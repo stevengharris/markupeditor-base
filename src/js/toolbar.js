@@ -1,7 +1,7 @@
 import crel from "crel"
 import {Plugin} from "prosemirror-state"
 
-import {renderGrouped} from "./menu"
+import {renderGrouped} from "prosemirror-menu"
 
 const prefix = "ProseMirror-menubar"
 

@@ -18,7 +18,8 @@
     "prosemirror-search": "^1.0.0",
     "prosemirror-state": "^1.4.3",
     "prosemirror-tables": "^1.6.1",
-    "prosemirror-view": "^1.34.3"
+    "prosemirror-view": "^1.34.3",
+    "prosemirror-menu": "git://github.com/stevengharris/prosemirror-menu.git"
   },
   "devDependencies": {
 		"@vscode/codicons": "0.0.20",

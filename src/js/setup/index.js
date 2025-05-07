@@ -7,7 +7,7 @@ import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search } from "prosemirror-search"
 
-import {toolbar} from "../menu/toolbar"
+import {toolbar} from "../toolbar"
 import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {buildInputRules} from "./inputrules"
