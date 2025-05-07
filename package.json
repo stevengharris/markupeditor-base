@@ -12,19 +12,19 @@
     "prosemirror-gapcursor": "^1.3.2",
     "prosemirror-history": "^1.4.1",
     "prosemirror-inputrules": "^1.4.0",
+    "prosemirror-menu": "file:../prosemirror-menu",
     "prosemirror-model": "^1.23.0",
     "prosemirror-schema-basic": "^1.2.3",
     "prosemirror-schema-list": "^1.4.1",
     "prosemirror-search": "^1.0.0",
     "prosemirror-state": "^1.4.3",
     "prosemirror-tables": "^1.6.1",
-    "prosemirror-view": "^1.34.3",
-    "prosemirror-menu": "git://github.com/stevengharris/prosemirror-menu.git"
+    "prosemirror-view": "^1.34.3"
   },
   "devDependencies": {
-		"@vscode/codicons": "0.0.20",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
+    "@vscode/codicons": "0.0.20",
     "rollup": "^4.31.0"
   },
   "scripts": {
