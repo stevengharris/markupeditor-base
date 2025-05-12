@@ -7,7 +7,7 @@ import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search } from "prosemirror-search"
 
-import {toolbar} from "../toolbar"
+import {toolbarPlugin} from "./toolbar"
 import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {buildInputRules} from "./inputrules"
@@ -176,15 +176,16 @@ export function markupSetup(options) {
     dropCursor(),
     gapCursor(),
   ]
-  if (options.toolbar !== false) {
-    plugins.push(
-      toolbar(
-        {
-          floating: options.floatingMenu !== false,
-          content: options.menuContent || buildMenuItems(options.schema).fullMenu
-        }
-      )
-    )
+  if (options.toolbar) {
+    // TODO: toolbarPlugin needs to be replaced with something senstive to options, like a ToobarSpec
+    plugins.push(toolbarPlugin)
+      //toolbar(
+      //  {
+      //    floating: options.floatingMenu !== false,
+      //    content: options.menuContent || buildMenuItems(options.schema).fullMenu
+      //  }
+      //)
+    //)
   }
 
   if (options.history !== false) plugins.push(history())

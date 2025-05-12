@@ -1,19 +1,21 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import pkg from './package.json' with { type: "json" };
+import css from 'rollup-plugin-import-css';
 
 export default [
 	// browser-friendly UMD build
 	{
-		input: 'src/js/main.js',
+		input: 'src/main.js',
 		output: {
 			file: pkg.browser,
 			format: 'umd',
             name: 'MU'  // so we can call MU.<exported function> from Swift
 		},
 		plugins: [
-			resolve(), // so Rollup can find `ms`
-			commonjs() // so Rollup can convert `ms` to an ES module
+			resolve(), 	// so Rollup can find `ms`
+			commonjs(), // so Rollup can convert `ms` to an ES module
+			css()		// so we can import css
 		]
 	},
 

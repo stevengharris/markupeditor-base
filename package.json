@@ -5,6 +5,7 @@
   "module": "dist/markupeditor.esm.js",
   "browser": "dist/markupeditor.umd.js",
   "dependencies": {
+    "@material-design-icons/font": "^0.14.15",
     "crel": "^4.2.1",
     "ms": "^2.0.0",
     "prosemirror-commands": "^1.6.2",
@@ -19,7 +20,8 @@
     "prosemirror-search": "^1.0.0",
     "prosemirror-state": "^1.4.3",
     "prosemirror-tables": "^1.6.1",
-    "prosemirror-view": "^1.34.3"
+    "prosemirror-view": "^1.34.3",
+    "rollup-plugin-import-css": "^3.5.8"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
