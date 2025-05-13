@@ -167,7 +167,7 @@ window.view = new EditorView(document.querySelector("#editor"), {
     // There is mo need to use a separate content element.
     doc: DOMParser.fromSchema(muSchema).parse(document.querySelector("#editor")),
     plugins: markupSetup({
-      toolbar: true,
+      toolbarConfig: markupConfig?.toolbar,
       menuBar: menuBar(),    // Show the menubar only if markupConfig?.menuBar is defined and true
       schema: muSchema
     })

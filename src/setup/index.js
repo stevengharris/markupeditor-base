@@ -176,7 +176,7 @@ export function markupSetup(options) {
     dropCursor(),
     gapCursor(),
   ]
-  if (options.toolbar) {
+  if (options.toolbarConfig?.visibility) {
     // TODO: toolbarPlugin needs to be replaced with something senstive to options, like a ToobarSpec
     plugins.push(toolbarPlugin)
       //toolbar(
