@@ -157,17 +157,11 @@ const placeholderPlugin = new Plugin({
 //     mapKeys:: ?Object
 //     Can be used to [adjust](#example-setup.buildKeymap) the key bindings created.
 //
-//     markupConfig:: ?Object
-//     Configuration for the MarkupEditor, including toolbar.visibility.
+//     config:: ?Object
+//     Configuration for the MarkupEditor, including toolbar.visibility and content.
 //
 //     history:: ?bool
 //     Set to false to disable the history plugin.
-//
-//     floatingMenu:: ?bool
-//     Set to false to make the menu bar non-floating.
-//
-//     menuContent:: [[MenuItem]]
-//     Can be used to override the menu content.
 export function markupSetup(options) {
   let plugins = [
     buildInputRules(options.schema),
@@ -176,8 +170,8 @@ export function markupSetup(options) {
     dropCursor(),
     gapCursor(),
   ]
-  if (options.markupConfig?.visibility.toolbar) {
-    plugins.push(toolbar(options))
+  if (options.config?.visibility.toolbar) {
+    plugins.push(toolbar(options.config))
   }
 
   if (options.history !== false) plugins.push(history())

@@ -145,7 +145,7 @@ window.view = new EditorView(document.querySelector("#editor"), {
     // There is mo need to use a separate content element.
     doc: DOMParser.fromSchema(muSchema).parse(document.querySelector("#editor")),
     plugins: markupSetup({
-      markupConfig: markupConfig,
+      config: markupConfig,
       schema: muSchema
     })
   }),
