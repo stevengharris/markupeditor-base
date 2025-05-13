@@ -7,7 +7,7 @@ import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search } from "prosemirror-search"
 
-import {toolbarPlugin} from "./toolbar"
+import {toolbar} from "./toolbar"
 import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {buildInputRules} from "./inputrules"
@@ -157,8 +157,8 @@ const placeholderPlugin = new Plugin({
 //     mapKeys:: ?Object
 //     Can be used to [adjust](#example-setup.buildKeymap) the key bindings created.
 //
-//     menuBar:: ?bool
-//     Set to false to disable the menu bar.
+//     markupConfig:: ?Object
+//     Configuration for the MarkupEditor, including toolbar.visibility.
 //
 //     history:: ?bool
 //     Set to false to disable the history plugin.
@@ -176,16 +176,8 @@ export function markupSetup(options) {
     dropCursor(),
     gapCursor(),
   ]
-  if (options.toolbarConfig?.visibility) {
-    // TODO: toolbarPlugin needs to be replaced with something senstive to options, like a ToobarSpec
-    plugins.push(toolbarPlugin)
-      //toolbar(
-      //  {
-      //    floating: options.floatingMenu !== false,
-      //    content: options.menuContent || buildMenuItems(options.schema).fullMenu
-      //  }
-      //)
-    //)
+  if (options.markupConfig?.visibility.toolbar) {
+    plugins.push(toolbar(options))
   }
 
   if (options.history !== false) plugins.push(history())

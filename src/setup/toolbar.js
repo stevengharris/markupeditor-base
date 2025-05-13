@@ -25,26 +25,39 @@ import {Plugin} from "prosemirror-state"
 import {toggleMark, setBlockType, wrapIn} from "prosemirror-commands"
 import {schema} from "../schema"
 
-export const toolbarPlugin = new Plugin({
-  view(editorView) {
-    // Create new class to hold editor and internal state such as editorView, HTML Dom elements, commands
-    let toolbarView = new ToolbarView(toolbarButtons, editorView)
+export function toolbar(options) {
+  let view = function view(editorView) {
+    let toolbarView = new ToolbarView(editorView, options)
 
-    // Put the toolbar at the top of the current editor.
+    // Put the toolbar at the top of the editorView
     editorView.dom.parentNode.insertBefore(toolbarView.dom, editorView.dom.parentNode.firstChild);
 
     return toolbarView;
   }
-})
+  return new Plugin({view})
+}
 
 class ToolbarView {
 
-  constructor(toolbarButtons, editorView) {
+  constructor(editorView, options) {
     this.buttons = toolbarButtons;
     this.editorView = editorView;
 
     // Create dom representation of toolbox.
     this.addToolbar(toolbarButtons, editorView)
+  }
+
+  buttonGroups(toolbarOptions) {
+    if (toolbarOptions.format) {
+
+    }
+    if (toolbarOptions.style) {
+      
+    }
+  }
+
+  buttonsFor(group, options) {
+
   }
 
   addToolbar(toolbarButtons, editorView) {
