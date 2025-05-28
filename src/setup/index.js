@@ -1,20 +1,21 @@
 import {keymap} from "prosemirror-keymap"
 import {history} from "prosemirror-history"
 import {baseKeymap} from "prosemirror-commands"
-import {AllSelection, NodeSelection, Plugin} from "prosemirror-state"
+import {AllSelection, NodeSelection, Plugin, PluginKey} from "prosemirror-state"
 import {dropCursor} from "prosemirror-dropcursor"
 import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
-import {search } from "prosemirror-search"
+import {search} from "prosemirror-search"
 
-import {toolbar} from "./toolbar"
+import { menuBar } from "prosemirror-menu"
 import {buildMenuItems} from "./menu"
+import {toolbar} from "./toolbar"
 import {buildKeymap} from "./keymap"
 import {buildInputRules} from "./inputrules"
 
 import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive} from "../markup"
 
-export {buildMenuItems, buildKeymap, buildInputRules}
+export {buildKeymap, buildInputRules}
 
 // !! This module exports helper functions for deriving a set of basic
 // menu items, input rules, or key bindings from a schema. These
@@ -23,13 +24,18 @@ export {buildMenuItems, buildKeymap, buildInputRules}
 // to know which of the node and mark types that they know about are
 // actually present in the schema.
 
+const muTableKey = new PluginKey("muTable");
+const muSearchModeKey = new PluginKey("muSearchMode");
+const muImageKey = new PluginKey("muImage");
+const muPlaceholderKey = new PluginKey("muPlaceholder");
+const muToolbarKey = new PluginKey("muToolbar");
+
 /**
- * The MarkupEditor plugin, aka `muPlugin`, handles decorations that add CSS styling 
- * we want to see reflected in the view. The node `attrs` for styling are, as needed, 
- * also produced in the `toDOM` definition in the schema, but they do not seem 
- * to reliably affect the view when changed during editing.
+ * The tablePlugin handles decorations that add CSS styling 
+ * for table borders.
  */
-const muPlugin = new Plugin({
+const tablePlugin = new Plugin({
+  key: muTableKey,
   state: {
     init(_, {doc}) {
       return DecorationSet.create(doc, [])
@@ -48,11 +54,12 @@ const muPlugin = new Plugin({
     }
   },
   props: {
-    decorations: (state) => { return muPlugin.getState(state) }
+    decorations: (state) => { return tablePlugin.getState(state) }
   }
 })
 
 const searchModePlugin  = new Plugin({
+  key: muSearchModeKey,
   state: {
     init(_, {doc}) {
       return DecorationSet.create(doc, [])
@@ -74,7 +81,7 @@ const searchModePlugin  = new Plugin({
   props: {
     decorations: (state) => { return searchModePlugin.getState(state) }
   }
-})
+}) 
 
 /**
  * The imagePlugin handles the interaction with the Swift side that we need for images.
@@ -96,6 +103,7 @@ const searchModePlugin  = new Plugin({
  * get one 'addedImage' notification.
  */
 const imagePlugin = new Plugin({
+  key: muImageKey,
   state: {
     init() {
       return new Map()
@@ -128,6 +136,7 @@ const imagePlugin = new Plugin({
  * @returns {Plugin}
  */
 const placeholderPlugin = new Plugin({
+  key: muPlaceholderKey,
   props: {
     decorations(state) {
       if (!placeholderText) return;   // No need to mess around if we have no placeholder
@@ -170,14 +179,16 @@ export function markupSetup(options) {
     dropCursor(),
     gapCursor(),
   ]
+  const menuBarPlugin = menuBar({floating: true, content: buildMenuItems(options.schema).fullMenu});
   if (options.config?.visibility.toolbar) {
-    plugins.push(toolbar(options.config))
+    plugins.push(menuBarPlugin);
+    plugins.push(toolbar(muToolbarKey, options.config, options.schema));
   }
 
   if (options.history !== false) plugins.push(history())
 
-  // Add the MarkupEditor plugin
-  plugins.push(muPlugin);
+  // Add the plugin that handles table borders
+  plugins.push(tablePlugin);
 
   // Add the plugin that handles placeholder display for an empty document
   plugins.push(placeholderPlugin)

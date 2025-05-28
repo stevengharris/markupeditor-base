@@ -22,71 +22,131 @@
  */
 
 import {Plugin} from "prosemirror-state"
-import {toggleMark, setBlockType, wrapIn} from "prosemirror-commands"
+import {toggleMark} from "prosemirror-commands"
+import {MenuItem, Dropdown, renderGrouped, blockTypeItem} from "prosemirror-menu"
 import {schema} from "../schema"
 
-export function toolbar(options) {
+export function toolbar(key, config, schema) {
   let view = function view(editorView) {
-    let toolbarView = new ToolbarView(editorView, options)
-
+    let toolbarView = new ToolbarView(editorView, config, schema)
+      
     // Put the toolbar at the top of the editorView
-    editorView.dom.parentNode.insertBefore(toolbarView.dom, editorView.dom.parentNode.firstChild);
+    editorView.dom.parentNode.insertBefore(toolbarView.dom, editorView.dom);
 
     return toolbarView;
   }
-  return new Plugin({view})
+  return new Plugin({key: key, view})
 }
 
 class ToolbarView {
 
-  constructor(editorView, options) {
-    this.buttons = toolbarButtons;
+  constructor(editorView, config, schema) {
+    console.log("Show format bar: " + config.visibility.formatBar)
+    console.log("Show style menu: " + config.visibility.styleMenu)
+    this.menuItems = this.itemGroups(config);
     this.editorView = editorView;
-
-    // Create dom representation of toolbox.
-    this.addToolbar(toolbarButtons, editorView)
-  }
-
-  buttonGroups(toolbarOptions) {
-    if (toolbarOptions.format) {
-
-    }
-    if (toolbarOptions.style) {
-      
-    }
-  }
-
-  buttonsFor(group, options) {
-
-  }
-
-  addToolbar(toolbarButtons, editorView) {
-    // Create div containing button
     this.dom = document.createElement("div")
     this.dom.style.display = "block";
-    toolbarButtons.forEach(({ dom }) => this.dom.appendChild(dom));
-
-    this.dom.addEventListener("mousedown", e => {
-      e.preventDefault()
-      editorView.focus()
-      toolbarButtons.forEach(({ command, dom }) => {
-        if (dom.contains(e.target))
-          command(editorView.state, editorView.dispatch, editorView)
-      })
-    })
+    let {dom, update} = renderGrouped(editorView, this.menuItems);
+    //this.contentUpdate = update
+    this.dom.appendChild(dom);
   }
 
-  update(view, lastState) {
+  itemGroups(config) {
+    let itemGroups = [];
+    let {formatBar, styleMenu} = config.visibility;
+    if (formatBar) itemGroups.push(this.markItems(config));
+    if (styleMenu) itemGroups.push(this.styleItems(config));
+    return itemGroups;
+  }
+
+  /** Format Bar */
+
+  /**
+   * Return the array of formatting MenuItems that should show per the config.
+   * 
+   * @param {*} config    The markupConfig that is passed-in, with boolean values in config.formatBar.
+   * @returns [MenuItem]  The array of MenuItems that show as passed in `config`
+   */
+  markItems(config) {
+    let items = []
+    let {bold, italic, underline} = config.formatBar;
+    if (bold) items.push(this.markItem(schema.marks.strong, {label: 'format_bold', class: 'material-symbols-outlined'}))
+    if (italic) items.push(this.markItem(schema.marks.em, {label: 'format_italic', class: 'material-symbols-outlined'}))
+    if (underline) items.push(this.markItem(schema.marks.u, {label: 'format_underline', class: 'material-symbols-outlined'}))
+    return items;
+  }
+
+  markItem(markType, options) {
+    let passedOptions = {
+      active(state) { return this.markActive(state, markType) },
+      enable: true
+    }
+    for (let prop in options) passedOptions[prop] = options[prop]
+    return this.cmdItem(toggleMark(markType), passedOptions)
+  }
+
+  markActive(state, type) {
+    let { from, $from, to, empty } = state.selection
+    if (empty) return type.isInSet(state.storedMarks || $from.marks())
+    else return state.doc.rangeHasMark(from, to, type)
+  }
+
+  cmdItem(cmd, options) {
+    let passedOptions = {
+      label: options.title,
+      run: cmd
+    }
+    for (let prop in options) passedOptions[prop] = options[prop]
+    if ((!options.enable || options.enable === true) && !options.select)
+      passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
+
+    return new MenuItem(passedOptions)
+  }
+
+  styleItems(config) {
+    let items = []
+    let {p, h1, h2, h3, h4, h5, h6} = config.styleMenu;
+    if (p) items.push(blockTypeItem(schema.nodes.paragraph, {label: 'P'}))
+    if (h1) items.push(blockTypeItem(schema.nodes.heading, {attrs: {level: 1}, label: 'H1'}))
+    if (h2) items.push(blockTypeItem(schema.nodes.heading, {attrs: {level: 2}, label: 'H2'}))
+    if (h3) items.push(blockTypeItem(schema.nodes.heading, {attrs: {level: 3}, label: 'H3'}))
+    if (h4) items.push(blockTypeItem(schema.nodes.heading, {attrs: {level: 4}, label: 'H4'}))
+    if (h5) items.push(blockTypeItem(schema.nodes.heading, {attrs: {level: 5}, label: 'H5'}))
+    if (h6) items.push(blockTypeItem(schema.nodes.heading, {attrs: {level: 6}, label: 'H6'}))
+    return [new Dropdown(items, {label: 'Style', title: 'Style'})]
+  }
+
+  //addToolbar(toolbarButtons, editorView) {
+  //  // Create div containing button
+  //  this.dom = document.createElement("div")
+  //  this.dom.style.display = "block";
+  //  toolbarButtons.forEach(({ dom }) => this.dom.appendChild(dom));
+//
+  //  this.dom.addEventListener("mousedown", e => {
+  //    e.preventDefault()
+  //    editorView.focus()
+  //    toolbarButtons.forEach(({ command, dom }) => {
+  //      if (dom.contains(e.target))
+  //        command(editorView.state, editorView.dispatch, editorView)
+  //    })
+  //  })
+  //}
+
+  update() {
     console.log("update")
-    // Update if popup should show or not.
-    //this.selectionUpdate(view, lastState);
-
-    // If clicked on a toolbox button, make an update on that:
-    this.buttons.forEach(({ command, dom }) => {
-      let active = command(this.editorView.state, null, this.editorView)
-      //dom.style.display = active ? "" : "none"
-    })
   }
+  //update(view, lastState) {
+  //  console.log("update")
+  //  // Update if popup should show or not.
+  //  //this.selectionUpdate(view, lastState);
+//
+  //  // If clicked on a toolbox button, make an update on that:
+  //  this.buttons.forEach(({ command, dom }) => {
+  //    let active = command(this.editorView.state, null, this.editorView)
+  //    //dom.style.display = active ? "" : "none"
+  //  })
+  //}
 
   selectionUpdate(view, lastState) {
     console.log("selectionUpdate")
@@ -119,27 +179,27 @@ class ToolbarView {
   destroy() { this.dom.remove() }
 }
 
-function heading(level) {
-  return {
-    command: setBlockType(schema.nodes.heading, { level }),
-    dom: toolbarButton("H" + level, null)
-  }
-}
+//function heading(level) {
+//  return {
+//    command: setBlockType(schema.nodes.heading, { level }),
+//    dom: toolbarButton("H" + level, null)
+//  }
+//}
 
-function toolbarButton(text, name) {
-  let div = document.createElement("div");
-  div.className = "material-symbols-outlined";
-  div.textContent = name ?? text;
-  return div;
-}
+//function toolbarButton(text, name) {
+//  let div = document.createElement("div");
+//  div.className = "material-symbols-outlined";
+//  div.textContent = name ?? text;
+//  return div;
+//}
 
 // Buttons in toolbar. They have a command assignment (command), and DOM representation description (dom).
-let toolbarButtons = [
-  { command: toggleMark(schema.marks.strong), dom: toolbarButton(null, "format_indent_increase") },
-  { command: toggleMark(schema.marks.em), dom: toolbarButton(null, "format_italic") },
-  { command: wrapIn(schema.nodes.blockquote), dom: toolbarButton(null, "format_bold") },
-  { command: wrapIn(schema.nodes.blockquote), dom: toolbarButton(null, "format_indent_decrease") }
-];
+//let toolbarButtons = [
+//  { command: toggleMark(schema.marks.strong), dom: toolbarButton(null, "format_indent_increase") },
+//  { command: toggleMark(schema.marks.em), dom: toolbarButton(null, "format_italic") },
+//  { command: wrapIn(schema.nodes.blockquote), dom: toolbarButton(null, "format_bold") },
+//  { command: wrapIn(schema.nodes.blockquote), dom: toolbarButton(null, "format_indent_decrease") }
+//];
 
 /*
 import crel from "crel"

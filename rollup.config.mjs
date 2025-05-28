@@ -6,11 +6,11 @@ import css from 'rollup-plugin-import-css';
 export default [
 	// browser-friendly UMD build
 	{
-		input: 'src/main.js',
+		input: ['src/main.js'],
 		output: {
 			file: pkg.browser,
 			format: 'umd',
-            name: 'MU'  // so we can call MU.<exported function> from Swift
+            name: 'MU',  // so we can call MU.<exported function> from Swift
 		},
 		plugins: [
 			resolve(), 	// so Rollup can find `ms`
