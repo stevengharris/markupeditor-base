@@ -112,14 +112,15 @@ class ToolbarView {
    */
   styleItems(config) {
     let items = []
-    let {p, h1, h2, h3, h4, h5, h6} = config.styleMenu;
-    if (p) items.push(blockTypeItem(this.schema.nodes.paragraph, {label: 'P'}))
-    if (h1) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 1}, label: 'H1'}))
-    if (h2) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 2}, label: 'H2'}))
-    if (h3) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 3}, label: 'H3'}))
-    if (h4) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 4}, label: 'H4'}))
-    if (h5) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 5}, label: 'H5'}))
-    if (h6) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 6}, label: 'H6'}))
+    let {p, h1, h2, h3, h4, h5, h6, codeblock} = config.styleMenu;
+    if (p) items.push(blockTypeItem(this.schema.nodes.paragraph, {label: 'Normal'}))
+    if (h1) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 1}, label: 'Header 1'}))
+    if (h2) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 2}, label: 'Header 2'}))
+    if (h3) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 3}, label: 'Header 3'}))
+    if (h4) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 4}, label: 'Header 4'}))
+    if (h5) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 5}, label: 'Header 5'}))
+    if (h6) items.push(blockTypeItem(this.schema.nodes.heading, {attrs: {level: 6}, label: 'Header 6'}))
+    if (codeblock) items.push(blockTypeItem(this.schema.nodes.code_block, {label: 'Code'}))
     return [new Dropdown(items, {label: 'Style', title: 'Style'})]
   }
 
