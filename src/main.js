@@ -1,6 +1,6 @@
 import {EditorState} from "prosemirror-state"
 import {EditorView} from "prosemirror-view"
-import {Schema, DOMParser} from "prosemirror-model"
+import {DOMParser} from "prosemirror-model"
 import {schema} from "./schema/index.js"
 import {markupSetup} from "./setup/index.js"
 

@@ -68,10 +68,14 @@ class ToolbarView {
    */
   markItems(config) {
     let items = []
-    let {bold, italic, underline} = config.formatBar;
+    let {bold, italic, underline, code, strikethrough, subscript, superscript} = config.formatBar;
     if (bold) items.push(this.markItem(this.schema.marks.strong, {label: 'format_bold', class: 'material-symbols-outlined'}))
     if (italic) items.push(this.markItem(this.schema.marks.em, {label: 'format_italic', class: 'material-symbols-outlined'}))
     if (underline) items.push(this.markItem(this.schema.marks.u, {label: 'format_underline', class: 'material-symbols-outlined'}))
+    if (code) items.push(this.markItem(this.schema.marks.code, {label: 'data_object', class: 'material-symbols-outlined'}))
+    if (strikethrough) items.push(this.markItem(this.schema.marks.s, {label: 'strikethrough_s', class: 'material-symbols-outlined'}))
+    if (subscript) items.push(this.markItem(this.schema.marks.sub, {label: 'subscript', class: 'material-symbols-outlined'}))
+    if (superscript) items.push(this.markItem(this.schema.marks.sup, {label: 'superscript', class: 'material-symbols-outlined'}))
     return items;
   }
 
