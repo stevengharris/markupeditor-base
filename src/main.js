@@ -134,19 +134,14 @@ export {
   borderTable,
 }
 
-const muSchema = new Schema({
-  nodes: schema.spec.nodes,
-  marks: schema.spec.marks
-})
-
 window.view = new EditorView(document.querySelector("#editor"), {
   state: EditorState.create({
     // For the MarkupEditor, we can just use the editor element. 
-    // There is mo need to use a separate content element.
-    doc: DOMParser.fromSchema(muSchema).parse(document.querySelector("#editor")),
+    // There is no need to use a separate content element.
+    doc: DOMParser.fromSchema(schema).parse(document.querySelector("#editor")),
     plugins: markupSetup({
       config: markupConfig,
-      schema: muSchema
+      schema: schema
     })
   }),
   nodeViews: {
