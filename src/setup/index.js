@@ -7,6 +7,7 @@ import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search} from "prosemirror-search"
 
+import {buildMenuItems} from "./menu"
 import {toolbar} from "./toolbar"
 import {buildKeymap} from "./keymap"
 import {buildInputRules} from "./inputrules"
@@ -163,7 +164,8 @@ export function markupSetup(options) {
 
   // Only show the toolbar if options enable it
   if (options.config?.visibility.toolbar) {
-    plugins.push(toolbar(options.config, options.schema));
+    let content = buildMenuItems(options.config, options.schema);
+    plugins.push(toolbar(content));
   }
 
   if (options.history !== false) plugins.push(history())

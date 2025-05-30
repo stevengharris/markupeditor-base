@@ -1,8 +1,13 @@
-import {wrapItem, blockTypeItem, Dropdown, DropdownSubmenu, joinUpItem, liftItem,
-       selectParentNodeItem, undoItem, redoItem, icons, MenuItem} from "prosemirror-menu"
-import {NodeSelection} from "prosemirror-state"
-import {toggleMark} from "prosemirror-commands"
-import {wrapInList} from "prosemirror-schema-list"
+/**
+ * Adapted, expanded, and copied-from prosemirror-menu under MIT license.
+ */
+
+import crel from "crelt"
+import {EditorState, NodeSelection} from "prosemirror-state"
+import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
+import {multiWrapInList, listTypeFor, getListType, isIndented} from "../markup"
+import {TextField, openPrompt} from "./prompt"
+import {NodeType} from "prosemirror-model"
 import {
   addColumnAfter,
   addColumnBefore,
@@ -16,19 +21,93 @@ import {
   deleteTable,
 } from 'prosemirror-tables'
 
-import {TextField, openPrompt} from "./prompt"
+const prefix = "ProseMirror-menu"
 
-// Helpers to create specific types of items
+/**
+An icon or label that, when clicked, executes a command.
+*/
+class MenuItem {
+    /**
+     * Create a menu item.
+     * 
+     * @param {*} spec The spec used to create this item.
+    */
+    constructor(spec) {
+        this.spec = spec;
+    }
 
-function canInsert(state, nodeType) {
-  let $from = state.selection.$from
-  for (let d = $from.depth; d >= 0; d--) {
-    let index = $from.index(d)
-    if ($from.node(d).canReplaceWith(index, index, nodeType)) return true
-  }
-  return false
+    /**
+    Renders the icon according to its [display
+    spec](https://prosemirror.net/docs/ref/#menu.MenuItemSpec.display), and adds an event handler which
+    executes the command when the representation is clicked.
+    */
+    render(view) {
+        let spec = this.spec;
+        let dom = spec.render ? spec.render(view)
+            : spec.icon ? getIcon(view.root, spec.icon)
+                : spec.label ? crel("div", null, translate(view, spec.label))
+                    : null;
+        if (!dom)
+            throw new RangeError("MenuItem without icon or label property");
+        if (spec.title) {
+            const title = (typeof spec.title === "function" ? spec.title(view.state) : spec.title);
+            dom.setAttribute("title", translate(view, title));
+        }
+        if (spec.class)
+            dom.classList.add(spec.class);
+        if (spec.css)
+            dom.style.cssText += spec.css;
+        dom.addEventListener("mousedown", e => {
+            e.preventDefault();
+            if (!dom.classList.contains(prefix + "-disabled"))
+                spec.run(view.state, view.dispatch, view, e);
+        });
+        function update(state) {
+            if (spec.select) {
+                let selected = spec.select(state);
+                dom.style.display = selected ? "" : "none";
+                if (!selected)
+                    return false;
+            }
+            let enabled = true;
+            if (spec.enable) {
+                enabled = spec.enable(state) || false;
+                setClass(dom, prefix + "-disabled", !enabled);
+            }
+            if (spec.active) {
+                let active = enabled && spec.active(state) || false;
+                setClass(dom, prefix + "-active", active);
+            }
+            return true;
+        }
+        return { dom, update };
+    }
 }
 
+function translate(view, text) {
+    return view._props.translate ? view._props.translate(text) : text;
+}
+
+// Work around classList.toggle being broken in IE11
+function setClass(dom, cls, on) {
+    if (on)
+        dom.classList.add(cls);
+    else
+        dom.classList.remove(cls);
+}
+
+// Helpers to create specific types of MenuItems used in by the MarkupEditor
+// as adapted from prosemirror-menu. Note that the exported `buildMenuItems`
+// method takes the `config` for the toolbar and uses that to return an 
+// array of MenuItems created using these helpers.
+
+// Insert helpers
+
+/**
+ * 
+ * @param {NodeTyoe} nodeType 
+ * @returns {MenuItem}  A MenuItem that can prompt for an image to insert
+ */
 function insertImageItem(nodeType) {
   return new MenuItem({
     title: "Insert image",
@@ -55,37 +134,26 @@ function insertImageItem(nodeType) {
   })
 }
 
-function cmdItem(cmd, options) {
-  let passedOptions = {
-    label: options.title,
-    run: cmd
+/**
+ * Return whether a Node of `nodeType` can be inserted.
+ * 
+ * @param {EditorState} state
+ * @param {NodeType} nodeType 
+ * @returns {boolean} Whether a Node of `nodeType` can be inserted given the `state`.
+ */
+function canInsert(state, nodeType) {
+  let $from = state.selection.$from
+  for (let d = $from.depth; d >= 0; d--) {
+    let index = $from.index(d)
+    if ($from.node(d).canReplaceWith(index, index, nodeType)) return true
   }
-  for (let prop in options) passedOptions[prop] = options[prop]
-  if ((!options.enable || options.enable === true) && !options.select)
-    passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
-
-  return new MenuItem(passedOptions)
-}
-
-function markActive(state, type) {
-  let {from, $from, to, empty} = state.selection
-  if (empty) return type.isInSet(state.storedMarks || $from.marks())
-  else return state.doc.rangeHasMark(from, to, type)
-}
-
-function markItem(markType, options) {
-  let passedOptions = {
-    active(state) { return markActive(state, markType) },
-    enable: true
-  }
-  for (let prop in options) passedOptions[prop] = options[prop]
-  return cmdItem(toggleMark(markType), passedOptions)
+  return false
 }
 
 function linkItem(markType) {
   return new MenuItem({
     title: "Add or remove link",
-    icon: icons.link,
+    label: "link",
     active(state) { return markActive(state, markType) },
     enable(state) { return !state.selection.empty },
     run(state, dispatch, view) {
@@ -111,10 +179,6 @@ function linkItem(markType) {
   })
 }
 
-function wrapListItem(nodeType, options) {
-  return cmdItem(wrapInList(nodeType, options.attrs), options)
-}
-
 function tableItem(title, command) {
   return new MenuItem({
     title: title,
@@ -124,156 +188,309 @@ function tableItem(title, command) {
   })
 }
 
-// :: (Schema) → Object
-// Given a schema, look for default mark and node types in it and
-// return an object with relevant menu items relating to those marks:
-//
-// **`toggleStrong`**`: MenuItem`
-//   : A menu item to toggle the [strong mark](#schema-basic.StrongMark).
-//
-// **`toggleEm`**`: MenuItem`
-//   : A menu item to toggle the [emphasis mark](#schema-basic.EmMark).
-//
-// **`toggleCode`**`: MenuItem`
-//   : A menu item to toggle the [code font mark](#schema-basic.CodeMark).
-//
-// **`toggleLink`**`: MenuItem`
-//   : A menu item to toggle the [link mark](#schema-basic.LinkMark).
-//
-// **`insertImage`**`: MenuItem`
-//   : A menu item to insert an [image](#schema-basic.Image).
-//
-// **`wrapBulletList`**`: MenuItem`
-//   : A menu item to wrap the selection in a [bullet list](#schema-list.BulletList).
-//
-// **`wrapOrderedList`**`: MenuItem`
-//   : A menu item to wrap the selection in an [ordered list](#schema-list.OrderedList).
-//
-// **`wrapBlockQuote`**`: MenuItem`
-//   : A menu item to wrap the selection in a [block quote](#schema-basic.BlockQuote).
-//
-// **`makeParagraph`**`: MenuItem`
-//   : A menu item to set the current textblock to be a normal
-//     [paragraph](#schema-basic.Paragraph).
-//
-// **`makeCodeBlock`**`: MenuItem`
-//   : A menu item to set the current textblock to be a
-//     [code block](#schema-basic.CodeBlock).
-//
-// **`makeHead[N]`**`: MenuItem`
-//   : Where _N_ is 1 to 6. Menu items to set the current textblock to
-//     be a [heading](#schema-basic.Heading) of level _N_.
-//
-// **`insertHorizontalRule`**`: MenuItem`
-//   : A menu item to insert a horizontal rule.
-//
-// The return value also contains some prefabricated menu elements and
-// menus, that you can use instead of composing your own menu from
-// scratch:
-//
-// **`insertMenu`**`: Dropdown`
-//   : A dropdown containing the `insertImage` and
-//     `insertHorizontalRule` items.
-//
-// **`typeMenu`**`: Dropdown`
-//   : A dropdown containing the items for making the current
-//     textblock a paragraph, code block, or heading.
-//
-// **`fullMenu`**`: [[MenuElement]]`
-//   : An array of arrays of menu elements for use as the full menu
-//     for, for example the [menu bar](https://github.com/prosemirror/prosemirror-menu#user-content-menubar).
-export function buildMenuItems(schema) {
-  let r = {}, type
-  if (type = schema.marks.strong)
-    r.toggleStrong = markItem(type, {title: "Toggle strong style", icon: icons.strong})
-  if (type = schema.marks.em)
-    r.toggleEm = markItem(type, {title: "Toggle emphasis", icon: icons.em})
-  if (type = schema.marks.u)
-    r.toggleU = markItem(type, {title: "Toggle underline", icon: icons.u})
-  if (type = schema.marks.code)
-    r.toggleCode = markItem(type, {title: "Toggle code font", icon: icons.code})
-  if (type = schema.marks.s)
-    r.toggleS = markItem(type, {title: "Toggle strikethrough", icon: icons.s})
-  if (type = schema.marks.link)
-    r.toggleLink = linkItem(type)
+/**
+ * Build an array of MenuItems and nested MenuItems that comprise the content of the Toolbar 
+ * based on the `config` and `schema`.
+ * 
+ * @param {Object} config The configuration of the menu
+ * @param {Schema} schema The schema that holds node and mark types
+ * @returns [MenuItem]    The array of MenuItems or nested MenuItems used by `renderGrouped`.
+ */
+export function buildMenuItems(config, schema) {
+  let itemGroups = [];
+  let { formatBar, styleMenu, styleBar } = config.visibility;
+  if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
+  if (styleBar) itemGroups.push(styleBarItems(config, schema));
+  if (formatBar) itemGroups.push(formatItems(config, schema));
+  return itemGroups;
+}
 
-  if (type = schema.nodes.image)
-    r.insertImage = insertImageItem(type)
-  if (type = schema.nodes.bullet_list)
-    r.wrapBulletList = wrapListItem(type, {
-      title: "Wrap in bullet list",
-      icon: icons.bulletList
-    })
-  if (type = schema.nodes.ordered_list)
-    r.wrapOrderedList = wrapListItem(type, {
-      title: "Wrap in ordered list",
-      icon: icons.orderedList
-    })
-  if (type = schema.nodes.blockquote)
-    r.wrapBlockQuote = wrapItem(type, {
-      title: "Wrap in block quote",
-      icon: icons.blockquote
-    })
-  if (type = schema.nodes.paragraph)
-    r.makeParagraph = blockTypeItem(type, {
-      title: "Change to paragraph",
-      label: "Plain"
-    })
-  if (type = schema.nodes.code_block)
-    r.makeCodeBlock = blockTypeItem(type, {
-      title: "Change to code block",
-      label: "Code"
-    })
-  if (type = schema.nodes.heading)
-    for (let i = 1; i <= 10; i++)
-      r["makeHead" + i] = blockTypeItem(type, {
-        title: "Change to heading " + i,
-        label: "Level " + i,
-        attrs: {level: i}
-      })
-  if (type = schema.nodes.horizontal_rule) {
-    let hr = type
-    r.insertHorizontalRule = new MenuItem({
-      title: "Insert horizontal rule",
-      label: "Horizontal rule",
-      enable(state) { return canInsert(state, hr) },
-      run(state, dispatch) { dispatch(state.tr.replaceSelectionWith(hr.create())) }
-    })
+// Style Bar (List, Indent, Outdent)
+
+function styleBarItems(config, schema) {
+  let items = [];
+  let { number, bullet, indent, outdent } = config.styleBar;
+  if (number) items.push(toggleListItem(schema, schema.nodes.ordered_list, { label: 'format_list_numbered', class: 'material-symbols-outlined' }))
+  if (bullet) items.push(toggleListItem(schema, schema.nodes.bullet_list, { label: 'format_list_bulleted', class: 'material-symbols-outlined' }))
+  if (indent) items.push(indentItem(schema.nodes.blockquote, { label: 'format_indent_increase', class: 'material-symbols-outlined' }))
+  if (outdent) items.push(outdentItem({ label: 'format_indent_decrease', class: 'material-symbols-outlined' }))
+  return items;
+}
+
+function toggleListItem(schema, nodeType, options) {
+  let passedOptions = {
+    active: (state) => { return listActive(state, nodeType) },
+    enable: true
   }
-  if (type = schema.nodes.table) {
-    r.addColumnBefore = tableItem('Insert column before', addColumnBefore)
-    r.addColumnAfter = tableItem('Insert column after', addColumnAfter)
-    r.deleteColumn = tableItem('Delete column', deleteColumn)
-    r.addRowBefore = tableItem('Insert row before', addRowBefore)
-    r.addRowAfter = tableItem('Insert row after', addRowAfter)
-    r.deleteRow = tableItem('Delete row', deleteRow)
-    r.deleteTable = tableItem('Delete table', deleteTable)
-    r.mergeCells = tableItem('Merge cells', mergeCells)
-    r.splitCell = tableItem('Split cell', splitCell)
-    r.toggleHeaderRow = tableItem('Toggle header row', toggleHeaderRow)
+  for (let prop in options) passedOptions[prop] = options[prop]
+  return cmdItem(multiWrapInList(schema, nodeType), passedOptions)
+}
+
+function listActive(state, nodeType) {
+  let listType = getListType(state)
+  return listType === listTypeFor(nodeType, state.schema)
+}
+
+function indentItem(nodeType, options) {
+  let passedOptions = {
+    active: (state) => { return isIndented(state) },
+    enable: true
   }
+  for (let prop in options) passedOptions[prop] = options[prop]
+  return cmdItem(wrapIn(nodeType), passedOptions)
+}
 
-  let cut = arr => arr.filter(x => x)
-  r.insertMenu = new Dropdown(cut([r.insertImage, r.insertHorizontalRule]), {label: "Insert"})
-  r.typeMenu = new Dropdown(cut([r.makeParagraph, r.makeCodeBlock, r.makeHead1 && new DropdownSubmenu(cut([
-    r.makeHead1, r.makeHead2, r.makeHead3, r.makeHead4, r.makeHead5, r.makeHead6
-  ]), {label: "Heading"})]), {label: "Type..."})
-  r.tableMenu = new Dropdown(cut([
-    r.addColumnBefore, 
-    r.addColumnAfter, 
-    r.deleteColumn, 
-    r.addRowBefore, 
-    r.addRowAfter, 
-    r.deleteRow, 
-    r.deleteTable, 
-    r.mergeCells, 
-    r.splitCell, 
-    r.toggleHeaderRow]), { label: 'Table' });
+function outdentItem(options) {
+  let passedOptions = {
+    active: (state) => { return isIndented(state) },
+    enable: true
+  }
+  for (let prop in options) passedOptions[prop] = options[prop]
+  return cmdItem(lift, passedOptions)
+}
 
-  r.inlineMenu = [cut([r.toggleStrong, r.toggleEm, r.toggleU, r.toggleCode, r.toggleS, r.toggleLink])]
-  r.blockMenu = [cut([r.wrapBulletList, r.wrapOrderedList, r.wrapBlockQuote, joinUpItem,
-                      liftItem, selectParentNodeItem])]
-  r.fullMenu = r.inlineMenu.concat([[r.insertMenu, r.typeMenu, r.tableMenu]], [[undoItem, redoItem]], r.blockMenu)
+// Format Bar (B, I, U, etc)
 
-  return r
+/**
+ * Return the array of formatting MenuItems that should show per the config.
+ * 
+ * @param {*} config    The markupConfig that is passed-in, with boolean values in config.formatBar.
+ * @returns [MenuItem]  The array of MenuItems that show as passed in `config`
+ */
+function formatItems(config, schema) {
+  let items = []
+  let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.formatBar;
+  if (bold) items.push(formatItem(schema.marks.strong, { label: 'format_bold', class: 'material-symbols-outlined' }))
+  if (italic) items.push(formatItem(schema.marks.em, { label: 'format_italic', class: 'material-symbols-outlined' }))
+  if (underline) items.push(formatItem(schema.marks.u, { label: 'format_underline', class: 'material-symbols-outlined' }))
+  if (code) items.push(formatItem(schema.marks.code, { label: 'data_object', class: 'material-symbols-outlined' }))
+  if (strikethrough) items.push(formatItem(schema.marks.s, { label: 'strikethrough_s', class: 'material-symbols-outlined' }))
+  if (subscript) items.push(formatItem(schema.marks.sub, { label: 'subscript', class: 'material-symbols-outlined' }))
+  if (superscript) items.push(formatItem(schema.marks.sup, { label: 'superscript', class: 'material-symbols-outlined' }))
+  return items;
+}
+
+function formatItem(markType, options) {
+  let passedOptions = {
+    active: (state) => { return markActive(state, markType) },
+    enable: true
+  }
+  for (let prop in options) passedOptions[prop] = options[prop]
+  return cmdItem(toggleMark(markType), passedOptions)
+}
+
+function markActive(state, type) {
+  let { from, $from, to, empty } = state.selection
+  if (empty) return type.isInSet(state.storedMarks || $from.marks())
+  else return state.doc.rangeHasMark(from, to, type)
+}
+
+function cmdItem(cmd, options) {
+  let passedOptions = {
+    label: options.title,
+    run: cmd
+  }
+  for (let prop in options) passedOptions[prop] = options[prop]
+  if ((!options.enable || options.enable === true) && !options.select)
+    passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
+
+  return new MenuItem(passedOptions)
+}
+
+// Style DropDown (P, H1-H6, Code)
+
+/**
+ * Return the Dropdown containing the styling MenuItems that should show per the config.
+ * 
+ * @param {*} config    The markupConfig that is passed-in, with boolean values in config.styleMenu.
+ * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
+ */
+function styleMenuItems(config, schema) {
+  let items = []
+  let { p, h1, h2, h3, h4, h5, h6, codeblock } = config.styleMenu;
+  if (p) items.push(blockTypeItem(schema.nodes.paragraph, { label: 'Normal' }))
+  if (h1) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 1 }, label: 'Header 1' }))
+  if (h2) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 2 }, label: 'Header 2' }))
+  if (h3) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 3 }, label: 'Header 3' }))
+  if (h4) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 4 }, label: 'Header 4' }))
+  if (h5) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 5 }, label: 'Header 5' }))
+  if (h6) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 6 }, label: 'Header 6' }))
+  if (codeblock) items.push(blockTypeItem(schema.nodes.code_block, { label: 'Code' }))
+  return [new Dropdown(items, { label: 'Style', title: 'Style' })]
+}
+
+/**
+Build a menu item for changing the type of the textblock around the
+selection to the given type. Provides `run`, `active`, and `select`
+properties. Others must be given in `options`. `options.attrs` may
+be an object to provide the attributes for the textblock node.
+*/
+function blockTypeItem(nodeType, options) {
+    let command = setBlockType(nodeType, options.attrs);
+    let passedOptions = {
+        run: command,
+        enable(state) { return command(state); },
+        active(state) {
+            let { $from, to, node } = state.selection;
+            if (node)
+                return node.hasMarkup(nodeType, options.attrs);
+            return to <= $from.end() && $from.parent.hasMarkup(nodeType, options.attrs);
+        }
+    };
+    for (let prop in options)
+        passedOptions[prop] = options[prop];
+    return new MenuItem(passedOptions);
+}
+
+/**
+A drop-down menu, displayed as a label with a downwards-pointing
+triangle to the right of it.
+*/
+class Dropdown {
+    /**
+    Create a dropdown wrapping the elements.
+    */
+    constructor(content, 
+    /**
+    @internal
+    */
+    options = {}) {
+        this.options = options;
+        this.options = options || {};
+        this.content = Array.isArray(content) ? content : [content];
+    }
+    /**
+    Render the dropdown menu and sub-items.
+    */
+    render(view) {
+        let content = renderDropdownItems(this.content, view);
+        let win = view.dom.ownerDocument.defaultView || window;
+        let label = crel("div", { class: prefix + "-dropdown " + (this.options.class || ""),
+            style: this.options.css }, translate(view, this.options.label || ""));
+        if (this.options.title)
+            label.setAttribute("title", translate(view, this.options.title));
+        let wrap = crel("div", { class: prefix + "-dropdown-wrap" }, label);
+        let open = null;
+        let listeningOnClose = null;
+        let close = () => {
+            if (open && open.close()) {
+                open = null;
+                win.removeEventListener("mousedown", listeningOnClose);
+            }
+        };
+        label.addEventListener("mousedown", e => {
+            e.preventDefault();
+            markMenuEvent(e);
+            if (open) {
+                close();
+            }
+            else {
+                open = this.expand(wrap, content.dom);
+                win.addEventListener("mousedown", listeningOnClose = () => {
+                    if (!isMenuEvent(wrap))
+                        close();
+                });
+            }
+        });
+        function update(state) {
+            let inner = content.update(state);
+            wrap.style.display = inner ? "" : "none";
+            return inner;
+        }
+        return { dom: wrap, update };
+    }
+    /**
+    @internal
+    */
+    expand(dom, items) {
+        let menuDOM = crel("div", { class: prefix + "-dropdown-menu " + (this.options.class || "") }, items);
+        let done = false;
+        function close() {
+            if (done)
+                return false;
+            done = true;
+            dom.removeChild(menuDOM);
+            return true;
+        }
+        dom.appendChild(menuDOM);
+        return { close, node: menuDOM };
+    }
+}
+
+function renderDropdownItems(items, view) {
+    let rendered = [], updates = [];
+    for (let i = 0; i < items.length; i++) {
+        let { dom, update } = items[i].render(view);
+        rendered.push(crel("div", { class: prefix + "-dropdown-item" }, dom));
+        updates.push(update);
+    }
+    return { dom: rendered, update: combineUpdates(updates, rendered) };
+}
+
+/**
+Render the given, possibly nested, array of menu elements into a
+document fragment, placing separators between them (and ensuring no
+superfluous separators appear when some of the groups turn out to
+be empty).
+*/
+export function renderGrouped(view, content) {
+    let result = document.createDocumentFragment();
+    let updates = [], separators = [];
+    for (let i = 0; i < content.length; i++) {
+        let items = content[i], localUpdates = [], localNodes = [];
+        for (let j = 0; j < items.length; j++) {
+            let { dom, update } = items[j].render(view);
+            let span = crel("span", { class: prefix + "item" }, dom);
+            result.appendChild(span);
+            localNodes.push(span);
+            localUpdates.push(update);
+        }
+        if (localUpdates.length) {
+            updates.push(combineUpdates(localUpdates, localNodes));
+            if (i < content.length - 1)
+                separators.push(result.appendChild(separator()));
+        }
+    }
+    function update(state) {
+        let something = false, needSep = false;
+        for (let i = 0; i < updates.length; i++) {
+            let hasContent = updates[i](state);
+            if (i)
+                separators[i - 1].style.display = needSep && hasContent ? "" : "none";
+            needSep = hasContent;
+            if (hasContent)
+                something = true;
+        }
+        return something;
+    }
+    return { dom: result, update };
+}
+
+function separator() {
+    return crel("span", { class: prefix + "separator" });
+}
+
+function combineUpdates(updates, nodes) {
+    return (state) => {
+        let something = false;
+        for (let i = 0; i < updates.length; i++) {
+            let up = updates[i](state);
+            nodes[i].style.display = up ? "" : "none";
+            if (up)
+                something = true;
+        }
+        return something;
+    };
+}
+
+let lastMenuEvent = { time: 0, node: null };
+
+function markMenuEvent(e) {
+    lastMenuEvent.time = Date.now();
+    lastMenuEvent.node = e.target;
+}
+
+function isMenuEvent(wrapper) {
+    return Date.now() - 100 < lastMenuEvent.time &&
+        lastMenuEvent.node && wrapper.contains(lastMenuEvent.node);
 }

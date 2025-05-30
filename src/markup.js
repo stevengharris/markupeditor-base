@@ -1854,7 +1854,7 @@ function _setParagraphStyle(protonode) {
 export function toggleListItem(listType) {
     const targetListType = nodeTypeFor(listType, view.state.schema);
     if (targetListType !== null) {
-        const command = multiWrapInList(view, targetListType);
+        const command = multiWrapInList(view.state.schema, targetListType);
         command(view.state, (transaction) => {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
@@ -1949,14 +1949,14 @@ export function listTypeFor(nodeType, schema) {
  * 
  * Adapted from code in https://discuss.prosemirror.net/t/changing-the-node-type-of-a-list/4996.
  * 
- * @param {EditorState}     state               The EditorState against which changes are made.
+ * @param {Schema}          schema              The schema holding the list and list item node types.
  * @param {NodeType}        targetNodeType      One of state.schema.nodes.bullet_list or ordered_list to change selection to.
  * @param {Attrs | null}    attrs               Attributes of the new list items.
  * @returns {Command}                           A command to wrap the selection in a list.
  */
-export function multiWrapInList(view, targetNodeType, attrs) {
-    const listTypes = [view.state.schema.nodes.bullet_list, view.state.schema.nodes.ordered_list];
-    const targetListItemType = view.state.schema.nodes.list_item;
+export function multiWrapInList(schema, targetNodeType, attrs) {
+    const listTypes = [schema.nodes.bullet_list, schema.nodes.ordered_list];
+    const targetListItemType = schema.nodes.list_item;
     const listItemTypes = [targetListItemType];
 
     const commandAdapter = (state, dispatch) => {
