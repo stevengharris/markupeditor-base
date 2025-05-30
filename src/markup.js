@@ -2327,7 +2327,7 @@ const _getSelectionState = function() {
     state['style'] = _getParagraphStyle();
     state['list'] = _getListType();
     state['li'] = state['list'] !== null;   // We are always in a li by definition for ProseMirror, right?
-    state['quote'] = _getIndented();
+    state['quote'] = isIndented();
     // Format
     const markTypes = _getMarkTypes();
     const schema = view.state.schema;
@@ -2562,16 +2562,21 @@ function _paragraphStyleFor(node) {
     return style;
 };
 
+export function isIndented(activeState) {
+    let state = activeState ? activeState : view.state;
+    return _getIndented(state); 
+}
+
 /**
  * Return whether the selection is indented.
  *
  * @return {Boolean}   Whether the selection is in a blockquote.
  */
-function _getIndented() {
-    const selection = view.state.selection;
+function _getIndented(state) {
+    const selection = state.selection;
     let indented = false;
-    view.state.doc.nodesBetween(selection.from, selection.to, node => {
-        if (node.type == view.state.schema.nodes.blockquote) { 
+    state.doc.nodesBetween(selection.from, selection.to, node => {
+        if (node.type == state.schema.nodes.blockquote) { 
             indented = true;
         };
         return false;   // We only need top-level nodes

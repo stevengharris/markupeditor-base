@@ -25,7 +25,7 @@ import {Plugin} from "prosemirror-state"
 import {toggleMark, wrapIn, lift} from "prosemirror-commands"
 import {MenuItem, Dropdown, renderGrouped, blockTypeItem} from "prosemirror-menu"
 
-import {multiWrapInList} from "../markup"
+import {getListType, listTypeFor, multiWrapInList, isIndented} from "../markup"
 
 const prefix = "ProseMirror-menubar"
 
@@ -100,32 +100,37 @@ class ToolbarView {
     let {number, bullet, indent, outdent} = config.styleBar;
     if (number) items.push(this.toggleListItem(this.nodes.ordered_list, {label: 'format_list_numbered', class: 'material-symbols-outlined'}))
     if (bullet) items.push(this.toggleListItem(this.nodes.bullet_list, {label: 'format_list_bulleted', class: 'material-symbols-outlined'}))
-    if (indent) items.push(this.wrapItem(this.nodes.blockquote, {label: 'format_indent_increase', class: 'material-symbols-outlined'}))
-    if (outdent) items.push(this.liftItem({label: 'format_indent_decrease', class: 'material-symbols-outlined'}))
+    if (indent) items.push(this.indentItem(this.nodes.blockquote, {label: 'format_indent_increase', class: 'material-symbols-outlined'}))
+    if (outdent) items.push(this.outdentItem({label: 'format_indent_decrease', class: 'material-symbols-outlined'}))
     return items;
   }
 
   toggleListItem(nodeType, options) {
     let passedOptions = {
-      active: () => { return false },  // FIX
+      active: (state) => { return this.listActive(state, nodeType) },
       enable: true
     }
     for (let prop in options) passedOptions[prop] = options[prop]
     return this.cmdItem(multiWrapInList(this.editorView, nodeType), passedOptions)
   }
 
-  wrapItem(nodeType, options) {
+  listActive(state, nodeType) {
+    let listType = getListType(state)
+    return listType === listTypeFor(nodeType, state.schema)
+  }
+
+  indentItem(nodeType, options) {
     let passedOptions = {
-      active: () => { return false },  // FIX
+      active: (state) => { return isIndented(state) },
       enable: true
     }
     for (let prop in options) passedOptions[prop] = options[prop]
     return this.cmdItem(wrapIn(nodeType), passedOptions)
   }
 
-  liftItem(options) {
+  outdentItem(options) {
     let passedOptions = {
-      active: () => { return false },  // FIX
+      active: (state) => { return isIndented(state) },
       enable: true
     }
     for (let prop in options) passedOptions[prop] = options[prop]
