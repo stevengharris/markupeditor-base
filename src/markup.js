@@ -1837,50 +1837,29 @@ function _setParagraphStyle(protonode) {
 //MARK: Lists
 
 /**
- * Turn the list tag off and on for selection, doing the right thing
- * for different cases of selections.
- * If the selection is in a list type that is different than newListTyle,
- * we need to create a new list and make the selection appear in it.
+ * Turn the list tag on and off for the selection, doing the right thing
+ * for different cases of selection.
  * 
- * @param {String}  newListType     The kind of list we want the list item to be in if we are turning it on or changing it.
+ * If the selection is in a list of type `listType`, then outdent the 
+ * items in the selection.
+ * 
+ * If the selection is in a list type that is different than `listType`,
+ * then wrap it in a new list.
+ * 
+ * We use a single command returned by `multiWrapInList` because the command 
+ * can be assigned to a single button in JavaScript.
+ * 
+ * @param {String}  listType     The kind of list we want the list item to be in if we are turning it on or changing it.
  */
-export function toggleListItem(newListType) {
-    if (_getListType() === newListType) {
-        _outdentListItems()
-    } else {
-        _setListType(newListType);
-    }
-};
-
-/**
- * Set the list style at the selection to the `listType`.
- * @param {String}  listType    The list type { 'UL' | 'OL' } we want to set.
- */
-function _setListType(listType) {
-    const targetListType = _nodeTypeFor(listType);
+export function toggleListItem(listType) {
+    const targetListType = nodeTypeFor(listType, view.state.schema);
     if (targetListType !== null) {
-        const command = multiWrapInList(view.state, targetListType);
+        const command = multiWrapInList(view, targetListType);
         command(view.state, (transaction) => {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
             stateChanged();
         });
-    };
-};
-
-/**
- * Outdent all the list items in the selection.
- */
-function _outdentListItems() {
-    const nodeTypes = view.state.schema.nodes;
-    const command = liftListItem(nodeTypes.list_item);
-    let newState;
-    command(view.state, (transaction) => {
-        newState = view.state.apply(transaction);
-    });
-    if (newState) {
-        view.updateState(newState);
-        stateChanged();
     };
 };
 
@@ -1900,13 +1879,13 @@ function _outdentListItems() {
  * 
  * @return { 'UL' | 'OL' | null }
  */
-function _getListType() {
-    const selection = view.state.selection;
-    const ul = view.state.schema.nodes.bullet_list;
-    const ol = view.state.schema.nodes.ordered_list;
+export function getListType(state) {
+    const selection = state.selection;
+    const ul = state.schema.nodes.bullet_list;
+    const ol = state.schema.nodes.ordered_list;
     let hasUl = false;
     let hasOl = false;
-    view.state.doc.nodesBetween(selection.from, selection.to, node => {
+    state.doc.nodesBetween(selection.from, selection.to, node => {
         if (node.isBlock) {
             hasUl = hasUl || (node.type === ul);
             hasOl = hasOl || (node.type === ol);
@@ -1916,7 +1895,11 @@ function _getListType() {
     });
     // If selection contains no lists or multiple list types, return null; else return the one list type
     const hasType = hasUl ? (hasOl ? null : ul) : (hasOl ? ol : null)
-    return _listTypeFor(hasType);
+    return listTypeFor(hasType, state.schema);
+}
+
+function _getListType() {
+    return getListType(view.state);
 };
 
 /**
@@ -1924,36 +1907,38 @@ function _getListType() {
  * @param {"UL" | "OL" | String} listType The Swift-side String corresponding to the NodeType
  * @returns {NodeType | null}
  */
-function _nodeTypeFor(listType) {
+export function nodeTypeFor(listType, schema) {
     if (listType === 'UL') {
-        return view.state.schema.nodes.bullet_list;
+        return schema.nodes.bullet_list;
     } else if (listType === 'OL') {
-        return view.state.schema.nodes.ordered_list;
+        return schema.nodes.ordered_list;
     } else {
         return null;
     };
-};
+}
 
 /**
  * Return the String corresponding to `nodeType`, else null.
  * @param {NodeType} nodeType The NodeType corresponding to the Swift-side String
  * @returns {'UL' | 'OL' | null}
  */
-function _listTypeFor(nodeType) {
-    if (nodeType === view.state.schema.nodes.bullet_list) {
+export function listTypeFor(nodeType, schema) {
+    if (nodeType === schema.nodes.bullet_list) {
         return 'UL';
-    } else if (nodeType === view.state.schema.nodes.ordered_list) {
+    } else if (nodeType === schema.nodes.ordered_list) {
         return 'OL';
     } else {
         return null;
-    }
+    };
 };
 
 /**
- * Return a command that performs `wrapInList`, or if `wrapInList` fails, does a wrapping across the 
+ * Return a command that performs `wrapInList` or `liftListItem` depending on whether the selection 
+ * is in the `targetNodeType` or not. In the former case, it does the `listLiftItem`, basically 
+ * unwrapping the list. If `wrapInList` or `liftListItem` fails, it does the command across the 
  * selection. This is done by finding the common list node for the selection and then recursively 
- * replacing existing list nodes among its descendants that are not of the `targetListType`. So, the 
- * every descendant is made into `targetListType`, but not the common list node or its siblings. Note 
+ * replacing existing list nodes among its descendants that are not of the `targetNodeType`. So, the 
+ * every descendant is made into `targetNodeType`, but not the common list node or its siblings. Note 
  * that when the selection includes a mixture of list nodes and non-list nodes (e.g., begins in a 
  * top-level <p> and ends in a list), the wrapping might be done by `wrapInList`, which doesn't follow 
  * quite the same rules in that it leaves existing sub-lists untouched. The wrapping can also just 
@@ -1963,19 +1948,20 @@ function _listTypeFor(nodeType) {
  * does avoid those methods from knowing about state or schema.
  * 
  * Adapted from code in https://discuss.prosemirror.net/t/changing-the-node-type-of-a-list/4996.
+ * 
  * @param {EditorState}     state               The EditorState against which changes are made.
- * @param {NodeType}        targetListType      One of state.schema.nodes.bullet_list or ordered_list to change selection to.
+ * @param {NodeType}        targetNodeType      One of state.schema.nodes.bullet_list or ordered_list to change selection to.
  * @param {Attrs | null}    attrs               Attributes of the new list items.
  * @returns {Command}                           A command to wrap the selection in a list.
  */
-function multiWrapInList(state, targetListType, attrs) {
-    const listTypes = [state.schema.nodes.bullet_list, state.schema.nodes.ordered_list];
-    const targetListItemType = state.schema.list_item;
+export function multiWrapInList(view, targetNodeType, attrs) {
+    const listTypes = [view.state.schema.nodes.bullet_list, view.state.schema.nodes.ordered_list];
+    const targetListItemType = view.state.schema.nodes.list_item;
     const listItemTypes = [targetListItemType];
-    
-    const command = wrapInList(targetListType, attrs);
 
     const commandAdapter = (state, dispatch) => {
+        const inTargetNodeType = getListType(state) === listTypeFor(targetNodeType, state.schema)
+        const command = inTargetNodeType ? liftListItem(state.schema.nodes.list_item) : wrapInList(targetNodeType, attrs);
         const result = command(state);
         if (result) return command(state, dispatch);
 
@@ -1985,7 +1971,7 @@ function multiWrapInList(state, targetListType, attrs) {
         if (dispatch) {
             const updatedNode = updateNode(
                 commonListNode.node,
-                targetListType,
+                targetNodeType,
                 targetListItemType,
                 listTypes,
                 listItemTypes
