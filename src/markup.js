@@ -1854,7 +1854,7 @@ function _setParagraphStyle(protonode) {
 export function toggleListItem(listType) {
     const targetListType = nodeTypeFor(listType, view.state.schema);
     if (targetListType !== null) {
-        const command = multiWrapInList(view.state.schema, targetListType);
+        const command = wrapInListCommand(view.state.schema, targetListType);
         command(view.state, (transaction) => {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
@@ -1954,7 +1954,7 @@ export function listTypeFor(nodeType, schema) {
  * @param {Attrs | null}    attrs               Attributes of the new list items.
  * @returns {Command}                           A command to wrap the selection in a list.
  */
-export function multiWrapInList(schema, targetNodeType, attrs) {
+export function wrapInListCommand(schema, targetNodeType, attrs) {
     const listTypes = [schema.nodes.bullet_list, schema.nodes.ordered_list];
     const targetListItemType = schema.nodes.list_item;
     const listItemTypes = [targetListItemType];
@@ -2972,6 +2972,19 @@ export function addRow(direction) {
     stateChanged();
 };
 
+export function addRowCommand(direction) {
+    const commandAdapter = (state, dispatch) => {
+        if (direction === 'BEFORE') {
+            addRowBefore(state, dispatch);
+        } else {
+            addRowAfter(state, dispatch);
+        };
+        return true;
+    };
+
+    return commandAdapter;
+}
+
 /**
  * Add a column before or after the current selection, whether it's in the header or body.
  * 
@@ -3001,6 +3014,34 @@ export function addCol(direction) {
     view.focus();
     stateChanged();
 };
+
+export function addColCommand(direction) {
+    const commandAdapter = (viewState, dispatch, view) => {
+        let state = view?.state ?? viewState;
+        const startSelection = new TextSelection(state.selection.$anchor, state.selection.$head)
+        let offset = 0;
+        if (direction === 'BEFORE') {
+            addColumnBefore(state, (tr) => { state = state.apply(tr) });
+            offset = 4  // An empty cell
+        } else {
+            addColumnAfter(state, (tr) => { state = state.apply(tr) });
+        };
+        _mergeHeaders(state, (tr) => { state = state.apply(tr) });
+
+        if (dispatch) {
+            const $anchor = state.tr.doc.resolve(startSelection.from + offset);
+            const $head = state.tr.doc.resolve(startSelection.to + offset);
+            const selection = new TextSelection($anchor, $head);
+            const transaction = state.tr.setSelection(selection);
+            state = state.apply(transaction);
+            view.updateState(state);
+        }
+
+        return true;
+    };
+
+    return commandAdapter;
+}
 
 /**
  * Add a header to the table at the selection.
@@ -3042,6 +3083,46 @@ export function addHeader(colspan=true) {
     stateChanged();
 };
 
+export function addHeaderCommand(colspan = true) {
+    const commandAdapter = (viewState, dispatch, view) => {
+        let state = view?.state ?? viewState;
+        const nodeTypes = state.schema.nodes
+        const startSelection = new TextSelection(state.selection.$anchor, state.selection.$head)
+        _selectInFirstCell(state, (tr) => { state = state.apply(tr) });
+        addRowBefore(state, (tr) => { state = state.apply(tr) });
+        _selectInFirstCell(state, (tr) => { state = state.apply(tr) });
+        toggleHeaderRow(state, (tr) => { state = state.apply(tr) });
+        if (colspan) {
+            _mergeHeaders(state, (tr) => { state = state.apply(tr) });
+        };
+
+        if (dispatch) {
+            // At this point, the state.selection is in the new header row we just added. By definition, 
+            // the header is placed before the original selection, so we can add its size to the 
+            // selection to restore the selection to where it was before.
+            let tableAttributes = _getTableAttributes(state);
+            let headerSize;
+            state.tr.doc.nodesBetween(tableAttributes.from, tableAttributes.to, (node) => {
+                if (!headerSize && (node.type == nodeTypes.table_row)) {
+                    headerSize = node.nodeSize;
+                    return false;
+                }
+                return (node.type == nodeTypes.table);  // We only want to recurse over table
+            })
+            const $anchor = state.tr.doc.resolve(startSelection.from + headerSize);
+            const $head = state.tr.doc.resolve(startSelection.to + headerSize);
+            const selection = new TextSelection($anchor, $head);
+            const transaction = state.tr.setSelection(selection);
+            state = state.apply(transaction);
+            view.updateState(state);
+        }
+
+        return true;
+    };
+
+    return commandAdapter;
+}
+
 /**
  * Delete the area at the table selection, either the row, col, or the entire table.
  * @param {'ROW' | 'COL' | 'TABLE'} area The area of the table to be deleted.
@@ -3062,6 +3143,25 @@ export function deleteTableArea(area) {
     view.focus();
     stateChanged();
 };
+
+export function deleteTableAreaCommand(area) {
+    const commandAdapter = (state, dispatch) => {
+        switch (area) {
+            case 'ROW':
+                deleteRow(state, dispatch);
+                break;
+            case 'COL':
+                deleteColumn(state, dispatch);
+                break;
+            case 'TABLE':
+                deleteTable(state, dispatch);
+                break;
+        };
+        return true;
+    };
+
+    return commandAdapter;
+}
 
 /**
  * Set the class of the table to style it using CSS.

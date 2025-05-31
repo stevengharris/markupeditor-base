@@ -6,7 +6,7 @@
  *  - MenuItems returned from buildMenuItems use label and class options for Google material fonts
  * 
  * Expansions:
- *  - Added table support
+ *  - Added table support using MarkupEditor capabilities for table editing
  *  - Use MarkupEditor capabilities for list/denting across range
  *  - Use MarkupEditor capability for toggling and changing list types
  * 
@@ -17,24 +17,19 @@
  */
 
 import crel from "crelt"
-import {EditorState, NodeSelection} from "prosemirror-state"
+import {NodeSelection} from "prosemirror-state"
 import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
-import {multiWrapInList, listTypeFor, getListType, isIndented} from "../markup"
-import {TextField, openPrompt} from "./prompt"
-import {MarkType, NodeType, Schema} from "prosemirror-model"
 import {
-  addColumnAfter,
-  addColumnBefore,
-  deleteColumn,
-  addRowAfter,
-  addRowBefore,
-  deleteRow,
-  mergeCells,
-  splitCell,
-  toggleHeaderRow,
-  deleteTable,
-} from 'prosemirror-tables'
-import { EditorView } from "prosemirror-view"
+  wrapInListCommand, 
+  addRowCommand, 
+  addColCommand, 
+  addHeaderCommand, 
+  deleteTableAreaCommand,
+  listTypeFor, 
+  getListType, 
+  isIndented
+} from "../markup"
+import {TextField, openPrompt} from "./prompt"
 
 const prefix = "ProseMirror-menu"
 
@@ -184,7 +179,8 @@ class Dropdown {
  */
 export function buildMenuItems(config, schema) {
   let itemGroups = [];
-  let { formatBar, styleMenu, styleBar } = config.visibility;
+  let { insertBar, formatBar, styleMenu, styleBar } = config.visibility;
+  if (insertBar) itemGroups.push(insertBarItems(config, schema));
   if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
   if (styleBar) itemGroups.push(styleBarItems(config, schema));
   if (formatBar) itemGroups.push(formatItems(config, schema));
@@ -277,7 +273,22 @@ function renderDropdownItems(items, view) {
     return { dom: rendered, update: combineUpdates(updates, rendered) };
 }
 
-/* Insert helpers */
+/* Insert Bar (Link, Image, Table) */
+
+/**
+ * Return the MenuItems for the style bar, as specified in `config`.
+ * @param {Object} config The config object with booleans indicating whether list and denting items are included
+ * @param {Schema} schema 
+ * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
+ */
+function insertBarItems(config, schema) {
+  let items = [];
+  let { link, image, table } = config.insertBar;
+  if (link) items.push(linkItem(schema.marks.link))
+  if (image) items.push(insertImageItem(schema.nodes.image))
+  if (table) items.push(tableMenuItems(config, schema))
+  return items;
+}
 
 /**
  * Return a MenuItem for image insertion
@@ -287,7 +298,8 @@ function renderDropdownItems(items, view) {
 function insertImageItem(nodeType) {
   return new MenuItem({
     title: "Insert image",
-    label: "Image",
+    label: 'image',
+    class: 'material-symbols-outlined',
     enable(state) { return canInsert(state, nodeType) },
     run(state, _, view) {
       let {from, to} = state.selection, attrs = null
@@ -318,7 +330,8 @@ function insertImageItem(nodeType) {
 function linkItem(markType) {
   return new MenuItem({
     title: "Add or remove link",
-    label: "link",
+    label: 'link', 
+    class: 'material-symbols-outlined',
     active(state) { return markActive(state, markType) },
     enable(state) { return !state.selection.empty },
     run(state, dispatch, view) {
@@ -344,13 +357,31 @@ function linkItem(markType) {
   })
 }
 
-function tableItem(title, command) {
-  return new MenuItem({
-    title: title,
-    label: title,
-    enable() { return true },  // TODO: Fix
-    run(state, dispatch) { command(state, dispatch) }
-  })
+function tableMenuItems(config, schema) {
+  let items = []
+  let { header, border } = config.tableMenu;
+  items.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Add row above'}))
+  items.push(tableEditItem(addRowCommand('AFTER'), {label: 'Add row below'}))
+  items.push(tableEditItem(deleteTableAreaCommand('ROW'), {label: 'Delete row'}))
+  items.push(tableEditItem(addColCommand('BEFORE'), {label: 'Add column before'}))
+  items.push(tableEditItem(addColCommand('AFTER'), {label: 'Add column after'}))
+  items.push(tableEditItem(deleteTableAreaCommand('COL'), {label: 'Delete column'}))
+  items.push(tableEditItem(deleteTableAreaCommand('TABLE'), {label: 'Delete table'}))
+  if (header) items.push(tableEditItem(addHeaderCommand(), {label: 'Add header'}))
+  return new Dropdown(items, { title: 'Insert/edit table', label: 'Table' })
+  //TODO: Fix Dropdown to handle icon display
+  //return new Dropdown(items, { title: 'Insert/edit table', label: 'table', class: 'material-symbols-outlined' })
+}
+
+function tableEditItem(command, options) {
+  let passedOptions = {
+    run: command,
+    enable(state) { return command(state); },
+    active(state) { return false }  // FIX
+  };
+  for (let prop in options)
+    passedOptions[prop] = options[prop];
+  return new MenuItem(passedOptions);
 }
 
 /* Style Bar (List, Indent, Outdent) */
@@ -364,10 +395,10 @@ function tableItem(title, command) {
 function styleBarItems(config, schema) {
   let items = [];
   let { number, bullet, indent, outdent } = config.styleBar;
-  if (number) items.push(toggleListItem(schema, schema.nodes.ordered_list, { label: 'format_list_numbered', class: 'material-symbols-outlined' }))
-  if (bullet) items.push(toggleListItem(schema, schema.nodes.bullet_list, { label: 'format_list_bulleted', class: 'material-symbols-outlined' }))
-  if (indent) items.push(indentItem(schema.nodes.blockquote, { label: 'format_indent_increase', class: 'material-symbols-outlined' }))
-  if (outdent) items.push(outdentItem({ label: 'format_indent_decrease', class: 'material-symbols-outlined' }))
+  if (number) items.push(toggleListItem(schema, schema.nodes.ordered_list, { title: 'Toggle numbered list', label: 'format_list_numbered', class: 'material-symbols-outlined' }))
+  if (bullet) items.push(toggleListItem(schema, schema.nodes.bullet_list, { title: 'Toggle bulleted list', label: 'format_list_bulleted', class: 'material-symbols-outlined' }))
+  if (indent) items.push(indentItem(schema.nodes.blockquote, { title: 'Increase indent', label: 'format_indent_increase', class: 'material-symbols-outlined' }))
+  if (outdent) items.push(outdentItem({ title: 'Decrease indent', label: 'format_indent_decrease', class: 'material-symbols-outlined' }))
   return items;
 }
 
@@ -377,7 +408,7 @@ function toggleListItem(schema, nodeType, options) {
     enable: true
   }
   for (let prop in options) passedOptions[prop] = options[prop]
-  return cmdItem(multiWrapInList(schema, nodeType), passedOptions)
+  return cmdItem(wrapInListCommand(schema, nodeType), passedOptions)
 }
 
 function listActive(state, nodeType) {
@@ -414,13 +445,13 @@ function outdentItem(options) {
 function formatItems(config, schema) {
   let items = []
   let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.formatBar;
-  if (bold) items.push(formatItem(schema.marks.strong, { label: 'format_bold', class: 'material-symbols-outlined' }))
-  if (italic) items.push(formatItem(schema.marks.em, { label: 'format_italic', class: 'material-symbols-outlined' }))
-  if (underline) items.push(formatItem(schema.marks.u, { label: 'format_underline', class: 'material-symbols-outlined' }))
-  if (code) items.push(formatItem(schema.marks.code, { label: 'data_object', class: 'material-symbols-outlined' }))
-  if (strikethrough) items.push(formatItem(schema.marks.s, { label: 'strikethrough_s', class: 'material-symbols-outlined' }))
-  if (subscript) items.push(formatItem(schema.marks.sub, { label: 'subscript', class: 'material-symbols-outlined' }))
-  if (superscript) items.push(formatItem(schema.marks.sup, { label: 'superscript', class: 'material-symbols-outlined' }))
+  if (bold) items.push(formatItem(schema.marks.strong, { title: 'Toggle bold', label: 'format_bold', class: 'material-symbols-outlined' }))
+  if (italic) items.push(formatItem(schema.marks.em, { title: 'Toggle italic', label: 'format_italic', class: 'material-symbols-outlined' }))
+  if (underline) items.push(formatItem(schema.marks.u, { title: 'Toggle underline', label: 'format_underline', class: 'material-symbols-outlined' }))
+  if (code) items.push(formatItem(schema.marks.code, { title: 'Toggle code', label: 'data_object', class: 'material-symbols-outlined' }))
+  if (strikethrough) items.push(formatItem(schema.marks.s, { title: 'Toggle strikethrough', label: 'strikethrough_s', class: 'material-symbols-outlined' }))
+  if (subscript) items.push(formatItem(schema.marks.sub, { title: 'Toggle subscript', label: 'subscript', class: 'material-symbols-outlined' }))
+  if (superscript) items.push(formatItem(schema.marks.sup, { title: 'Toggle superscript', label: 'superscript', class: 'material-symbols-outlined' }))
   return items;
 }
 
@@ -452,7 +483,7 @@ function styleMenuItems(config, schema) {
   if (h5) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 5 }, label: 'Header 5' }))
   if (h6) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 6 }, label: 'Header 6' }))
   if (codeblock) items.push(blockTypeItem(schema.nodes.code_block, { label: 'Code' }))
-  return [new Dropdown(items, { label: 'Style', title: 'Style' })]
+  return [new Dropdown(items, { title: 'Set paragraph style', label: 'Style' })]
 }
 
 /**
