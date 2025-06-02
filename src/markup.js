@@ -2955,6 +2955,50 @@ export function insertTable(rows, cols) {
     stateChanged()
 };
 
+export function insertTableCommand(rows, cols) {
+    const commandAdapter = (viewState, dispatch, view) => {
+        let state = view?.state ?? viewState;
+        const selection = state.selection;
+        const nodeTypes = state.schema.nodes;
+        let firstP;
+        const table_rows = []
+        for (let j = 0; j < rows; j++) {
+            const table_cells = [];
+            for (let i = 0; i < cols; i++) {
+                const paragraph = state.schema.node('paragraph');
+                if ((i == 0) && (j == 0)) firstP = paragraph;
+                table_cells.push(nodeTypes.table_cell.create(null, paragraph));
+            }
+            table_rows.push(nodeTypes.table_row.create(null, table_cells));
+        }
+        const table = nodeTypes.table.createChecked(null, table_rows);
+        if (!table) return false;     // Something went wrong, like we tried to insert it at a disallowed spot
+
+        if (dispatch) {
+            // Replace the existing selection and track the transaction
+            let transaction = view.state.tr.replaceSelectionWith(table, false);
+            // Locate the first paragraph position in the transaction's doc
+            let pPos;
+            transaction.doc.nodesBetween(selection.from, selection.from + table.nodeSize, (node, pos) => {
+                if (node === firstP) {
+                    pPos = pos;
+                    return false;
+                };
+                return true;
+            });
+            // Set the selection in the first cell, apply it to the state and  the view
+            const textSelection = TextSelection.near(transaction.doc.resolve(pPos))
+            transaction = transaction.setSelection(textSelection);
+            state = state.apply(transaction);
+            view.updateState(state);
+        }
+        
+        return true;
+    };
+
+    return commandAdapter;
+}
+
 /**
  * Add a row before or after the current selection, whether it's in the header or body.
  * For rows, AFTER = below; otherwise above.

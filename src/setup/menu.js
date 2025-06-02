@@ -21,6 +21,7 @@ import {NodeSelection} from "prosemirror-state"
 import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
 import {
   wrapInListCommand, 
+  insertTableCommand,
   addRowCommand, 
   addColCommand, 
   addHeaderCommand, 
@@ -102,11 +103,7 @@ class Dropdown {
     /**
     Create a dropdown wrapping the elements.
     */
-    constructor(content, 
-    /**
-    @internal
-    */
-    options = {}) {
+    constructor(content, options = {}) {
         this.options = options;
         this.options = options || {};
         this.content = Array.isArray(content) ? content : [content];
@@ -151,9 +148,7 @@ class Dropdown {
         }
         return { dom: wrap, update };
     }
-    /**
-    @internal
-    */
+    
     expand(dom, items) {
         let menuDOM = crel("div", { class: prefix + "-dropdown-menu " + (this.options.class || "") }, items);
         let done = false;
@@ -166,6 +161,51 @@ class Dropdown {
         }
         dom.appendChild(menuDOM);
         return { close, node: menuDOM };
+    }
+}
+
+/**
+Represents a submenu wrapping a group of elements that start
+hidden and expand to the right when hovered over or tapped.
+*/
+class DropdownSubmenu {
+    /**
+    Creates a submenu for the given group of menu elements. The
+    following options are recognized:
+    */
+    constructor(content, options = {}) {
+        this.options = options;
+        this.content = Array.isArray(content) ? content : [content];
+    }
+
+    /**
+    Renders the submenu.
+    */
+    render(view) {
+        let items = renderDropdownItems(this.content, view);
+        let win = view.dom.ownerDocument.defaultView || window;
+        let label = crel("div", { class: prefix + "-submenu-label" }, translate(view, this.options.label || ""));
+        let wrap = crel("div", { class: prefix + "-submenu-wrap" }, label, crel("div", { class: prefix + "-submenu" }, items.dom));
+        let listeningOnClose = null;
+        label.addEventListener("mousedown", e => {
+            e.preventDefault();
+            markMenuEvent(e);
+            setClass(wrap, prefix + "-submenu-wrap-active", false);
+            if (!listeningOnClose)
+                win.addEventListener("mousedown", listeningOnClose = () => {
+                    if (!isMenuEvent(wrap)) {
+                        wrap.classList.remove(prefix + "-submenu-wrap-active");
+                        win.removeEventListener("mousedown", listeningOnClose);
+                        listeningOnClose = null;
+                    }
+                });
+        });
+        function update(state) {
+            let inner = items.update(state);
+            wrap.style.display = inner ? "" : "none";
+            return inner;
+        }
+        return { dom: wrap, update };
     }
 }
 
@@ -360,6 +400,12 @@ function linkItem(markType) {
 function tableMenuItems(config, schema) {
   let items = []
   let { header, border } = config.tableMenu;
+  let createItems = []
+  createItems.push(insertTableItem(1, 1, {label: '1 column'}))
+  createItems.push(insertTableItem(1, 2, {label: '2 columns'}))
+  createItems.push(insertTableItem(1, 3, {label: '3 columns'}))
+  createItems.push(insertTableItem(1, 4, {label: '4 columns'}))
+  items.push(new DropdownSubmenu(createItems, {title: 'Insert new table', label: 'Create'}))
   items.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Add row above'}))
   items.push(tableEditItem(addRowCommand('AFTER'), {label: 'Add row below'}))
   items.push(tableEditItem(deleteTableAreaCommand('ROW'), {label: 'Delete row'}))
@@ -371,6 +417,18 @@ function tableMenuItems(config, schema) {
   return new Dropdown(items, { title: 'Insert/edit table', label: 'Table' })
   //TODO: Fix Dropdown to handle icon display
   //return new Dropdown(items, { title: 'Insert/edit table', label: 'table', class: 'material-symbols-outlined' })
+}
+
+function insertTableItem(rows, cols, options) {
+  let command = insertTableCommand(rows, cols)
+  let passedOptions = {
+    run: command,
+    enable(state) { return command(state); },
+    active(state) { return false }  // FIX
+  };
+  for (let prop in options)
+    passedOptions[prop] = options[prop];
+  return new MenuItem(passedOptions);
 }
 
 function tableEditItem(command, options) {
@@ -394,11 +452,15 @@ function tableEditItem(command, options) {
  */
 function styleBarItems(config, schema) {
   let items = [];
-  let { number, bullet, indent, outdent } = config.styleBar;
-  if (number) items.push(toggleListItem(schema, schema.nodes.ordered_list, { title: 'Toggle numbered list', label: 'format_list_numbered', class: 'material-symbols-outlined' }))
-  if (bullet) items.push(toggleListItem(schema, schema.nodes.bullet_list, { title: 'Toggle bulleted list', label: 'format_list_bulleted', class: 'material-symbols-outlined' }))
-  if (indent) items.push(indentItem(schema.nodes.blockquote, { title: 'Increase indent', label: 'format_indent_increase', class: 'material-symbols-outlined' }))
-  if (outdent) items.push(outdentItem({ title: 'Decrease indent', label: 'format_indent_decrease', class: 'material-symbols-outlined' }))
+  let { list, dent } = config.styleBar;
+  if (list) {
+    items.push(toggleListItem(schema, schema.nodes.ordered_list, { title: 'Toggle numbered list', label: 'format_list_numbered', class: 'material-symbols-outlined' }))
+    items.push(toggleListItem(schema, schema.nodes.bullet_list, { title: 'Toggle bulleted list', label: 'format_list_bulleted', class: 'material-symbols-outlined' }))
+  }
+  if (dent) {
+    items.push(indentItem(schema.nodes.blockquote, { title: 'Increase indent', label: 'format_indent_increase', class: 'material-symbols-outlined' }))
+    items.push(outdentItem({ title: 'Decrease indent', label: 'format_indent_decrease', class: 'material-symbols-outlined' }))
+  }
   return items;
 }
 
