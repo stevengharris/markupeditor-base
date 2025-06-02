@@ -3,6 +3,7 @@ import {EditorView} from "prosemirror-view"
 import {DOMParser} from "prosemirror-model"
 import {schema} from "./schema/index.js"
 import {markupSetup} from "./setup/index.js"
+import {MenuConfig} from "./menuconfig.js"
 
 import {
   DivView,
@@ -75,6 +76,7 @@ import {
  * The public MarkupEditor API callable from Swift as "MU.<function name>"
  */
 export {
+  MenuConfig,
   setTopLevelAttributes,
   setMessageHandler,
   loadUserFiles,
@@ -134,13 +136,23 @@ export {
   borderTable,
 }
 
+/**
+ * Set the EditorView for the MarkupEditor.
+ * 
+ * Note that `markupConfig` is a global that must already exist, but which can be undefined.
+ * This is typically accomplished by setting it in the first script loaded into the view, 
+ * something as simple as `<script>var markupConfig;</script>'. For an environment like VSCode, 
+ * which has a rich configuration capability, it can be set using `vscode.getConfiguration()`.
+ * 
+ * If `markupConfig` is undefined, the "standard" config is supplied by `MenuConfig.standard()`.
+ */
 window.view = new EditorView(document.querySelector("#editor"), {
   state: EditorState.create({
     // For the MarkupEditor, we can just use the editor element. 
     // There is no need to use a separate content element.
     doc: DOMParser.fromSchema(schema).parse(document.querySelector("#editor")),
     plugins: markupSetup({
-      config: markupConfig,
+      config: markupConfig ?? MenuConfig.standard(),
       schema: schema
     })
   }),
