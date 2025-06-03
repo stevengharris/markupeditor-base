@@ -118,15 +118,16 @@ class Dropdown {
     let content = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
     let label = crel("div", {
-      class: prefix + "-dropdown " + (this.options.class || ""),
+      class: prefix + "-dropdown",
       style: this.options.css
     }, translate(view, this.options.label || ""));
     if (this.options.title)
       label.setAttribute("title", translate(view, this.options.title));
+    if (this.options.labelClass)
+      label.classList.add(this.options.labelClass)
     let enabled = true;
     if (this.options.enable) {
       enabled = this.options.enable(state) || false;
-      console.log('Dropdown ' + this.options.title + ' enabled: ' + enabled)
       setClass(dom, prefix + "-disabled", !enabled);
     }
     let wrap = crel("div", { class: prefix + "-dropdown-wrap" }, label);
@@ -217,8 +218,9 @@ class DropdownSubmenu {
         });
     });
     function update(state) {
+      let enabled = true;
       if (options.enable) {
-        let enabled = options.enable(state) || false;
+        enabled = options.enable(state) || false;
         setClass(label, prefix + "-disabled", !enabled);
       }
       let inner = items.update(state);
@@ -448,9 +450,8 @@ function tableMenuItems(config, schema) {
       })
     items.push(borderDropdown)
   }
-  return new Dropdown(items, { title: 'Insert/edit table', label: 'Table' })
-  //TODO: Fix Dropdown to handle icon display
-  //return new Dropdown(items, { title: 'Insert/edit table', label: 'table', class: 'material-symbols-outlined' })
+  let table = String.fromCodePoint(0xe265)
+  return new Dropdown(items, { title: 'Insert/edit table', label: table, labelClass: 'material-symbols-outlined' })
 }
 
 function insertTableItem(rows, cols, options) {
