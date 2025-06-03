@@ -29,7 +29,8 @@ import {
   setBorderCommand,
   listTypeFor, 
   getListType, 
-  isIndented
+  isIndented,
+  isTableSelected
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
@@ -39,61 +40,61 @@ const prefix = "ProseMirror-menu"
 An icon or label that, when clicked, executes a command.
 */
 class MenuItem {
-    /**
-     * Create a menu item.
-     * 
-     * @param {*} spec The spec used to create this item.
-    */
-    constructor(spec) {
-        this.spec = spec;
-    }
+  /**
+   * Create a menu item.
+   * 
+   * @param {*} spec The spec used to create this item.
+  */
+  constructor(spec) {
+    this.spec = spec;
+  }
 
-    /**
-    Renders the icon according to its [display
-    spec](https://prosemirror.net/docs/ref/#menu.MenuItemSpec.display), and adds an event handler which
-    executes the command when the representation is clicked.
-    */
-    render(view) {
-        let spec = this.spec;
-        let dom = spec.render ? spec.render(view)
-            : spec.icon ? getIcon(view.root, spec.icon)
-                : spec.label ? crel("div", null, translate(view, spec.label))
-                    : null;
-        if (!dom)
-            throw new RangeError("MenuItem without icon or label property");
-        if (spec.title) {
-            const title = (typeof spec.title === "function" ? spec.title(view.state) : spec.title);
-            dom.setAttribute("title", translate(view, title));
-        }
-        if (spec.class)
-            dom.classList.add(spec.class);
-        if (spec.css)
-            dom.style.cssText += spec.css;
-        dom.addEventListener("mousedown", e => {
-            e.preventDefault();
-            if (!dom.classList.contains(prefix + "-disabled"))
-                spec.run(view.state, view.dispatch, view, e);
-        });
-        function update(state) {
-            if (spec.select) {
-                let selected = spec.select(state);
-                dom.style.display = selected ? "" : "none";
-                if (!selected)
-                    return false;
-            }
-            let enabled = true;
-            if (spec.enable) {
-                enabled = spec.enable(state) || false;
-                setClass(dom, prefix + "-disabled", !enabled);
-            }
-            if (spec.active) {
-                let active = enabled && spec.active(state) || false;
-                setClass(dom, prefix + "-active", active);
-            }
-            return true;
-        }
-        return { dom, update };
+  /**
+  Renders the icon according to its [display
+  spec](https://prosemirror.net/docs/ref/#menu.MenuItemSpec.display), and adds an event handler which
+  executes the command when the representation is clicked.
+  */
+  render(view) {
+    let spec = this.spec;
+    let dom = spec.render ? spec.render(view)
+      : spec.icon ? getIcon(view.root, spec.icon)
+        : spec.label ? crel("div", null, translate(view, spec.label))
+          : null;
+    if (!dom)
+      throw new RangeError("MenuItem without icon or label property");
+    if (spec.title) {
+      const title = (typeof spec.title === "function" ? spec.title(view.state) : spec.title);
+      dom.setAttribute("title", translate(view, title));
     }
+    if (spec.class)
+      dom.classList.add(spec.class);
+    if (spec.css)
+      dom.style.cssText += spec.css;
+    dom.addEventListener("mousedown", e => {
+      e.preventDefault();
+      if (!dom.classList.contains(prefix + "-disabled"))
+        spec.run(view.state, view.dispatch, view, e);
+    });
+    function update(state) {
+      if (spec.select) {
+        let selected = spec.select(state);
+        dom.style.display = selected ? "" : "none";
+        if (!selected)
+          return false;
+      }
+      let enabled = true;
+      if (spec.enable) {
+        enabled = spec.enable(state) || false;
+        setClass(dom, prefix + "-disabled", !enabled);
+      }
+      if (spec.active) {
+        let active = enabled && spec.active(state) || false;
+        setClass(dom, prefix + "-active", active);
+      }
+      return true;
+    }
+    return { dom, update };
+  }
 }
 
 /**
@@ -101,68 +102,81 @@ A drop-down menu, displayed as a label with a downwards-pointing
 triangle to the right of it.
 */
 class Dropdown {
-    /**
-    Create a dropdown wrapping the elements.
-    */
-    constructor(content, options = {}) {
-        this.options = options;
-        this.options = options || {};
-        this.content = Array.isArray(content) ? content : [content];
+  /**
+  Create a dropdown wrapping the elements.
+  */
+  constructor(content, options = {}) {
+    this.options = options;
+    this.options = options || {};
+    this.content = Array.isArray(content) ? content : [content];
+  }
+  /**
+  Render the dropdown menu and sub-items.
+  */
+  render(view) {
+    let options = this.options;
+    let content = renderDropdownItems(this.content, view);
+    let win = view.dom.ownerDocument.defaultView || window;
+    let label = crel("div", {
+      class: prefix + "-dropdown " + (this.options.class || ""),
+      style: this.options.css
+    }, translate(view, this.options.label || ""));
+    if (this.options.title)
+      label.setAttribute("title", translate(view, this.options.title));
+    let enabled = true;
+    if (this.options.enable) {
+      enabled = this.options.enable(state) || false;
+      console.log('Dropdown ' + this.options.title + ' enabled: ' + enabled)
+      setClass(dom, prefix + "-disabled", !enabled);
     }
-    /**
-    Render the dropdown menu and sub-items.
-    */
-    render(view) {
-        let content = renderDropdownItems(this.content, view);
-        let win = view.dom.ownerDocument.defaultView || window;
-        let label = crel("div", { class: prefix + "-dropdown " + (this.options.class || ""),
-            style: this.options.css }, translate(view, this.options.label || ""));
-        if (this.options.title)
-            label.setAttribute("title", translate(view, this.options.title));
-        let wrap = crel("div", { class: prefix + "-dropdown-wrap" }, label);
-        let open = null;
-        let listeningOnClose = null;
-        let close = () => {
-            if (open && open.close()) {
-                open = null;
-                win.removeEventListener("mousedown", listeningOnClose);
-            }
-        };
-        label.addEventListener("mousedown", e => {
-            e.preventDefault();
-            markMenuEvent(e);
-            if (open) {
-                close();
-            }
-            else {
-                open = this.expand(wrap, content.dom);
-                win.addEventListener("mousedown", listeningOnClose = () => {
-                    if (!isMenuEvent(wrap))
-                        close();
-                });
-            }
+    let wrap = crel("div", { class: prefix + "-dropdown-wrap" }, label);
+    let open = null;
+    let listeningOnClose = null;
+    let close = () => {
+      if (open && open.close()) {
+        open = null;
+        win.removeEventListener("mousedown", listeningOnClose);
+      }
+    };
+    label.addEventListener("mousedown", e => {
+      e.preventDefault();
+      markMenuEvent(e);
+      if (open) {
+        close();
+      }
+      else {
+        open = this.expand(wrap, content.dom);
+        win.addEventListener("mousedown", listeningOnClose = () => {
+          if (!isMenuEvent(wrap))
+            close();
         });
-        function update(state) {
-            let inner = content.update(state);
-            wrap.style.display = inner ? "" : "none";
-            return inner;
-        }
-        return { dom: wrap, update };
+      }
+    });
+    function update(state) {
+      if (options.enable) {
+        let enabled = options.enable(state) || false;
+        setClass(label, prefix + "-disabled", !enabled);
+      }
+      let inner = content.update(state);
+      wrap.style.display = inner ? "" : "none";
+      return inner;
     }
-    
-    expand(dom, items) {
-        let menuDOM = crel("div", { class: prefix + "-dropdown-menu " + (this.options.class || "") }, items);
-        let done = false;
-        function close() {
-            if (done)
-                return false;
-            done = true;
-            dom.removeChild(menuDOM);
-            return true;
-        }
-        dom.appendChild(menuDOM);
-        return { close, node: menuDOM };
+    return { dom: wrap, update };
+  }
+
+  expand(dom, items) {
+    let menuDOM = crel("div", { class: prefix + "-dropdown-menu " + (this.options.class || "") }, items);
+    let done = false;
+    function close() {
+      if (done)
+        return false;
+      done = true;
+      dom.removeChild(menuDOM);
+      return true;
     }
+    dom.appendChild(menuDOM);
+    return { close, node: menuDOM };
+  }
 }
 
 /**
@@ -170,44 +184,49 @@ Represents a submenu wrapping a group of elements that start
 hidden and expand to the right when hovered over or tapped.
 */
 class DropdownSubmenu {
-    /**
-    Creates a submenu for the given group of menu elements. The
-    following options are recognized:
-    */
-    constructor(content, options = {}) {
-        this.options = options;
-        this.content = Array.isArray(content) ? content : [content];
-    }
+  /**
+  Creates a submenu for the given group of menu elements. The
+  following options are recognized:
+  */
+  constructor(content, options = {}) {
+    this.options = options;
+    this.content = Array.isArray(content) ? content : [content];
+  }
 
-    /**
-    Renders the submenu.
-    */
-    render(view) {
-        let items = renderDropdownItems(this.content, view);
-        let win = view.dom.ownerDocument.defaultView || window;
-        let label = crel("div", { class: prefix + "-submenu-label" }, translate(view, this.options.label || ""));
-        let wrap = crel("div", { class: prefix + "-submenu-wrap" }, label, crel("div", { class: prefix + "-submenu" }, items.dom));
-        let listeningOnClose = null;
-        label.addEventListener("mousedown", e => {
-            e.preventDefault();
-            markMenuEvent(e);
-            setClass(wrap, prefix + "-submenu-wrap-active", false);
-            if (!listeningOnClose)
-                win.addEventListener("mousedown", listeningOnClose = () => {
-                    if (!isMenuEvent(wrap)) {
-                        wrap.classList.remove(prefix + "-submenu-wrap-active");
-                        win.removeEventListener("mousedown", listeningOnClose);
-                        listeningOnClose = null;
-                    }
-                });
+  /**
+  Renders the submenu.
+  */
+  render(view) {
+    let options = this.options
+    let items = renderDropdownItems(this.content, view);
+    let win = view.dom.ownerDocument.defaultView || window;
+    let label = crel("div", { class: prefix + "-submenu-label" }, translate(view, this.options.label || ""));
+    let wrap = crel("div", { class: prefix + "-submenu-wrap" }, label, crel("div", { class: prefix + "-submenu" }, items.dom));
+    let listeningOnClose = null;
+    label.addEventListener("mousedown", e => {
+      e.preventDefault();
+      markMenuEvent(e);
+      setClass(wrap, prefix + "-submenu-wrap-active", false);
+      if (!listeningOnClose)
+        win.addEventListener("mousedown", listeningOnClose = () => {
+          if (!isMenuEvent(wrap)) {
+            wrap.classList.remove(prefix + "-submenu-wrap-active");
+            win.removeEventListener("mousedown", listeningOnClose);
+            listeningOnClose = null;
+          }
         });
-        function update(state) {
-            let inner = items.update(state);
-            wrap.style.display = inner ? "" : "none";
-            return inner;
-        }
-        return { dom: wrap, update };
+    });
+    function update(state) {
+      if (options.enable) {
+        let enabled = options.enable(state) || false;
+        setClass(label, prefix + "-disabled", !enabled);
+      }
+      let inner = items.update(state);
+      wrap.style.display = inner ? "" : "none";
+      return inner;
     }
+    return { dom: wrap, update };
+  }
 }
 
 /**
@@ -421,7 +440,13 @@ function tableMenuItems(config, schema) {
     borderItems.push(tableBorderItem(setBorderCommand('outer'), {label: 'Outer'}))
     borderItems.push(tableBorderItem(setBorderCommand('header'), {label: 'Header'}))
     borderItems.push(tableBorderItem(setBorderCommand('none'), {label: 'None'}))
-    items.push(new DropdownSubmenu(borderItems, {title: 'Set border', label: 'Border'}))
+    let borderDropdown = new DropdownSubmenu(
+      borderItems, {
+        title: 'Set border', 
+        label: 'Border',
+        enable: (state) => { return isTableSelected(state) },
+      })
+    items.push(borderDropdown)
   }
   return new Dropdown(items, { title: 'Insert/edit table', label: 'Table' })
   //TODO: Fix Dropdown to handle icon display

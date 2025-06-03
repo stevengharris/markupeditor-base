@@ -3019,11 +3019,10 @@ export function addRow(direction) {
 export function addRowCommand(direction) {
     const commandAdapter = (state, dispatch) => {
         if (direction === 'BEFORE') {
-            addRowBefore(state, dispatch);
+            return addRowBefore(state, dispatch);
         } else {
-            addRowAfter(state, dispatch);
+            return addRowAfter(state, dispatch);
         };
-        return true;
     };
 
     return commandAdapter;
@@ -3062,6 +3061,7 @@ export function addCol(direction) {
 export function addColCommand(direction) {
     const commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
+        if (!isTableSelected(state)) return false;
         const startSelection = new TextSelection(state.selection.$anchor, state.selection.$head)
         let offset = 0;
         if (direction === 'BEFORE') {
@@ -3130,6 +3130,7 @@ export function addHeader(colspan=true) {
 export function addHeaderCommand(colspan = true) {
     const commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
+        if (!isTableSelected(state)) return false;
         const nodeTypes = state.schema.nodes
         const startSelection = new TextSelection(state.selection.$anchor, state.selection.$head)
         _selectInFirstCell(state, (tr) => { state = state.apply(tr) });
@@ -3192,16 +3193,13 @@ export function deleteTableAreaCommand(area) {
     const commandAdapter = (state, dispatch) => {
         switch (area) {
             case 'ROW':
-                deleteRow(state, dispatch);
-                break;
+                return deleteRow(state, dispatch);
             case 'COL':
-                deleteColumn(state, dispatch);
-                break;
+                return deleteColumn(state, dispatch);
             case 'TABLE':
-                deleteTable(state, dispatch);
-                break;
+                return deleteTable(state, dispatch);
         };
-        return true;
+        return false;
     };
 
     return commandAdapter;
@@ -3323,6 +3321,18 @@ function _setBorder(border) {
     view.focus();
 };
 
+export function isTableSelected(state) {
+    let tableSelected = false;
+    state.doc.nodesBetween(state.selection.from, state.selection.to, (node) => {
+        if (node.type === state.schema.nodes.table) {
+            tableSelected = true;
+            return false;
+        };
+        return false;
+    });
+    return tableSelected
+}
+
 export function setBorderCommand(border) {
     const commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
@@ -3337,7 +3347,7 @@ export function setBorderCommand(border) {
             };
             return false;
         });
-        if (!table) return;
+        if (!table) return false;
         switch (border) {
             case 'outer':
                 table.attrs.class = 'bordered-table-outer';
