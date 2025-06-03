@@ -26,6 +26,7 @@ import {
   addColCommand, 
   addHeaderCommand, 
   deleteTableAreaCommand,
+  setBorderCommand,
   listTypeFor, 
   getListType, 
   isIndented
@@ -414,6 +415,14 @@ function tableMenuItems(config, schema) {
   items.push(tableEditItem(deleteTableAreaCommand('COL'), {label: 'Delete column'}))
   items.push(tableEditItem(deleteTableAreaCommand('TABLE'), {label: 'Delete table'}))
   if (header) items.push(tableEditItem(addHeaderCommand(), {label: 'Add header'}))
+  if (border) {
+    let borderItems = []
+    borderItems.push(tableBorderItem(setBorderCommand('cell'), {label: 'All'}))
+    borderItems.push(tableBorderItem(setBorderCommand('outer'), {label: 'Outer'}))
+    borderItems.push(tableBorderItem(setBorderCommand('header'), {label: 'Header'}))
+    borderItems.push(tableBorderItem(setBorderCommand('none'), {label: 'None'}))
+    items.push(new DropdownSubmenu(borderItems, {title: 'Set border', label: 'Border'}))
+  }
   return new Dropdown(items, { title: 'Insert/edit table', label: 'Table' })
   //TODO: Fix Dropdown to handle icon display
   //return new Dropdown(items, { title: 'Insert/edit table', label: 'table', class: 'material-symbols-outlined' })
@@ -432,6 +441,17 @@ function insertTableItem(rows, cols, options) {
 }
 
 function tableEditItem(command, options) {
+  let passedOptions = {
+    run: command,
+    enable(state) { return command(state); },
+    active(state) { return false }  // FIX
+  };
+  for (let prop in options)
+    passedOptions[prop] = options[prop];
+  return new MenuItem(passedOptions);
+}
+
+function tableBorderItem(command, options) {
   let passedOptions = {
     run: command,
     enable(state) { return command(state); },
