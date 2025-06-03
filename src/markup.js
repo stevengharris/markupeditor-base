@@ -2530,16 +2530,20 @@ function _getTableAttributes(state) {
  * @return {String}   {Tag name | 'Multiple'} that represents the selected paragraph style on the Swift side.
  */
 function _getParagraphStyle() {
-    const selection = view.state.selection;
+    return paragraphStyle(view.state)
+};
+
+export function paragraphStyle(state) {
+    const selection = state.selection;
     const nodeTypes = new Set();
-    view.state.doc.nodesBetween(selection.from, selection.to, node => {
+    state.doc.nodesBetween(selection.from, selection.to, node => {
         if (node.isBlock) { 
             nodeTypes.add(node.type)
         };
         return false;   // We only need top-level nodes
     });
     return (nodeTypes.size <= 1) ? _paragraphStyleFor(selection.$anchor.parent) : 'Multiple';
-};
+}
 
 /**
  * 

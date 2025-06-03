@@ -30,7 +30,8 @@ import {
   listTypeFor, 
   getListType, 
   isIndented,
-  isTableSelected
+  isTableSelected,
+  paragraphStyle
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
@@ -157,6 +158,10 @@ class Dropdown {
       if (options.enable) {
         let enabled = options.enable(state) || false;
         setClass(label, prefix + "-disabled", !enabled);
+      }
+      if (options.titleUpdate) {
+        let newTitle = options.titleUpdate(state);
+        label.replaceChild(document.createTextNode(newTitle), label.firstChild)
       }
       let inner = content.update(state);
       wrap.style.display = inner ? "" : "none";
@@ -574,6 +579,17 @@ function formatItem(markType, options) {
 
 /* Style DropDown (P, H1-H6, Code) */
 
+const styleLabels = {
+  'P': 'Normal',
+  'H1': 'Header 1',
+  'H2': 'Header 2',
+  'H3': 'Header 3',
+  'H4': 'Header 4',
+  'H5': 'Header 5',
+  'H6': 'Header 6',
+  'PRE': 'Code'
+}
+
 /**
  * Return the Dropdown containing the styling MenuItems that should show per the config.
  * 
@@ -583,15 +599,19 @@ function formatItem(markType, options) {
 function styleMenuItems(config, schema) {
   let items = []
   let { p, h1, h2, h3, h4, h5, h6, codeblock } = config.styleMenu;
-  if (p) items.push(blockTypeItem(schema.nodes.paragraph, { label: 'Normal' }))
-  if (h1) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 1 }, label: 'Header 1' }))
-  if (h2) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 2 }, label: 'Header 2' }))
-  if (h3) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 3 }, label: 'Header 3' }))
-  if (h4) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 4 }, label: 'Header 4' }))
-  if (h5) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 5 }, label: 'Header 5' }))
-  if (h6) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 6 }, label: 'Header 6' }))
-  if (codeblock) items.push(blockTypeItem(schema.nodes.code_block, { label: 'Code' }))
-  return [new Dropdown(items, { title: 'Set paragraph style', label: 'Style' })]
+  if (p) items.push(blockTypeItem(schema.nodes.paragraph, { label: styleLabels['P'] }))
+  if (h1) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 1 }, label: styleLabels['H1'] }))
+  if (h2) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 2 }, label: styleLabels['H2'] }))
+  if (h3) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 3 }, label: styleLabels['H3'] }))
+  if (h4) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 4 }, label: styleLabels['H4'] }))
+  if (h5) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 5 }, label: styleLabels['H5'] }))
+  if (h6) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 6 }, label: styleLabels['H6'] }))
+  if (codeblock) items.push(blockTypeItem(schema.nodes.code_block, { label: styleLabels['PRE'] }))
+  let titleUpdate = (state) => {
+    let style = paragraphStyle(state)
+    return styleLabels[style] ?? style
+  }
+  return [new Dropdown(items, { title: 'Set paragraph style', label: 'Style', titleUpdate: titleUpdate })]
 }
 
 /**
