@@ -3337,6 +3337,11 @@ export function isTableSelected(state) {
     return tableSelected
 }
 
+export function tableHasHeader(state) {
+    if (!isTableSelected) return false
+    return _getTableAttributes(state).header === true
+}
+
 export function setBorderCommand(border) {
     const commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;

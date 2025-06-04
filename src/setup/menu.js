@@ -31,7 +31,8 @@ import {
   getListType, 
   isIndented,
   isTableSelected,
-  paragraphStyle
+  paragraphStyle,
+  tableHasHeader
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
@@ -433,27 +434,45 @@ function tableMenuItems(config, schema) {
   createItems.push(insertTableItem(1, 3, {label: '3 columns'}))
   createItems.push(insertTableItem(1, 4, {label: '4 columns'}))
   items.push(new DropdownSubmenu(createItems, {title: 'Insert new table', label: 'Create'}))
-  items.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Add row above'}))
-  items.push(tableEditItem(addRowCommand('AFTER'), {label: 'Add row below'}))
-  items.push(tableEditItem(deleteTableAreaCommand('ROW'), {label: 'Delete row'}))
-  items.push(tableEditItem(addColCommand('BEFORE'), {label: 'Add column before'}))
-  items.push(tableEditItem(addColCommand('AFTER'), {label: 'Add column after'}))
-  items.push(tableEditItem(deleteTableAreaCommand('COL'), {label: 'Delete column'}))
-  items.push(tableEditItem(deleteTableAreaCommand('TABLE'), {label: 'Delete table'}))
-  if (header) items.push(tableEditItem(addHeaderCommand(), {label: 'Add header'}))
+  let addItems = []
+  addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}))
+  addItems.push(tableEditItem(addRowCommand('AFTER'), {label: 'Row below'}))
+  addItems.push(tableEditItem(addColCommand('BEFORE'), {label: 'Column before'}))
+  addItems.push(tableEditItem(addColCommand('AFTER'), {label: 'Column after'}))
+  if (header) addItems.push(
+    tableEditItem(
+      addHeaderCommand(), {
+        label: 'Header',
+        enable: (state) => { return isTableSelected(state) && !tableHasHeader(state) },
+      }))
+  items.push(new DropdownSubmenu(
+    addItems, {
+      title: 'Add row/column', 
+      label: 'Add',
+      enable: (state) => { return isTableSelected(state) }
+    }))
+  let deleteItems = []
+  deleteItems.push(tableEditItem(deleteTableAreaCommand('ROW'), {label: 'Row'}))
+  deleteItems.push(tableEditItem(deleteTableAreaCommand('COL'), {label: 'Column'}))
+  deleteItems.push(tableEditItem(deleteTableAreaCommand('TABLE'), {label: 'Table'}))
+  items.push(new DropdownSubmenu(
+    deleteItems, {
+      title: 'Delete row/column', 
+      label: 'Delete',
+      enable: (state) => { return isTableSelected(state) }
+    }))
   if (border) {
     let borderItems = []
     borderItems.push(tableBorderItem(setBorderCommand('cell'), {label: 'All'}))
     borderItems.push(tableBorderItem(setBorderCommand('outer'), {label: 'Outer'}))
     borderItems.push(tableBorderItem(setBorderCommand('header'), {label: 'Header'}))
     borderItems.push(tableBorderItem(setBorderCommand('none'), {label: 'None'}))
-    let borderDropdown = new DropdownSubmenu(
+    items.push(new DropdownSubmenu(
       borderItems, {
         title: 'Set border', 
         label: 'Border',
-        enable: (state) => { return isTableSelected(state) },
-      })
-    items.push(borderDropdown)
+        enable: (state) => { return isTableSelected(state) }
+      }))
   }
   let table = String.fromCodePoint(0xe265)
   return new Dropdown(items, { title: 'Insert/edit table', label: table, labelClass: 'material-symbols-outlined' })
