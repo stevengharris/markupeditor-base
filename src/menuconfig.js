@@ -21,16 +21,17 @@ export class MenuConfig {
 }
 
 class VisibilityConfig {
-  constructor(toolbar, insertBar, formatBar, styleMenu, styleBar) {
+  constructor(toolbar, insertBar, formatBar, styleMenu, styleBar, tableMenu) {
     this.toolbar = toolbar
     this.insertBar = insertBar
     this.formatBar = formatBar
     this.styleMenu = styleMenu
     this.styleBar = styleBar
+    this.tableMenu = tableMenu
   }
 
   static standard() {
-    return new VisibilityConfig(true, true, true, true, true)
+    return new VisibilityConfig(true, true, true, true, true, true)
   }
 }
 
@@ -75,7 +76,7 @@ class StyleMenuConfig {
   }
 
   static standard() {
-    return new StyleBarConfig(true, true, true, true, true, true, true, true)
+    return new StyleMenuConfig(true, true, true, true, true, true, true, true)
   }
 }
 

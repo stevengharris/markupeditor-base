@@ -78,7 +78,6 @@ class ToolbarView {
   }
 
   update() {
-    console.log("UPDATE Toolbar")
     if (this.editorView.root != this.root) {
       let { dom, update } = renderGrouped(this.editorView, this.content);
       this.contentUpdate = update;
@@ -96,7 +95,7 @@ class ToolbarView {
       if (this.menu.offsetHeight > this.maxHeight) {
         // Don't reset maxHeight because intermediate updates render as text, expanding height
         // this.maxHeight = this.menu.offsetHeight;
-        this.menu.style.minHeight = this.maxHeight + "px";
+        //this.menu.style.minHeight = this.maxHeight + "px";
       }
     }
   }
@@ -120,7 +119,7 @@ class ToolbarView {
   updateFloat(scrollAncestor) {
     let parent = this.wrapper, editorRect = parent.getBoundingClientRect(), top = scrollAncestor ? Math.max(0, scrollAncestor.getBoundingClientRect().top) : 0;
     if (this.floating) {
-      if (editorRect.top >= top || editorRect.bottom < this.menu.offsetHeight + 10) {
+      if (editorRect.top >= top || editorRect.bottom < this.menu.offsetHeight + 12) {
         this.floating = false;
         this.menu.style.position = this.menu.style.left = this.menu.style.top = this.menu.style.width = "";
         this.menu.style.display = "";
@@ -135,10 +134,10 @@ class ToolbarView {
           this.menu.style.top = top + "px";
       }
     } else {
-      if (editorRect.top < top && editorRect.bottom >= this.menu.offsetHeight + 10) {
+      if (editorRect.top < top && editorRect.bottom >= this.menu.offsetHeight + 12) {
         this.floating = true;
         let menuRect = this.menu.getBoundingClientRect();
-        let spacerHeight = this.menu.firstChild.getBoundingClientRect().height + 10;
+        let spacerHeight = this.menu.firstChild.getBoundingClientRect().height + 12;
         this.menu.style.left = menuRect.left + "px";
         this.menu.style.width = menuRect.width + "px";
         if (scrollAncestor)
