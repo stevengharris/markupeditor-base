@@ -42,6 +42,8 @@ const prefix = "ProseMirror-menu"
 An icon or label that, when clicked, executes a command.
 */
 class MenuItem {
+
+  prefix = "ProseMirror-menu"
   /**
    * Create a menu item.
    * 
@@ -58,6 +60,7 @@ class MenuItem {
   */
   render(view) {
     let spec = this.spec;
+    let prefix = this.prefix
     let dom = spec.render ? spec.render(view)
       : spec.icon ? getIcon(view.root, spec.icon)
         : spec.label ? crel("div", null, translate(view, spec.label))
@@ -104,6 +107,8 @@ A drop-down menu, displayed as a label with a downwards-pointing
 triangle to the right of it.
 */
 class Dropdown {
+
+  prefix = "ProseMirror-menu"
   /**
   Create a dropdown wrapping the elements.
   */
@@ -117,6 +122,7 @@ class Dropdown {
   */
   render(view) {
     let options = this.options;
+    let prefix = this.prefix;
     let content = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
     let label;
@@ -162,6 +168,7 @@ class Dropdown {
         });
       }
     });
+
     function update(state) {
       if (options.enable) {
         let enabled = options.enable(state) || false;
@@ -198,6 +205,8 @@ Represents a submenu wrapping a group of elements that start
 hidden and expand to the right when hovered over or tapped.
 */
 class DropdownSubmenu {
+
+  prefix = "ProseMirror-menu"
   /**
   Creates a submenu for the given group of menu elements. The
   following options are recognized:
@@ -211,7 +220,8 @@ class DropdownSubmenu {
   Renders the submenu.
   */
   render(view) {
-    let options = this.options
+    let options = this.options;
+    let prefix = this.prefix;
     let items = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
     let label = crel("div", { class: prefix + "-submenu-label" }, translate(view, this.options.label || ""));
@@ -811,8 +821,9 @@ export const icons = {
 }
 
 function getIcon(root, icon) {
+    let prefix = "ProseMirror-icon"
     let doc = (root.nodeType == 9 ? root : root.ownerDocument) || document;
-    let node = doc.createElement("div");
+    let node = doc.createElement("span");
     node.className = prefix;
     node.innerHTML = icon.svg;
     return node;

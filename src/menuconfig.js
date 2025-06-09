@@ -3,9 +3,9 @@ export class MenuConfig {
     this.visibility = visibility
     this.insertBar = insertBar
     this.formatBar = formatBar
-    this.styleMenu = styleMenu
+    this.styleMenu = false
     this.styleBar = styleBar
-    this.tableMenu = tableMenu
+    this.tableMenu = false
   }
 
   static standard() {

@@ -1,17 +1,53 @@
 /* Specialized for MarkupEditor toolbar usage */
-.ProseMirror-menuitem {
-  vertical-align: text-top;
-  padding-top: 3px;
-  text-align: center;
-  cursor: pointer;
-  margin-right: 4px;
-  display: inline-block;
+
+.ProseMirror-menu {
+  line-height: 1;
   font-size: 24px;
-  min-width: 31px;
+}
+
+.ProseMirror-menu-disabled {
+  opacity: .3;
+}
+@media (prefers-color-scheme: dark) {
+  .ProseMirror-menu-disabled {
+    opacity: .6;
+  }
+}
+
+.ProseMirror-menubar {
+  vertical-align: middle;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  position: relative;
+  height: 38px;
+  color: #666;
+  padding: 4px 8px;
+  top: 0; left: 0; right: 0;
+  border-bottom: 1px solid silver;
+  background: white;
+  z-index: 10;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  overflow: visible;
+}
+@media (prefers-color-scheme: dark) {
+  .ProseMirror-menubar {
+    background: black;
+    color: lightgray;
+    border-bottom: 1px solid gray;
+  }
+}
+
+.ProseMirror-menuitem {
+  display: inline-block;
+  width: 28px;
   height: 28px;
+  cursor: pointer;
+  font-size: 24px;
+  margin-right: 4px;
+  border-radius: 4px;
   border: 1px solid black;
   fill: black;
-  border-radius: 4px;
 }
 @media (prefers-color-scheme: dark) {
   .ProseMirror-menuitem {
@@ -20,30 +56,59 @@
   }
 }
 
-.ProseMirror-menuitem-active {
-  background: yellow;
-  border-radius: 4px;
+.ProseMirror-icon span {
   vertical-align: middle;
-  font-size: 80%;
-  padding-bottom: 3px;
+}
+
+.ProseMirror-icon {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 0;
+}
+
+.ProseMirror-icon svg {
+  padding: 2px;
+  border: 0;
+  fill: inherit;
 }
 @media (prefers-color-scheme: dark) {
-   .ProseMirror-menuitem-active {
-    background: red;
+  .ProseMirror-icon svg {
+    fill: inherit;
+  }
+}
+
+.ProseMirror-menuseparator {
+  display: inline-block;
+  font-size: 24px;
+  height: 28px;
+  vertical-align: top;
+  padding-top: 2px;
+  border-right: 1px solid lightgray;
+  margin-right: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  .ProseMirror-menuseparator {
+    border-right: 1px solid gray;
+  }
+}
+
+.ProseMirror-menu-disabled .ProseMirror-icon {
+  cursor: default;
+}
+
+.ProseMirror-menu-active {
+  fill: white;
+  background: black;
+}
+@media (prefers-color-scheme: dark) {
+   .ProseMirror-menu-active {
+      fill: black;
+      background: white;
   }
 }
 
 /*
-This is a modified version of menu.css from prosemirror-menu. By using the 
-same names, we can override the defaults used there. The main changes for the 
-MarkupEditor involve sizes, with the styles being referenced in toolbar.js, 
-which is a replacement for menubar.ts in prosemirror-menu.
-*/
-
-.ProseMirror-menu {
-  line-height: 1;
-  font-size: 24px;
-}
 
 .ProseMirror-textblock-dropdown {
   min-width: 3em;
@@ -53,18 +118,6 @@ which is a replacement for menubar.ts in prosemirror-menu.
   width: -webkit-fit-content;
   width: fit-content;
   white-space: pre;
-}
-
-.ProseMirror-menuseparator {
-  vertical-align: bottom;
-  border-right: 1px solid #ddd;
-  margin-right: 4px;
-  font-size: 24px;
-}
-@media (prefers-color-scheme: dark) {
-  .ProseMirror-menuseparator {
-    border-right: 1px solid gray;
-  }
 }
 
 .ProseMirror-menu-dropdown, .ProseMirror-menu-dropdown-menu {
@@ -182,67 +235,8 @@ which is a replacement for menubar.ts in prosemirror-menu.
   top: -3px;
 }
 
-.ProseMirror-menu-disabled {
-  opacity: .3;
-}
-@media (prefers-color-scheme: dark) {
-  .ProseMirror-menu-disabled {
-    opacity: .6;
-  }
-}
-
 .ProseMirror-menu-submenu-wrap:hover .ProseMirror-menu-submenu, .ProseMirror-menu-submenu-wrap-active .ProseMirror-menu-submenu {
   display: block;
 }
 
-.ProseMirror-menubar {
-  border-top-left-radius: inherit;
-  border-top-right-radius: inherit;
-  position: relative;
-  min-height: 1em;
-  color: #666;
-  padding: 4px 6px 4px;
-  top: 0; left: 0; right: 0;
-  border-bottom: 1px solid silver;
-  background: white;
-  z-index: 10;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  overflow: visible;
-}
-@media (prefers-color-scheme: dark) {
-  .ProseMirror-menubar {
-    background: black;
-    color: lightgray;
-    border-bottom: 1px solid gray;
-  }
-}
-
-.ProseMirror-icon {
-  display: inline-block;
-  line-height: .8;
-  vertical-align: -2px; /* Compensate for padding */
-  padding: 2px 8px;
-  cursor: pointer;
-}
-
-.ProseMirror-menu-disabled .ProseMirror-icon {
-  cursor: default;
-}
-
-.ProseMirror-icon svg {
-  fill: currentColor;
-  height: 1em;
-}
-@media (prefers-color-scheme: dark) {
-  .ProseMirror-icon svg {
-    fill: white;
-    color: white;
-  }
-}
-
-/*
-.ProseMirror-icon span {
-  vertical-align: text-top;
-}
 */
