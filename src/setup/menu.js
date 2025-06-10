@@ -36,20 +36,20 @@ import {
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
-const prefix = "ProseMirror-menu"
+const prefix = "Markup"
 
 /**
 An icon or label that, when clicked, executes a command.
 */
 class MenuItem {
 
-  prefix = "ProseMirror-menu"
   /**
    * Create a menu item.
    * 
    * @param {*} spec The spec used to create this item.
   */
   constructor(spec) {
+    this.prefix = prefix + "-menuitem"
     this.spec = spec;
   }
 
@@ -108,11 +108,11 @@ triangle to the right of it.
 */
 class Dropdown {
 
-  prefix = "ProseMirror-menu"
   /**
   Create a dropdown wrapping the elements.
   */
   constructor(content, options = {}) {
+    this.prefix = prefix + "-menu";
     this.options = options;
     this.options = options || {};
     this.content = Array.isArray(content) ? content : [content];
@@ -125,15 +125,20 @@ class Dropdown {
     let prefix = this.prefix;
     let content = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
+    let indicator = crel("span", "\u25BE");
+    setClass(indicator, prefix + "-dropdown-indicator", true);
     let label;
     if (this.options.icon) {
       label = getIcon(view.root, this.options.icon)
+      label.appendChild(indicator)
       setClass(label, prefix + "-dropdown-icon", true)
     } else {
-      label = crel("div", {
+      label = crel("span", {
         class: prefix + "-dropdown",
         style: this.options.css
-      }, translate(view, this.options.label || ""));
+      });
+      label.appendChild(crel("span", this.options.label))
+      label.appendChild(indicator)
     }
     if (this.options.title)
       label.setAttribute("title", translate(view, this.options.title));
@@ -145,7 +150,7 @@ class Dropdown {
       setClass(dom, prefix + "-disabled", !enabled);
     }
     let wrapClass = (this.options.icon) ? prefix + "-dropdown-icon-wrap" : prefix + "-dropdown-wrap"
-    let wrap = crel("div", { class: wrapClass }, label);
+    let wrap = crel("span", { class: wrapClass }, label);
     let open = null;
     let listeningOnClose = null;
     let close = () => {
@@ -206,12 +211,12 @@ hidden and expand to the right when hovered over or tapped.
 */
 class DropdownSubmenu {
 
-  prefix = "ProseMirror-menu"
   /**
   Creates a submenu for the given group of menu elements. The
   following options are recognized:
   */
   constructor(content, options = {}) {
+    this.prefix = prefix + "-menu"
     this.options = options;
     this.content = Array.isArray(content) ? content : [content];
   }
@@ -692,7 +697,7 @@ export function renderGrouped(view, content) {
         let items = content[i], localUpdates = [], localNodes = [];
         for (let j = 0; j < items.length; j++) {
             let { dom, update } = items[j].render(view);
-            let span = crel("span", { class: prefix + "item" }, dom);
+            let span = crel("span", { class: prefix + "-menuitem" }, dom);
             result.appendChild(span);
             localNodes.push(span);
             localUpdates.push(update);
@@ -821,10 +826,9 @@ export const icons = {
 }
 
 function getIcon(root, icon) {
-    let prefix = "ProseMirror-icon"
     let doc = (root.nodeType == 9 ? root : root.ownerDocument) || document;
     let node = doc.createElement("span");
-    node.className = prefix;
+    node.className = prefix + "-icon";
     node.innerHTML = icon.svg;
     return node;
 }

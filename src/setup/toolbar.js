@@ -22,7 +22,7 @@ import crel from "crelt"
 import {Plugin} from "prosemirror-state"
 import {renderGrouped} from  "./menu"
 
-const prefix = "ProseMirror-menubar"
+const prefix = "Markup"
 
 function isIOS() {
   if (typeof navigator == "undefined") return false
@@ -41,6 +41,7 @@ export function toolbar(content) {
 class ToolbarView {
 
   constructor(editorView, content) {
+    this.prefix = prefix + "-toolbar";
     this.editorView = editorView;
     this.content = content;
     this.spacer = null;
@@ -49,9 +50,9 @@ class ToolbarView {
     this.floating = false;
     this.scrollHandler = null;
     this.root = editorView.root
-    this.wrapper = crel("div", {class: prefix + "-wrapper"})
-    this.menu = this.wrapper.appendChild(crel("div", {class: prefix}))
-    this.menu.className = prefix
+    this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
+    this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix}))
+    this.menu.className = this.prefix
 
     if (editorView.dom.parentNode)
       editorView.dom.parentNode.replaceChild(this.wrapper, editorView.dom)
@@ -143,7 +144,7 @@ class ToolbarView {
         if (scrollAncestor)
           this.menu.style.top = top + "px";
         this.menu.style.position = "fixed";
-        this.spacer = crel("div", { class: prefix + "-spacer", style: `height: ${spacerHeight}px` });
+        this.spacer = crel("div", { class: this.prefix + "-spacer", style: `height: ${spacerHeight}px` });
         parent.insertBefore(this.spacer, this.menu);
       }
     }

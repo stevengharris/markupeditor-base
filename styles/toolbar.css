@@ -1,20 +1,18 @@
-/* Specialized for MarkupEditor toolbar usage */
-
-.ProseMirror-menu {
+.Markup-menu {
   line-height: 1;
   font-size: 24px;
 }
 
-.ProseMirror-menu-disabled {
+.Markup-menu-disabled {
   opacity: .3;
 }
 @media (prefers-color-scheme: dark) {
-  .ProseMirror-menu-disabled {
+  .Markup-menu-disabled {
     opacity: .6;
   }
 }
 
-.ProseMirror-menubar {
+.Markup-toolbar {
   vertical-align: middle;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
@@ -31,16 +29,16 @@
   overflow: visible;
 }
 @media (prefers-color-scheme: dark) {
-  .ProseMirror-menubar {
+  .Markup-toolbar {
     background: black;
     color: lightgray;
     border-bottom: 1px solid gray;
   }
 }
 
-.ProseMirror-menuitem {
+.Markup-menuitem {
   display: inline-block;
-  width: 28px;
+  min-width: 28px;
   height: 28px;
   cursor: pointer;
   font-size: 24px;
@@ -50,97 +48,161 @@
   fill: black;
 }
 @media (prefers-color-scheme: dark) {
-  .ProseMirror-menuitem {
+  .Markup-menuitem {
     border: 1px solid white;
     fill: white;
   }
 }
 
-.ProseMirror-icon span {
+.Markup-icon span {
   vertical-align: middle;
 }
 
-.ProseMirror-icon {
+.Markup-icon {
   display: inline-block;
   width: 28px;
   height: 28px;
   border: 0;
 }
 
-.ProseMirror-icon svg {
+.Markup-icon svg {
   padding: 2px;
   border: 0;
   fill: inherit;
 }
 @media (prefers-color-scheme: dark) {
-  .ProseMirror-icon svg {
+  .Markup-icon svg {
     fill: inherit;
   }
 }
 
-.ProseMirror-menuseparator {
+.Markup-menuseparator {
   display: inline-block;
   font-size: 24px;
   height: 28px;
-  vertical-align: top;
-  padding-top: 2px;
   border-right: 1px solid lightgray;
   margin-right: 4px;
 }
 @media (prefers-color-scheme: dark) {
-  .ProseMirror-menuseparator {
+  .Markup-menuseparator {
     border-right: 1px solid gray;
   }
 }
 
-.ProseMirror-menu-disabled .ProseMirror-icon {
+.Markup-menu-disabled .Markup-icon {
   cursor: default;
 }
 
-.ProseMirror-menu-active {
+.Markup-menuitem-active {
   fill: white;
   background: black;
 }
 @media (prefers-color-scheme: dark) {
-   .ProseMirror-menu-active {
+   .Markup-menuitem-active {
       fill: black;
       background: white;
   }
 }
 
-/*
-
-.ProseMirror-textblock-dropdown {
-  min-width: 3em;
-}
-
-.ProseMirror-tooltip .ProseMirror-menu {
-  width: -webkit-fit-content;
-  width: fit-content;
-  white-space: pre;
-}
-
-.ProseMirror-menu-dropdown, .ProseMirror-menu-dropdown-menu {
-  font-size: 80%;
+.Markup-menu-dropdown, .Markup-menu-dropdown-menu {
   text-align: left;
   white-space: nowrap;
 }
 
-.ProseMirror-menu-dropdown {
+.Markup-menu-dropdown span {
   vertical-align: middle;
-  cursor: pointer;
-  position: relative;
-  padding-right: 15px;
 }
 
-.ProseMirror-menu-dropdown-icon {
+.Markup-menu-dropdown-icon span {
   vertical-align: middle;
-  cursor: pointer;
-  position: relative;
-  padding-right: 15px;
 }
 
-.ProseMirror-menu-dropdown-wrap {
+.Markup-menu-dropdown-wrap {
+  display: inline-block;
+  padding: 0 4px;
+  width: 108px;
+  height: 28px;
+}
+
+.Markup-menu-dropdown-icon-wrap {
+  display: inline-block;
+  padding: 0 2px;
+  width: 42px;
+  height: 28px;
+}
+
+.Markup-menu-dropdown {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 108px;
+  height: 28px;
+  position: absolute;
+  color: black;
+}
+@media (prefers-color-scheme: dark) {
+   .Markup-menu-dropdown {
+      color: white;
+  }
+}
+
+.Markup-menu-dropdown-icon {
+  display: inline-flex;
+  justify-content: space-between;
+  font-size: 24px;
+  width: 42px;
+  cursor: pointer;
+  position: absolute;
+}
+
+.Markup-menu-dropdown-indicator {
+  opacity: .6;
+  color: black;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-menu-dropdown-indicator {
+    color: white;
+  }
+}
+
+/*
+.Markup-menu-dropdown:after {
+  content: "\25BE";
+  opacity: .6;*/
+  /*
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: .6;
+  position: absolute;
+  top: calc(50% - 2px);
+  */
+/* }
+
+.Markup-menu-dropdown-icon:after {
+  content: "";
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: .6;
+  position: absolute;
+  top: calc(50% - 2px);
+}
+*/
+
+/*
+
+.Markup-menu-dropdown:after {
+  content: "";
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: .6;
+  position: absolute;
+  right: 4px;
+  top: calc(50% - 2px);
+}
+
+.Markup-menu-dropdown-wrap {
   font-size: 80%;
   padding: 3px 8px 0 8px;
   display: block;
@@ -148,37 +210,29 @@
   position: relative;
 }
 
-.ProseMirror-menu-dropdown-icon-wrap {
-  font-size: 80%;
-  padding: 0 8px 3px 8px;
-  display: block;
-  height: 28px;
+.Markup-menu-dropdown, .Markup-menu-dropdown-menu {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.Markup-menu-dropdown {
+  vertical-align: middle;
+  cursor: pointer;
   position: relative;
+  padding-right: 15px;
 }
 
-.ProseMirror-menu-dropdown:after {
-  content: "";
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 4px solid currentColor;
-  opacity: .6;
-  position: absolute;
-  right: 4px;
-  top: calc(50% - 2px);
+.Markup-textblock-dropdown {
+  min-width: 3em;
 }
 
-.ProseMirror-menu-dropdown-icon:after {
-  content: "";
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 4px solid currentColor;
-  opacity: .6;
-  position: absolute;
-  right: 4px;
-  top: calc(50% - 2px);
+.Markup-tooltip .Markup-menu {
+  width: -webkit-fit-content;
+  width: fit-content;
+  white-space: pre;
 }
 
-.ProseMirror-menu-dropdown-menu, .ProseMirror-menu-submenu {
+.Markup-menu-dropdown-menu, .Markup-menu-submenu {
   position: absolute;
   background: white;
   color: gray;
@@ -186,38 +240,38 @@
   padding: 2px;
 }
 @media (prefers-color-scheme: dark) {
-  .ProseMirror-menu-dropdown-menu, .ProseMirror-menu-submenu {
+  .Markup-menu-dropdown-menu, .Markup-menu-submenu {
     background: black;
     color: lightgray;
     border: 1px solid gray;
   }
 }
 
-.ProseMirror-menu-dropdown-menu {
+.Markup-menu-dropdown-menu {
   z-index: 15;
   min-width: 6em;
 }
 
-.ProseMirror-menu-dropdown-item {
+.Markup-menu-dropdown-item {
   cursor: pointer;
   padding: 2px 8px 2px 4px;
 }
 
-.ProseMirror-menu-dropdown-item:hover {
+.Markup-menu-dropdown-item:hover {
   background: #f2f2f2;
 }
 @media (prefers-color-scheme: dark) {
-  .ProseMirror-menu-dropdown-item:hover {
+  .Markup-menu-dropdown-item:hover {
     background: rgb(11, 11, 11);
   }
 }
 
-.ProseMirror-menu-submenu-wrap {
+.Markup-menu-submenu-wrap {
   position: relative;
   margin-right: -4px;
 }
 
-.ProseMirror-menu-submenu-label:after {
+.Markup-menu-submenu-label:after {
   content: "";
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
@@ -228,14 +282,14 @@
   top: calc(50% - 4px);
 }
 
-.ProseMirror-menu-submenu {
+.Markup-menu-submenu {
   display: none;
   min-width: 4em;
   left: 100%;
   top: -3px;
 }
 
-.ProseMirror-menu-submenu-wrap:hover .ProseMirror-menu-submenu, .ProseMirror-menu-submenu-wrap-active .ProseMirror-menu-submenu {
+.Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {
   display: block;
 }
 

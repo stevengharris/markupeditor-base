@@ -3,7 +3,7 @@ export class MenuConfig {
     this.visibility = visibility
     this.insertBar = insertBar
     this.formatBar = formatBar
-    this.styleMenu = false
+    this.styleMenu = styleMenu
     this.styleBar = styleBar
     this.tableMenu = false
   }
