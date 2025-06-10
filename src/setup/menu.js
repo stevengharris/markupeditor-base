@@ -60,7 +60,7 @@ class MenuItem {
   */
   render(view) {
     let spec = this.spec;
-    let prefix = this.prefix
+    let prefix = this.prefix;
     let dom = spec.render ? spec.render(view)
       : spec.icon ? getIcon(view.root, spec.icon)
         : spec.label ? crel("div", null, translate(view, spec.label))
@@ -122,19 +122,18 @@ class Dropdown {
   */
   render(view) {
     let options = this.options;
-    let prefix = this.prefix;
     let content = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
     let indicator = crel("span", "\u25BE");
-    setClass(indicator, prefix + "-dropdown-indicator", true);
+    setClass(indicator, this.prefix + "-dropdown-indicator", true);
     let label;
     if (this.options.icon) {
       label = getIcon(view.root, this.options.icon)
       label.appendChild(indicator)
-      setClass(label, prefix + "-dropdown-icon", true)
+      setClass(label, this.prefix + "-dropdown-icon", true)
     } else {
       label = crel("span", {
-        class: prefix + "-dropdown",
+        class: this.prefix + "-dropdown",
         style: this.options.css
       });
       label.appendChild(crel("span", this.options.label))
@@ -147,9 +146,9 @@ class Dropdown {
     let enabled = true;
     if (this.options.enable) {
       enabled = this.options.enable(state) || false;
-      setClass(dom, prefix + "-disabled", !enabled);
+      setClass(dom, this.prefix + "-disabled", !enabled);
     }
-    let wrapClass = (this.options.icon) ? prefix + "-dropdown-icon-wrap" : prefix + "-dropdown-wrap"
+    let wrapClass = (this.options.icon) ? this.prefix + "-dropdown-icon-wrap" : this.prefix + "-dropdown-wrap"
     let wrap = crel("span", { class: wrapClass }, label);
     let open = null;
     let listeningOnClose = null;
@@ -177,7 +176,7 @@ class Dropdown {
     function update(state) {
       if (options.enable) {
         let enabled = options.enable(state) || false;
-        setClass(label, prefix + "-disabled", !enabled);
+        setClass(label, this.prefix + "-disabled", !enabled);
       }
       if (options.titleUpdate) {
         let newTitle = options.titleUpdate(state);
@@ -226,20 +225,19 @@ class DropdownSubmenu {
   */
   render(view) {
     let options = this.options;
-    let prefix = this.prefix;
     let items = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
-    let label = crel("div", { class: prefix + "-submenu-label" }, translate(view, this.options.label || ""));
-    let wrap = crel("div", { class: prefix + "-submenu-wrap" }, label, crel("div", { class: prefix + "-submenu" }, items.dom));
+    let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
+    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, crel("div", { class: this.prefix + "-submenu" }, items.dom));
     let listeningOnClose = null;
     label.addEventListener("mousedown", e => {
       e.preventDefault();
       markMenuEvent(e);
-      setClass(wrap, prefix + "-submenu-wrap-active", false);
+      setClass(wrap, this.prefix + "-submenu-wrap-active", false);
       if (!listeningOnClose)
         win.addEventListener("mousedown", listeningOnClose = () => {
           if (!isMenuEvent(wrap)) {
-            wrap.classList.remove(prefix + "-submenu-wrap-active");
+            wrap.classList.remove(this.prefix + "-submenu-wrap-active");
             win.removeEventListener("mousedown", listeningOnClose);
             listeningOnClose = null;
           }
@@ -249,7 +247,7 @@ class DropdownSubmenu {
       let enabled = true;
       if (options.enable) {
         enabled = options.enable(state) || false;
-        setClass(label, prefix + "-disabled", !enabled);
+        setClass(label, this.prefix + "-disabled", !enabled);
       }
       let inner = items.update(state);
       wrap.style.display = inner ? "" : "none";
@@ -357,7 +355,7 @@ function renderDropdownItems(items, view) {
     let rendered = [], updates = [];
     for (let i = 0; i < items.length; i++) {
         let { dom, update } = items[i].render(view);
-        rendered.push(crel("div", { class: prefix + "-dropdown-item" }, dom));
+        rendered.push(crel("div", { class: prefix + "-menu-dropdown-item" }, dom));
         updates.push(update);
     }
     return { dom: rendered, update: combineUpdates(updates, rendered) };
@@ -724,7 +722,7 @@ export function renderGrouped(view, content) {
 }
 
 function separator() {
-    return crel("span", { class: prefix + "separator" });
+    return crel("span", { class: prefix + "-menuseparator" });
 }
 
 function combineUpdates(updates, nodes) {

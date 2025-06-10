@@ -54,6 +54,7 @@
 }
 
 .Markup-menuitem-disabled {
+  cursor: default;
   opacity: .3;
 }
 @media (prefers-color-scheme: dark) {
