@@ -191,7 +191,7 @@ class Dropdown {
   }
 
   expand(dom, items) {
-    let menuDOM = crel("div", { class: prefix + "-dropdown-menu " + (this.options.class || "") }, items);
+    let menuDOM = crel("div", { class: this.prefix + "-dropdown-menu" + (this.options.class || "") }, items);
     let done = false;
     function close() {
       if (done)

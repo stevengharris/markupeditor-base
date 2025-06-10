@@ -2,7 +2,7 @@
     background: white;
     color: black;
     background-clip: padding-box;
-    margin: -8px -8px -8px -8px;        /* Set so that the .ProseMirror padding starts from edges */
+    margin: -8px;        /* Set so that the .ProseMirror padding starts from edges */
     --padBottom: 0;                     /* MU.padBottom() sets this value in px based on fullHeight */
     padding-block: 0 var(--padBottom);
     overflow-x: clip;

@@ -1,16 +1,4 @@
-.Markup-menu {
-  line-height: 1;
-  font-size: 24px;
-}
-
-.Markup-menu-disabled {
-  opacity: .3;
-}
-@media (prefers-color-scheme: dark) {
-  .Markup-menu-disabled {
-    opacity: .6;
-  }
-}
+/* The toolbar contains menuitems and menuseparators */
 
 .Markup-toolbar {
   vertical-align: middle;
@@ -54,8 +42,24 @@
   }
 }
 
-.Markup-icon span {
-  vertical-align: middle;
+.Markup-menuitem-active {
+  fill: white;
+  background: black;
+}
+@media (prefers-color-scheme: dark) {
+   .Markup-menuitem-active {
+      fill: black;
+      background: white;
+  }
+}
+
+.Markup-menuitem-disabled {
+  opacity: .3;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-menuitem-disabled {
+    opacity: .6;
+  }
 }
 
 .Markup-icon {
@@ -63,6 +67,10 @@
   width: 28px;
   height: 28px;
   border: 0;
+}
+
+.Markup-icon span {
+  vertical-align: middle;
 }
 
 .Markup-icon svg {
@@ -91,17 +99,6 @@
 
 .Markup-menu-disabled .Markup-icon {
   cursor: default;
-}
-
-.Markup-menuitem-active {
-  fill: white;
-  background: black;
-}
-@media (prefers-color-scheme: dark) {
-   .Markup-menuitem-active {
-      fill: black;
-      background: white;
-  }
 }
 
 .Markup-menu-dropdown, .Markup-menu-dropdown-menu {
@@ -164,68 +161,6 @@
   }
 }
 
-/*
-.Markup-menu-dropdown:after {
-  content: "\25BE";
-  opacity: .6;*/
-  /*
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 4px solid currentColor;
-  opacity: .6;
-  position: absolute;
-  top: calc(50% - 2px);
-  */
-/* }
-
-.Markup-menu-dropdown-icon:after {
-  content: "";
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 4px solid currentColor;
-  opacity: .6;
-  position: absolute;
-  top: calc(50% - 2px);
-}
-*/
-
-/*
-
-.Markup-menu-dropdown:after {
-  content: "";
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 4px solid currentColor;
-  opacity: .6;
-  position: absolute;
-  right: 4px;
-  top: calc(50% - 2px);
-}
-
-.Markup-menu-dropdown-wrap {
-  font-size: 80%;
-  padding: 3px 8px 0 8px;
-  display: block;
-  height: 28px;
-  position: relative;
-}
-
-.Markup-menu-dropdown, .Markup-menu-dropdown-menu {
-  text-align: left;
-  white-space: nowrap;
-}
-
-.Markup-menu-dropdown {
-  vertical-align: middle;
-  cursor: pointer;
-  position: relative;
-  padding-right: 15px;
-}
-
-.Markup-textblock-dropdown {
-  min-width: 3em;
-}
-
 .Markup-tooltip .Markup-menu {
   width: -webkit-fit-content;
   width: fit-content;
@@ -235,19 +170,20 @@
 .Markup-menu-dropdown-menu, .Markup-menu-submenu {
   position: absolute;
   background: white;
-  color: gray;
-  border: 1px solid lightgray;
+  color: black;
+  border: 1px solid gray;
   padding: 2px;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-dropdown-menu, .Markup-menu-submenu {
     background: black;
-    color: lightgray;
-    border: 1px solid gray;
+    color: white;
+    border: 1px solid lightgray;
   }
 }
 
 .Markup-menu-dropdown-menu {
+  margin-top: 30px;
   z-index: 15;
   min-width: 6em;
 }
@@ -292,5 +228,3 @@
 .Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {
   display: block;
 }
-
-*/
