@@ -1,16 +1,16 @@
 /* The toolbar contains menuitems and menuseparators */
 
 .Markup-toolbar {
+  font-size: 24px;
   vertical-align: middle;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
   position: relative;
   height: 38px;
-  color: #666;
   padding: 4px 8px;
-  top: 0; left: 0; right: 0;
-  border-bottom: 1px solid silver;
+  color: black;
   background: white;
+  border-bottom: 1px solid lightgray;
   z-index: 10;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -18,8 +18,8 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar {
+    color: white;
     background: black;
-    color: lightgray;
     border-bottom: 1px solid gray;
   }
 }
@@ -29,10 +29,10 @@
   min-width: 28px;
   height: 28px;
   cursor: pointer;
-  font-size: 24px;
   margin-right: 4px;
   border-radius: 4px;
   border: 1px solid black;
+  background: inherit;
   fill: black;
 }
 @media (prefers-color-scheme: dark) {
@@ -87,7 +87,6 @@
 
 .Markup-menuseparator {
   display: inline-block;
-  font-size: 24px;
   height: 28px;
   border-right: 1px solid lightgray;
   margin-right: 4px;
@@ -103,6 +102,7 @@
 }
 
 .Markup-menu-dropdown, .Markup-menu-dropdown-menu {
+  background: inherit;
   text-align: left;
   white-space: nowrap;
 }
@@ -118,48 +118,40 @@
 .Markup-menu-dropdown-wrap {
   display: inline-block;
   padding: 0 4px;
-  width: 108px;
-  height: 28px;
+  width: calc(4.5em);
+  height: calc(1em + 4px);
+  border-radius: 4px;
+  background: inherit;
 }
 
 .Markup-menu-dropdown-icon-wrap {
   display: inline-block;
-  padding: 0 2px;
-  width: 42px;
-  height: 28px;
+  padding-right: 4px;
+  width: calc(1.8em);
+  height: calc(1em + 4px);
+  border-radius: 4px;
+  background: inherit;
 }
 
 .Markup-menu-dropdown {
   display: inline-flex;
   justify-content: space-between;
-  width: 108px;
-  height: 28px;
+  width: calc(4.5em);
+  height: calc(1em + 4px);
+  background: inherit;
   position: absolute;
-  color: black;
-}
-@media (prefers-color-scheme: dark) {
-   .Markup-menu-dropdown {
-      color: white;
-  }
 }
 
 .Markup-menu-dropdown-icon {
   display: inline-flex;
   justify-content: space-between;
-  font-size: 24px;
-  width: 42px;
+  width: calc(1.8em);
   cursor: pointer;
   position: absolute;
 }
 
 .Markup-menu-dropdown-indicator {
   opacity: .6;
-  color: black;
-}
-@media (prefers-color-scheme: dark) {
-  .Markup-menu-dropdown-indicator {
-    color: white;
-  }
 }
 
 .Markup-tooltip .Markup-menu {
@@ -170,23 +162,21 @@
 
 .Markup-menu-dropdown-menu, .Markup-menu-submenu {
   position: absolute;
-  background: white;
-  color: black;
-  border: 1px solid gray;
+  background: inherit;
   padding: 2px;
+  background: inherit;
+  border: 1px solid gray;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-dropdown-menu, .Markup-menu-submenu {
-    background: black;
-    color: white;
     border: 1px solid lightgray;
   }
 }
 
 .Markup-menu-dropdown-menu {
-  margin-top: 30px;
+  margin-top: calc(1em + 6px);
   z-index: 15;
-  min-width: 6em;
+  min-width: 5em;
 }
 
 .Markup-menu-dropdown-item {
@@ -194,18 +184,38 @@
   padding: 2px 8px 2px 4px;
 }
 
-.Markup-menu-dropdown-item:hover {
+.Markup-menu-dropdown-item:hover, .Markup-menu-submenu-wrap:hover {
   background: #f2f2f2;
 }
 @media (prefers-color-scheme: dark) {
-  .Markup-menu-dropdown-item:hover {
-    background: rgb(11, 11, 11);
+  .Markup-menu-dropdown-item:hover, .Markup-menu-submenu-wrap:hover {
+    background: rgb(80, 80, 80);
   }
+}
+
+.Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {
+  display: block;
 }
 
 .Markup-menu-submenu-wrap {
   position: relative;
   margin-right: -4px;
+  background: inherit;
+}
+
+.Markup-menu-submenu {
+  display: none;
+  min-width: 4em;
+  left: 100%;
+  top: -5px;
+  /* background cannot be inherited because of hover highlighting in dropdown */
+  background: white;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-menu-submenu {
+    /* background cannot be inherited because of hover highlighting in dropdown */
+    background: black;
+  }
 }
 
 .Markup-menu-submenu-label:after {
@@ -217,15 +227,4 @@
   position: absolute;
   right: 4px;
   top: calc(50% - 4px);
-}
-
-.Markup-menu-submenu {
-  display: none;
-  min-width: 4em;
-  left: 100%;
-  top: -3px;
-}
-
-.Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {
-  display: block;
 }
