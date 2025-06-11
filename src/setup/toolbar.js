@@ -62,20 +62,6 @@ class ToolbarView {
     this.contentUpdate = update;
     this.menu.appendChild(dom)
     this.update();
-
-    if (!isIOS()) { // The toolbar always stays at the top
-      this.updateFloat();
-      let potentialScrollers = getAllWrapping(this.wrapper);
-      this.scrollHandler = (e) => {
-        let root = this.editorView.root;
-        if (!(root.body || root).contains(this.wrapper))
-          potentialScrollers.forEach(el => el.removeEventListener("scroll", this.scrollHandler));
-        else
-          this.updateFloat(e.target.getBoundingClientRect ? e.target : undefined);
-      };
-      potentialScrollers.forEach(el => el.addEventListener('scroll', this.scrollHandler));
-    }
-
   }
 
   update() {
@@ -85,69 +71,12 @@ class ToolbarView {
       this.menu.replaceChild(dom, this.menu.firstChild);
       this.root = this.editorView.root;
     }
+    if (!this.spacer) {
+      let spacerHeight = this.menu.offsetHeight;
+      this.spacer = crel("div", { class: this.prefix + "-spacer", style: `height: ${spacerHeight}px` });
+      this.wrapper.insertBefore(this.spacer, this.menu);
+    }
     this.contentUpdate(this.editorView.state);
-    if (this.floating) {
-      this.updateScrollCursor();
-    } else {
-      if (this.menu.offsetWidth != this.widthForMaxHeight) {
-        this.widthForMaxHeight = this.menu.offsetWidth;
-        this.maxHeight = 0;
-      }
-      if (this.menu.offsetHeight > this.maxHeight) {
-        // Don't reset maxHeight because intermediate updates render as text, expanding height
-        // this.maxHeight = this.menu.offsetHeight;
-        //this.menu.style.minHeight = this.maxHeight + "px";
-      }
-    }
-  }
-
-  updateScrollCursor() {
-    let selection = this.editorView.root.getSelection();
-    if (!selection.focusNode)
-      return;
-    let rects = selection.getRangeAt(0).getClientRects();
-    let selRect = rects[selectionIsInverted(selection) ? 0 : rects.length - 1];
-    if (!selRect)
-      return;
-    let menuRect = this.menu.getBoundingClientRect();
-    if (selRect.top < menuRect.bottom && selRect.bottom > menuRect.top) {
-      let scrollable = findWrappingScrollable(this.wrapper);
-      if (scrollable)
-        scrollable.scrollTop -= (menuRect.bottom - selRect.top);
-    }
-  }
-
-  updateFloat(scrollAncestor) {
-    let parent = this.wrapper, editorRect = parent.getBoundingClientRect(), top = scrollAncestor ? Math.max(0, scrollAncestor.getBoundingClientRect().top) : 0;
-    if (this.floating) {
-      if (editorRect.top >= top || editorRect.bottom < this.menu.offsetHeight + 12) {
-        this.floating = false;
-        this.menu.style.position = this.menu.style.left = this.menu.style.top = this.menu.style.width = "";
-        this.menu.style.display = "";
-        this.spacer.parentNode.removeChild(this.spacer);
-        this.spacer = null;
-      } else {
-        let border = (parent.offsetWidth - parent.clientWidth) / 2;
-        this.menu.style.left = (editorRect.left + border) + "px";
-        this.menu.style.display = editorRect.top > (this.editorView.dom.ownerDocument.defaultView || window).innerHeight
-          ? "none" : "";
-        if (scrollAncestor)
-          this.menu.style.top = top + "px";
-      }
-    } else {
-      if (editorRect.top < top && editorRect.bottom >= this.menu.offsetHeight + 12) {
-        this.floating = true;
-        let menuRect = this.menu.getBoundingClientRect();
-        let spacerHeight = this.menu.firstChild.getBoundingClientRect().height + 12;
-        this.menu.style.left = menuRect.left + "px";
-        this.menu.style.width = menuRect.width + "px";
-        if (scrollAncestor)
-          this.menu.style.top = top + "px";
-        this.menu.style.position = "fixed";
-        this.spacer = crel("div", { class: this.prefix + "-spacer", style: `height: ${spacerHeight}px` });
-        parent.insertBefore(this.spacer, this.menu);
-      }
-    }
   }
 
   destroy() {
@@ -155,24 +84,4 @@ class ToolbarView {
       this.wrapper.parentNode.replaceChild(this.editorView.dom, this.wrapper)
   }
 
-}
-
-// Not precise, but close enough
-function selectionIsInverted(selection) {
-    if (selection.anchorNode == selection.focusNode)
-        return selection.anchorOffset > selection.focusOffset;
-    return selection.anchorNode.compareDocumentPosition(selection.focusNode) == Node.DOCUMENT_POSITION_FOLLOWING;
-}
-
-function findWrappingScrollable(node) {
-    for (let cur = node.parentNode; cur; cur = cur.parentNode)
-        if (cur.scrollHeight > cur.clientHeight)
-            return cur;
-}
-
-function getAllWrapping(node) {
-    let res = [node.ownerDocument.defaultView || window];
-    for (let cur = node.parentNode; cur; cur = cur.parentNode)
-        res.push(cur);
-    return res;
 }

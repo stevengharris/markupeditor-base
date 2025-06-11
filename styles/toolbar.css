@@ -5,11 +5,13 @@
   vertical-align: middle;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
-  position: relative;
+  position: fixed;
+  top: 0;
+  width: 100%;
   height: 38px;
   padding: 4px 8px;
-  color: black;
-  background: white;
+  color: blue;
+  background: rgba(250, 249, 246, 0.95);
   border-bottom: 1px solid lightgray;
   z-index: 10;
   -moz-box-sizing: border-box;
@@ -18,8 +20,8 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar {
-    color: white;
-    background: black;
+    color: rgb(250, 249, 246);
+    background: rgba(40, 40, 43, 0.9);
     border-bottom: 1px solid gray;
   }
 }
@@ -31,25 +33,26 @@
   cursor: pointer;
   margin-right: 4px;
   border-radius: 4px;
-  border: 1px solid black;
-  background: inherit;
-  fill: black;
+  border: 1px solid blue;
+  background: white;
+  fill: blue;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menuitem {
-    border: 1px solid white;
+    border: 1px solid blue;
+    background: black;
     fill: white;
   }
 }
 
 .Markup-menuitem-active {
   fill: white;
-  background: black;
+  background: blue;
 }
 @media (prefers-color-scheme: dark) {
    .Markup-menuitem-active {
-      fill: black;
-      background: white;
+      fill: white;
+      background: blue;
   }
 }
 
@@ -150,7 +153,7 @@
   position: absolute;
 }
 
-.Markup-menu-dropdown-indicator {
+.Markup-menu-dropdown-indicator, .Markup-menu-dropdown-icon-indicator{
   opacity: .6;
 }
 
