@@ -50,7 +50,7 @@
   background: blue;
 }
 @media (prefers-color-scheme: dark) {
-   .Markup-menuitem-active {
+  .Markup-menuitem-active {
       fill: white;
       background: blue;
   }

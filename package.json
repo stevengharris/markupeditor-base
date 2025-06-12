@@ -1,5 +1,5 @@
 {
-  "name": "markupeditor",
+  "name": "markupeditor-base",
   "version": "0.8",
   "main": "dist/markupeditor.cjs.js",
   "module": "dist/markupeditor.esm.js",
