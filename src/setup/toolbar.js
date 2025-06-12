@@ -1,21 +1,15 @@
 /**
- * The ToolbarView contains the `content` that is passed to it. The content is an array (or nested arrays) of 
- * MenuItems, which the ToolbarView renders using `renderGrouped`. The contents passed to the
- * ToolbarView is defined in `menu.js` using `buildMenuItems` by passing the config that defines what is 
- * visible (the toolbar itself and the subtoolbars within it), and what MenuItems are added to each 
- * subtoolbar. Note that the ToolbarView uses a class and label to display each item, as defined in 
- * `menu.js`. The class and labels are specific to Google's Material Design (https://fonts.google.com/icons)
- * and the web page displaying the toolbar will need to load `material-icons-outlines.woff2`.
- * 
- * Right now the markupeditorjs holds its configuration in a global `markupconfig` which is referenced in 
- * `main.js`. This object needs to be set up before a MarkupEditor web page is launched, which I'm currently 
- * doing in a script that is loaded before markupeditor.js. You can't see that in markupeditorjs, but you 
- * can see it in markupeditorvs, the VSCode extension, in the webview panel set up done in markupCoordinator.js.
- * It's a bit odd that the JavaScript MarkupEditor package references something like `markupconfig` but itself
- * never defines it. I might have to do something about that in the future, but the intent is that something 
- * somewhere creates an actual web page that holds onto the MarkupEditor and loads all of its scripts. That 
- * thing is what controls and defines the config. In the VSCode extension, that is done via the standard 
- * VSCode extension settings mechanisms. In Swift, it is done in the Swift using the MarkupEditor settings.
+ * The markupeditor-base holds its configuration in a global `markupConfig` which is referenced in 
+ * `main.js`. This object needs to be set up before a MarkupEditor web page is launched. This needs to be  
+ * done as a script before `dist/markupeditor.umd.js` is loaded. You can see this in the `demo/index.html`, and
+ * in markupeditor-vs, the VSCode extension, in the webview panel setup done in `markupCoordinator.js`.
+ * It's a bit odd that the markupeditor-base package references something like `markupConfig` but itself
+ * never defines it. The intent is that something external creates an actual web page that holds onto the
+ * MarkupEditor and loads all of its scripts - like `demo/index.html` does in the simplest case. That external
+ * thing is what controls and defines the `markupConfig`. In the VSCode extension, that is done via the standard 
+ * VSCode extension settings mechanisms. In Swift, it is done using the MarkupEditor settings. In the
+ * markupeditor-base demo, the global `markupConfig` exists but is `undefined`, which results in `main.js` using
+ * the value returned from `MenuConfig.standard()`.
  */
 
 import crel from "crelt"
