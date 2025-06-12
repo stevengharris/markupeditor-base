@@ -19,6 +19,7 @@
 import crel from "crelt"
 import {NodeSelection} from "prosemirror-state"
 import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
+import {undo, redo} from "prosemirror-history"
 import {
   wrapInListCommand, 
   insertTableCommand,
@@ -267,7 +268,8 @@ class DropdownSubmenu {
  */
 export function buildMenuItems(config, schema) {
   let itemGroups = [];
-  let { insertBar, formatBar, styleMenu, styleBar } = config.visibility;
+  let { correctionBar, insertBar, formatBar, styleMenu, styleBar } = config.visibility;
+  if (correctionBar) itemGroups.push(correctionBarItems());
   if (insertBar) itemGroups.push(insertBarItems(config, schema));
   if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
   if (styleBar) itemGroups.push(styleBarItems(config, schema));
@@ -359,6 +361,33 @@ function renderDropdownItems(items, view) {
         updates.push(update);
     }
     return { dom: rendered, update: combineUpdates(updates, rendered) };
+}
+
+/* Correction Bar (Undo, Redo) */
+
+function correctionBarItems() {
+  let items = [];
+  items.push(undoItem({ title: 'Undo', icon: icons.undo }));
+  items.push(redoItem({ title: 'Redo', icon: icons.redo }));
+  return items;
+}
+
+function undoItem(options) {
+  let passedOptions = {
+    enable: (state) => undo(state)
+  }
+  for (let prop in options)
+    passedOptions[prop] = options[prop];
+  return cmdItem(undo, passedOptions)
+}
+
+function redoItem(options) {
+  let passedOptions = {
+    enable: (state) => redo(state)
+  }
+  for (let prop in options)
+    passedOptions[prop] = options[prop];
+  return cmdItem(redo, passedOptions)
 }
 
 /* Insert Bar (Link, Image, Table) */
