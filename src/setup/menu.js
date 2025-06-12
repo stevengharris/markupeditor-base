@@ -545,8 +545,8 @@ function styleBarItems(config, schema) {
   let items = [];
   let { list, dent } = config.styleBar;
   if (list) {
-    items.push(toggleListItem(schema, schema.nodes.ordered_list, { title: 'Toggle numbered list', icon: icons.orderedList }))
     items.push(toggleListItem(schema, schema.nodes.bullet_list, { title: 'Toggle bulleted list', icon: icons.bulletList }))
+    items.push(toggleListItem(schema, schema.nodes.ordered_list, { title: 'Toggle numbered list', icon: icons.orderedList }))
   }
   if (dent) {
     items.push(indentItem(schema.nodes.blockquote, { title: 'Increase indent', icon: icons.blockquote }))
