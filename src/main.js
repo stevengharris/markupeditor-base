@@ -141,7 +141,7 @@ export {
  * 
  * Note that `markupConfig` is a global that must already exist, but which can be undefined.
  * This is typically accomplished by setting it in the first script loaded into the view, 
- * something as simple as `<script>var markupConfig;</script>'. For an environment like VSCode, 
+ * something as simple as `<script>let markupConfig;</script>'. For an environment like VSCode, 
  * which has a rich configuration capability, it can be set using `vscode.getConfiguration()`.
  * 
  * If `markupConfig` is undefined, the "standard" config is supplied by `MenuConfig.standard()`.
