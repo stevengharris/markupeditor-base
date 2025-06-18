@@ -33,11 +33,12 @@ import {
   isIndented,
   isTableSelected,
   paragraphStyle,
-  tableHasHeader
+  tableHasHeader,
+  searchForCommand
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
-const prefix = "Markup"
+let prefix;
 
 /**
 An icon or label that, when clicked, executes a command.
@@ -115,7 +116,6 @@ class Dropdown {
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu";
     this.options = options;
-    this.options = options || {};
     this.content = Array.isArray(content) ? content : [content];
   }
   /**
@@ -262,22 +262,43 @@ class DropdownSubmenu {
  * Build an array of MenuItems and nested MenuItems that comprise the content of the Toolbar 
  * based on the `config` and `schema`.
  * 
- * @param {Object} config The configuration of the menu
- * @param {Schema} schema The schema that holds node and mark types
+ * This is the first entry point for menu that is called from `setup/index.js', returning the 
+ * contents that `renderGrouped` can display. It also sets the prefix used locally.
+ * 
+ * @param {string}  basePrefix  The prefix used when building style strings, "Markup" by default.
+ * @param {Object}  config      The configuration of the menu.
+ * @param {Schema}  schema      The schema that holds node and mark types.
  * @returns [MenuItem]    The array of MenuItems or nested MenuItems used by `renderGrouped`.
  */
-export function buildMenuItems(config, schema) {
+export function buildMenuItems(basePrefix, config, schema) {
+  prefix = basePrefix;
   let itemGroups = [];
-  let { correctionBar, insertBar, formatBar, styleMenu, styleBar } = config.visibility;
+  let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.visibility;
   if (correctionBar) itemGroups.push(correctionBarItems());
   if (insertBar) itemGroups.push(insertBarItems(config, schema));
   if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
   if (styleBar) itemGroups.push(styleBarItems(config, schema));
   if (formatBar) itemGroups.push(formatItems(config, schema));
+  if (search) itemGroups.push([searchItem()])
   return itemGroups;
 }
 
 /* Utility functions */
+
+/**
+ * Return the toolbar div in `view`
+ * @param {EditorView} view 
+ * @returns {HTMLDivElement}  The toolbar div in the view
+ */
+function getToolbar(view) {
+  let toolbars = view.dom.parentElement.getElementsByClassName(prefix + "-toolbar");
+  return (toolbars.length == 1) ? toolbars[0] : null;
+}
+
+function getSearchbar(view) {
+  let searchbars = view.dom.parentElement.getElementsByClassName(prefix + "-searchbar");
+  return (searchbars.length == 1) ? searchbars[0] : null;
+}
 
 /**
  * 
@@ -359,8 +380,47 @@ function renderDropdownItems(items, view) {
         let { dom, update } = items[i].render(view);
         rendered.push(crel("div", { class: prefix + "-menu-dropdown-item" }, dom));
         updates.push(update);
-    }
+    };
     return { dom: rendered, update: combineUpdates(updates, rendered) };
+}
+
+/* Search */
+
+function searchItem() {
+  let options = {
+    enable: () => true,
+    // TODO: Show active when searching
+    title: 'Open search', 
+    icon: icons.search
+  };
+  return cmdItem(toggleSearch, options)
+}
+
+function toggleSearch(state, dispatch, view) {
+  let searchBar = getSearchbar(view);
+  if (searchBar) {
+    searchBar.parentElement.removeChild(searchBar);
+  } else {
+    addSearchbar(view);
+  } 
+}
+
+function addSearchbar(view) {
+  let toolbar = getToolbar(view);
+  if (!toolbar) return;
+  let input = crel("input", {type: 'search', placeholder: 'Search document...'});
+  input.addEventListener("keypress", e => {
+    if (e.key === 'Enter') {
+      let direction = (e.shiftKey) ? 'backward' : 'forward';
+      let text = e.target.value;
+      let command = searchForCommand(text, direction, true);
+      command(view.state, view.dispatch, view);
+    }
+  });
+  let searchbar = crel("div", { class: prefix + "-searchbar" }, input);
+  //let button = crel("button", "Search");
+  //searchbar.appendChild(button);
+  toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
 }
 
 /* Correction Bar (Undo, Redo) */
@@ -850,6 +910,10 @@ export const icons = {
     // <span class="material-icons-outlined">format_indent_decrease</span>
     svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M120-120v-80h720v80H120Zm320-160v-80h400v80H440Zm0-160v-80h400v80H440Zm0-160v-80h400v80H440ZM120-760v-80h720v80H120Zm160 440L120-480l160-160v320Z"/></svg>'
   },
+  search: {
+    // <span class="material-symbols-outlined">search</span>
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>'
+  }
 }
 
 function getIcon(root, icon) {

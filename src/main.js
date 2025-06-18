@@ -76,7 +76,6 @@ import {
  * The public MarkupEditor API callable from Swift as "MU.<function name>"
  */
 export {
-  MenuConfig,
   setTopLevelAttributes,
   setMessageHandler,
   loadUserFiles,

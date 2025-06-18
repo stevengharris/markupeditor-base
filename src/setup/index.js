@@ -14,8 +14,6 @@ import {buildInputRules} from "./inputrules"
 
 import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive} from "../markup"
 
-export {buildKeymap, buildInputRules}
-
 /**
  * The tablePlugin handles decorations that add CSS styling 
  * for table borders.
@@ -154,6 +152,7 @@ const placeholderPlugin = new Plugin({
 //     history:: ?bool
 //     Set to false to disable the history plugin.
 export function markupSetup(options) {
+  let prefix = "Markup"
   let plugins = [
     buildInputRules(options.schema),
     keymap(buildKeymap(options.schema, options.mapKeys)),
@@ -164,8 +163,8 @@ export function markupSetup(options) {
 
   // Only show the toolbar if options enable it
   if (options.config?.visibility.toolbar) {
-    let content = buildMenuItems(options.config, options.schema);
-    plugins.push(toolbar(content));
+    let content = buildMenuItems(prefix, options.config, options.schema);
+    plugins.push(toolbar(prefix, content));
   }
 
   if (options.history !== false) plugins.push(history())
@@ -181,7 +180,8 @@ export function markupSetup(options) {
 
   // Add the plugins that performs search, decorates matches, and indicates searchmode
   plugins.push(search())
-  plugins.push(searchModePlugin)
+  //TODO: Is this plugin needed when used with Swift. It is not for the browser.
+  //plugins.push(searchModePlugin)
 
   return plugins;
 }

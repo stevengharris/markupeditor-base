@@ -5,7 +5,7 @@ export class MenuConfig {
     this.formatBar = formatBar
     this.styleMenu = styleMenu
     this.styleBar = styleBar
-    this.tableMenu = false
+    this.tableMenu = tableMenu
   }
 
   static standard() {
@@ -21,18 +21,23 @@ export class MenuConfig {
 }
 
 class VisibilityConfig {
-  constructor(toolbar, correctionBar, insertBar, formatBar, styleMenu, styleBar, tableMenu) {
+  constructor(toolbar, correctionBar, insertBar, styleMenu, styleBar, formatBar, tableMenu, search) {
     this.toolbar = toolbar
     this.correctionBar = correctionBar
     this.insertBar = insertBar
-    this.formatBar = formatBar
     this.styleMenu = styleMenu
     this.styleBar = styleBar
+    this.formatBar = formatBar
     this.tableMenu = tableMenu
+    this.search = search
   }
 
+  /**
+   * Return the standard VisibilityConfig, which shows everything except undo/redo and search.
+   * @returns {VisibilityConfig}
+   */
   static standard() {
-    return new VisibilityConfig(true, false, true, true, true, true, true)
+    return new VisibilityConfig(true, false, true, true, true, true, true, true)
   }
 }
 

@@ -16,17 +16,9 @@ import crel from "crelt"
 import {Plugin} from "prosemirror-state"
 import {renderGrouped} from  "./menu"
 
-const prefix = "Markup"
-
-function isIOS() {
-  if (typeof navigator == "undefined") return false
-  let agent = navigator.userAgent
-  return !/Edge\/\d/.test(agent) && /AppleWebKit/.test(agent) && /Mobile\/\w+/.test(agent)
-}
-
-export function toolbar(content) {
+export function toolbar(prefix, content) {
   let view = function view(editorView) {
-    let toolbarView = new ToolbarView(editorView, content)
+    let toolbarView = new ToolbarView(editorView, prefix, content)
     return toolbarView;
   }
   return new Plugin({view})
@@ -34,18 +26,14 @@ export function toolbar(content) {
 
 class ToolbarView {
 
-  constructor(editorView, content) {
+  constructor(editorView, prefix, content) {
     this.prefix = prefix + "-toolbar";
     this.editorView = editorView;
     this.content = content;
     this.spacer = null;
-    this.maxHeight = 0;
-    this.widthForMaxHeight = 0;
-    this.floating = false;
-    this.scrollHandler = null;
     this.root = editorView.root
     this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
-    this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix}))
+    this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
     this.menu.className = this.prefix
 
     if (editorView.dom.parentNode)

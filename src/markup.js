@@ -705,14 +705,47 @@ class Searcher {
         };
 
         // Search for text and return the result containing from and to that was found
-        result = this._searchInDirection(direction);
+        result = this._searchInDirection(direction, view.state, view.dispatch);
         if (!result.from) {
-            this.deactivate();
+            this.deactivate(view);
         } else {
             this._direction = direction;
-            if (searchOnEnter) { this._activate() };    // Only intercept Enter if searchOnEnter is explicitly passed as true
+            if (searchOnEnter) { this._activate(view) };    // Only intercept Enter if searchOnEnter is explicitly passed as true
         }
         return result;
+    };
+
+    searchForCommand(text, direction='forward', searchOnEnter=false) {
+        const commandAdapter = (state, dispatch, view) => {
+            let result = {};
+            if (!text || (text.length === 0)) {
+                this.cancel()
+                return result;
+            }
+            text = text.replaceAll('&quot;', '"')       // Fix the hack for quotes in the call
+            text = text.replaceAll('&apos;', "'")       // Fix the hack for apostrophes in the call
+
+            // Rebuild the query if forced or if the search string changed
+            if (this._forceIndexing || (text !== this._searchString)) {
+                this._searchString = text;
+                this._isActive = searchOnEnter
+                this._buildQuery();
+                const transaction = setSearchState(state.tr, this._searchQuery);
+                dispatch(transaction);             // Show all the matches
+            };
+
+            // Search for text and return the result containing from and to that was found
+            result = this._searchInDirection(direction, state, dispatch);
+            if (!result.from) {
+                this.deactivate(view);
+            } else {
+                this._direction = direction;
+                if (searchOnEnter) { this._activate(view) };    // Only intercept Enter if searchOnEnter is explicitly passed as true
+            }
+            return result;
+        };
+
+        return commandAdapter;
     };
     
     /**
@@ -732,7 +765,7 @@ class Searcher {
     /**
      * Activate search mode where Enter is being intercepted
      */
-    _activate() {
+    _activate(view) {
         this._isActive = true;
         view.dom.classList.add("searching");
         _callback('activateSearch');
@@ -741,7 +774,7 @@ class Searcher {
     /**
      * Deactivate search mode where Enter is being intercepted
      */
-    deactivate() {
+    deactivate(view) {
         if (!this.isActive) return;
         view.dom.classList.remove("searching");
         this._isActive = false;
@@ -763,24 +796,24 @@ class Searcher {
      * Search forward (might be from Enter when isActive).
      */
     searchForward() {
-        return this._searchInDirection('forward');
+        return this._searchInDirection('forward', view.state, view.dispatch);
     };
     
     /*
      * Search backward (might be from Shift+Enter when isActive).
      */
     searchBackward() {
-        return this._searchInDirection('backward');
+        return this._searchInDirection('backward', view.state, view.dispatch);
     }
     
     /*
      * Search in the specified direction.
      */
-    _searchInDirection(direction) {
+    _searchInDirection(direction, state, dispatch) {
         if (this._searchString && (this._searchString.length > 0)) {
-            if (direction == "forward") { findNext(view.state, view.dispatch)} else { findPrev(view.state, view.dispatch)};
+            if (direction == "forward") { findNext(state, dispatch)} else { findPrev(state, dispatch)};
             _callback('searched')
-            return {from: view.state.selection.from, to: view.state.selection.to};
+            return {from: state.selection.from, to: state.selection.to};
         };
         return {}
     };
@@ -1011,11 +1044,15 @@ export function searchFor(text, direction, activate) {
     searcher.searchFor(text, direction, searchOnEnter);
 };
 
+export function searchForCommand(text, direction, activate) {
+    return searcher.searchForCommand(text, direction, activate);
+}
+
 /**
  * Deactivate search mode, stop intercepting Enter to search.
  */
 export function deactivateSearch() {
-    searcher.deactivate();
+    searcher.deactivate(view);
 };
 
 /**

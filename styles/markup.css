@@ -252,3 +252,18 @@ img {
     position: absolute;
     color: #ccc;
 }
+
+/* Classes set by prosemirror-search module, modified for MarkupEditor */
+/* Note the dark and light mode are the same */
+
+.ProseMirror-search-match {
+  background-color: yellow;
+  color: black;
+}
+
+.ProseMirror-active-search-match {
+  background-color: orange;
+  color: black;
+  outline: 1px orangered solid;
+  z-index: 2;
+}
