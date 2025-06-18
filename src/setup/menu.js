@@ -290,14 +290,20 @@ export function buildMenuItems(basePrefix, config, schema) {
  * @param {EditorView} view 
  * @returns {HTMLDivElement}  The toolbar div in the view
  */
-function getToolbar(view) {
-  let toolbars = view.dom.parentElement.getElementsByClassName(prefix + "-toolbar");
-  return (toolbars.length == 1) ? toolbars[0] : null;
+function getToolbar() {
+  return document.getElementById(prefix + "-toolbar");
 }
 
-function getSearchbar(view) {
-  let searchbars = view.dom.parentElement.getElementsByClassName(prefix + "-searchbar");
-  return (searchbars.length == 1) ? searchbars[0] : null;
+function getSearchbar() {
+  return document.getElementById(prefix + "-searchbar");
+}
+
+function getSpacer() {
+  return document.getElementById(prefix + "-toolbar-spacer")
+}
+
+function searchbarShowing() {
+  return prefix + "-searchbar-showing"
 }
 
 /**
@@ -397,9 +403,10 @@ function searchItem() {
 }
 
 function toggleSearch(state, dispatch, view) {
-  let searchBar = getSearchbar(view);
-  if (searchBar) {
-    searchBar.parentElement.removeChild(searchBar);
+  let searchbar = getSearchbar();
+  if (searchbar) {
+    searchbar.parentElement.removeChild(searchbar);
+    setClass(getSpacer(), searchbarShowing(), false)
   } else {
     addSearchbar(view);
   } 
@@ -417,10 +424,12 @@ function addSearchbar(view) {
       command(view.state, view.dispatch, view);
     }
   });
-  let searchbar = crel("div", { class: prefix + "-searchbar" }, input);
+  let idClass = prefix + "-searchbar";
+  let searchbar = crel("div", { class: idClass, id: idClass}, input);
   //let button = crel("button", "Search");
   //searchbar.appendChild(button);
   toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
+  setClass(getSpacer(), searchbarShowing(), true);
 }
 
 /* Correction Bar (Undo, Redo) */

@@ -4,9 +4,10 @@
   display: inline-block;
   font-size: 24px;
   vertical-align: middle;
+  position: fixed;
+  top: 38px;
   width: 100%;
-  height: 38px;
-  margin-top: 2px;
+  height: 35px;
   margin-bottom: 2px;
   color: blue;
   background: rgba(250, 249, 246, 0.95);
@@ -16,9 +17,16 @@
   box-sizing: border-box;
   overflow: visible;
 }
+@media (prefers-color-scheme: dark) {
+  .Markup-searchbar {
+    color: rgb(250, 249, 246);
+    background: rgba(40, 40, 43, 0.9);
+    border-bottom: 1px solid gray;
+  }
+}
 
 .Markup-searchbar input {
-  -webkit-appearance: none;
+  -webkit-appearance: none;   /* Otherwise, in Safari/WebKit, the height is small and fixed */
   font-size: 18px;
   height: 30px;
   width: calc(100% - 16px);
@@ -28,6 +36,21 @@
   box-sizing: border-box;
   border: 1px solid lightgray;
   border-radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-searchbar input {
+    color: rgb(250, 249, 246);
+    background: rgb(40, 40, 43);
+    border: 1px solid gray;
+  }
+}
+
+.Markup-toolbar-spacer {
+  height: 38px;
+}
+
+.Markup-searchbar-showing {
+  height: 76px;
 }
 
 /*
