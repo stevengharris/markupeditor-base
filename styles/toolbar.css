@@ -26,7 +26,7 @@
 }
 
 .Markup-searchbar input {
-  -webkit-appearance: none;   /* Otherwise, in Safari/WebKit, the height is small and fixed */
+  appearance: none; /* Otherwise, in Safari/WebKit, the height is small and fixed */
   font-size: 18px;
   height: 30px;
   width: calc(100% - 16px);
