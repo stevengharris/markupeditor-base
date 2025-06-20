@@ -34,7 +34,8 @@ import {
   isTableSelected,
   paragraphStyle,
   tableHasHeader,
-  searchForCommand
+  searchForCommand,
+  deactivateSearch
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
@@ -82,6 +83,7 @@ class MenuItem {
       if (!dom.classList.contains(prefix + "-disabled"))
         spec.run(view.state, view.dispatch, view, e);
     });
+
     function update(state) {
       if (spec.select) {
         let selected = spec.select(state);
@@ -259,6 +261,77 @@ class DropdownSubmenu {
 }
 
 /**
+ * Represents the search item in the toolbar, which hides/shows the search bar and maintains its state.
+ */
+class SearchItem {
+
+  constructor() {
+    let options = {
+      enable: (state) => { return true },
+      active: (state) => { return this.isActive() },
+      title: 'Open search',
+      icon: icons.search
+    };
+    this.item = cmdItem(this.toggleSearch.bind(this), options)
+    this.direction = 'forward';
+    this.text = '';
+  }
+
+  isActive() {
+    return getSearchbar() != null;
+  }
+
+  toggleSearch(state, dispatch, view) {
+    if (this.isActive()) {
+      this.hideSearchbar()
+    } else {
+      this.showSearchbar(state, dispatch, view);
+    }
+    this.update(state);
+  }
+
+  hideSearchbar() {
+    let searchbar = getSearchbar();
+    searchbar.parentElement.removeChild(searchbar);
+    setClass(getSpacer(), searchbarShowing(), false);
+    deactivateSearch();
+  }
+
+  showSearchbar(state, dispatch, view) {
+    let toolbar = getToolbar();
+    if (!toolbar) return;
+    let input = crel('input', { type: 'search', placeholder: 'Search document...' });
+    input.addEventListener('keydown', e => {  // Use keydown because 'input' isn't triggered for Enter
+      if (e.key === 'Enter') {
+        this.direction = (e.shiftKey) ? 'backward' : 'forward';
+        let command = searchForCommand(this.text, this.direction, true);  // Search and put in "search mode"
+        command(view.state, view.dispatch, view);
+      }
+    });
+    input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
+      this.text = e.target.value;
+      if (this.text.length === 0) {
+        let command = searchForCommand(this.text, this.direction, false);   // Search without setting "search mode"
+        command(view.state, view.dispatch, view);
+      }
+    });
+    let idClass = prefix + "-searchbar";
+    let searchbar = crel("div", { class: idClass, id: idClass }, input);
+    //let button = crel("button", "Search");
+    //searchbar.appendChild(button);
+    toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
+    setClass(getSpacer(), searchbarShowing(), true);
+  }
+
+  render(view) {
+    let {dom, update} = this.item.render(view);
+    this.update = update;
+    return {dom, update};
+  }
+
+}
+
+/**
  * Build an array of MenuItems and nested MenuItems that comprise the content of the Toolbar 
  * based on the `config` and `schema`.
  * 
@@ -279,7 +352,7 @@ export function buildMenuItems(basePrefix, config, schema) {
   if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
   if (styleBar) itemGroups.push(styleBarItems(config, schema));
   if (formatBar) itemGroups.push(formatItems(config, schema));
-  if (search) itemGroups.push([searchItem()])
+  if (search) itemGroups.push([new SearchItem()])
   return itemGroups;
 }
 
@@ -388,48 +461,6 @@ function renderDropdownItems(items, view) {
         updates.push(update);
     };
     return { dom: rendered, update: combineUpdates(updates, rendered) };
-}
-
-/* Search */
-
-function searchItem() {
-  let options = {
-    enable: () => true,
-    // TODO: Show active when searching
-    title: 'Open search', 
-    icon: icons.search
-  };
-  return cmdItem(toggleSearch, options)
-}
-
-function toggleSearch(state, dispatch, view) {
-  let searchbar = getSearchbar();
-  if (searchbar) {
-    searchbar.parentElement.removeChild(searchbar);
-    setClass(getSpacer(), searchbarShowing(), false)
-  } else {
-    addSearchbar(view);
-  } 
-}
-
-function addSearchbar(view) {
-  let toolbar = getToolbar(view);
-  if (!toolbar) return;
-  let input = crel("input", {type: 'search', placeholder: 'Search document...'});
-  input.addEventListener("keypress", e => {
-    if (e.key === 'Enter') {
-      let direction = (e.shiftKey) ? 'backward' : 'forward';
-      let text = e.target.value;
-      let command = searchForCommand(text, direction, true);
-      command(view.state, view.dispatch, view);
-    }
-  });
-  let idClass = prefix + "-searchbar";
-  let searchbar = crel("div", { class: idClass, id: idClass}, input);
-  //let button = crel("button", "Search");
-  //searchbar.appendChild(button);
-  toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
-  setClass(getSpacer(), searchbarShowing(), true);
 }
 
 /* Correction Bar (Undo, Redo) */

@@ -730,12 +730,27 @@ class Searcher {
                 this._searchString = text;
                 this._isActive = searchOnEnter
                 this._buildQuery();
-                const transaction = setSearchState(state.tr, this._searchQuery);
-                dispatch(transaction);             // Show all the matches
+                const transaction = setSearchState(view.state.tr, this._searchQuery);
+                view.dispatch(transaction);             // Show all the matches
             };
 
             // Search for text and return the result containing from and to that was found
-            result = this._searchInDirection(direction, state, dispatch);
+            //
+            // TODO: Fix bug that occurs when searching for next or prev when the current selection 
+            //          is unique within the doc. The `nextMatch` in prosemirror-search when failing,  
+            //          should set the to value to `Math.min(curTo, range.to))` or it misses the 
+            //          existing selection. Similarly on `prevMatch`. This needs to be done in a 
+            //          patch of prosemirror-search. For example:
+            //
+            //  function nextMatch(search, state, wrap, curFrom, curTo) {
+            //      let range = search.range || { from: 0, to: state.doc.content.size };
+            //      let next = search.query.findNext(state, Math.max(curTo, range.from), range.to);
+            //      if (!next && wrap)
+            //          next = search.query.findNext(state, range.from, Math.min(curTo, range.to));
+            //      return next;
+            //  }
+
+            result = this._searchInDirection(direction, view.state, view.dispatch);
             if (!result.from) {
                 this.deactivate(view);
             } else {
@@ -775,7 +790,7 @@ class Searcher {
      * Deactivate search mode where Enter is being intercepted
      */
     deactivate(view) {
-        if (!this.isActive) return;
+        //if (!this.isActive) return;
         view.dom.classList.remove("searching");
         this._isActive = false;
         this._searchQuery = new SearchQuery({search: "", caseSensitive: this._caseSensitive});
@@ -788,7 +803,7 @@ class Searcher {
      * Stop searchForward()/searchBackward() from being executed on Enter. Force reindexing for next search.
      */
     cancel() {
-        this.deactivate()
+        this.deactivate(view)
         this._resetQuery();
     };
     
