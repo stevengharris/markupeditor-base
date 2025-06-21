@@ -776,6 +776,14 @@ class Searcher {
     get isActive() {
         return this._isActive;
     };
+
+    get caseSensitive() {
+        return this._caseSensitive;
+    }
+
+    set caseSensitive(value) {
+        this._caseSensitive = value;
+    }
     
     /**
      * Activate search mode where Enter is being intercepted
@@ -1061,6 +1069,10 @@ export function searchFor(text, direction, activate) {
 
 export function searchForCommand(text, direction, activate) {
     return searcher.searchForCommand(text, direction, activate);
+}
+
+export function matchCase(caseSensitive) {
+    searcher.caseSensitive = caseSensitive;
 }
 
 /**

@@ -28,14 +28,15 @@ import {
   addHeaderCommand, 
   deleteTableAreaCommand,
   setBorderCommand,
+  searchForCommand,
   listTypeFor, 
   getListType, 
   isIndented,
   isTableSelected,
   paragraphStyle,
   tableHasHeader,
-  searchForCommand,
-  deactivateSearch
+  cancelSearch,
+  matchCase,
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
@@ -272,9 +273,9 @@ class SearchItem {
       title: 'Open search',
       icon: icons.search
     };
-    this.item = cmdItem(this.toggleSearch.bind(this), options)
-    this.direction = 'forward';
+    this.item = cmdItem(this.toggleSearch.bind(this), options);
     this.text = '';
+    this.caseSensitive = false;
   }
 
   isActive() {
@@ -294,7 +295,14 @@ class SearchItem {
     let searchbar = getSearchbar();
     searchbar.parentElement.removeChild(searchbar);
     setClass(getSpacer(), searchbarShowing(), false);
-    deactivateSearch();
+    this.matchCaseDom = null;
+    this.matchCaseItem = null;
+    this.stopSearching();
+  }
+
+  stopSearching() {
+    cancelSearch();
+    view.focus();
   }
 
   showSearchbar(state, dispatch, view) {
@@ -303,24 +311,83 @@ class SearchItem {
     let input = crel('input', { type: 'search', placeholder: 'Search document...' });
     input.addEventListener('keydown', e => {  // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
-        this.direction = (e.shiftKey) ? 'backward' : 'forward';
-        let command = searchForCommand(this.text, this.direction, true);  // Search and put in "search mode"
+        let direction = (e.shiftKey) ? 'backward' : 'forward';
+        let command = searchForCommand(this.text, direction);
         command(view.state, view.dispatch, view);
       }
     });
     input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
       this.text = e.target.value;
-      if (this.text.length === 0) {
-        let command = searchForCommand(this.text, this.direction, false);   // Search without setting "search mode"
-        command(view.state, view.dispatch, view);
-      }
+      // If the text is empty, then cancel the current search
+      if (this.text.length === 0) this.stopSearching();
     });
     let idClass = prefix + "-searchbar";
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
-    //let button = crel("button", "Search");
-    //searchbar.appendChild(button);
+    this.addSearchButtons(view, searchbar);
     toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
     setClass(getSpacer(), searchbarShowing(), true);
+  }
+
+  addSearchButtons(view, searchbar) {
+
+    // The searchBackward and searchForward buttons don't need updating
+    let searchBackward = this.searchBackwardCommand.bind(this);
+    let searchBackwardItem = cmdItem(searchBackward, {title: "Search backward", icon: icons.searchBackward});
+    let searchBackwardDom = searchBackwardItem.render(view).dom;
+    let searchBackwardSpan = crel("span", {class: prefix + "-menuitem"}, searchBackwardDom);
+    let searchForward = this.searchForwardCommand.bind(this);
+    let searchForwardItem = cmdItem(searchForward, {title: "Search forward", icon: icons.searchForward});
+    let searchForwardDom = searchForwardItem.render(view).dom;
+    let searchForwardSpan = crel("span", {class: prefix + "-menuitem"}, searchForwardDom);
+    let separator = crel("span", {class: prefix + "-menuseparator"})
+
+    // The toggleCase button needs to indicate the state of `caseSensitive`. Because the MenuItems we use 
+    // in the SearchBar are not in a separate Plugin, and they are not part of the toolbar content, 
+    // we need to handle updating "manually" by tracking and replacing the MenuItem and the dom it 
+    // produces using its `render` method.
+    let toggleMatchCase = this.toggleMatchCaseCommand.bind(this);
+    this.matchCaseItem = cmdItem(
+      toggleMatchCase, {
+        title: "Match case", 
+        icon: icons.matchCase,
+        enable: () => {return true},
+        active: () => {return this.caseSensitive}
+      }
+    );
+    let {dom, update} = this.matchCaseItem.render(view);
+    this.matchCaseDom = dom;
+    let matchCaseSpan = crel("span", {class: prefix + "-menuitem"}, this.matchCaseDom);
+
+    // Add the divs holding the MenuItems
+    searchbar.appendChild(searchBackwardSpan);
+    searchbar.appendChild(searchForwardSpan);
+    searchbar.appendChild(separator);
+    searchbar.appendChild(matchCaseSpan);
+
+    // Then update the matchCaseItem to indicate the current setting, which is held in this 
+    // SearchItem.
+    update(view.state)
+  }
+
+  searchForwardCommand(state, dispatch, view) {
+    let command = searchForCommand(this.text, "forward");
+    command(state, dispatch, view);
+  }
+
+  searchBackwardCommand(state, dispatch, view) {
+    let command = searchForCommand(this.text, "backward");
+    command(state, dispatch, view);
+  }
+
+  toggleMatchCaseCommand(state, dispatch, view) {
+    this.caseSensitive = !this.caseSensitive;
+    matchCase(this.caseSensitive);
+    if (view) {
+      let {dom, update} = this.matchCaseItem.render(view);
+      this.matchCaseDom.parentElement.replaceChild(dom, this.matchCaseDom);
+      this.matchCaseDom = dom;
+      update(state);
+    }
   }
 
   render(view) {
@@ -953,6 +1020,18 @@ export const icons = {
   search: {
     // <span class="material-symbols-outlined">search</span>
     svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>'
+  },
+  searchForward: {
+    // <span class="material-symbols-outlined">chevron_forward</span>
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>'
+  },
+  searchBackward: {
+    // <span class="material-symbols-outlined">chevron_backward</span>
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>'
+  },
+  matchCase: {
+    // <span class="material-symbols-outlined">match_case</span>
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="m131-252 165-440h79l165 440h-76l-39-112H247l-40 112h-76Zm139-176h131l-64-182h-4l-63 182Zm395 186q-51 0-81-27.5T554-342q0-44 34.5-72.5T677-443q23 0 45 4t38 11v-12q0-29-20.5-47T685-505q-23 0-42 9.5T610-468l-47-35q24-29 54.5-43t68.5-14q69 0 103 32.5t34 97.5v178h-63v-37h-4q-14 23-38 35t-53 12Zm12-54q35 0 59.5-24t24.5-56q-14-8-33.5-12.5T689-393q-32 0-50 14t-18 37q0 20 16 33t40 13Z"/></svg>'
   }
 }
 
