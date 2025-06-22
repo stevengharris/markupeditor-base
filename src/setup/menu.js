@@ -37,6 +37,8 @@ import {
   tableHasHeader,
   cancelSearch,
   matchCase,
+  matchCount,
+  matchIndex
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
 
@@ -300,26 +302,29 @@ class SearchItem {
     this.stopSearching();
   }
 
-  stopSearching() {
+  stopSearching(focus=true) {
     cancelSearch();
-    view.focus();
+    this.setStatus();
+    if (focus) view.focus();
   }
 
   showSearchbar(state, dispatch, view) {
     let toolbar = getToolbar();
     if (!toolbar) return;
     let input = crel('input', { type: 'search', placeholder: 'Search document...' });
-    input.addEventListener('keydown', e => {  // Use keydown because 'input' isn't triggered for Enter
+    input.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
         let direction = (e.shiftKey) ? 'backward' : 'forward';
-        let command = searchForCommand(this.text, direction);
-        command(view.state, view.dispatch, view);
+        if (direction == 'forward') {
+          this.searchForwardCommand(view.state, view.dispatch, view)
+        } else {
+          this.searchBackwardCommand(view.state, view.dispatch, view);
+        }
       }
     });
     input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
       this.text = e.target.value;
-      // If the text is empty, then cancel the current search
-      if (this.text.length === 0) this.stopSearching();
+      this.stopSearching(false);              // Stop searching but leave focus in the input field
     });
     let idClass = prefix + "-searchbar";
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
@@ -328,7 +333,25 @@ class SearchItem {
     setClass(getSpacer(), searchbarShowing(), true);
   }
 
+  setStatus() {
+    let count = matchCount();
+    let index = matchIndex();
+    if (this.status) this.status.innerHTML = this.statusString(count, index);
+  }
+
+  statusString(count, index) {
+    if (count == null) {
+      return "";
+    } else if (count == 0) {
+      return "No matches";
+    };
+    return `${index}/${count}`;
+  }
+
   addSearchButtons(view, searchbar) {
+    
+    // Overlay the status (index/count) on the input field
+    this.status = crel("span", {class: prefix + "-searchbar-status"});
 
     // The searchBackward and searchForward buttons don't need updating
     let searchBackward = this.searchBackwardCommand.bind(this);
@@ -359,6 +382,7 @@ class SearchItem {
     let matchCaseSpan = crel("span", {class: prefix + "-menuitem"}, this.matchCaseDom);
 
     // Add the divs holding the MenuItems
+    searchbar.appendChild(this.status)
     searchbar.appendChild(searchBackwardSpan);
     searchbar.appendChild(searchForwardSpan);
     searchbar.appendChild(separator);
@@ -372,17 +396,20 @@ class SearchItem {
   searchForwardCommand(state, dispatch, view) {
     let command = searchForCommand(this.text, "forward");
     command(state, dispatch, view);
+    this.setStatus();
   }
 
   searchBackwardCommand(state, dispatch, view) {
     let command = searchForCommand(this.text, "backward");
     command(state, dispatch, view);
+    this.setStatus();
   }
 
   toggleMatchCaseCommand(state, dispatch, view) {
     this.caseSensitive = !this.caseSensitive;
     matchCase(this.caseSensitive);
     if (view) {
+      this.stopSearching(false);
       let {dom, update} = this.matchCaseItem.render(view);
       this.matchCaseDom.parentElement.replaceChild(dom, this.matchCaseDom);
       this.matchCaseDom = dom;

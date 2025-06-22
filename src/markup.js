@@ -21,7 +21,7 @@ import {
     mergeCells,
     toggleHeaderRow,
 } from 'prosemirror-tables'
-import {SearchQuery, setSearchState, findNext, findPrev} from 'prosemirror-search'
+import {SearchQuery, setSearchState, findNext, findPrev, getMatchHighlights} from 'prosemirror-search'
 
 /**
  * The NodeView to support divs, as installed in main.js.
@@ -677,6 +677,8 @@ class Searcher {
         this._forceIndexing = true;     // true === rebuild foundRanges before use; false === use foundRanges\
         this._searchQuery = null        // the SearchQuery we use
         this._isActive = false;         // whether we are in "search mode", intercepting Enter/Shift-Enter
+        this._matchCount = null;        // the current number of matches, null when not active
+        this._matchIndex = null;        // the index into matches we are at in the current search, null when not active
     };
     
     /**
@@ -732,6 +734,8 @@ class Searcher {
                 this._buildQuery();
                 const transaction = setSearchState(view.state.tr, this._searchQuery);
                 view.dispatch(transaction);             // Show all the matches
+                this._setMatchCount(view.state);
+                this._forceIndexing = false;
             };
 
             // Search for text and return the result containing from and to that was found
@@ -754,6 +758,11 @@ class Searcher {
             if (!result.from) {
                 this.deactivate(view);
             } else {
+                let increment = (direction == 'forward') ? 1 : -1;
+                let index = this._matchIndex + increment;
+                let total = this._matchCount;
+                let zeroIndex = index % total;
+                this._matchIndex = (zeroIndex <= 0) ? total : zeroIndex;
                 this._direction = direction;
                 if (searchOnEnter) { this._activate(view) };    // Only intercept Enter if searchOnEnter is explicitly passed as true
             }
@@ -762,6 +771,19 @@ class Searcher {
 
         return commandAdapter;
     };
+
+    _setMatchCount(state) {
+        this._matchCount = getMatchHighlights(state).find().length;
+        this._matchIndex = 0;
+    }
+
+    get matchCount() {
+        return this._matchCount;
+    }
+
+    get matchIndex() {
+        return this._matchIndex;
+    }
     
     /**
      * Reset the query by forcing it to be recomputed at find time.
@@ -804,6 +826,8 @@ class Searcher {
         this._searchQuery = new SearchQuery({search: "", caseSensitive: this._caseSensitive});
         const transaction = setSearchState(view.state.tr, this._searchQuery);
         view.dispatch(transaction);
+        this._matchCount = null;
+        this._matchIndex = null;
         _callback('deactivateSearch');
     }
     
@@ -1087,6 +1111,14 @@ export function deactivateSearch() {
  */
 export function cancelSearch() {
     searcher.cancel()
+}
+
+export function matchCount() {
+    return searcher.matchCount;
+}
+
+export function matchIndex() {
+    return searcher.matchIndex;
 }
 
 /********************************************************************************

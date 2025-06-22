@@ -48,6 +48,23 @@
   }
 }
 
+.Markup-searchbar .Markup-searchbar-status {
+  position: absolute;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  white-space: nowrap;
+  font-size: 12px;
+  overflow-x: visible;
+  height: 28px;
+  top: 5px;
+  left: calc(100% - 13em);
+  width: 1px;
+  color: gray;
+  z-index: 20;
+  user-select: none;
+}
+
 .Markup-toolbar-spacer {
   height: 38px;
 }
