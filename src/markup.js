@@ -1,9 +1,3 @@
-/*
- Edit only from within MarkupEditor/rollup/src. After running "npm run build",
- the rollup/dist/markupmirror.umd.js is copied into MarkupEditor/Resources/markup.js.
- That file contains the combined ProseMirror code along with markup.js.
- */
-
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
 import {DOMParser, DOMSerializer, ResolvedPos} from 'prosemirror-model'
 import {toggleMark, wrapIn, lift} from 'prosemirror-commands'
@@ -68,7 +62,7 @@ export class DivView {
     }
 
     /**
-     * Return the rectangle of the button in a form that can be digested on the Swift side.
+     * Return the rectangle of the button in a form that can be digested consistently.
      * @param {HTMLButton} button 
      * @returns {Object} The button's (origin) x, y, width, and height.
      */
@@ -86,7 +80,7 @@ export class DivView {
 }
 
 /**
- * The NodeView to support resizable images and Swift callbacks, as installed in main.js.
+ * The NodeView to support resizable images and callbacks, as installed in main.js.
  * 
  * The ResizableImage instance holds onto the actual HTMLImageElement and deals with the styling,
  * event listeners, and resizing work.
@@ -226,7 +220,7 @@ class ResizableImage {
             this.imageLoaded(src)
         })
 
-        // Notify the Swift side of any errors. Use => style function to reference this.
+        // Notify of any errors. Use => style function to reference this.
         img.addEventListener('error', e => {
             this.imageLoaded(src)
         });
@@ -579,7 +573,7 @@ class ResizableImage {
     };
    
     /**
-     * Callback to Swift with the resizableImage data that allows us to put an image
+     * Callback with the resizableImage data that allows us to put an image
      * in the clipboard without all the browser shenanigans.
      */
     copyToClipboard() {
@@ -597,7 +591,7 @@ class ResizableImage {
 };
 
 /**
- * Define various arrays of tags used to represent concepts on the Swift side and internally.
+ * Define various arrays of tags used to represent MarkupEditor-specific concepts.
  *
  * For example, "Paragraph Style" is a MarkupEditor concept that doesn't map directly to HTML or CSS.
  */
@@ -615,8 +609,7 @@ const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', '
 export let selectedID = null;
 
 /**
- * MUError captures internal errors and makes it easy to communicate them to the
- * Swift side.
+ * MUError captures internal errors and makes it easy to communicate them externally.
  *
  * Usage is generally via the statics defined here, altho supplementary info can
  * be provided to the MUError instance when useful.
@@ -684,39 +677,22 @@ class Searcher {
     /**
      * Select and return the selection.from and selection.to in the direction that matches text.
      * 
-     * The text is passed from the Swift side with smartquote nonsense removed and '&quot;'
+     * In Swift, the text is passed with smartquote nonsense removed and '&quot;'
      * instead of quotes and '&apos;' instead of apostrophes, so that we can search on text
      * that includes them and pass them from Swift to JavaScript consistently.
      */
     searchFor(text, direction='forward', searchOnEnter=false) {
-        let result = {};
-        if (!text || (text.length === 0)) {
-            this.cancel()
-            return result;
-        }
-        text = text.replaceAll('&quot;', '"')       // Fix the hack for quotes in the call
-        text = text.replaceAll('&apos;', "'")       // Fix the hack for apostrophes in the call
-
-        // Rebuild the query if forced or if the search string changed
-        if (this._forceIndexing || (text !== this._searchString)) {
-            this._searchString = text;
-            this._isActive = searchOnEnter
-            this._buildQuery();
-            const transaction = setSearchState(view.state.tr, this._searchQuery);
-            view.dispatch(transaction);             // Show all the matches
-        };
-
-        // Search for text and return the result containing from and to that was found
-        result = this._searchInDirection(direction, view.state, view.dispatch);
-        if (!result.from) {
-            this.deactivate(view);
-        } else {
-            this._direction = direction;
-            if (searchOnEnter) { this._activate(view) };    // Only intercept Enter if searchOnEnter is explicitly passed as true
-        }
-        return result;
+        let command = searchForCommand(text, direction, searchOnEnter);
+        return command(view.state, view.dispatch, view);
     };
 
+    /**
+     * Return a command that will execute a search, typically assigned as a button action.
+     * @param {string}                  text            The text to search for.
+     * @param {'forward' | 'backward'}  direction       The direction to search in.
+     * @param {boolean}                 searchOnEnter   Whether to begin intercepting Enter in the view until cancelled.
+     * @returns {Command}                               A command that will execute a search for text given the state, dispatch, and view.
+     */
     searchForCommand(text, direction='forward', searchOnEnter=false) {
         const commandAdapter = (state, dispatch, view) => {
             let result = {};
@@ -987,9 +963,10 @@ export function loadUserFiles(scriptFile, cssFile) {
 };
 
 /**
- * Callback into Swift.
- * The message is handled by the WKScriptMessageHandler.
- * In our case, the WKScriptMessageHandler is the MarkupCoordinator,
+ * Callback to the message handler.
+ * In Swift, the message is handled by the WKScriptMessageHandler, 
+ * but in other cases, it might have been reassigned.
+ * In Swift, the WKScriptMessageHandler is the MarkupCoordinator,
  * and the userContentController(_ userContentController:didReceive:)
  * function receives message as a WKScriptMessage.
  *
@@ -1000,7 +977,7 @@ function _callback(message) {
 };
 
 /**
- * Callback into Swift to signal that input came-in, passing along the DIV ID
+ * Callback to signal that input came-in, passing along the DIV ID
  * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
  * callback means the change happened in the 'editor' div.
  */
@@ -1009,7 +986,7 @@ function _callbackInput() {
 };
 
 /**
- * Callback into Swift to signal that user-provided CSS and/or script files have
+ * Callback to signal that user-provided CSS and/or script files have
  * been loaded.
  */
 function _loadedUserFiles() {
@@ -1042,7 +1019,7 @@ function _loadUserCSSFile(file) {
 };
 
 /**
- * The 'ready' callback lets Swift know the editor and this js is properly loaded.
+ * The 'ready' callback indicated that the editor and this js is properly loaded.
  *
  * Note for history, replaced window.onload with this eventListener.
  */
@@ -1051,7 +1028,7 @@ window.addEventListener('load', function() {
 });
 
 /**
- * Capture all unexpected runtime errors in this script, report to the Swift side for debugging.
+ * Capture all unexpected runtime errors in this script, report for debugging.
  *
  * There is not any useful debug information for users, but as a developer,
  * you can place a break in this method to examine the call stack.
@@ -1064,37 +1041,54 @@ window.addEventListener('error', function(ev) {
 });
 
 /**
- * If the window is resized, let the Swift side know so that it can adjust its height tracking if needed.
+ * If the window is resized, call back so that the holder can adjust its height tracking if needed.
  */
 window.addEventListener('resize', function() {
     _callback('updateHeight');
 });
 
 /********************************************************************************
- * Public entry point for search.
- *
- * When text is empty, search is canceled.
- *
- * CAUTION: Search must be cancelled once started, or Enter will be intercepted
- * to mean searcher.searchForward()/searchBackward()
+ * Search
  */
 //MARK: Search
 
 /**
+ * Search for `text` in `direction`.
  * 
- * @param {string}  text        The string to search for in a case-insensitive manner
- * @param {string}  direction   Search direction, either `forward ` or `backward`.
- * @param {*}       activate    Set to true to activate "search mode", where Enter/Shift-Enter = Search forward/backward.
+ * When text is empty, search is canceled.
+ *
+ * CAUTION: When `activate` is "true", search must be cancelled once started, or Enter 
+ * will be intercepted to mean searcher.searchForward()/searchBackward()
+ * 
+ * @param {string}              text        The string to search for in a case-insensitive manner.
+ * @param {string}              direction   Search direction, either `forward ` or `backward`.
+ * @param {"true" | "false"}    activate    Set to "true" to activate "search mode", where Enter/Shift-Enter = Search forward/backward.
+ * @returns {Object}                        The {to: number, from: number} location of the match.
  */
 export function searchFor(text, direction, activate) {
     const searchOnEnter = activate === 'true';
-    searcher.searchFor(text, direction, searchOnEnter);
+    let command = searchForCommand(text, direction, searchOnEnter);
+    return command(view.state, view.dispatch, view);
 };
 
+/**
+ * Return the command that will execute search for `text` in `direction when provided with the 
+ * view.state, view.dispatch, and view.
+ *
+ * @param {string}              text        The string to search for in a case-insensitive manner
+ * @param {string}              direction   Search direction, either `forward ` or `backward`.
+ * @param {"true" | "false"}    activate    Set to "true" to activate "search mode", where Enter/Shift-Enter = Search forward/backward.
+ * @returns {Command}                       The command that can be executed to return the location of the match.
+ */
 export function searchForCommand(text, direction, activate) {
     return searcher.searchForCommand(text, direction, activate);
 }
 
+/**
+ * Set whether searches will be case sensitive or not.
+ * 
+ * @param {boolean} caseSensitive 
+ */
 export function matchCase(caseSensitive) {
     searcher.caseSensitive = caseSensitive;
 }
@@ -1113,10 +1107,21 @@ export function cancelSearch() {
     searcher.cancel()
 }
 
+/**
+ * Return the number of matches in the current search or null if search has not yet been initiated.
+ * 
+ * @returns {number | null }
+ */
 export function matchCount() {
     return searcher.matchCount;
 }
 
+/**
+ * Return the index of the match in the current search, starting at the first match which began 
+ * at the selection point, or null if search has not yet been initiated.
+ * 
+ * @returns {number | null }
+ */
 export function matchIndex() {
     return searcher.matchIndex;
 }
@@ -1841,7 +1846,6 @@ export function setStyle(style) {
 
 /**
  * Find/verify the oldStyle for the selection and replace it with newStyle.
- * Replacement for execCommand(formatBlock).
  * @deprecated Use setStyle
  * @param {String}  oldStyle    One of the styles P or H1-H6 that exists at selection.
  * @param {String}  newStyle    One of the styles P or H1-H6 to replace oldStyle with.
@@ -2000,7 +2004,7 @@ function _getListType() {
 
 /**
  * Return the NodeType corresponding to `listType`, else null.
- * @param {"UL" | "OL" | String} listType The Swift-side String corresponding to the NodeType
+ * @param {"UL" | "OL" | String} listType The String corresponding to the NodeType
  * @returns {NodeType | null}
  */
 export function nodeTypeFor(listType, schema) {
@@ -2015,7 +2019,7 @@ export function nodeTypeFor(listType, schema) {
 
 /**
  * Return the String corresponding to `nodeType`, else null.
- * @param {NodeType} nodeType The NodeType corresponding to the Swift-side String
+ * @param {NodeType} nodeType The NodeType corresponding to the String
  * @returns {'UL' | 'OL' | null}
  */
 export function listTypeFor(nodeType, schema) {
@@ -2355,7 +2359,7 @@ function _cleanUpSpansDivsWithin(node, type, removed) {
 /**
  * Populate a dictionary of properties about the current selection
  * and return it in a JSON form. This is the primary means that the
- * Swift side finds out what the selection is in the document, so we
+ * find out what the selection is in the document, so we
  * can tell if the selection is in a bolded word or a list or a table, etc.
  *
  * @return {String}      The stringified dictionary of selectionState.
@@ -2560,7 +2564,7 @@ function _getImageAttributes() {
  * In the MarkupEditor, if there is a header, it is always colspanned across the number 
  * of columns, and normal rows are never colspanned.
  *
- * @returns {Object}   An object with properties populated that are consumable in Swift.
+ * @returns {Object}   An object with properties populated.
  */
 function _getTableAttributes(state) {
     const viewState = state ?? view.state;
@@ -2623,7 +2627,7 @@ function _getTableAttributes(state) {
 /**
  * Return the paragraph style at the selection.
  *
- * @return {String}   {Tag name | 'Multiple'} that represents the selected paragraph style on the Swift side.
+ * @return {String}   {Tag name | 'Multiple'} that represents the selected paragraph style.
  */
 function _getParagraphStyle() {
     return paragraphStyle(view.state)
@@ -2643,7 +2647,7 @@ export function paragraphStyle(state) {
 
 /**
  * 
- * @param {Node} node The node we want the Swift-side paragraph style for
+ * @param {Node} node The node we want the paragraph style for
  * @returns {String}    { "P" | "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | null }
  */
 function _paragraphStyleFor(node) {
@@ -2685,14 +2689,14 @@ function _getIndented(state) {
 };
 
 /**
- * Report a selection change to the Swift side.
+ * Report a selection change.
  */
 export function selectionChanged() {
     _callback('selectionChanged')
 }
 
 /**
- * Report a click to the Swift side.
+ * Report a click.
  */
 export function clicked() {
     deactivateSearch()
@@ -2700,7 +2704,7 @@ export function clicked() {
 }
 
 /**
- * Report a change in the ProseMirror document state to the Swift side. The 
+ * Report a change in the ProseMirror document state. The 
  * change might be from typing or formatting or styling, etc.
  * 
  * @returns Bool    Return false so we can use in chainCommands directly
@@ -2713,9 +2717,9 @@ export function stateChanged() {
 }
 
 /**
- * Post a message to the MarkupCoordinator.
+ * Post a message to the message handler.
  * 
- * Refer to MarkupCoordinate.swift source for message types and contents that are supported.
+ * Refer to MarkupCoordinate.swift source for message types and contents that are supported in Swift.
  * @param {string | Object} message  A JSON-serializable JavaScript object.
  */
 export function postMessage(message) {
@@ -2838,7 +2842,7 @@ export function testExtractContents() {
  * Testing in this way lets us do simple pasteHTML tests with
  * clean HTML and test the effect of schema-conformance on HTML contents
  * separately. The html passed here is (typically) obtained from the paste 
- * buffer on the Swift side.
+ * buffer.
  */
 export function testPasteHTMLPreprocessing(html) {
     const node = _nodeFromHTML(html);
@@ -2979,9 +2983,9 @@ export function modifyImage(src, alt) {
 /**
  * Cut the selected image from the document.
  * 
- * Copy before deleting the image is done via a callback to the Swift side, which avoids
- * potential CORS issues. Similarly, copying of an image (e.g., Ctrl-C) is all done of the 
- * Swift side, not via JavaScript.
+ * Copy before deleting the image is done via a callback, which avoids
+ * potential CORS issues. Similarly, copying of an image (e.g., Ctrl-C) is all done 
+ * by the side holding the copy buffer, not via JavaScript.
  */
 export function cutImage() {
     const selection = view.state.selection
@@ -2995,7 +2999,7 @@ export function cutImage() {
 };
 
 /**
- * Call back to the Swift side with src, alt, and dimensions, to put the image into the clipboard.
+ * Post a message with src, alt, and dimensions, so the image contents can be put into the clipboard.
  * 
  * @param {Node} node   A ProseMirror image node
  */
@@ -3022,37 +3026,11 @@ function copyImage(node) {
  */
 export function insertTable(rows, cols) {
     if ((rows < 1) || (cols < 1)) return;
-    const selection = view.state.selection;
-    const nodeTypes = view.state.schema.nodes;
-    let firstP;
-    const table_rows = []
-    for (let j = 0; j < rows; j++) {
-        const table_cells = [];
-        for (let i = 0; i < cols; i++) {
-            const paragraph = view.state.schema.node('paragraph');
-            if ((i == 0) && (j == 0)) firstP = paragraph;
-            table_cells.push(nodeTypes.table_cell.create(null, paragraph));
-        }
-        table_rows.push(nodeTypes.table_row.create(null, table_cells));
-    }
-    const table = nodeTypes.table.createChecked(null, table_rows);
-    if (!table) return;     // Something went wrong, like we tried to insert it at a disallowed spot
-    // Replace the existing selection and track the transaction
-    let transaction = view.state.tr.replaceSelectionWith(table, false);
-    // Locate the first paragraph position in the transaction's doc
-    let pPos;
-    transaction.doc.nodesBetween(selection.from, selection.from + table.nodeSize, (node, pos) => {
-        if (node === firstP) {
-            pPos = pos;
-            return false;
-        };
-        return true;
-    });
-    // Set the selection in the first cell, apply it to the state and  the view
-    const textSelection = TextSelection.near(transaction.doc.resolve(pPos))
-    transaction = transaction.setSelection(textSelection);
-    view.dispatch(transaction);
-    stateChanged()
+    let command = insertTableCommand(rows, cols);
+    let result = command(view.state, view.dispatch, view);
+    view.focus();
+    stateChanged();
+    return result;
 };
 
 export function insertTableCommand(rows, cols) {
@@ -3107,13 +3085,11 @@ export function insertTableCommand(rows, cols) {
  */
 export function addRow(direction) {
     if (!_tableSelected()) return;
-    if (direction === 'BEFORE') {
-        addRowBefore(view.state, view.dispatch);
-    } else {
-        addRowAfter(view.state, view.dispatch);
-    };
+    let command = addRowCommand(direction);
+    let result = command(view.state, view.dispatch)
     view.focus();
     stateChanged();
+    return result;
 };
 
 export function addRowCommand(direction) {
@@ -3138,24 +3114,11 @@ export function addRowCommand(direction) {
  */
 export function addCol(direction) {
     if (!_tableSelected()) return;
-    let state = view.state;
-    const startSelection = new TextSelection(state.selection.$anchor, state.selection.$head)
-    let offset = 0;
-    if (direction === 'BEFORE') {
-        addColumnBefore(state, (tr)=> {state = state.apply(tr)});
-        offset = 4  // An empty cell
-    } else {
-        addColumnAfter(state, (tr)=> {state = state.apply(tr)});
-    };
-    _mergeHeaders(state, (tr)=> {state = state.apply(tr)});
-    const $anchor = state.tr.doc.resolve(startSelection.from + offset);
-    const $head = state.tr.doc.resolve(startSelection.to + offset);
-    const selection = new TextSelection($anchor, $head);
-    const transaction = state.tr.setSelection(selection);
-    state = state.apply(transaction);
-    view.updateState(state);
+    let command = addColCommand(direction);
+    let result = command(view.state, view.dispatch, view);
     view.focus();
     stateChanged();
+    return result;
 };
 
 export function addColCommand(direction) {
@@ -3195,36 +3158,11 @@ export function addColCommand(direction) {
 export function addHeader(colspan=true) {
     let tableAttributes = _getTableAttributes();
     if (!tableAttributes.table || tableAttributes.header) return;   // We're not in a table or we are but it has a header already
-    let state = view.state;
-    const nodeTypes = state.schema.nodes
-    const startSelection = new TextSelection(state.selection.$anchor, state.selection.$head)
-    _selectInFirstCell(state, (tr) => {state = state.apply(tr)});
-    addRowBefore(state, (tr) => {state = state.apply(tr)});
-    _selectInFirstCell(state, (tr) => {state = state.apply(tr)});
-    toggleHeaderRow(state, (tr) => {state = state.apply(tr)});
-    if (colspan) {
-       _mergeHeaders(state, (tr)=> {state = state.apply(tr)});
-    };
-    // At this point, the state.selection is in the new header row we just added. By definition, 
-    // the header is placed before the original selection, so we can add its size to the 
-    // selection to restore the selection to where it was before.
-    tableAttributes = _getTableAttributes(state);
-    let headerSize;
-    state.tr.doc.nodesBetween(tableAttributes.from, tableAttributes.to, (node) => {
-        if (!headerSize && (node.type == nodeTypes.table_row)) {
-            headerSize = node.nodeSize;
-            return false;
-        }
-        return (node.type == nodeTypes.table);  // We only want to recurse over table
-    })
-    const $anchor = state.tr.doc.resolve(startSelection.from + headerSize);
-    const $head = state.tr.doc.resolve(startSelection.to + headerSize);
-    const selection = new TextSelection($anchor, $head);
-    const transaction = state.tr.setSelection(selection);
-    state = state.apply(transaction);
-    view.updateState(state);
+    let command = addHeaderCommand(colspan);
+    let result = command(view.state, view.dispatch, view);
     view.focus();
     stateChanged();
+    return result;
 };
 
 export function addHeaderCommand(colspan = true) {
@@ -3274,19 +3212,11 @@ export function addHeaderCommand(colspan = true) {
  */
 export function deleteTableArea(area) {
     if (!_tableSelected()) return;
-    switch (area) {
-        case 'ROW':
-            deleteRow(view.state, view.dispatch);
-            break;
-        case 'COL':
-            deleteColumn(view.state, view.dispatch);
-            break;
-        case 'TABLE':
-            deleteTable(view.state, view.dispatch);
-            break;
-    };
+    let command = deleteTableAreaCommand(area);
+    let result = command(view.state, view.dispatch);
     view.focus();
     stateChanged();
+    return result;
 };
 
 export function deleteTableAreaCommand(area) {
@@ -3308,10 +3238,16 @@ export function deleteTableAreaCommand(area) {
 /**
  * Set the class of the table to style it using CSS.
  * The default draws a border around everything.
+ * 
+ * @param {'outer' | 'header' | 'cell' | 'none'} border Set the class of the table to correspond to caller's notion of border, so it displays properly.
  */
 export function borderTable(border) {
     if (_tableSelected()) {
-        _setBorder(border);
+        let command = setBorderCommand(border);
+        let result = command(view.state, view.dispatch, view);
+        stateChanged();
+        view.focus();
+        return result;
     }
 };
 
@@ -3379,48 +3315,6 @@ function _mergeHeaders(state, dispatch) {
     };
 };
 
-/**
- * Set the border around and within the cell.
- * @param {'outer' | 'header' | 'cell' | 'none'} border Set the class of the table to correspond to Swift-side notion of border, so css displays it properly.
- */
-function _setBorder(border) {
-    const selection = view.state.selection;
-    let table, fromPos, toPos;
-    view.state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
-        if (node.type === view.state.schema.nodes.table) {
-            table = node;
-            fromPos = pos;
-            toPos = pos + node.nodeSize;
-            return false;
-        };
-        return false;
-    });
-    if (!table) return;
-    switch (border) {
-        case 'outer':
-            table.attrs.class = 'bordered-table-outer';
-            break;
-        case 'header':
-            table.attrs.class = 'bordered-table-header';
-            break;
-        case 'cell':
-            table.attrs.class = 'bordered-table-cell';
-            break;
-        case 'none':
-            table.attrs.class = 'bordered-table-none';
-            break;
-        default:
-            table.attrs.class = 'bordered-table-cell';
-            break;
-    };
-    const transaction = view.state.tr
-        .setMeta("bordered-table", {border: border, fromPos: fromPos, toPos: toPos})
-        .setNodeMarkup(fromPos, table.type, table.attrs)
-    view.dispatch(transaction);
-    stateChanged();
-    view.focus();
-};
-
 export function isTableSelected(state) {
     let tableSelected = false;
     state.doc.nodesBetween(state.selection.from, state.selection.to, (node) => {
@@ -3479,7 +3373,6 @@ export function setBorderCommand(border) {
                 .setMeta("bordered-table", {border: border, fromPos: fromPos, toPos: toPos})
                 .setNodeMarkup(fromPos, table.type, table.attrs)
             view.dispatch(transaction);
-            stateChanged();
         }
 
         return true;
@@ -3490,7 +3383,7 @@ export function setBorderCommand(border) {
 
 /**
  * Get the border around and within the cell.
- * @returns {'outer' | 'header' | 'cell' | 'none'} The type of table border known on the Swift side
+ * @returns {'outer' | 'header' | 'cell' | 'none'} The type of table border known on the view holder's side.
  */
 function _getBorder(table) {
     let border;
@@ -3655,7 +3548,7 @@ function _isLinkNode(node) {
 };
 
 /**
- * Callback into Swift to show a string in the Xcode console, like console.log()
+ * Callback to show a string in the console, like console.log(), but for environments like Xcode.
  */
 function _consoleLog(string) {
     let messageDict = {
