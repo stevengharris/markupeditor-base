@@ -396,12 +396,14 @@ class SearchItem {
   searchForwardCommand(state, dispatch, view) {
     let command = searchForCommand(this.text, "forward");
     command(state, dispatch, view);
+    this.scrollToSelection(view);
     this.setStatus();
   }
 
   searchBackwardCommand(state, dispatch, view) {
     let command = searchForCommand(this.text, "backward");
     command(state, dispatch, view);
+    this.scrollToSelection(view);
     this.setStatus();
   }
 
@@ -415,6 +417,13 @@ class SearchItem {
       this.matchCaseDom = dom;
       update(state);
     }
+  }
+  
+  scrollToSelection(view) {
+    const { node } = view.domAtPos(view.state.selection.anchor);
+    // In case node is a Node not an Element
+    let element = (node instanceof Element) ? node : node.parentElement;
+    element?.scrollIntoView(false);
   }
 
   render(view) {
