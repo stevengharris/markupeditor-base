@@ -38,9 +38,15 @@ import {
   cancelSearch,
   matchCase,
   matchCount,
-  matchIndex
+  matchIndex,
+  getLinkAttributes,
+  selectFullLink,
+  getSelectionRect,
+  insertLinkCommand,
+  deleteLinkCommand
 } from "../markup"
 import {TextField, openPrompt} from "./prompt"
+import { EditorView } from "prosemirror-view"
 
 let prefix;
 
@@ -271,7 +277,7 @@ class SearchItem {
   constructor() {
     let options = {
       enable: (state) => { return true },
-      active: (state) => { return this.isActive() },
+      active: (state) => { return this.showing() },
       title: 'Open search',
       icon: icons.search
     };
@@ -280,12 +286,12 @@ class SearchItem {
     this.caseSensitive = false;
   }
 
-  isActive() {
+  showing() {
     return getSearchbar() != null;
   }
 
   toggleSearch(state, dispatch, view) {
-    if (this.isActive()) {
+    if (this.showing()) {
       this.hideSearchbar()
     } else {
       this.showSearchbar(state, dispatch, view);
@@ -419,11 +425,120 @@ class SearchItem {
     }
   }
   
+  /**
+   * Use the dom to scroll to the node at the selection. The scrollIntoView when setting the 
+   * selection in prosemirror-search findCommand doesn't work, perhaps because the selection 
+   * is set on state.doc instead of state.tr.doc. 
+   * 
+   * TODO: This method has some problems in that it can
+   * scroll to a paragraph, and then the next element will be in a bold section within the 
+   * paragraph, causing it to jump. It would be much better if the prosemirror-search 
+   * scrollIntoView worked properly.
+   * 
+   * @param {EditorView} view 
+   */
   scrollToSelection(view) {
     const { node } = view.domAtPos(view.state.selection.anchor);
     // In case node is a Node not an Element
     let element = (node instanceof Element) ? node : node.parentElement;
     element?.scrollIntoView(false);
+  }
+
+  render(view) {
+    let {dom, update} = this.item.render(view);
+    this.update = update;
+    return {dom, update};
+  }
+
+}
+
+class LinkItem {
+
+  constructor() {
+    let options = {
+      enable: (state) => { return true }, // TODO, do we want to restrict when it's enabled?
+      active: (state) => { return markActive(state, state.schema.marks.link) },
+      title: 'Add or modify link',
+      icon: icons.link
+    };
+    this.item = cmdItem(this.openLinkDialog.bind(this), options);
+    this.dialog = null;
+    this.selectionDiv = null;
+  }
+
+  openLinkDialog(state, dispatch, view) {
+    this.createLinkDialog(state, dispatch, view)
+    this.dialog.showModal();
+  }
+
+  createLinkDialog(state, dispatch) {
+
+    let {href} = getLinkAttributes();   // href is what is linked-to, undefined if there is no link
+
+    selectFullLink(state, dispatch, view);
+    let selrect = getSelectionRect();
+
+    // Show the selection, becaue the view is not focused, so it doesn't otherwise show up
+    this.setSelectionDiv(selrect);
+
+    // Create the dialog in the proper position
+    this.dialog = crel('dialog', { id: prefix + '-linkdialog', class: prefix + '-prompt', contenteditable: 'false' });
+    this.dialog.style.top = `${selrect.top + window.scrollY}px`
+    this.dialog.style.left = `${selrect.right + window.scrollX + 4}px`
+
+    let title = crel('p', (href) ? 'Modify link' : 'Add link');
+    this.dialog.appendChild(title)
+
+    let urlArea = crel('textArea', { rows: 3, placeholder: 'Enter url...' }, href ?? '')
+    this.dialog.appendChild(urlArea)
+
+    let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
+    this.dialog.appendChild(buttonsDiv)
+
+    if (href) {
+      let removeButton = crel('button', 'Remove');
+      removeButton.addEventListener('click', () => this.deleteLink(state, dispatch, view))
+      buttonsDiv.appendChild(removeButton);
+    }
+
+    let okButton = crel('button', 'OK');
+    okButton.addEventListener('click', () => this.insertLink(urlArea.value, state, dispatch))
+    buttonsDiv.appendChild(okButton)
+
+    let cancelButton = crel('button', 'Cancel')
+    cancelButton.addEventListener('click', () => this.closeLinkDialog())
+    buttonsDiv.appendChild(cancelButton)
+
+    getWrapper().appendChild(this.dialog);
+  }
+
+  setSelectionDiv(selrect) {
+    this.selectionDiv = crel('div', {id: prefix + '-selection', class: prefix + '-selection'})
+    this.selectionDiv.style.top = `${selrect.top + window.scrollY}px`
+    this.selectionDiv.style.left = `${selrect.left + window.scrollX}px`
+    this.selectionDiv.style.width = `${selrect.right - selrect.left}px`
+    this.selectionDiv.style.height = `${selrect.bottom - selrect.top}px`
+    getWrapper().appendChild(this.selectionDiv)
+  }
+
+  insertLink(url, state, dispatch) {
+    let command = insertLinkCommand(url);
+    command(state, dispatch);
+    this.closeLinkDialog();
+  }
+
+  deleteLink(state, dispatch, view) {
+    let command = deleteLinkCommand();
+    command(state, dispatch, view);
+    this.closeLinkDialog();
+  }
+
+  closeLinkDialog() {
+    this.selectionDiv?.parentElement.removeChild(this.selectionDiv)
+    this.selectionDiv = null;
+    this.dialog?.close()
+    this.dialog?.parentElement.removeChild(this.dialog)
+    this.dialog = null;
   }
 
   render(view) {
@@ -476,6 +591,10 @@ function getSearchbar() {
 
 function getSpacer() {
   return document.getElementById(prefix + "-toolbar-spacer")
+}
+
+function getWrapper() {
+  return getSpacer().parentElement;
 }
 
 function searchbarShowing() {
@@ -604,7 +723,7 @@ function redoItem(options) {
 function insertBarItems(config, schema) {
   let items = [];
   let { link, image, table } = config.insertBar;
-  if (link) items.push(linkItem(schema.marks.link))
+  if (link) items.push(new LinkItem())
   if (image) items.push(insertImageItem(schema.nodes.image))
   if (table) items.push(tableMenuItems(config, schema))
   return items;
@@ -618,8 +737,6 @@ function insertBarItems(config, schema) {
 function insertImageItem(nodeType) {
   return new MenuItem({
     title: "Insert image",
-    //label: 'image',
-    //class: 'material-symbols-outlined',
     icon: icons.image,
     enable(state) { return canInsert(state, nodeType) },
     run(state, _, view) {
@@ -636,42 +753,6 @@ function insertImageItem(nodeType) {
         },
         callback(attrs) {
           view.dispatch(view.state.tr.replaceSelectionWith(nodeType.createAndFill(attrs)))
-          view.focus()
-        }
-      })
-    }
-  })
-}
-
-/**
- * Return a MenuItem for link insertion
- * @param {MarkType} markType 
- * @returns {MenuItem}        A MenuItem that can prompt for a link to insert
- */
-function linkItem(markType) {
-  return new MenuItem({
-    title: "Add or remove link",
-    icon: icons.link,
-    //label: 'link', 
-    //class: 'material-symbols-outlined',
-    active(state) { return markActive(state, markType) },
-    enable(state) { return !state.selection.empty },
-    run(state, dispatch, view) {
-      if (markActive(state, markType)) {
-        toggleMark(markType)(state, dispatch)
-        return true
-      }
-      openPrompt({
-        title: "Create a link",
-        fields: {
-          href: new TextField({
-            label: "Link target",
-            required: true
-          }),
-          title: new TextField({label: "Title"})
-        },
-        callback(attrs) {
-          toggleMark(markType, attrs)(view.state, view.dispatch)
           view.focus()
         }
       })

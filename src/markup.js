@@ -836,7 +836,8 @@ class Searcher {
         if (this._searchString && (this._searchString.length > 0)) {
             if (direction == "forward") { findNext(state, dispatch)} else { findPrev(state, dispatch)};
             _callback('searched')
-            return {from: state.selection.from, to: state.selection.to};
+            // Return the selection from and to from the view, because that is what changed
+            return {from: view.state.tr.selection.from, to: view.state.tr.selection.to};
         };
         return {}
     };
@@ -2392,7 +2393,7 @@ const _getSelectionState = function() {
     // Selected text
     state['selection'] = _getSelectionText();
     // The selrect tells us where the selection can be found
-    const selrect = _getSelectionRect();
+    const selrect = getSelectionRect();
     const selrectDict = {
         'x' : selrect.left,
         'y' : selrect.top,
@@ -2401,7 +2402,7 @@ const _getSelectionState = function() {
     };
     state['selrect'] = selrectDict;
     // Link
-    const linkAttributes = _getLinkAttributes();
+    const linkAttributes = getLinkAttributes();
     state['href'] = linkAttributes['href'];
     state['link'] = linkAttributes['link'];
     // Image
@@ -2486,7 +2487,7 @@ function _getSelectionText() {
  * Return the rectangle that encloses the selection.
  * @returns {Object} The selection rectangle's top, bottom, left, right.
  */
-function _getSelectionRect() {
+export function getSelectionRect() {
     const selection = view.state.selection;
     const fromCoords = view.coordsAtPos(selection.from);
     if (selection.empty) return fromCoords;
@@ -2523,7 +2524,7 @@ function _getMarkTypes() {
  * Return the link attributes at the selection.
  * @returns {Object}   An Object whose properties are <a> attributes (like href, link) at the selection.
  */
-function _getLinkAttributes() {
+export function getLinkAttributes() {
     const selection = view.state.selection;
     const selectedNodes = [];
     view.state.doc.nodesBetween(selection.from, selection.to, node => {
@@ -2752,6 +2753,9 @@ export function setTestHTML(contents, sel) {
     setHTML(contents, false);   // Do a normal setting of HTML
     if (!sel) return;           // Don't do any selection if we don't know what marks it
 
+    // We need to clear the search state because we use it to find sel markers.
+    searcher.cancel();
+
     // It's important that deleting the sel markers is not part of history, because 
     // otherwise undoing later will put them back.
     const selFrom = searcher.searchFor(sel).from;   // Find the first marker
@@ -2875,20 +2879,31 @@ export function testPasteTextPreprocessing(html) {
  * @param {String}  url             The url/href to use for the link
  */
 export function insertLink(url) {
-    const selection = view.state.selection;
-    const linkMark = view.state.schema.marks.link.create({ href: url });
-    if (selection.empty) {
-        const textNode = view.state.schema.text(url).mark([linkMark]);
-        const transaction = view.state.tr.replaceSelectionWith(textNode, false);
-        const linkSelection = TextSelection.create(transaction.doc, selection.from, selection.from + textNode.nodeSize);
-        transaction.setSelection(linkSelection);
-        view.dispatch(transaction);
-    } else {
-        const toggle = toggleMark(linkMark.type, linkMark.attrs);
-        if (toggle) toggle(view.state, view.dispatch);
-    };
+    let command = insertLinkCommand(url);
+    let result = command(view.state, view.dispatch, view);
     stateChanged();
+    return result
 };
+
+export function insertLinkCommand(url) {
+    const commandAdapter = (state, dispatch, view) => {
+        const selection = state.selection;
+        const linkMark = state.schema.marks.link.create({ href: url });
+        if (selection.empty) {
+            const textNode = state.schema.text(url).mark([linkMark]);
+            const transaction = state.tr.replaceSelectionWith(textNode, false);
+            const linkSelection = TextSelection.create(transaction.doc, selection.from, selection.from + textNode.nodeSize);
+            transaction.setSelection(linkSelection);
+            dispatch(transaction);
+        } else {
+            const toggle = toggleMark(linkMark.type, linkMark.attrs);
+            if (toggle) toggle(state, dispatch);
+        };
+
+        return true;
+    };
+    return commandAdapter;
+}
 
 /**
  * Remove the link at the selection, maintaining the same selection.
@@ -2934,6 +2949,75 @@ export function deleteLink() {
         });
     };
 };
+
+export function deleteLinkCommand() {
+    const commandAdapter = (state, dispatch, view) => {
+        const linkType = view.state.schema.marks.link;
+        const selection = view.state.selection;
+
+        // Make sure the selection is in a single text node with a linkType Mark
+        const nodePos = [];
+        view.state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+            if (node.isText) {
+                nodePos.push({node: node, pos: pos});
+                return false;
+            };
+            return true;
+        });
+        if (nodePos.length !== 1) return;
+        const selectedNode = nodePos[0].node;
+        const selectedPos = nodePos[0].pos;
+        const linkMarks = selectedNode && selectedNode.marks.filter(mark => mark.type === linkType);
+        if (linkMarks.length !== 1) return;
+
+        // Select the entire text of selectedNode
+        const anchor = selectedPos;
+        const head = anchor + selectedNode.nodeSize;
+        const linkSelection = TextSelection.create(view.state.doc, anchor, head);
+        const transaction = view.state.tr.setSelection(linkSelection);
+        let newState = view.state.apply(transaction);
+
+        // Then toggle the link off and reset the selection
+        const toggle = toggleMark(linkType);
+        if (toggle) {
+            toggle(newState, (tr) => {
+                newState = newState.apply(tr);   // Toggle the link off
+                const textSelection = TextSelection.create(newState.doc, selection.from, selection.to);
+                tr.setSelection(textSelection);
+                view.dispatch(tr);
+                stateChanged();
+            });
+        };
+    };
+    return commandAdapter;
+}
+
+export function selectFullLink(state, dispatch) {
+    const linkType = state.schema.marks.link;
+    const selection = state.selection;
+
+    // Make sure the selection is in a single text node with a linkType Mark
+    const nodePos = [];
+    state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+        if (node.isText) {
+            nodePos.push({node: node, pos: pos});
+            return false;
+        };
+        return true;
+    });
+    if (nodePos.length !== 1) return;
+    const selectedNode = nodePos[0].node;
+    const selectedPos = nodePos[0].pos;
+    const linkMarks = selectedNode && selectedNode.marks.filter(mark => mark.type === linkType);
+    if (linkMarks.length !== 1) return;
+
+    // Select the entire text of selectedNode
+    const anchor = selectedPos;
+    const head = anchor + selectedNode.nodeSize;
+    const linkSelection = TextSelection.create(state.doc, anchor, head);
+    const transaction = state.tr.setSelection(linkSelection);
+    return dispatch(transaction);
+}
 
 /********************************************************************************
  * Images
