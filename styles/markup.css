@@ -20,6 +20,7 @@ body {
 }
 
 a {
+    color: blue;
     text-decoration: none;
 }
 @media (prefers-color-scheme: dark) {

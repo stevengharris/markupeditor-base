@@ -475,10 +475,10 @@ class LinkItem {
 
     let {href} = getLinkAttributes();   // href is what is linked-to, undefined if there is no link
 
-    selectFullLink(state, dispatch, view);
+    selectFullLink(view);
     let selrect = getSelectionRect();
 
-    // Show the selection, becaue the view is not focused, so it doesn't otherwise show up
+    // Show the selection, because the view is not focused, so it doesn't otherwise show up
     this.setSelectionDiv(selrect);
 
     // Create the dialog in the proper position

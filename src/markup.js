@@ -2915,6 +2915,38 @@ export function deleteLink() {
     const linkType = view.state.schema.marks.link;
     const selection = view.state.selection;
 
+    // Make sure the selection is in a single text node with a linkType Mark and 
+    // that the full link is selected in the view.
+    selectFullLink(view)
+
+    // Then execute the deleteLinkCommand, which removes the link and leaves the 
+    // full text of what was linked selected.
+    let command = deleteLinkCommand()
+    return command(view.state, view.dispatch, view)
+};
+
+export function deleteLinkCommand() {
+    const commandAdapter = (state, dispatch, view) => {
+        const linkType = view.state.schema.marks.link;
+        const selection = view.state.selection;
+        const toggle = toggleMark(linkType);
+        if (toggle) {
+            toggle(view.state, (tr) => {
+                let newState = view.state.apply(tr);   // Toggle the link off
+                const textSelection = TextSelection.create(newState.doc, selection.from, selection.to);
+                tr.setSelection(textSelection);
+                view.dispatch(tr);
+                stateChanged();
+            });
+        };
+    };
+    return commandAdapter;
+}
+
+export function selectFullLink(view) {
+    const linkType = view.state.schema.marks.link;
+    const selection = view.state.selection;
+
     // Make sure the selection is in a single text node with a linkType Mark
     const nodePos = [];
     view.state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
@@ -2935,88 +2967,7 @@ export function deleteLink() {
     const head = anchor + selectedNode.nodeSize;
     const linkSelection = TextSelection.create(view.state.doc, anchor, head);
     const transaction = view.state.tr.setSelection(linkSelection);
-    let state = view.state.apply(transaction);
-
-    // Then toggle the link off and reset the selection
-    const toggle = toggleMark(linkType);
-    if (toggle) {
-        toggle(state, (tr) => {
-            state = state.apply(tr);   // Toggle the link off
-            const textSelection = TextSelection.create(state.doc, selection.from, selection.to);
-            tr.setSelection(textSelection);
-            view.dispatch(tr);
-            stateChanged();
-        });
-    };
-};
-
-export function deleteLinkCommand() {
-    const commandAdapter = (state, dispatch, view) => {
-        const linkType = view.state.schema.marks.link;
-        const selection = view.state.selection;
-
-        // Make sure the selection is in a single text node with a linkType Mark
-        const nodePos = [];
-        view.state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
-            if (node.isText) {
-                nodePos.push({node: node, pos: pos});
-                return false;
-            };
-            return true;
-        });
-        if (nodePos.length !== 1) return;
-        const selectedNode = nodePos[0].node;
-        const selectedPos = nodePos[0].pos;
-        const linkMarks = selectedNode && selectedNode.marks.filter(mark => mark.type === linkType);
-        if (linkMarks.length !== 1) return;
-
-        // Select the entire text of selectedNode
-        const anchor = selectedPos;
-        const head = anchor + selectedNode.nodeSize;
-        const linkSelection = TextSelection.create(view.state.doc, anchor, head);
-        const transaction = view.state.tr.setSelection(linkSelection);
-        let newState = view.state.apply(transaction);
-
-        // Then toggle the link off and reset the selection
-        const toggle = toggleMark(linkType);
-        if (toggle) {
-            toggle(newState, (tr) => {
-                newState = newState.apply(tr);   // Toggle the link off
-                const textSelection = TextSelection.create(newState.doc, selection.from, selection.to);
-                tr.setSelection(textSelection);
-                view.dispatch(tr);
-                stateChanged();
-            });
-        };
-    };
-    return commandAdapter;
-}
-
-export function selectFullLink(state, dispatch) {
-    const linkType = state.schema.marks.link;
-    const selection = state.selection;
-
-    // Make sure the selection is in a single text node with a linkType Mark
-    const nodePos = [];
-    state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
-        if (node.isText) {
-            nodePos.push({node: node, pos: pos});
-            return false;
-        };
-        return true;
-    });
-    if (nodePos.length !== 1) return;
-    const selectedNode = nodePos[0].node;
-    const selectedPos = nodePos[0].pos;
-    const linkMarks = selectedNode && selectedNode.marks.filter(mark => mark.type === linkType);
-    if (linkMarks.length !== 1) return;
-
-    // Select the entire text of selectedNode
-    const anchor = selectedPos;
-    const head = anchor + selectedNode.nodeSize;
-    const linkSelection = TextSelection.create(state.doc, anchor, head);
-    const transaction = state.tr.setSelection(linkSelection);
-    return dispatch(transaction);
+    view.dispatch(transaction);
 }
 
 /********************************************************************************
