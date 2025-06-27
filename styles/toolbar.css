@@ -112,7 +112,7 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menuitem {
-    border: 1px solid blue;
+    border: 1px solid #4183c4;
     background: black;
     fill: white;
   }
@@ -125,7 +125,7 @@
 @media (prefers-color-scheme: dark) {
   .Markup-menuitem-active {
       fill: white;
-      background: blue;
+      background: #4183c4;
   }
 }
 
@@ -307,7 +307,7 @@
 
 .Markup-selection {
   position: absolute;
-  border: 1px solid red;
+  border: 1px solid #4183c4;
   background: transparent;
 }
 
@@ -364,8 +364,17 @@
   font-size: 100%;
   height: 28px;
   margin-right: 4px;
+  color: blue;
   border-radius: 4px;
   border: 1px solid blue;
   background: white;
   fill: blue;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-prompt-buttons button {
+    color: rgb(250, 249, 246);
+    border: 1px solid #4183c4;
+    background: black;
+    fill: #4183c4;
+  }
 }
