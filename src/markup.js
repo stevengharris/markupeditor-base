@@ -2931,14 +2931,16 @@ export function deleteLinkCommand() {
         const selection = view.state.selection;
         const toggle = toggleMark(linkType);
         if (toggle) {
-            toggle(view.state, (tr) => {
+            return toggle(view.state, (tr) => {
                 let newState = view.state.apply(tr);   // Toggle the link off
                 const textSelection = TextSelection.create(newState.doc, selection.from, selection.to);
                 tr.setSelection(textSelection);
                 view.dispatch(tr);
                 stateChanged();
             });
-        };
+        } else {
+            return false;
+        }
     };
     return commandAdapter;
 }

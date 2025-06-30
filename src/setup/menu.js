@@ -467,13 +467,13 @@ class LinkItem {
   }
 
   openLinkDialog(state, dispatch, view) {
-    this.createLinkDialog(state, dispatch, view)
+    this.createLinkDialog(view)
     this.dialog.showModal();
   }
 
-  createLinkDialog(state, dispatch) {
+  createLinkDialog(view) {
 
-    let {href} = getLinkAttributes();   // href is what is linked-to, undefined if there is no link
+    let href = this.hrefAtSelection();   // href is what is linked-to, undefined if there is no link
 
     selectFullLink(view);
     let selrect = getSelectionRect();
@@ -489,27 +489,93 @@ class LinkItem {
     let title = crel('p', (href) ? 'Modify link' : 'Add link');
     this.dialog.appendChild(title)
 
-    let urlArea = crel('textArea', { rows: 3, placeholder: 'Enter url...' }, href ?? '')
-    this.dialog.appendChild(urlArea)
+    this.setUrlArea(href, view)
+    this.setButtons(view)
+    this.okUpdate(view.state);
+    this.cancelUpdate(view.state);
+    getWrapper().appendChild(this.dialog);
+  }
 
+  hrefAtSelection() {
+    return getLinkAttributes().href;
+  }
+
+  setUrlArea(href, view) {
+    this.urlArea = crel('input', { type: 'text', placeholder: 'Enter url...' })
+    this.urlArea.value = href ?? '';
+    this.urlArea.setAttribute('size', 30);
+    this.urlArea.addEventListener('input', () => {
+      if (this.isValidURL()) {
+        setClass(this.okDom, 'Markup-menuitem-disabled', false);
+      } else {
+        setClass(this.okDom, 'Markup-menuitem-disabled', true);
+      };
+      this.okUpdate(view.state);
+      this.cancelUpdate(view.state);
+    });
+    this.urlArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (this.isValidURL()) {
+          this.insertLink(view.state, view.dispatch, view);
+        } else {
+          this.cancel()
+        }
+      }
+    })
+    this.dialog.appendChild(this.urlArea)
+  }
+
+  setButtons(view) {
     let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
     this.dialog.appendChild(buttonsDiv)
 
-    if (href) {
-      let removeButton = crel('button', 'Remove');
-      removeButton.addEventListener('click', () => this.deleteLink(state, dispatch, view))
-      buttonsDiv.appendChild(removeButton);
-    }
+    if (this.isValidURL()) {
+      let removeItem = cmdItem(this.deleteLink.bind(this), {
+        class: prefix + '-menuitem',
+        title: 'Remove',
+        enable: () => { return true }
+      })
+      let {dom} = removeItem.render(view)
+      buttonsDiv.appendChild(dom);
+    } else {
+      let spacer = crel('div', {class: prefix + '-menuitem'})
+      spacer.style.visibility = 'hidden';
+      buttonsDiv.appendChild(spacer)
+    };
 
-    let okButton = crel('button', 'OK');
-    okButton.addEventListener('click', () => this.insertLink(urlArea.value, state, dispatch))
-    buttonsDiv.appendChild(okButton)
+    let group = crel('div', {class: prefix + '-prompt-buttongroup'});
+    let okItem = cmdItem(this.insertLink.bind(this), {
+      class: prefix + '-menuitem',
+      title: 'OK',
+      active: () => {
+        return this.isValidURL()
+      },
+      enable: () => {
+        return this.isValidURL()
+      }
+    })
+    let {dom: okDom, update: okUpdate} = okItem.render(view)
+    this.okDom = okDom;
+    this.okUpdate = okUpdate;
+    group.appendChild(this.okDom)
 
-    let cancelButton = crel('button', 'Cancel')
-    cancelButton.addEventListener('click', () => this.closeLinkDialog())
-    buttonsDiv.appendChild(cancelButton)
+    let cancelItem = cmdItem(this.cancel.bind(this), {
+      class: prefix + '-menuitem',
+      title: 'Cancel',
+      active: () => {
+        return !this.isValidURL()
+      },
+      enable: () => {
+        return true
+      }
+    })
+    let {dom: cancelDom, update: cancelUpdate} = cancelItem.render(view)
+    this.cancelDom = cancelDom;
+    this.cancelUpdate = cancelUpdate;
+    group.appendChild(this.cancelDom)
 
-    getWrapper().appendChild(this.dialog);
+    buttonsDiv.appendChild(group);
   }
 
   setSelectionDiv(selrect) {
@@ -521,30 +587,44 @@ class LinkItem {
     getWrapper().appendChild(this.selectionDiv)
   }
 
-  insertLink(url, state, dispatch) {
-    let command = insertLinkCommand(url);
-    command(state, dispatch);
-    this.closeLinkDialog();
+  isValidURL() {
+    return URL.canParse(this.urlValue())
+  }
+
+  urlValue() {
+    return this.urlArea.value
+  }
+
+  insertLink(state, dispatch, view) {
+    if (!this.isValidURL()) return;
+    if (this.hrefAtSelection()) this.deleteLink(state, dispatch, view)
+    let command = insertLinkCommand(this.urlValue());
+    let result = command(view.state, view.dispatch);
+    if (result) this.cancel();
+  }
+
+  cancel() {
+    return this.closeLinkDialog()
   }
 
   deleteLink(state, dispatch, view) {
     let command = deleteLinkCommand();
-    command(state, dispatch, view);
-    this.closeLinkDialog();
+    let result = command(state, dispatch, view);
+    if (result) this.cancel();
   }
 
   closeLinkDialog() {
-    this.selectionDiv?.parentElement.removeChild(this.selectionDiv)
+    this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
     this.selectionDiv = null;
     this.dialog?.close()
-    this.dialog?.parentElement.removeChild(this.dialog)
+    this.dialog?.parentElement?.removeChild(this.dialog)
     this.dialog = null;
+    this.okUpdate = null;
+    this.cancelUpdate = null;
   }
 
   render(view) {
-    let {dom, update} = this.item.render(view);
-    this.update = update;
-    return {dom, update};
+    return this.item.render(view);
   }
 
 }
