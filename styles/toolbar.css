@@ -30,7 +30,6 @@
   position: relative;
   font-size: 18px;
   line-height: 30px;
-  /* top: 2px; */
   height: 30px;
   width: calc(100% - 128px);
   margin: 0 8px;
@@ -320,6 +319,8 @@
 .Markup-prompt {
   margin: 0;
   font-size: 18px;
+  height: 96px;
+  width: 300px;
   background: white;
   padding: 4px 8px;
   border: 1px solid silver;
@@ -339,6 +340,7 @@
   font-size: 100%;
   line-height: 28px;
   margin-top: 4px;
+  width: calc(100% - 2px);
   appearance: none;
   background: #eee;
   border: none;
