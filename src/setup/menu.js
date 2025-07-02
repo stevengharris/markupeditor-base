@@ -3,7 +3,9 @@
  * 
  * Adaptations:
  *  - Modify buildMenuItems to use a `config` object that specifies visibility and content
- *  - MenuItems returned from buildMenuItems use label and class options for Google material fonts
+ *  - Modify icons to use SVG from Google Material Fonts
+ *  - Allow DropDown menus to be icons, not just labels
+ *  - Replace use of prompt with custom dialogs for links and images
  * 
  * Expansions:
  *  - Added table support using MarkupEditor capabilities for table editing
@@ -17,7 +19,7 @@
  */
 
 import crel from "crelt"
-import {EditorState, NodeSelection} from "prosemirror-state"
+import {EditorState} from "prosemirror-state"
 import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
 import {undo, redo} from "prosemirror-history"
 import {
@@ -43,9 +45,11 @@ import {
   selectFullLink,
   getSelectionRect,
   insertLinkCommand,
-  deleteLinkCommand
+  deleteLinkCommand,
+  getImageAttributes,
+  insertImageCommand,
+  modifyImageCommand
 } from "../markup"
-import {TextField, openPrompt} from "./prompt"
 import { EditorView } from "prosemirror-view"
 
 let prefix;
@@ -487,9 +491,9 @@ class LinkItem {
    * @param {EditorView} view 
    */
   createLinkDialog(view) {
-    this.href = getLinkAttributes().href;;   // href is what is linked-to, undefined if there is no link at selection
+    this.href = getLinkAttributes().href;   // href is what is linked-to, undefined if there is no link at selection
 
-    // Select the full link if the selection is in one, and then set selDivRect that surrounds it
+    // Select the full link if the selection is in one, and then set selectionDivRect that surrounds it
     selectFullLink(view);
     this.selectionDivRect = this.getSelectionDivRect()
 
@@ -497,13 +501,14 @@ class LinkItem {
     this.setSelectionDiv();
 
     // Create the dialog in the proper position
-    this.dialog = crel('dialog', { id: prefix + '-linkdialog', class: prefix + '-prompt', contenteditable: 'false' });
+    this.dialog = crel('dialog', { class: prefix + '-prompt', contenteditable: 'false' });
+    setClass(this.dialog, prefix + '-prompt-link', true);
     this.setDialogLocation()
 
     let title = crel('p', (this.href) ? 'Modify link' : 'Add link');
     this.dialog.appendChild(title)
 
-    this.setUrlArea(view)
+    this.setInputArea(view)
     this.setButtons(view)
     this.okUpdate(view.state);
     this.cancelUpdate(view.state);
@@ -517,11 +522,11 @@ class LinkItem {
    * 
    * @param {*} view 
    */
-  setUrlArea(view) {
-    this.urlArea = crel('input', { type: 'text', placeholder: 'Enter url...' })
-    this.urlArea.value = this.href ?? '';
-    this.urlArea.addEventListener('input', () => {
-      if (this.isValidURL()) {
+  setInputArea(view) {
+    this.hrefArea = crel('input', { type: 'text', placeholder: 'Enter url...' })
+    this.hrefArea.value = this.href ?? '';
+    this.hrefArea.addEventListener('input', () => {
+      if (this.isValid()) {
         setClass(this.okDom, 'Markup-menuitem-disabled', false);
       } else {
         setClass(this.okDom, 'Markup-menuitem-disabled', true);
@@ -529,24 +534,24 @@ class LinkItem {
       this.okUpdate(view.state);
       this.cancelUpdate(view.state);
     });
-    this.urlArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+    this.hrefArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (this.isValidURL()) {
+        if (this.isValid()) {
           this.insertLink(view.state, view.dispatch, view);
         } else {
-          this.cancel()
+          this.closeDialog()
         }
       }
     })
-    this.dialog.appendChild(this.urlArea)
+    this.dialog.appendChild(this.hrefArea)
   }
 
   /**
    * Create and append the buttons in the `dialog`.
    * 
    * Track the `dom` and `update` properties for the OK and Cancel buttons so we can show when
-   * they are active as a way to indicate the default action on Enter in the `urlArea`.
+   * they are active as a way to indicate the default action on Enter in the `hrefArea`.
    * 
    * @param {EditorView} view 
    */
@@ -554,7 +559,7 @@ class LinkItem {
     let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
     this.dialog.appendChild(buttonsDiv)
 
-    if (this.isValidURL()) {
+    if (this.isValid()) {
       let removeItem = cmdItem(this.deleteLink.bind(this), {
         class: prefix + '-menuitem',
         title: 'Remove',
@@ -573,10 +578,10 @@ class LinkItem {
       class: prefix + '-menuitem',
       title: 'OK',
       active: () => {
-        return this.isValidURL()
+        return this.isValid()
       },
       enable: () => {
-        return this.isValidURL()
+        return this.isValid()
       }
     })
     let {dom: okDom, update: okUpdate} = okItem.render(view)
@@ -584,11 +589,11 @@ class LinkItem {
     this.okUpdate = okUpdate;
     group.appendChild(this.okDom)
 
-    let cancelItem = cmdItem(this.cancel.bind(this), {
+    let cancelItem = cmdItem(this.closeDialog.bind(this), {
       class: prefix + '-menuitem',
       title: 'Cancel',
       active: () => {
-        return !this.isValidURL()
+        return !this.isValid()
       },
       enable: () => {
         return true
@@ -639,7 +644,7 @@ class LinkItem {
     // We need the dialogHeight and width because we can only position the dialog top and left. 
     // You would think that an element could be positioned by specifying right and bottom, but 
     // apparently not. Even when width is fixed, specifying right doesn't work. The values below
-    // are dependent on toolbar.css for .Markup-prompt.
+    // are dependent on toolbar.css for .Markup-prompt-link.
     let dialogHeight = 104
     let dialogWidth = 317
 
@@ -674,38 +679,31 @@ class LinkItem {
     }
   }
 
-  isValidURL() {
-    return URL.canParse(this.urlValue())
+  isValid() {
+    return URL.canParse(this.hrefValue())
   }
 
   /**
-   * Return the string from the `urlArea`.
+   * Return the string from the `hrefArea`.
    * @returns {string}
    */
-  urlValue() {
-    return this.urlArea.value
+  hrefValue() {
+    return this.hrefArea.value
   }
 
   /**
-   * Insert the link in the urlArea if it's valid, deleting any existing link first. Close if it worked.
+   * Insert the link provided in the hrefArea if it's valid, deleting any existing link first. Close if it worked.
    * 
    * @param {EditorState} state 
    * @param {fn(tr: Transaction)} dispatch 
    * @param {EditorView} view 
    */
   insertLink(state, dispatch, view) {
-    if (!this.isValidURL()) return;
+    if (!this.isValid()) return;
     if (this.href) deleteLinkCommand()(state, dispatch, view);
-    let command = insertLinkCommand(this.urlValue());
+    let command = insertLinkCommand(this.hrefValue());
     let result = command(view.state, view.dispatch);
-    if (result) this.cancel();
-  }
-
-  /**
-   * Close the link dialog without doing anything else.
-   */
-  cancel() {
-    return this.closeLinkDialog()
+    if (result) this.closeDialog();
   }
 
   /**
@@ -718,13 +716,315 @@ class LinkItem {
   deleteLink(state, dispatch, view) {
     let command = deleteLinkCommand();
     let result = command(state, dispatch, view);
-    if (result) this.cancel();
+    if (result) this.closeDialog();
   }
 
   /**
-   * Close the link dialog, deleting the dialog and selectionDiv and clearing out state.
+   * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
    */
-  closeLinkDialog() {
+  closeDialog() {
+    this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
+    this.selectionDiv = null;
+    this.dialog?.close()
+    this.dialog?.parentElement?.removeChild(this.dialog)
+    this.dialog = null;
+    this.okUpdate = null;
+    this.cancelUpdate = null;
+  }
+
+  /**
+   * Show the MenuItem that LinkItem holds in its `item` property.
+   * @param {EditorView} view 
+   * @returns {Object}    The {dom, update} object for `item`.
+   */
+  render(view) {
+    return this.item.render(view);
+  }
+
+}
+
+/**
+ * Represents the image MenuItem in the toolbar, which opens the image dialog and maintains its state.
+ */
+class ImageItem {
+
+  constructor() {
+    let options = {
+      enable: () => { return true }, // Always enabled because it is presented modally
+      active: (state) => { return getImageAttributes(state).src  },
+      title: 'Add or modify image',
+      icon: icons.image
+    };
+    this.item = cmdItem(this.openImageDialog.bind(this), options);
+    this.dialog = null;
+    this.selectionDiv = null;
+  }
+
+  /**
+   * Command to open the image dialog and show it modally.
+   *
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
+  openImageDialog(state, dispatch, view) {
+    this.createImageDialog(view)
+    this.dialog.showModal();
+  }
+
+  /**
+   * Create the dialog element for adding/modifying images. Append it to the wrapper after the toolbar.
+   * 
+   * @param {EditorView} view 
+   */
+  createImageDialog(view) {
+    let {src, alt} = getImageAttributes(view.state);
+    this.src = src   // src for the selected image, undefined if there is no image at selection
+    this.alt = alt
+
+    // Set selectionDivRect that surrounds the selection
+    this.selectionDivRect = this.getSelectionDivRect()
+
+    // Show the selection, because the view is not focused, so it doesn't otherwise show up
+    this.setSelectionDiv();
+
+    // Create the dialog in the proper position
+    this.dialog = crel('dialog', { class: prefix + '-prompt', contenteditable: 'false' });
+    setClass(this.dialog, prefix + '-prompt-image', true);
+    this.setDialogLocation()
+
+    let title = crel('p', (this.src) ? 'Modify image' : 'Add image');
+    this.dialog.appendChild(title)
+
+    this.setInputArea(view)
+    this.setButtons(view)
+    this.okUpdate(view.state);
+    this.cancelUpdate(view.state);
+    getWrapper().appendChild(this.dialog);
+  }
+
+  /**
+   * Create and add the input elements.
+   * 
+   * Capture Enter to perform the command of the active button, either OK or Cancel.
+   * 
+   * @param {*} view 
+   */
+  setInputArea(view) {
+    this.srcArea = crel('input', { type: 'text', placeholder: 'Enter url...' })
+    this.srcArea.value = this.src ?? '';
+    this.srcArea.addEventListener('input', () => {
+      if (this.isValid()) {
+        setClass(this.okDom, 'Markup-menuitem-disabled', false);
+      } else {
+        setClass(this.okDom, 'Markup-menuitem-disabled', true);
+      };
+      this.okUpdate(view.state);
+      this.cancelUpdate(view.state);
+    });
+    this.srcArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (this.isValid()) {
+          this.insertImage(view.state, view.dispatch, view);
+        } else {
+          this.closeDialog()
+        }
+      }
+    })
+    this.dialog.appendChild(this.srcArea)
+
+    this.altArea = crel('input', { type: 'text', placeholder: 'Enter description...' })
+    this.altArea.value = this.alt ?? '';
+    this.altArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (this.isValid()) {
+          this.insertImage(view.state, view.dispatch, view);
+        } else {
+          this.closeDialog()
+        }
+      }
+    })
+    this.dialog.appendChild(this.altArea)
+  }
+
+  /**
+   * Create and append the buttons in the `dialog`.
+   * 
+   * Track the `dom` and `update` properties for the OK and Cancel buttons so we can show when
+   * they are active as a way to indicate the default action on Enter in the input areas.
+   * 
+   * @param {EditorView} view 
+   */
+  setButtons(view) {
+    let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
+    this.dialog.appendChild(buttonsDiv)
+
+    // TODO: When local images are allowed, we should insert a "Select..." button on the 
+    // left that will bring up a file chooser. For it to really work for editing, the 
+    // choosing has to be followed by copying from the selection into the current working 
+    // dieectory or a "resources" type of directory below. In Swift, this is all handled 
+    // by the app itself, which is notified of the UUID file that is placed in the temp 
+    // directory, so the app can do what it wants with it.
+    //if (this.isValid()) {
+    //  let removeItem = cmdItem(this.deleteIm.bind(this), {
+    //    class: prefix + '-menuitem',
+    //    title: 'Remove',
+    //    enable: () => { return true }
+    //  })
+    //  let {dom} = removeItem.render(view)
+    //  buttonsDiv.appendChild(dom);
+    //} else {
+      let spacer = crel('div', {class: prefix + '-menuitem'})
+      spacer.style.visibility = 'hidden';
+      buttonsDiv.appendChild(spacer)
+    //};
+
+    let group = crel('div', {class: prefix + '-prompt-buttongroup'});
+    let okItem = cmdItem(this.insertImage.bind(this), {
+      class: prefix + '-menuitem',
+      title: 'OK',
+      active: () => {
+        return this.isValid()
+      },
+      enable: () => {
+        return this.isValid()
+      }
+    })
+    let {dom: okDom, update: okUpdate} = okItem.render(view)
+    this.okDom = okDom;
+    this.okUpdate = okUpdate;
+    group.appendChild(this.okDom)
+
+    let cancelItem = cmdItem(this.closeDialog.bind(this), {
+      class: prefix + '-menuitem',
+      title: 'Cancel',
+      active: () => {
+        return !this.isValid()
+      },
+      enable: () => {
+        return true
+      }
+    })
+    let {dom: cancelDom, update: cancelUpdate} = cancelItem.render(view)
+    this.cancelDom = cancelDom;
+    this.cancelUpdate = cancelUpdate;
+    group.appendChild(this.cancelDom)
+
+    buttonsDiv.appendChild(group);
+  }
+
+  /**
+   * Create and append a div that encloses the selection, with a class that displays it properly.
+   */
+  setSelectionDiv() {
+    this.selectionDiv = crel('div', {id: prefix + '-selection', class: prefix + '-selection'})
+    this.selectionDiv.style.top = this.selectionDivRect.top + 'px'
+    this.selectionDiv.style.left = this.selectionDivRect.left + 'px'
+    this.selectionDiv.style.width = this.selectionDivRect.width + 'px'
+    this.selectionDiv.style.height = this.selectionDivRect.height + 'px'
+    getWrapper().appendChild(this.selectionDiv)
+  }
+
+  /**
+   * Return an object with location and dimension properties for the selection rectangle.
+   * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
+   */
+  getSelectionDivRect() {
+    let selrect = getSelectionRect();
+    let top = selrect.top + window.scrollY
+    let left = selrect.left + window.scrollX
+    let right = selrect.right;
+    let width = selrect.right - selrect.left
+    let height = selrect.bottom - selrect.top
+    let bottom = selrect.bottom;
+    return {top: top, left: left, right: right, width: width, height: height, bottom: bottom}
+  }
+
+  /**
+   * Set the `dialog` location on the screen so it is adjacent to the selection.
+   */
+  setDialogLocation() {
+    // selRect is the position within the document. So, doesn't change even if the document is scrolled.
+    let selrect = this.selectionDivRect
+
+    // We need the dialogHeight and width because we can only position the dialog top and left. 
+    // You would think that an element could be positioned by specifying right and bottom, but 
+    // apparently not. Even when width is fixed, specifying right doesn't work. The values below
+    // are dependent on toolbar.css for .Markup-prompt-image.
+    let dialogHeight = 134
+    let dialogWidth = 317
+
+    // The dialog needs to be positioned within the document regardless of scroll, too, but the position is
+    // set based on the direction from selrect that has the most screen real-estate. We always prefer right 
+    // or left of the selection if we can fit it in the visible area on either side. We can bias it as 
+    // close as we can to the vertical center. If we can't fit it right or left, then we will put it above
+    // or below, whichever fits, biasing alignment as close as we can to the horizontal center.
+    // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
+    // it with the best chance of showing the entire dialog.
+    let style = this.dialog.style
+    let toolbarHeight = getSpacer().getBoundingClientRect().height
+    let minTop = toolbarHeight + scrollY + 4
+    let maxTop = scrollY + innerHeight - dialogHeight - 4
+    let minLeft = scrollX + 4;
+    let maxLeft = innerWidth - dialogWidth - 4
+    let fitsRight = window.innerWidth - selrect.right - window.scrollX > dialogWidth + 4
+    let fitsLeft = selrect.left - window.scrollX > dialogWidth + 4
+    let fitsTop = selrect.top - window.scrollY - toolbarHeight > dialogHeight + 4
+    if (fitsRight) {           // Put dialog right of selection
+      style.left = selrect.right + 4 + scrollX + 'px'
+      style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
+    } else if (fitsLeft) {     // Put dialog left of selection
+      style.left = selrect.left - dialogWidth - 4 + scrollX + 'px'
+      style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
+    } else if (fitsTop) {     // Put dialog above selection
+      style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
+      style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px'
+    } else {                                          // Put dialog below selection, even if it's off the screen somewhat
+      style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
+      style.top = Math.min((selrect.bottom + 4), maxTop) + 'px'
+    }
+  }
+
+  isValid() {
+    // TODO: file:steve.png loads properly in the browser because it is local and exists, but it is not a valid url. 
+    // Validation should allow relative file name references.
+    return URL.canParse(this.srcValue())
+  }
+
+  /**
+   * Return the string from the `srcArea`.
+   * @returns {string}
+   */
+  srcValue() {
+    return this.srcArea.value
+  }
+
+  altValue() {
+    return this.altArea.value
+  }
+
+  /**
+   * Insert the image provided in the srcArea if it's valid, modifying image if it exists. Close if it worked.
+   * 
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
+  insertImage(state, dispatch, view) {
+    if (!this.isValid()) return;
+    let newSrc = this.srcValue();
+    let newAlt = this.altValue();
+    let command = (this.src) ? modifyImageCommand(newSrc, newAlt) : insertImageCommand(newSrc, newAlt);
+    let result = command(view.state, view.dispatch, view);
+    if (result) this.closeDialog();
+  }
+
+  /**
+   * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
+   */
+  closeDialog() {
     this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
     this.selectionDiv = null;
     this.dialog?.close()
@@ -920,40 +1220,9 @@ function insertBarItems(config, schema) {
   let items = [];
   let { link, image, table } = config.insertBar;
   if (link) items.push(new LinkItem())
-  if (image) items.push(insertImageItem(schema.nodes.image))
+  if (image) items.push(new ImageItem())
   if (table) items.push(tableMenuItems(config, schema))
   return items;
-}
-
-/**
- * Return a MenuItem for image insertion
- * @param {NodeTyoe} nodeType 
- * @returns {MenuItem}  A MenuItem that can prompt for an image to insert
- */
-function insertImageItem(nodeType) {
-  return new MenuItem({
-    title: "Insert image",
-    icon: icons.image,
-    enable(state) { return canInsert(state, nodeType) },
-    run(state, _, view) {
-      let {from, to} = state.selection, attrs = null
-      if (state.selection instanceof NodeSelection && state.selection.node.type == nodeType)
-        attrs = state.selection.node.attrs
-      openPrompt({
-        title: "Insert image",
-        fields: {
-          src: new TextField({label: "Location", required: true, value: attrs && attrs.src}),
-          title: new TextField({label: "Title", value: attrs && attrs.title}),
-          alt: new TextField({label: "Description",
-                              value: attrs ? attrs.alt : state.doc.textBetween(from, to, " ")})
-        },
-        callback(attrs) {
-          view.dispatch(view.state.tr.replaceSelectionWith(nodeType.createAndFill(attrs)))
-          view.focus()
-        }
-      })
-    }
-  })
 }
 
 function tableMenuItems(config, schema) {

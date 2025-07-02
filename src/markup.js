@@ -2540,15 +2540,19 @@ export function getLinkAttributes() {
     return {};
 };
 
+function _getImageAttributes() {
+    return getImageAttributes(view.state)
+}
+
 /**
  * Return the image attributes at the selection
  * @returns {Object}   An Object whose properties are <img> attributes (like src, alt, width, height, scale) at the selection.
  */
-function _getImageAttributes() {
-    const selection = view.state.selection;
+export function getImageAttributes(state) {
+    const selection = state.selection;
     const selectedNodes = [];
-    view.state.doc.nodesBetween(selection.from, selection.to, node => {
-        if (node.type === view.state.schema.nodes.image)  {
+    state.doc.nodesBetween(selection.from, selection.to, node => {
+        if (node.type === state.schema.nodes.image)  {
             selectedNodes.push(node);
             return false;
         };
@@ -2985,11 +2989,21 @@ export function selectFullLink(view) {
  * @param {String}              alt         The alt text describing the image.
  */
 export function insertImage(src, alt) {
-    const imageNode = view.state.schema.nodes.image.create({src: src, alt: alt})
-    const transaction = view.state.tr.replaceSelectionWith(imageNode, true);
-    view.dispatch(transaction);
-    stateChanged();
+    let command = insertImageCommand(src, alt);
+    return command(view.state, view.dispatch, view)
 };
+
+export function insertImageCommand(src, alt) {
+    const commandAdapter = (state, dispatch, view) => {
+        const imageNode = view.state.schema.nodes.image.create({src: src, alt: alt})
+        const transaction = view.state.tr.replaceSelectionWith(imageNode, true);
+        view.dispatch(transaction);
+        stateChanged();
+        return true;
+    }
+
+    return commandAdapter
+}
 
 /**
  * Modify the attributes of the image at selection.
@@ -2998,24 +3012,36 @@ export function insertImage(src, alt) {
  * @param {String}              alt         The alt text describing the image.
  */
 export function modifyImage(src, alt) {
-    const selection = view.state.selection
-    const imageNode = selection.node;
-    if (imageNode?.type !== view.state.schema.nodes.image) return;
-    let imagePos;
-    view.state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
-        if (node === imageNode) {
-            imagePos = pos;
-            return false;
-        }
-        return true;
-    })
-    if (imagePos) {
-        const transaction = view.state.tr
-            .setNodeAttribute(imagePos, 'src', src)
-            .setNodeAttribute(imagePos, 'alt', alt)
-        view.dispatch(transaction)
-    }
+    let command = modifyImageCommand(src, alt);
+    return command(view.state, view.dispatch, view)
 };
+
+export function modifyImageCommand(src, alt) {
+    const commandAdapter = (state, dispatch, view) => {
+        const selection = view.state.selection
+        const imageNode = selection.node;
+        if (imageNode?.type !== view.state.schema.nodes.image) return false;
+        let imagePos;
+        view.state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+            if (node === imageNode) {
+                imagePos = pos;
+                return false;
+            }
+            return true;
+        })
+        if (imagePos) {
+            const transaction = view.state.tr
+                .setNodeAttribute(imagePos, 'src', src)
+                .setNodeAttribute(imagePos, 'alt', alt)
+            view.dispatch(transaction)
+            return true
+        } else {
+            return false
+        }
+    }
+
+    return commandAdapter
+}
 
 /**
  * Cut the selected image from the document.
