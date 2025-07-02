@@ -17,7 +17,7 @@
  */
 
 import crel from "crelt"
-import {NodeSelection} from "prosemirror-state"
+import {EditorState, NodeSelection} from "prosemirror-state"
 import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
 import {undo, redo} from "prosemirror-history"
 import {
@@ -270,7 +270,7 @@ class DropdownSubmenu {
 }
 
 /**
- * Represents the search item in the toolbar, which hides/shows the search bar and maintains its state.
+ * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
  */
 class SearchItem {
 
@@ -452,11 +452,14 @@ class SearchItem {
 
 }
 
+/**
+ * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
+ */
 class LinkItem {
 
   constructor() {
     let options = {
-      enable: (state) => { return true }, // TODO, do we want to restrict when it's enabled?
+      enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
       title: 'Add or modify link',
       icon: icons.link
@@ -466,14 +469,25 @@ class LinkItem {
     this.selectionDiv = null;
   }
 
+  /**
+   * Command to open the link dialog and show it modally.
+   *
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
   openLinkDialog(state, dispatch, view) {
     this.createLinkDialog(view)
     this.dialog.showModal();
   }
 
+  /**
+   * Create the dialog element for adding/modifying links. Append it to the wrapper after the toolbar.
+   * 
+   * @param {EditorView} view 
+   */
   createLinkDialog(view) {
-
-    let href = this.hrefAtSelection();   // href is what is linked-to, undefined if there is no link
+    this.href = getLinkAttributes().href;;   // href is what is linked-to, undefined if there is no link at selection
 
     // Select the full link if the selection is in one, and then set selDivRect that surrounds it
     selectFullLink(view);
@@ -486,23 +500,26 @@ class LinkItem {
     this.dialog = crel('dialog', { id: prefix + '-linkdialog', class: prefix + '-prompt', contenteditable: 'false' });
     this.setDialogLocation()
 
-    let title = crel('p', (href) ? 'Modify link' : 'Add link');
+    let title = crel('p', (this.href) ? 'Modify link' : 'Add link');
     this.dialog.appendChild(title)
 
-    this.setUrlArea(href, view)
+    this.setUrlArea(view)
     this.setButtons(view)
     this.okUpdate(view.state);
     this.cancelUpdate(view.state);
     getWrapper().appendChild(this.dialog);
   }
 
-  hrefAtSelection() {
-    return getLinkAttributes().href;
-  }
-
-  setUrlArea(href, view) {
+  /**
+   * Create and add the input element for the URL.
+   * 
+   * Capture Enter to perform the command of the active button, either OK or Cancel.
+   * 
+   * @param {*} view 
+   */
+  setUrlArea(view) {
     this.urlArea = crel('input', { type: 'text', placeholder: 'Enter url...' })
-    this.urlArea.value = href ?? '';
+    this.urlArea.value = this.href ?? '';
     this.urlArea.addEventListener('input', () => {
       if (this.isValidURL()) {
         setClass(this.okDom, 'Markup-menuitem-disabled', false);
@@ -525,6 +542,14 @@ class LinkItem {
     this.dialog.appendChild(this.urlArea)
   }
 
+  /**
+   * Create and append the buttons in the `dialog`.
+   * 
+   * Track the `dom` and `update` properties for the OK and Cancel buttons so we can show when
+   * they are active as a way to indicate the default action on Enter in the `urlArea`.
+   * 
+   * @param {EditorView} view 
+   */
   setButtons(view) {
     let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
     this.dialog.appendChild(buttonsDiv)
@@ -577,6 +602,9 @@ class LinkItem {
     buttonsDiv.appendChild(group);
   }
 
+  /**
+   * Create and append a div that encloses the selection, with a class that displays it properly.
+   */
   setSelectionDiv() {
     this.selectionDiv = crel('div', {id: prefix + '-selection', class: prefix + '-selection'})
     this.selectionDiv.style.top = this.selectionDivRect.top + 'px'
@@ -586,6 +614,10 @@ class LinkItem {
     getWrapper().appendChild(this.selectionDiv)
   }
 
+  /**
+   * Return an object with location and dimension properties for the selection rectangle.
+   * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
+   */
   getSelectionDivRect() {
     let selrect = getSelectionRect();
     let top = selrect.top + window.scrollY
@@ -597,6 +629,9 @@ class LinkItem {
     return {top: top, left: left, right: right, width: width, height: height, bottom: bottom}
   }
 
+  /**
+   * Set the `dialog` location on the screen so it is adjacent to the selection.
+   */
   setDialogLocation() {
     // selRect is the position within the document. So, doesn't change even if the document is scrolled.
     let selrect = this.selectionDivRect
@@ -621,16 +656,16 @@ class LinkItem {
     let maxTop = scrollY + innerHeight - dialogHeight - 4
     let minLeft = scrollX + 4;
     let maxLeft = innerWidth - dialogWidth - 4
-    let visibleAtLeft = selrect.left - window.scrollX > dialogWidth + 4
-    let visibleAtRight = window.innerWidth - selrect.right - window.scrollX > dialogWidth + 4
-    let visibleAtTop = selrect.top - window.scrollY - toolbarHeight > dialogHeight + 4
-    if (visibleAtRight) {           // Put dialog right of selection
+    let fitsRight = window.innerWidth - selrect.right - window.scrollX > dialogWidth + 4
+    let fitsLeft = selrect.left - window.scrollX > dialogWidth + 4
+    let fitsTop = selrect.top - window.scrollY - toolbarHeight > dialogHeight + 4
+    if (fitsRight) {           // Put dialog right of selection
       style.left = selrect.right + 4 + scrollX + 'px'
       style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
-    } else if (visibleAtLeft) {     // Put dialog left of selection
+    } else if (fitsLeft) {     // Put dialog left of selection
       style.left = selrect.left - dialogWidth - 4 + scrollX + 'px'
       style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
-    } else if (visibleAtTop) {     // Put dialog above selection
+    } else if (fitsTop) {     // Put dialog above selection
       style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
       style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px'
     } else {                                          // Put dialog below selection, even if it's off the screen somewhat
@@ -643,28 +678,52 @@ class LinkItem {
     return URL.canParse(this.urlValue())
   }
 
+  /**
+   * Return the string from the `urlArea`.
+   * @returns {string}
+   */
   urlValue() {
     return this.urlArea.value
   }
 
+  /**
+   * Insert the link in the urlArea if it's valid, deleting any existing link first. Close if it worked.
+   * 
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
   insertLink(state, dispatch, view) {
     if (!this.isValidURL()) return;
-    if (this.hrefAtSelection()) this.deleteLink(state, dispatch, view)
+    if (this.href) deleteLinkCommand()(state, dispatch, view);
     let command = insertLinkCommand(this.urlValue());
     let result = command(view.state, view.dispatch);
     if (result) this.cancel();
   }
 
+  /**
+   * Close the link dialog without doing anything else.
+   */
   cancel() {
     return this.closeLinkDialog()
   }
 
+  /**
+   * Delete the link at the selection. Close if it worked.
+   * 
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
   deleteLink(state, dispatch, view) {
     let command = deleteLinkCommand();
     let result = command(state, dispatch, view);
     if (result) this.cancel();
   }
 
+  /**
+   * Close the link dialog, deleting the dialog and selectionDiv and clearing out state.
+   */
   closeLinkDialog() {
     this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
     this.selectionDiv = null;
@@ -675,6 +734,11 @@ class LinkItem {
     this.cancelUpdate = null;
   }
 
+  /**
+   * Show the MenuItem that LinkItem holds in its `item` property.
+   * @param {EditorView} view 
+   * @returns {Object}    The {dom, update} object for `item`.
+   */
   render(view) {
     return this.item.render(view);
   }
