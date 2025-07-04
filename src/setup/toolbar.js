@@ -54,13 +54,11 @@ class ToolbarView {
       this.root = this.editorView.root;
     }
     if (!this.spacer) {
-      //let spacerHeight = this.menu.offsetHeight;
       let idClass = this.prefix + "-spacer";
-      //this.spacer = crel("div", { class: idClass, id: idClass, style: `height: ${spacerHeight}px` });
       this.spacer = crel("div", { class: idClass, id: idClass });
       this.wrapper.insertBefore(this.spacer, this.menu);
     }
-    this.contentUpdate(this.editorView.state);
+    return this.contentUpdate(this.editorView.state);
   }
 
   destroy() {

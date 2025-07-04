@@ -1046,6 +1046,129 @@ class ImageItem {
 }
 
 /**
+  A submenu for creating a table, which contains many TableInsertItems each of which 
+  will insert a table of a specific size. The items are bounded divs in a css grid 
+  layout that highlight to show the size of the table being created, so we end up with 
+  a compact way to display 24 TableInsertItems.
+  */
+class TableCreateSubmenu {
+  constructor(options = {}) {
+    this.prefix = prefix + "-menu"
+    this.options = options;
+    this.content = []
+    this.maxRows = 6
+    this.maxCols = 4
+    this.rowSize = 0
+    this.colSize = 0
+    for (let row = 0; row < this.maxRows; row++) {
+      for (let col = 0; col < this.maxCols; col++) {
+        // If we want the MenuItem div to respond to keydown, it needs to contain something, 
+        // in this case a non-breaking space. Just ' ' doesn't work.
+        let options = {
+          label: '\u00A0', 
+          active: () => {
+            return (row < this.rowSize) && (col < this.colSize)
+          }
+        }
+        let insertItem = new TableInsertItem(row + 1, col + 1, this.onMouseover.bind(this), options)
+        this.content.push(insertItem)
+      }
+    }
+  }
+
+  onMouseover(rows, cols) {
+    this.rowSize = rows
+    this.colSize = cols
+    this.itemsUpdate(view.state)
+  }
+
+  resetSize() {
+    this.rowSize = 0;
+    this.colSize = 0;
+  }
+
+  /**
+  Renders the submenu.
+  */
+  render(view) {
+    let resetSize = this.resetSize.bind(this);
+    let options = this.options;
+    let items = renderDropdownItems(this.content, view);
+    this.itemsUpdate = items.update;  // Track the update method so we can update as the mouse is over items
+    let win = view.dom.ownerDocument.defaultView || window;
+    let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
+    let sizer = crel("div", { class: this.prefix + "-tablesizer" }, items.dom);
+    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, sizer);
+    let listeningOnClose = null;
+    // Clear the sizer when the mouse moves outside of it
+    // It's not enough to just resetSize, because it doesn't clear properly until the 
+    // mouse is back over an item.
+    sizer.addEventListener("mouseleave", () => {this.onMouseover.bind(this)(0, 0)})
+    label.addEventListener("mousedown", e => {
+      e.preventDefault();
+      markMenuEvent(e);
+      setClass(wrap, this.prefix + "-submenu-wrap-active", false);
+      if (!listeningOnClose)
+        win.addEventListener("mousedown", listeningOnClose = () => {
+          if (!isMenuEvent(wrap)) {
+            wrap.classList.remove(this.prefix + "-submenu-wrap-active");
+            win.removeEventListener("mousedown", listeningOnClose);
+            listeningOnClose = null;
+          }
+        });
+    });
+    function update(state) {
+      resetSize();
+      let enabled = true;
+      if (options.enable) {
+        enabled = options.enable(state) || false;
+        setClass(label, this.prefix + "-disabled", !enabled);
+      }
+      let inner = items.update(state);
+      wrap.style.display = inner ? "" : "none";
+      return inner;
+    }
+    return { dom: wrap, update };
+  }
+
+}
+
+/**
+ * A MenuItem that inserts a table of size rows/cols and invokes `onMouseover` when 
+ * the mouse is over it to communicate the size of table it will create when selected.
+ */
+class TableInsertItem {
+
+  constructor(rows, cols, onMouseover, options) {
+    this.prefix = prefix + "-menuitem"
+    this.rows = rows
+    this.cols = cols
+    this.onMouseover = onMouseover
+    this.item = this.tableInsertItem(this.rows, this.cols, options)
+  }
+
+  tableInsertItem(rows, cols, options) {
+    let command = insertTableCommand(rows, cols)
+    let passedOptions = {
+      run: command,
+      enable(state) { return command(state); },
+    };
+    for (let prop in options)
+      passedOptions[prop] = options[prop];
+    return new MenuItem(passedOptions);
+  }
+
+  render(view) {
+    let {dom, update} = this.item.render(view);
+    dom.addEventListener('mouseover', e => {
+      this.onMouseover(this.rows, this.cols)
+    })
+    return {dom, update}
+  }
+
+}
+
+/**
  * Build an array of MenuItems and nested MenuItems that comprise the content of the Toolbar 
  * based on the `config` and `schema`.
  * 
@@ -1228,12 +1351,7 @@ function insertBarItems(config, schema) {
 function tableMenuItems(config, schema) {
   let items = []
   let { header, border } = config.tableMenu;
-  let createItems = []
-  createItems.push(insertTableItem(1, 1, {label: '1 column'}))
-  createItems.push(insertTableItem(1, 2, {label: '2 columns'}))
-  createItems.push(insertTableItem(1, 3, {label: '3 columns'}))
-  createItems.push(insertTableItem(1, 4, {label: '4 columns'}))
-  items.push(new DropdownSubmenu(createItems, {title: 'Insert new table', label: 'Create'}))
+  items.push(new TableCreateSubmenu({title: 'Insert new table', label: 'Create'}))
   let addItems = []
   addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}))
   addItems.push(tableEditItem(addRowCommand('AFTER'), {label: 'Row below'}))
@@ -1275,18 +1393,6 @@ function tableMenuItems(config, schema) {
       }))
   }
   return new Dropdown(items, { title: 'Insert/edit table', icon: icons.table })
-}
-
-function insertTableItem(rows, cols, options) {
-  let command = insertTableCommand(rows, cols)
-  let passedOptions = {
-    run: command,
-    enable(state) { return command(state); },
-    active(state) { return false }  // FIX
-  };
-  for (let prop in options)
-    passedOptions[prop] = options[prop];
-  return new MenuItem(passedOptions);
 }
 
 function tableEditItem(command, options) {
