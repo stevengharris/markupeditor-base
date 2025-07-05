@@ -1,68 +1,4 @@
-/* The toolbar contains menuitems and menuseparators */
-
-.Markup-searchbar {
-  display: inline-block;
-  font-size: 24px;
-  vertical-align: middle;
-  position: fixed;
-  top: 38px;
-  width: 100%;
-  line-height: 30px;
-  height: 37px;
-  color: blue;
-  background: rgba(250, 249, 246, 0.95);
-  border-bottom: 1px solid lightgray;
-  z-index: 9;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  overflow: visible;
-}
-@media (prefers-color-scheme: dark) {
-  .Markup-searchbar {
-    color: rgb(250, 249, 246);
-    background: rgba(40, 40, 43, 0.9);
-    border-bottom: 1px solid gray;
-  }
-}
-
-.Markup-searchbar input {
-  appearance: none; /* Otherwise, in Safari/WebKit, the height is small and fixed */
-  position: relative;
-  font-size: 18px;
-  line-height: 30px;
-  height: 30px;
-  width: calc(100% - 128px);
-  margin: 0 8px;
-  padding: 0 4px;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  border: 1px solid lightgray;
-  border-radius: 6px;
-}
-@media (prefers-color-scheme: dark) {
-  .Markup-searchbar input {
-    color: rgb(250, 249, 246);
-    background: rgb(40, 40, 43);
-    border: 1px solid gray;
-  }
-}
-
-.Markup-searchbar .Markup-searchbar-status {
-  position: absolute;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  white-space: nowrap;
-  font-size: 12px;
-  overflow-x: visible;
-  height: 28px;
-  top: 5px;
-  left: calc(100% - 13em);
-  width: 1px;
-  color: gray;
-  z-index: 9;
-  user-select: none;
-}
+/* Spacing at the top */
 
 .Markup-toolbar-spacer {
   height: 38px;
@@ -71,6 +7,8 @@
 .Markup-searchbar-showing {
   height: 76px;
 }
+
+/* Toolbar, menu item, and dropdown styling */
 
 .Markup-toolbar {
   font-size: 24px;
@@ -328,6 +266,74 @@
   border: 1px solid lightblue;
   background: transparent;
 }
+
+/* Searchbar styling */
+
+.Markup-searchbar {
+  display: inline-block;
+  font-size: 24px;
+  vertical-align: middle;
+  position: fixed;
+  top: 38px;
+  width: 100%;
+  line-height: 30px;
+  height: 37px;
+  color: blue;
+  background: rgba(250, 249, 246, 0.95);
+  border-bottom: 1px solid lightgray;
+  z-index: 9;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  overflow: visible;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-searchbar {
+    color: rgb(250, 249, 246);
+    background: rgba(40, 40, 43, 0.9);
+    border-bottom: 1px solid gray;
+  }
+}
+
+.Markup-searchbar input {
+  appearance: none; /* Otherwise, in Safari/WebKit, the height is small and fixed */
+  position: relative;
+  font-size: 18px;
+  line-height: 30px;
+  height: 30px;
+  width: calc(100% - 128px);
+  margin: 0 8px;
+  padding: 0 4px;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  border: 1px solid lightgray;
+  border-radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-searchbar input {
+    color: rgb(250, 249, 246);
+    background: rgb(40, 40, 43);
+    border: 1px solid gray;
+  }
+}
+
+.Markup-searchbar .Markup-searchbar-status {
+  position: absolute;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  white-space: nowrap;
+  font-size: 12px;
+  overflow-x: visible;
+  height: 28px;
+  top: 5px;
+  left: calc(100% - 13em);
+  width: 1px;
+  color: gray;
+  z-index: 9;
+  user-select: none;
+}
+
+/* Dialog styling for insert/edit actions */
 
 .Markup-prompt {
   margin: 0;
