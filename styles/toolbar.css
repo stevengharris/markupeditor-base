@@ -223,6 +223,7 @@
 .Markup-menu-dropdown-item pre {
   padding: 0;
   margin: 0;
+  min-height: 24px;
 }
 
 .Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {
@@ -303,6 +304,7 @@
   width: calc(100% - 128px);
   margin: 0 8px;
   padding: 0 4px;
+  outline: none;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   border: 1px solid lightgray;
@@ -339,12 +341,18 @@
   margin: 0;
   font-size: 18px;
   background: white;
-  padding: 4px 8px;
+  padding: 8px;
   border: 1px solid silver;
   position: absolute;
   border-radius: 3px;
   z-index: 8;
   box-shadow: -.5px 2px 5px rgba(0, 0, 0, .2);
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-prompt {
+    background: black;
+    box-shadow: -.5px 2px 5px rgba(255, 255, 255, .8);
+  }
 }
 
 .Markup-prompt-link {
@@ -358,20 +366,37 @@
 }
 
 .Markup-prompt p {
-  margin: 0;
+  margin: 0 0 4px 0;
   font-weight: normal;
-  color: #444;
+  color: black;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-prompt p {
+    color: white;
+  }
 }
 
 .Markup-prompt input[type="text"] {
   font-size: 100%;
   line-height: 28px;
-  margin-top: 4px;
-  width: calc(100% - 2px);
+  margin-top: 2px;
+  padding-right: 4px;
+  padding-left: 4px;
+  width: 100%;
   appearance: none;
   background: #eee;
-  border: none;
   outline: none;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  border: 1px solid lightgray;
+  border-radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-prompt input[type="text"] {
+    color: rgb(250, 249, 246);
+    background: rgb(40, 40, 43);
+    border: 1px solid gray;
+  }
 }
 
 .Markup-prompt-buttons {
@@ -382,12 +407,13 @@
   line-height: 28px;
   height: 28px;
   margin-top: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .Markup-prompt-buttons .Markup-menuitem {
   display: inline-flex;
-  padding: 0 4px;
+  padding-right: 4px;
+  padding-left: 4px;
 }
 
 /* The buttongroup contains OK and Cancel menuitems on the right */
