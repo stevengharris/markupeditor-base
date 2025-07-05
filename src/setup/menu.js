@@ -1,25 +1,29 @@
 /**
  * Adapted, expanded, and copied-from prosemirror-menu under MIT license.
+ * Original prosemirror-menu at https://github.com/prosemirror/prosemirror-menu.
  * 
  * Adaptations:
  *  - Modify buildMenuItems to use a `config` object that specifies visibility and content
  *  - Modify icons to use SVG from Google Material Fonts
- *  - Allow DropDown menus to be icons, not just labels
+ *  - Allow Dropdown menus to be icons, not just labels
  *  - Replace use of prompt with custom dialogs for links and images
  * 
  * Expansions:
  *  - Added table support using MarkupEditor capabilities for table editing
  *  - Use MarkupEditor capabilities for list/denting across range
  *  - Use MarkupEditor capability for toggling and changing list types
+ *  - Added SearchItem, LinkItem, ImageItem
+ *  - Added TableCreateSubmenu and TableInsertItem in support of table creation
+ *  - Added ParagraphStyleItem to support showing font sizes for supported styles
  * 
  * Copied:
  *  - MenuItem
- *  - DropDown
+ *  - Dropdown
+ *  - DropdownSubmenu
  *  - Various "helper methods" returning MenuItems
  */
 
 import crel from "crelt"
-import {EditorState} from "prosemirror-state"
 import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
 import {undo, redo} from "prosemirror-history"
 import {
@@ -35,7 +39,6 @@ import {
   getListType, 
   isIndented,
   isTableSelected,
-  paragraphStyle,
   tableHasHeader,
   cancelSearch,
   matchCase,
@@ -50,7 +53,6 @@ import {
   insertImageCommand,
   modifyImageCommand
 } from "../markup"
-import { EditorView } from "prosemirror-view"
 
 let prefix;
 
@@ -1618,17 +1620,6 @@ function formatItem(markType, options) {
 
 /* Style DropDown (P, H1-H6, Code) */
 
-const styleLabels = {
-  'P': 'Normal',
-  'H1': 'Header 1',
-  'H2': 'Header 2',
-  'H3': 'Header 3',
-  'H4': 'Header 4',
-  'H5': 'Header 5',
-  'H6': 'Header 6',
-  'PRE': 'Code'
-}
-
 /**
  * Return the Dropdown containing the styling MenuItems that should show per the config.
  * 
@@ -1646,42 +1637,7 @@ function styleMenuItems(config, schema) {
   if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { attrs: { level: 5 }}))
   if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { attrs: { level: 6 }}))
   if (codeblock) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE'))
-  //if (p) items.push(blockTypeItem(schema.nodes.paragraph, { label: styleLabels['P'] }))
-  //if (h1) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 1 }, label: styleLabels['H1'] }))
-  //if (h2) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 2 }, label: styleLabels['H2'] }))
-  //if (h3) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 3 }, label: styleLabels['H3'] }))
-  //if (h4) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 4 }, label: styleLabels['H4'] }))
-  //if (h5) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 5 }, label: styleLabels['H5'] }))
-  //if (h6) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 6 }, label: styleLabels['H6'] }))
-  //if (codeblock) items.push(blockTypeItem(schema.nodes.code_block, { label: styleLabels['PRE'] }))
-  //let titleUpdate = (state) => {
-  //  let style = paragraphStyle(state) ?? 'Style'
-  //  return styleLabels[style] ?? style
-  //}
   return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
-}
-
-/**
-Build a menu item for changing the type of the textblock around the
-selection to the given type. Provides `run`, `active`, and `select`
-properties. Others must be given in `options`. `options.attrs` may
-be an object to provide the attributes for the textblock node.
-*/
-function blockTypeItem(nodeType, options) {
-    let command = setBlockType(nodeType, options.attrs);
-    let passedOptions = {
-        run: command,
-        enable(state) { return command(state); },
-        active(state) {
-            let { $from, to, node } = state.selection;
-            if (node)
-                return node.hasMarkup(nodeType, options.attrs);
-            return to <= $from.end() && $from.parent.hasMarkup(nodeType, options.attrs);
-        }
-    };
-    for (let prop in options)
-        passedOptions[prop] = options[prop];
-    return new MenuItem(passedOptions);
 }
 
 /* Rendering support for MenuItems */
