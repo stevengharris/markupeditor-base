@@ -465,7 +465,7 @@ class LinkItem {
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
-      title: 'Add or modify link',
+      title: 'Insert/edit link',
       icon: icons.link
     };
     this.item = cmdItem(this.openLinkDialog.bind(this), options);
@@ -505,7 +505,7 @@ class LinkItem {
     setClass(this.dialog, prefix + '-prompt-link', true);
     this.setDialogLocation()
 
-    let title = crel('p', (this.href) ? 'Modify link' : 'Add link');
+    let title = crel('p', (this.href) ? 'Edit link' : 'Insert link');
     this.dialog.appendChild(title)
 
     this.setInputArea(view)
@@ -752,7 +752,7 @@ class ImageItem {
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return getImageAttributes(state).src  },
-      title: 'Add or modify image',
+      title: 'Insert/edit image',
       icon: icons.image
     };
     this.item = cmdItem(this.openImageDialog.bind(this), options);
@@ -793,7 +793,7 @@ class ImageItem {
     setClass(this.dialog, prefix + '-prompt-image', true);
     this.setDialogLocation()
 
-    let title = crel('p', (this.src) ? 'Modify image' : 'Add image');
+    let title = crel('p', (this.src) ? 'Edit image' : 'Insert image');
     this.dialog.appendChild(title)
 
     this.setInputArea(view)
@@ -1168,6 +1168,53 @@ class TableInsertItem {
 
 }
 
+class ParagraphStyleItem {
+
+  constructor(nodeType, style, options) {
+    let styleLabels = {
+      'P': 'Body',
+      'H1': 'Header 1',
+      'H2': 'Header 2',
+      'H3': 'Header 3',
+      'H4': 'Header 4',
+      'H5': 'Header 5',
+      'H6': 'Header 6',
+      'PRE': 'Code'
+    }
+    this.style = style
+    this.styleLabel = styleLabels[this.style] ?? "Normal"
+    let passedOptions = {label: this.styleLabel}
+    if (options) {
+      for (let prop in options) passedOptions[prop] = options[prop]
+    }
+    this.item = this.paragraphStyleItem(nodeType, passedOptions)
+  }
+
+  paragraphStyleItem(nodeType, options) {
+    let command = setBlockType(nodeType, options.attrs);
+    let passedOptions = {
+        run: command,
+        enable(state) { return command(state); },
+        active(state) {
+            let { $from, to, node } = state.selection;
+            if (node)
+                return node.hasMarkup(nodeType, options.attrs);
+            return to <= $from.end() && $from.parent.hasMarkup(nodeType, options.attrs);
+        }
+    };
+    for (let prop in options)
+        passedOptions[prop] = options[prop];
+    return new MenuItem(passedOptions);
+  }
+
+  render(view) {
+    let {dom, update} = this.item.render(view);
+    let styledElement = crel(this.style, this.styleLabel)
+    dom.replaceChild(styledElement, dom.firstChild);
+    return {dom, update}
+  }
+}
+
 /**
  * Build an array of MenuItems and nested MenuItems that comprise the content of the Toolbar 
  * based on the `config` and `schema`.
@@ -1351,7 +1398,7 @@ function insertBarItems(config, schema) {
 function tableMenuItems(config, schema) {
   let items = []
   let { header, border } = config.tableMenu;
-  items.push(new TableCreateSubmenu({title: 'Insert new table', label: 'Create'}))
+  items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))
   let addItems = []
   addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}))
   addItems.push(tableEditItem(addRowCommand('AFTER'), {label: 'Row below'}))
@@ -1523,19 +1570,27 @@ const styleLabels = {
 function styleMenuItems(config, schema) {
   let items = []
   let { p, h1, h2, h3, h4, h5, h6, codeblock } = config.styleMenu;
-  if (p) items.push(blockTypeItem(schema.nodes.paragraph, { label: styleLabels['P'] }))
-  if (h1) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 1 }, label: styleLabels['H1'] }))
-  if (h2) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 2 }, label: styleLabels['H2'] }))
-  if (h3) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 3 }, label: styleLabels['H3'] }))
-  if (h4) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 4 }, label: styleLabels['H4'] }))
-  if (h5) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 5 }, label: styleLabels['H5'] }))
-  if (h6) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 6 }, label: styleLabels['H6'] }))
-  if (codeblock) items.push(blockTypeItem(schema.nodes.code_block, { label: styleLabels['PRE'] }))
-  let titleUpdate = (state) => {
-    let style = paragraphStyle(state) ?? 'Style'
-    return styleLabels[style] ?? style
-  }
-  return [new Dropdown(items, { title: 'Set paragraph style', label: 'Style', titleUpdate: titleUpdate })]
+  if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P'))
+  if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { attrs: { level: 1 }}))
+  if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { attrs: { level: 2 }}))
+  if (h3) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H3', { attrs: { level: 3 }}))
+  if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { attrs: { level: 4 }}))
+  if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { attrs: { level: 5 }}))
+  if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { attrs: { level: 6 }}))
+  if (codeblock) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE'))
+  //if (p) items.push(blockTypeItem(schema.nodes.paragraph, { label: styleLabels['P'] }))
+  //if (h1) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 1 }, label: styleLabels['H1'] }))
+  //if (h2) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 2 }, label: styleLabels['H2'] }))
+  //if (h3) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 3 }, label: styleLabels['H3'] }))
+  //if (h4) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 4 }, label: styleLabels['H4'] }))
+  //if (h5) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 5 }, label: styleLabels['H5'] }))
+  //if (h6) items.push(blockTypeItem(schema.nodes.heading, { attrs: { level: 6 }, label: styleLabels['H6'] }))
+  //if (codeblock) items.push(blockTypeItem(schema.nodes.code_block, { label: styleLabels['PRE'] }))
+  //let titleUpdate = (state) => {
+  //  let style = paragraphStyle(state) ?? 'Style'
+  //  return styleLabels[style] ?? style
+  //}
+  return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
 }
 
 /**
@@ -1720,6 +1775,10 @@ export const icons = {
   matchCase: {
     // <span class="material-symbols-outlined">match_case</span>
     svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="m131-252 165-440h79l165 440h-76l-39-112H247l-40 112h-76Zm139-176h131l-64-182h-4l-63 182Zm395 186q-51 0-81-27.5T554-342q0-44 34.5-72.5T677-443q23 0 45 4t38 11v-12q0-29-20.5-47T685-505q-23 0-42 9.5T610-468l-47-35q24-29 54.5-43t68.5-14q69 0 103 32.5t34 97.5v178h-63v-37h-4q-14 23-38 35t-53 12Zm12-54q35 0 59.5-24t24.5-56q-14-8-33.5-12.5T689-393q-32 0-50 14t-18 37q0 20 16 33t40 13Z"/></svg>'
+  },
+  paragraphStyle: {
+    // <span class="material-symbols-outlined">format_paragraph/span>
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M360-160v-240q-83 0-141.5-58.5T160-600q0-83 58.5-141.5T360-800h360v80h-80v560h-80v-560H440v560h-80Z"/></svg>'
   }
 }
 

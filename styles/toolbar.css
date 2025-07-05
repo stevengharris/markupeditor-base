@@ -113,10 +113,11 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menuitem {
-    color: rgb(250, 249, 246);
-    border: 1px solid #4183c4;
+    color: lightblue;
+    border: 1px solid lightblue; 
+    /* border: 1px solid #4183c4; */
     background: black;
-    fill: white;
+    fill: lightblue;
   }
 }
 
@@ -127,9 +128,9 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menuitem-active {
-      fill: white;
-      color: white;
-      background: #4183c4;
+      fill: black;
+      color: black;
+      background: lightblue;
   }
 }
 
@@ -274,6 +275,18 @@
   }
 }
 
+.Markup-menu-dropdown-item p, 
+.Markup-menu-dropdown-item h1, 
+.Markup-menu-dropdown-item h2, 
+.Markup-menu-dropdown-item h3, 
+.Markup-menu-dropdown-item h4, 
+.Markup-menu-dropdown-item h5, 
+.Markup-menu-dropdown-item h6, 
+.Markup-menu-dropdown-item pre {
+  padding: 0;
+  margin: 0;
+}
+
 .Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {
   display: block;
 }
@@ -312,7 +325,7 @@
 
 .Markup-selection {
   position: absolute;
-  border: 1px solid #4183c4;
+  border: 1px solid lightblue;
   background: transparent;
 }
 
@@ -425,6 +438,6 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-tablesizer .Markup-menu-dropdown-item {
-    border: 1px solid #4183c4;
+    border: 1px solid lightblue;
   }
 }
