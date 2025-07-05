@@ -482,7 +482,7 @@ class LinkItem {
    */
   openLinkDialog(state, dispatch, view) {
     this.createLinkDialog(view)
-    this.dialog.showModal();
+    this.dialog.show();
   }
 
   /**
@@ -512,7 +512,30 @@ class LinkItem {
     this.setButtons(view)
     this.okUpdate(view.state);
     this.cancelUpdate(view.state);
-    getWrapper().appendChild(this.dialog);
+    
+    let wrapper = getWrapper();
+    wrapper.appendChild(this.dialog);
+
+    // Add an overlay so we can get a modal effect without using showModal
+    // showModal puts the dialog in the top-laver, so it slides over the toolbar 
+    // when scrolling and ignores z-order. Good article: https://bitsofco.de/accessible-modal-dialog/.
+    // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
+    // because it sits at a higher z-level than the prompt and overlay.
+    this.overlay = crel('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
+    this.overlay.addEventListener('click', e => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.overlay);
+    this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
+    if (getSearchbar()) {
+      setClass(this.toolbarOverlay, searchbarShowing(), true);
+    } else {
+      setClass(this.toolbarOverlay, searchbarHidden(), true);
+    }
+    this.toolbarOverlay.addEventListener('click', e => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.toolbarOverlay);
   }
 
   /**
@@ -542,6 +565,10 @@ class LinkItem {
         } else {
           this.closeDialog()
         }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        this.closeDialog()
       }
     })
     this.dialog.appendChild(this.hrefArea)
@@ -723,6 +750,8 @@ class LinkItem {
    * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
    */
   closeDialog() {
+    this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
+    this.overlay?.parentElement?.removeChild(this.overlay)
     this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
     this.selectionDiv = null;
     this.dialog?.close()
@@ -769,7 +798,7 @@ class ImageItem {
    */
   openImageDialog(state, dispatch, view) {
     this.createImageDialog(view)
-    this.dialog.showModal();
+    this.dialog.show();
   }
 
   /**
@@ -800,7 +829,30 @@ class ImageItem {
     this.setButtons(view)
     this.okUpdate(view.state);
     this.cancelUpdate(view.state);
-    getWrapper().appendChild(this.dialog);
+
+    let wrapper = getWrapper();
+    wrapper.appendChild(this.dialog);
+
+    // Add an overlay so we can get a modal effect without using showModal
+    // showModal puts the dialog in the top-laver, so it slides over the toolbar 
+    // when scrolling and ignores z-order. Good article: https://bitsofco.de/accessible-modal-dialog/.
+    // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
+    // because it sits at a higher z-level than the prompt and overlay.
+    this.overlay = crel('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
+    this.overlay.addEventListener('click', e => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.overlay);
+    this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
+    if (getSearchbar()) {
+      setClass(this.toolbarOverlay, searchbarShowing(), true);
+    } else {
+      setClass(this.toolbarOverlay, searchbarHidden(), true);
+    }
+    this.toolbarOverlay.addEventListener('click', e => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.toolbarOverlay);
   }
 
   /**
@@ -830,6 +882,11 @@ class ImageItem {
         } else {
           this.closeDialog()
         }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        this.altArea.focus();
+      } else if (e.key === 'Escape') {
+        this.closeDialog()
       }
     })
     this.dialog.appendChild(this.srcArea)
@@ -844,6 +901,11 @@ class ImageItem {
         } else {
           this.closeDialog()
         }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        this.srcArea.focus();
+      } else if (e.key === 'Escape') {
+        this.closeDialog()
       }
     })
     this.dialog.appendChild(this.altArea)
@@ -1025,6 +1087,8 @@ class ImageItem {
    * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
    */
   closeDialog() {
+    this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
+    this.overlay?.parentElement?.removeChild(this.overlay)
     this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
     this.selectionDiv = null;
     this.dialog?.close()
@@ -1265,6 +1329,10 @@ function getWrapper() {
 
 function searchbarShowing() {
   return prefix + "-searchbar-showing"
+}
+
+function searchbarHidden() {
+  return prefix + "-searchbar-hidden"
 }
 
 /**
