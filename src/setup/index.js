@@ -7,9 +7,8 @@ import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search} from "prosemirror-search"
 
-import {buildMenuItems} from "./menu"
+import {buildMenuItems, buildKeymap} from "./menu"
 import {toolbar} from "./toolbar"
-import {buildKeymap} from "./keymap"
 import {buildInputRules} from "./inputrules"
 
 import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive} from "../markup"
@@ -155,7 +154,7 @@ export function markupSetup(options) {
   let prefix = "Markup"
   let plugins = [
     buildInputRules(options.schema),
-    keymap(buildKeymap(options.schema, options.mapKeys)),
+    keymap(buildKeymap(options.config, options.schema)),
     keymap(baseKeymap),
     dropCursor(),
     gapCursor(),

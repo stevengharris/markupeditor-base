@@ -1,11 +1,12 @@
 export class MenuConfig {
-  constructor(visibility, insertBar, formatBar, styleMenu, styleBar, tableMenu) {
+  constructor(visibility, insertBar, formatBar, styleMenu, styleBar, tableMenu, keymap) {
     this.visibility = visibility
     this.insertBar = insertBar
     this.formatBar = formatBar
     this.styleMenu = styleMenu
     this.styleBar = styleBar
     this.tableMenu = tableMenu
+    this.keymap = keymap
   }
 
   static standard() {
@@ -15,7 +16,8 @@ export class MenuConfig {
       FormatBarConfig.standard(),
       StyleMenuConfig.standard(),
       StyleBarConfig.standard(),
-      TableMenuConfig.standard()
+      TableMenuConfig.standard(),
+      KeymapConfig.standard()
     )
   }
 }
@@ -105,5 +107,37 @@ class TableMenuConfig {
 
   static standard() {
     return new TableMenuConfig(true, true)
+  }
+}
+
+class KeymapConfig {
+  constructor() {
+    // Formatting
+    this.bold = ["Mod-b", "Mod-B"]
+    this.italic = ["Mod-i", "Mod-I"]
+    this.underline = ["Mod-u", "Mod-U"]
+    this.code = "Mod-`"
+    this.strikethrough = "Ctrl-Mod-x"
+    this.subscript = "Ctrl-Mod--"
+    this.superscript = "Ctrl-Mod-+"
+    // Correction
+    this.undo = "Mod-z"
+    this.redo = "Shift-Mod-z"
+    // List types
+    this.bullet = "Mod-."
+    this.number = "Shift-Mod-."
+    // Denting
+    this.indent = ["Mod-]", "Mod->"]
+    this.outdent = ["Mod-[", "Mod-<"]
+    // Insert
+    this.link = ["Mod-k", "Mod-K"]
+    this.image = ""
+    this.table = "" // TODO: If this is going to map to a key, the table sizer has to work independently
+    // Search
+    this.search = "Shift-Mod-F" // "Mod-f" in a browser also brings up the browser search function
+  }
+
+  static standard() {
+    return new KeymapConfig()
   }
 }

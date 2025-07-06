@@ -4,6 +4,7 @@
  * 
  * Adaptations:
  *  - Modify buildMenuItems to use a `config` object that specifies visibility and content
+ *  - Modify buildKeymap to use a `config` object that specifies key mappings
  *  - Modify icons to use SVG from Google Material Fonts
  *  - Allow Dropdown menus to be icons, not just labels
  *  - Replace use of prompt with custom dialogs for links and images
@@ -24,7 +25,16 @@
  */
 
 import crel from "crelt"
-import {toggleMark, wrapIn, lift, setBlockType} from "prosemirror-commands"
+import {
+  toggleMark, 
+  wrapIn, 
+  lift, 
+  setBlockType, 
+  chainCommands
+} from "prosemirror-commands"
+import {splitListItem} from "prosemirror-schema-list"
+import {goToNextCell} from 'prosemirror-tables'
+import {undoInputRule} from "prosemirror-inputrules"
 import {undo, redo} from "prosemirror-history"
 import {
   wrapInListCommand, 
@@ -51,7 +61,11 @@ import {
   deleteLinkCommand,
   getImageAttributes,
   insertImageCommand,
-  modifyImageCommand
+  modifyImageCommand,
+  stateChanged, 
+  handleDelete, 
+  handleEnter, 
+  handleShiftEnter
 } from "../markup"
 
 let prefix;
@@ -287,7 +301,8 @@ class SearchItem {
       title: 'Open search',
       icon: icons.search
     };
-    this.item = cmdItem(this.toggleSearch.bind(this), options);
+    this.command = this.toggleSearch.bind(this);
+    this.item = cmdItem(this.command, options);
     this.text = '';
     this.caseSensitive = false;
   }
@@ -470,7 +485,8 @@ class LinkItem {
       title: 'Insert/edit link',
       icon: icons.link
     };
-    this.item = cmdItem(this.openLinkDialog.bind(this), options);
+    this.command = this.openLinkDialog.bind(this);
+    this.item = cmdItem(this.command, options);
     this.dialog = null;
     this.selectionDiv = null;
   }
@@ -786,7 +802,8 @@ class ImageItem {
       title: 'Insert/edit image',
       icon: icons.image
     };
-    this.item = cmdItem(this.openImageDialog.bind(this), options);
+    this.command = this.openImageDialog.bind(this);
+    this.item = cmdItem(this.command, options);
     this.dialog = null;
     this.selectionDiv = null;
   }
@@ -1210,11 +1227,11 @@ class TableInsertItem {
     this.rows = rows
     this.cols = cols
     this.onMouseover = onMouseover
-    this.item = this.tableInsertItem(this.rows, this.cols, options)
+    this.command = insertTableCommand(this.rows, this.cols)
+    this.item = this.tableInsertItem(this.command, options)
   }
 
-  tableInsertItem(rows, cols, options) {
-    let command = insertTableCommand(rows, cols)
+  tableInsertItem(command, options) {
     let passedOptions = {
       run: command,
       enable(state) { return command(state); },
@@ -1304,6 +1321,73 @@ export function buildMenuItems(basePrefix, config, schema) {
   if (formatBar) itemGroups.push(formatItems(config, schema));
   if (search) itemGroups.push([new SearchItem()])
   return itemGroups;
+}
+
+/**
+ * Return a map of Commands that will be invoked when key combos are pressed.
+ * 
+ * @param {Object}  config      The configuration of the menu.
+ * @param {Schema}  schema      The schema that holds node and mark types.
+ * @returns [String : Command]  Commands bound to keys identified by strings (e.g., "Mod-b")
+ */
+export function buildKeymap(config, schema) {
+  let keymap = config.keymap
+  let keys = {}
+
+  /** Allow keyString to be a string or array of strings identify the map from keys to cmd */
+  function bind(keyString, cmd) {
+    if (keyString instanceof Array) {
+      for (let key of keyString) { keys[key] = cmd }
+    } else {
+      if (keyString?.length > 0) {
+        keys[keyString] = cmd
+      } else {
+        delete keys[keyString]
+      }
+    }
+  }
+
+  // MarkupEditor-specific
+  // We need to know when Enter is pressed, so we can identify a change on the Swift side.
+  // In ProseMirror, empty paragraphs don't change the doc until they contain something, 
+  // so we don't get a notification until something is put in the paragraph. By chaining 
+  // the stateChanged with splitListItem that is bound to Enter here, it always executes, 
+  // but splitListItem will also execute, as will anything else beyond it in the chain 
+  // if splitListItem returns false (i.e., it doesn't really split the list).
+  bind("Enter", chainCommands(handleEnter, splitListItem(schema.nodes.list_item)))
+  // The MarkupEditor handles Shift-Enter as searchBackward when search is active.
+  bind("Shift-Enter", handleShiftEnter)
+  // The MarkupEditor needs to be notified of state changes on Delete, like Backspace
+  bind("Delete", handleDelete)
+  // Table navigation by Tab/Shift-Tab
+  bind('Tab', goToNextCell(1))
+  bind('Shift-Tab', goToNextCell(-1))
+  
+  // Text formatting
+  bind(keymap.bold, formatCommand(schema.marks.strong))
+  bind(keymap.italic, formatCommand(schema.marks.em))
+  bind(keymap.underline, formatCommand(schema.marks.u))
+  bind(keymap.code, formatCommand(schema.marks.code))
+  bind(keymap.strikethrough, formatCommand(schema.marks.s))
+  bind(keymap.subscript, formatCommand(schema.marks.sub))
+  bind(keymap.superscript, formatCommand(schema.marks.sup))
+  // Correction (needs to be chained with stateChanged also)
+  bind(keymap.undo, chainCommands(stateChanged, undo))
+  bind(keymap.redo, chainCommands(stateChanged, redo))
+  bind("Backspace", chainCommands(handleDelete, undoInputRule))
+  // List types
+  bind(keymap.bullet, wrapInListCommand(schema, schema.nodes.bullet_list))
+  bind(keymap.number, wrapInListCommand(schema, schema.nodes.ordered_list))
+    // Denting
+  bind(keymap.indent, wrapIn(schema.nodes.blockquote))
+  bind(keymap.outdent, lift)
+    // Insert
+  bind(keymap.link, new LinkItem().command)
+  bind(keymap.image, new ImageItem().command)
+  bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
+    // Search
+  bind(keymap.search, new SearchItem().command)
+  return keys
 }
 
 /* Utility functions */
@@ -1609,13 +1693,17 @@ function formatItems(config, schema) {
   return items;
 }
 
+function formatCommand(markType) {
+  return toggleMark(markType)
+}
+
 function formatItem(markType, options) {
   let passedOptions = {
     active: (state) => { return markActive(state, markType) },
     enable: true
   }
   for (let prop in options) passedOptions[prop] = options[prop]
-  return cmdItem(toggleMark(markType), passedOptions)
+  return cmdItem(formatCommand(markType), passedOptions)
 }
 
 /* Style DropDown (P, H1-H6, Code) */
