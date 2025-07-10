@@ -39,7 +39,16 @@ class VisibilityConfig {
    * @returns {VisibilityConfig}
    */
   static standard() {
-    return new VisibilityConfig(true, false, true, true, true, true, true, true)
+    return new VisibilityConfig(
+      true,   // toolbar overall
+      false,  // correctionBar
+      true,   // insertBar
+      true,   // styleMenu
+      true,   // styleBar
+      true,   // formatBar
+      true,   // tableMenu
+      true    // search
+    )
   }
 }
 
@@ -51,7 +60,11 @@ class InsertBarConfig {
   }
 
   static standard() {
-    return new InsertBarConfig(true, true, true)
+    return new InsertBarConfig(
+      true,   // link
+      true,   // image
+      true    // table
+    )
   }
 }
 
@@ -67,7 +80,15 @@ class FormatBarConfig {
   }
 
   static standard() {
-    return new FormatBarConfig(true, true, true, true, true, false, false)
+    return new FormatBarConfig(
+      true,   // bold
+      true,   // italic
+      true,   // underline
+      true,   // code
+      true,   // strikethrough
+      false,  // subscript
+      false   // superscript
+    )
   }
 }
 
@@ -84,7 +105,16 @@ class StyleMenuConfig {
   }
 
   static standard() {
-    return new StyleMenuConfig(true, true, true, true, true, true, true, true)
+    return new StyleMenuConfig(
+      true,   // P
+      true,   // H1
+      true,   // H2
+      true,   // H3
+      true,   // H4
+      true,   // H5
+      true,   // H6
+      true    // CODE
+    )
   }
 }
 
@@ -95,7 +125,10 @@ class StyleBarConfig {
   }
 
   static standard() {
-    return new StyleBarConfig(true, true)
+    return new StyleBarConfig(
+      true,   // list
+      true    // dent
+    )
   }
 }
 
@@ -106,7 +139,10 @@ class TableMenuConfig {
   }
 
   static standard() {
-    return new TableMenuConfig(true, true)
+    return new TableMenuConfig(
+      true,   // border
+      true    // header
+    )
   }
 }
 
