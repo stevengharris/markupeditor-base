@@ -982,7 +982,7 @@ function _callback(message) {
  * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
  * callback means the change happened in the 'editor' div.
  */
-function _callbackInput() {
+export function callbackInput() {
     _callback('input' + (selectedID ?? ''))
 };
 
@@ -1796,36 +1796,46 @@ export function toggleSuperscript() {
  * @param {string} type     The *uppercase* type to be toggled at the selection.
  */
 function _toggleFormat(type) {
-    const state = view.state;
-    let toggle;
-    switch (type) {
-        case 'B':
-            toggle = toggleMark(state.schema.marks.strong);
-            break;
-        case 'I':
-            toggle = toggleMark(state.schema.marks.em);
-            break;
-        case 'U':
-            toggle = toggleMark(state.schema.marks.u);
-            break;
-        case 'CODE':
-            toggle = toggleMark(state.schema.marks.code);
-            break;
-        case 'DEL':
-            toggle = toggleMark(state.schema.marks.s);
-            break;
-        case 'SUB':
-            toggle = toggleMark(state.schema.marks.sub);
-            break;
-        case 'SUP':
-            toggle = toggleMark(state.schema.marks.sup);
-            break;
-    };  
-    if (toggle) {
-        toggle(state, view.dispatch);
-        stateChanged()
-    };
+    let command = toggleFormatCommand(type)
+    return command(view.state, view.dispatch, view)
 };
+
+export function toggleFormatCommand(type) {
+    let commandAdapter = (viewState, dispatch, view) => {
+        let state = view?.state ?? viewState;
+        let toggle;
+        switch (type) {
+            case 'B':
+                toggle = toggleMark(state.schema.marks.strong);
+                break;
+            case 'I':
+                toggle = toggleMark(state.schema.marks.em);
+                break;
+            case 'U':
+                toggle = toggleMark(state.schema.marks.u);
+                break;
+            case 'CODE':
+                toggle = toggleMark(state.schema.marks.code);
+                break;
+            case 'DEL':
+                toggle = toggleMark(state.schema.marks.s);
+                break;
+            case 'SUB':
+                toggle = toggleMark(state.schema.marks.sub);
+                break;
+            case 'SUP':
+                toggle = toggleMark(state.schema.marks.sup);
+                break;
+        };
+        if (toggle && view) {
+            toggle(state, view.dispatch);
+            stateChanged()
+        } else {
+            return toggle
+        }
+    }
+    return commandAdapter
+}
 
 /********************************************************************************
  * Styling
@@ -1841,9 +1851,58 @@ function _toggleFormat(type) {
  * @param {String}  style    One of the styles P or H1-H6 to set the selection to.
  */
 export function setStyle(style) {
-    const node = _nodeFor(style);
-    _setParagraphStyle(node);
+    let command = setStyleCommand(style)
+    let result = command(view.state, view.dispatch, view)
+    return result
 };
+
+/**
+ * Return a Command that sets the paragraph style at the selection to `style` 
+ * @param {String}  style    One of the styles P or H1-H6 to set the selection to.
+ */
+export function setStyleCommand(style) {
+    let commandAdapter = (viewState, dispatch, view) => {
+        let state = view?.state ?? viewState;
+        const protonode = _nodeFor(style, state.schema);
+        const doc = state.doc;
+        const selection = state.selection;
+        const tr = state.tr;
+        let transaction, error;
+        doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+            if (node.type === state.schema.nodes.div) { 
+                return true;
+            } else if (node.isBlock) {
+                if (node.type.inlineContent) {
+                    try {
+                        transaction = tr.setNodeMarkup(pos, protonode.type, protonode.attrs);
+                    } catch(e) {
+                        // We might hit multiple errors across the selection, but we will only return one MUError.Style
+                        error = MUError.Style;
+                        if ((e instanceof RangeError) && (protonode.type == state.schema.nodes.code_block)) {
+                            // This is so non-obvious when people encounter it, it needs some explanation
+                            error.info = ('Code style can only be applied to unformatted text.')
+                        }
+                    }
+                } else {    // Keep searching if in blockquote or other than p, h1-h6
+                    return true;
+                }
+            };
+            return false;   // We only need top-level nodes within doc
+        });
+        if (error) {
+            //error.alert = true;
+            //error.callback();
+            return false;
+        } else if (view) {
+            const newState = view.state.apply(transaction);
+            view.updateState(newState);
+            stateChanged();
+        } else {    // When checking if active based on state, return true only if different
+            return paragraphStyle(state) != style;
+        }
+    }
+    return commandAdapter
+}
 
 /**
  * Find/verify the oldStyle for the selection and replace it with newStyle.
@@ -1860,8 +1919,8 @@ export function replaceStyle(oldStyle, newStyle) {
  * @param {string} paragraphStyle   One of the paragraph styles supported by the MarkupEditor.
  * @returns {Node | null}           A ProseMirror Node of the specified type or null if unknown.
  */
-function _nodeFor(paragraphStyle) {
-    const nodeTypes = view.state.schema.nodes;
+function _nodeFor(paragraphStyle, schema) {
+    const nodeTypes = schema.nodes;
     let node;
     switch (paragraphStyle) {
         case 'P':
@@ -1890,46 +1949,6 @@ function _nodeFor(paragraphStyle) {
             break;
     };
     return node;
-};
-
-/**
- * Set the paragraph style at the selection based on the settings of protonode.
- * @param {Node}  protonode    A Node with the attributes and type we want to set.
- */
-function _setParagraphStyle(protonode) {
-    const doc = view.state.doc;
-    const selection = view.state.selection;
-    const tr = view.state.tr;
-    let transaction, error;
-    doc.nodesBetween(selection.from, selection.to, (node, pos) => {
-        if (node.type === view.state.schema.nodes.div) { 
-            return true;
-        } else if (node.isBlock) {
-            if (node.type.inlineContent) {
-                try {
-                    transaction = tr.setNodeMarkup(pos, protonode.type, protonode.attrs);
-                } catch(e) {
-                    // We might hit multiple errors across the selection, but we will only return one MUError.Style
-                    error = MUError.Style;
-                    if ((e instanceof RangeError) && (protonode.type == view.state.schema.nodes.code_block)) {
-                        // This is so non-obvious when people encounter it, it needs some explanation
-                        error.info = ('Code style can only be applied to unformatted text.')
-                    }
-                }
-            } else {    // Keep searching if in blockquote or other than p, h1-h6
-                return true;
-            }
-        };
-        return false;   // We only need top-level nodes within doc
-    });
-    if (error) {
-        error.alert = true;
-        error.callback();
-    } else {
-        const newState = view.state.apply(transaction);
-        view.updateState(newState);
-        stateChanged();
-    };
 };
 
 /********************************************************************************
@@ -2202,24 +2221,35 @@ function updateNode(node, targetListType, targetListItemType, listTypes, listIte
  *
  */
 export function indent() {
-    const selection = view.state.selection;
-    const nodeTypes = view.state.schema.nodes;
-    let newState;
-    view.state.doc.nodesBetween(selection.from, selection.to, node => {
-        if (node.isBlock) {   
-            const command = wrapIn(nodeTypes.blockquote);
-            command(view.state, (transaction) => {
-                newState = view.state.apply(transaction);
-            });
-            return true;
-        };
-        return false;
-    });
-    if (newState) {
-        view.updateState(newState);
-        stateChanged();
-    }
+    let command = indentCommand();
+    return command(view.state, view.dispatch, view)
 };
+
+export function indentCommand() {
+    let commandAdapter = (viewState, dispatch, view) => {
+        let state = view?.state ?? viewState;
+        const selection = state.selection;
+        const nodeTypes = state.schema.nodes;
+        let newState;
+        state.doc.nodesBetween(selection.from, selection.to, node => {
+            if (node.isBlock) {
+                const command = wrapIn(nodeTypes.blockquote);
+                command(state, (transaction) => {
+                    newState = state.apply(transaction);
+                });
+                return true;
+            };
+            return false;
+        });
+        if (view && newState) {
+            view.updateState(newState);
+            stateChanged();
+        } else {
+            return newState;
+        }
+    }
+    return commandAdapter;
+}
 
 /**
  * Do a context-sensitive outdent.
@@ -2230,32 +2260,41 @@ export function indent() {
  *
  */
 export function outdent() {
-    const selection = view.state.selection;
-    const blockquote = view.state.schema.nodes.blockquote;
-    const ul = view.state.schema.nodes.bullet_list;
-    const ol = view.state.schema.nodes.ordered_list;
-    let newState;
-    view.state.doc.nodesBetween(selection.from, selection.to, node => {
-        if ((node.type == blockquote) || (node.type == ul) || (node.type == ol)) {   
-            lift(view.state, (transaction) => {
-                // Note that some selections will not outdent, even though they
-                // contain outdentable items. For example, multiple blockquotes 
-                // within a selection cannot be outdented. However, multiple 
-                // blocks (e.g., p) can be outdented within a blockquote, because
-                // the selection is identifying the paragraphs to be outdented.
-                newState = view.state.apply(transaction);
-            });
-        };
-        return true;
-    });
-    if (newState) {
-        view.updateState(newState);
-        stateChanged();
-        return true;
-    } else {
-        return false;
-    }
+    let command = outdentCommand()
+    return command(view.state, view.dispatch, view)
 };
+
+export function outdentCommand() {
+    let commandAdapter = (viewState, dispatch, view) => {
+        let state = view?.state ?? viewState;
+        const selection = state.selection;
+        const blockquote = state.schema.nodes.blockquote;
+        const ul = state.schema.nodes.bullet_list;
+        const ol = state.schema.nodes.ordered_list;
+        let newState;
+        state.doc.nodesBetween(selection.from, selection.to, node => {
+            if ((node.type == blockquote) || (node.type == ul) || (node.type == ol)) {
+                lift(state, (transaction) => {
+                    // Note that some selections will not outdent, even though they
+                    // contain outdentable items. For example, multiple blockquotes 
+                    // within a selection cannot be outdented. However, multiple 
+                    // blocks (e.g., p) can be outdented within a blockquote, because
+                    // the selection is identifying the paragraphs to be outdented.
+                    newState = state.apply(transaction);
+                });
+            };
+            return true;
+        });
+        if (view && newState) {
+            view.updateState(newState);
+            stateChanged();
+            return true;
+        } else {
+            return newState;
+        }
+    }
+    return commandAdapter
+}
 
 /********************************************************************************
  * Deal with modal input from the Swift side
@@ -2380,7 +2419,7 @@ const _getSelectionState = function() {
     // When we have multiple contentEditable elements within editor, we need to
     // make sure we selected something that is editable. If we didn't
     // then just return state, which will be invalid but have the enclosing div ID.
-    // Note: _callbackInput() uses a cached value of the *editable* div ID
+    // Note: callbackInput() uses a cached value of the *editable* div ID
     // because it is called at every keystroke and change, whereas here we take
     // the time to find the enclosing div ID from the selection so we are sure it
     // absolutely reflects the selection state at the time of the call regardless
@@ -2704,20 +2743,21 @@ export function selectionChanged() {
  * Report a click.
  */
 export function clicked() {
-    deactivateSearch()
+    if (searcher.isActive) deactivateSearch()
     _callback('clicked')
 }
 
 /**
  * Report a change in the ProseMirror document state. The 
  * change might be from typing or formatting or styling, etc.
+ * and triggers both a `selectionChanged` and `input` callback.
  * 
  * @returns Bool    Return false so we can use in chainCommands directly
  */
 export function stateChanged() {
-    deactivateSearch()
-    _callbackInput()
+    if (searcher.isActive) deactivateSearch()
     selectionChanged()
+    callbackInput()
     return false;
 }
 
@@ -2810,17 +2850,31 @@ export function getTestHTML(sel) {
 };
 
 /**
- * Invoke the undo command.
+ * Return a command to undo and do the proper callbacks.
  */
 export function undoCommand() {
-    undo(view.state, view.dispatch);
+    let commandAdapter = (state, dispatch) => {
+        let result = undo(state, dispatch);
+        if (result) {
+            stateChanged()
+        }
+        return result
+    }
+    return commandAdapter
 };
 
 /**
- * Invoke the redo command.
+ * Return a command to redo and do the proper callbacks.
  */
 export function redoCommand() {
-    redo(view.state, view.dispatch);
+    let commandAdapter = (state, dispatch) => {
+        let result = redo(state, dispatch);
+        if (result) {
+            stateChanged()
+        }
+        return result
+    }
+    return commandAdapter
 };
 
 /**

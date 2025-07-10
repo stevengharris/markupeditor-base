@@ -8,7 +8,7 @@ import {Decoration, DecorationSet} from "prosemirror-view"
 import {search} from "prosemirror-search"
 
 import {buildMenuItems, buildKeymap} from "./menu"
-import {toolbar} from "./toolbar"
+import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 
 import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive} from "../markup"
@@ -129,6 +129,24 @@ const placeholderPlugin = new Plugin({
     }
   }
 })
+
+/**
+ * Insert an array of MenuItems or a single MenuItem at the front of the toolbar
+ * @param {[MenuItem] | MenuItem} menuItems 
+ */
+export function prependToolbar(menuItems) {
+  let items = Array.isArray(menuItems) ? menuItems : [menuItems];
+  toolbarView.prepend(items)
+}
+
+/**
+ * Append an array of MenuItems or a single MenuItem at the end of the toolbar
+ * @param {[MenuItem] | MenuItem} menuItems 
+ */
+export function appendToolbar(menuItems) {
+  let items = Array.isArray(menuItems) ? menuItems : [menuItems];
+  toolbarView.append(items)
+}
 
 // :: (Object) → [Plugin]
 // A convenience plugin that bundles together a simple menu with basic

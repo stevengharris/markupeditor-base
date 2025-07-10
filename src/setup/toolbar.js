@@ -16,9 +16,11 @@ import crel from "crelt"
 import {Plugin} from "prosemirror-state"
 import {renderGrouped} from  "./menu"
 
+export let toolbarView;
+
 export function toolbar(prefix, content) {
   let view = function view(editorView) {
-    let toolbarView = new ToolbarView(editorView, prefix, content)
+    toolbarView = new ToolbarView(editorView, prefix, content)
     return toolbarView;
   }
   return new Plugin({view})
@@ -35,12 +37,11 @@ class ToolbarView {
     this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
     this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
     this.menu.className = this.prefix
-
     if (editorView.dom.parentNode)
       editorView.dom.parentNode.replaceChild(this.wrapper, editorView.dom)
     this.wrapper.appendChild(editorView.dom)
 
-    let {dom, update} = renderGrouped(editorView, content);
+    let {dom, update} = renderGrouped(editorView, this.content);
     this.contentUpdate = update;
     this.menu.appendChild(dom)
     this.update();
@@ -48,9 +49,7 @@ class ToolbarView {
 
   update() {
     if (this.editorView.root != this.root) {
-      let { dom, update } = renderGrouped(this.editorView, this.content);
-      this.contentUpdate = update;
-      this.menu.replaceChild(dom, this.menu.firstChild);
+      this.refresh()
       this.root = this.editorView.root;
     }
     if (!this.spacer) {
@@ -59,6 +58,32 @@ class ToolbarView {
       this.wrapper.insertBefore(this.spacer, this.menu);
     }
     return this.contentUpdate(this.editorView.state);
+  }
+
+  /**
+   * Insert an array of MenuItems at the front of the toolbar
+   * @param {[MenuItem]} items 
+   */
+  prepend(items) {
+    this.content = [items].concat(this.content)
+    this.refresh()
+  }
+
+  /**
+   * Add an array of MenuItems at the end of the toolbar
+   * @param {[MenuItem]} items 
+   */
+  append(items) {
+    this.content = this.content.concat([items])
+    this.refresh()
+  }
+
+  refresh() {
+      let { dom, update } = renderGrouped(this.editorView, this.content);
+      this.contentUpdate = update;
+      // dom is an HTMLDocumentFragment and needs to replace all of menu
+      this.menu.innerHTML = '';
+      this.menu.appendChild(dom);
   }
 
   destroy() {

@@ -25,18 +25,17 @@
  */
 
 import crel from "crelt"
-import {
-  toggleMark, 
-  wrapIn, 
-  lift, 
-  setBlockType, 
-  chainCommands
-} from "prosemirror-commands"
+import {chainCommands} from "prosemirror-commands"
 import {splitListItem} from "prosemirror-schema-list"
 import {goToNextCell} from 'prosemirror-tables'
 import {undoInputRule} from "prosemirror-inputrules"
-import {undo, redo} from "prosemirror-history"
 import {
+  setStyleCommand,
+  indentCommand,
+  outdentCommand,
+  undoCommand,
+  redoCommand,
+  toggleFormatCommand,
   wrapInListCommand, 
   insertTableCommand,
   addRowCommand, 
@@ -62,10 +61,10 @@ import {
   getImageAttributes,
   insertImageCommand,
   modifyImageCommand,
-  stateChanged, 
   handleDelete, 
   handleEnter, 
-  handleShiftEnter
+  handleShiftEnter,
+  toggleFormat
 } from "../markup"
 
 let prefix;
@@ -73,7 +72,7 @@ let prefix;
 /**
 An icon or label that, when clicked, executes a command.
 */
-class MenuItem {
+export class MenuItem {
 
   /**
    * Create a menu item.
@@ -139,7 +138,7 @@ class MenuItem {
 A drop-down menu, displayed as a label with a downwards-pointing
 triangle to the right of it.
 */
-class Dropdown {
+export class Dropdown {
 
   /**
   Create a dropdown wrapping the elements.
@@ -240,7 +239,7 @@ class Dropdown {
 Represents a submenu wrapping a group of elements that start
 hidden and expand to the right when hovered over or tapped.
 */
-class DropdownSubmenu {
+export class DropdownSubmenu {
 
   /**
   Creates a submenu for the given group of menu elements. The
@@ -1270,14 +1269,14 @@ class ParagraphStyleItem {
     if (options) {
       for (let prop in options) passedOptions[prop] = options[prop]
     }
-    this.item = this.paragraphStyleItem(nodeType, passedOptions)
+    this.item = this.paragraphStyleItem(nodeType, style, passedOptions)
   }
 
-  paragraphStyleItem(nodeType, options) {
-    let command = setBlockType(nodeType, options.attrs);
+  paragraphStyleItem(nodeType, style, options) {
+    let command = setStyleCommand(style)
     let passedOptions = {
         run: command,
-        enable(state) { return command(state); },
+        enable(state) { return command(state) },
         active(state) {
             let { $from, to, node } = state.selection;
             if (node)
@@ -1351,7 +1350,7 @@ export function buildKeymap(config, schema) {
   // We need to know when Enter is pressed, so we can identify a change on the Swift side.
   // In ProseMirror, empty paragraphs don't change the doc until they contain something, 
   // so we don't get a notification until something is put in the paragraph. By chaining 
-  // the stateChanged with splitListItem that is bound to Enter here, it always executes, 
+  // the handleEnter with splitListItem that is bound to Enter here, it always executes, 
   // but splitListItem will also execute, as will anything else beyond it in the chain 
   // if splitListItem returns false (i.e., it doesn't really split the list).
   bind("Enter", chainCommands(handleEnter, splitListItem(schema.nodes.list_item)))
@@ -1362,25 +1361,26 @@ export function buildKeymap(config, schema) {
   // Table navigation by Tab/Shift-Tab
   bind('Tab', goToNextCell(1))
   bind('Shift-Tab', goToNextCell(-1))
+  //bind(['Mod+c', 'Mod+C'], commandFrom(pasteHTML, ))
   
   // Text formatting
-  bind(keymap.bold, formatCommand(schema.marks.strong))
-  bind(keymap.italic, formatCommand(schema.marks.em))
-  bind(keymap.underline, formatCommand(schema.marks.u))
-  bind(keymap.code, formatCommand(schema.marks.code))
-  bind(keymap.strikethrough, formatCommand(schema.marks.s))
-  bind(keymap.subscript, formatCommand(schema.marks.sub))
-  bind(keymap.superscript, formatCommand(schema.marks.sup))
+  bind(keymap.bold, toggleFormatCommand('B'))
+  bind(keymap.italic, toggleFormatCommand('I'))
+  bind(keymap.underline, toggleFormatCommand('U'))
+  bind(keymap.code, toggleFormatCommand('CODE'))
+  bind(keymap.strikethrough, toggleFormatCommand('DEL'))
+  bind(keymap.subscript, toggleFormatCommand('SUB'))
+  bind(keymap.superscript, toggleFormatCommand('SUP'))
   // Correction (needs to be chained with stateChanged also)
-  bind(keymap.undo, chainCommands(stateChanged, undo))
-  bind(keymap.redo, chainCommands(stateChanged, redo))
+  bind(keymap.undo, undoCommand())
+  bind(keymap.redo, redoCommand())
   bind("Backspace", chainCommands(handleDelete, undoInputRule))
   // List types
   bind(keymap.bullet, wrapInListCommand(schema, schema.nodes.bullet_list))
   bind(keymap.number, wrapInListCommand(schema, schema.nodes.ordered_list))
     // Denting
-  bind(keymap.indent, wrapIn(schema.nodes.blockquote))
-  bind(keymap.outdent, lift)
+  bind(keymap.indent, indentCommand())
+  bind(keymap.outdent, outdentCommand())
     // Insert
   bind(keymap.link, new LinkItem().command)
   bind(keymap.image, new ImageItem().command)
@@ -1474,37 +1474,6 @@ function markActive(state, type) {
   else return state.doc.rangeHasMark(from, to, type)
 }
 
-/**
- * Return a MenuItem that runs the command when selected.
- * 
- * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
- * what `cmd(state)` returns unless otherwise specified in `options`.
- * @param {Command}     cmd 
- * @param {*} options   The spec for the MenuItem
- * @returns {MenuItem}
- */
-function cmdItem(cmd, options) {
-  let passedOptions = {
-    label: options.title,
-    run: cmd
-  }
-  for (let prop in options) passedOptions[prop] = options[prop]
-  if ((!options.enable || options.enable === true) && !options.select)
-    passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
-
-  return new MenuItem(passedOptions)
-}
-
-function renderDropdownItems(items, view) {
-    let rendered = [], updates = [];
-    for (let i = 0; i < items.length; i++) {
-        let { dom, update } = items[i].render(view);
-        rendered.push(crel("div", { class: prefix + "-menu-dropdown-item" }, dom));
-        updates.push(update);
-    };
-    return { dom: rendered, update: combineUpdates(updates, rendered) };
-}
-
 /* Correction Bar (Undo, Redo) */
 
 function correctionBarItems() {
@@ -1516,20 +1485,20 @@ function correctionBarItems() {
 
 function undoItem(options) {
   let passedOptions = {
-    enable: (state) => undo(state)
+    enable: (state) => undoCommand()(state)
   }
   for (let prop in options)
     passedOptions[prop] = options[prop];
-  return cmdItem(undo, passedOptions)
+  return cmdItem(undoCommand(), passedOptions)
 }
 
 function redoItem(options) {
   let passedOptions = {
-    enable: (state) => redo(state)
+    enable: (state) => redoCommand()(state)
   }
   for (let prop in options)
     passedOptions[prop] = options[prop];
-  return cmdItem(redo, passedOptions)
+  return cmdItem(redoCommand(), passedOptions)
 }
 
 /* Insert Bar (Link, Image, Table) */
@@ -1634,7 +1603,7 @@ function styleBarItems(config, schema) {
     items.push(toggleListItem(schema, schema.nodes.ordered_list, { title: 'Toggle numbered list', icon: icons.orderedList }))
   }
   if (dent) {
-    items.push(indentItem(schema.nodes.blockquote, { title: 'Increase indent', icon: icons.blockquote }))
+    items.push(indentItem({ title: 'Increase indent', icon: icons.blockquote }))
     items.push(outdentItem({ title: 'Decrease indent', icon: icons.lift }))
   }
   return items;
@@ -1654,13 +1623,13 @@ function listActive(state, nodeType) {
   return listType === listTypeFor(nodeType, state.schema)
 }
 
-function indentItem(nodeType, options) {
+function indentItem(options) {
   let passedOptions = {
     active: (state) => { return isIndented(state) },
     enable: true
   }
   for (let prop in options) passedOptions[prop] = options[prop]
-  return cmdItem(wrapIn(nodeType), passedOptions)
+  return cmdItem(indentCommand(), passedOptions)
 }
 
 function outdentItem(options) {
@@ -1669,7 +1638,7 @@ function outdentItem(options) {
     enable: true
   }
   for (let prop in options) passedOptions[prop] = options[prop]
-  return cmdItem(lift, passedOptions)
+  return cmdItem(outdentCommand(), passedOptions)
 }
 
 /* Format Bar (B, I, U, etc) */
@@ -1683,27 +1652,23 @@ function outdentItem(options) {
 function formatItems(config, schema) {
   let items = []
   let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.formatBar;
-  if (bold) items.push(formatItem(schema.marks.strong, { title: 'Toggle bold', icon: icons.strong }))
-  if (italic) items.push(formatItem(schema.marks.em, { title: 'Toggle italic', icon: icons.em }))
-  if (underline) items.push(formatItem(schema.marks.u, { title: 'Toggle underline', icon: icons.u }))
-  if (code) items.push(formatItem(schema.marks.code, { title: 'Toggle code', icon: icons.code }))
-  if (strikethrough) items.push(formatItem(schema.marks.s, { title: 'Toggle strikethrough', icon: icons.s }))
-  if (subscript) items.push(formatItem(schema.marks.sub, { title: 'Toggle subscript', icon: icons.sub }))
-  if (superscript) items.push(formatItem(schema.marks.sup, { title: 'Toggle superscript', icon: icons.sup }))
+  if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold', icon: icons.strong }))
+  if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic', icon: icons.em }))
+  if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline', icon: icons.u }))
+  if (code) items.push(formatItem(schema.marks.code, 'CODE', { title: 'Toggle code', icon: icons.code }))
+  if (strikethrough) items.push(formatItem(schema.marks.s, 'DEL', { title: 'Toggle strikethrough', icon: icons.s }))
+  if (subscript) items.push(formatItem(schema.marks.sub, 'SUB', { title: 'Toggle subscript', icon: icons.sub }))
+  if (superscript) items.push(formatItem(schema.marks.sup, 'SUP', { title: 'Toggle superscript', icon: icons.sup }))
   return items;
 }
 
-function formatCommand(markType) {
-  return toggleMark(markType)
-}
-
-function formatItem(markType, options) {
+function formatItem(markType, markName, options) {
   let passedOptions = {
     active: (state) => { return markActive(state, markType) },
-    enable: true
+    enable: (state) => { return toggleFormatCommand(markName)(state) }
   }
   for (let prop in options) passedOptions[prop] = options[prop]
-  return cmdItem(formatCommand(markType), passedOptions)
+  return cmdItem(toggleFormatCommand(markName), passedOptions)
 }
 
 /* Style DropDown (P, H1-H6, Code) */
@@ -1728,7 +1693,7 @@ function styleMenuItems(config, schema) {
   return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
 }
 
-/* Rendering support for MenuItems */
+/* Rendering support and utility functions for MenuItem, Dropdown */
 
 /**
  * Render the given, possibly nested, array of menu elements into a
@@ -1770,6 +1735,37 @@ export function renderGrouped(view, content) {
         return something;
     }
     return { dom: result, update };
+}
+
+/**
+ * Return a MenuItem that runs the command when selected.
+ * 
+ * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
+ * what `cmd(state)` returns unless otherwise specified in `options`.
+ * @param {Command}     cmd 
+ * @param {*} options   The spec for the MenuItem
+ * @returns {MenuItem}
+ */
+export function cmdItem(cmd, options) {
+  let passedOptions = {
+    label: options.title,
+    run: cmd
+  }
+  for (let prop in options) passedOptions[prop] = options[prop]
+  if ((!options.enable || options.enable === true) && !options.select)
+    passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
+
+  return new MenuItem(passedOptions)
+}
+
+export function renderDropdownItems(items, view) {
+    let rendered = [], updates = [];
+    for (let i = 0; i < items.length; i++) {
+        let { dom, update } = items[i].render(view);
+        rendered.push(crel("div", { class: prefix + "-menu-dropdown-item" }, dom));
+        updates.push(update);
+    };
+    return { dom: rendered, update: combineUpdates(updates, rendered) };
 }
 
 function separator() {
