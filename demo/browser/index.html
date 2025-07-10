@@ -3,12 +3,20 @@
     <head>
         <title>MarkupEditor Document</title>
         <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-        <link href="../styles/mirror.css" rel="stylesheet">
-        <link href="../styles/markup.css" rel="stylesheet">
-        <link href="../styles/toolbar.css" rel="stylesheet">
+        <link href="../../styles/mirror.css" rel="stylesheet">
+        <link href="../../styles/markup.css" rel="stylesheet">
+        <link href="../../styles/toolbar.css" rel="stylesheet">
+        <link href="custom.css" rel="stylesheet">
     </head>
     <body>
-        <div id="editor"></div>
+        <div class="editor-wrapper">
+            <div id="editor"></div>
+            <div id="htmldiv" class="htmldiv">
+                <div class="Markup-toolbar-spacer"></div>
+                <pre id="htmldiv-body" class="htmldiv-body"></pre>
+            </div>
+        </div> 
+        <input id="docpicker" type="file" accept=".html" style="display: none;">
         <div id="content" style="display: none">
             <h1>Base MarkupEditor Demo</h1>
 
@@ -119,7 +127,7 @@
             <p>The demo makes use of the <code>leftToolbar</code> option in the <code>MarkupEditor</code>, which makes it simple to add your own toolbar to the left (and/or with <code>rightToolbar</code> for the other side) of the standard <code>MarkupToolbar</code>. You can just as easily construct your own toolbar in SwiftUI using the toolbar-level views like <code>StyleToolbar</code> and <code>FormatToolbar</code>, or with the <code>LabeledToolbar</code> and <code>ToolbarButton</code> used within them.</p>
         </div>
         <script>let markupConfig;</script>
-        <script src="../dist/markupeditor.umd.js"></script>
-        <script src="loaddemo.js"></script>
+        <script src="../../dist/markupeditor.umd.js"></script>
+        <script src="custom.js"></script>
     </body>
 </html>

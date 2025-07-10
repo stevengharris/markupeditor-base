@@ -1,0 +1,37 @@
+.editor-wrapper {
+    display: flex;
+    overflow: hidden;
+    margin: -8px;        /* Set so that the .ProseMirror padding starts from edges */
+    padding: 8px;
+    background: white;
+    color: black;
+}
+@media (prefers-color-scheme: dark) {
+    .editor-wrapper {
+        background: black;
+        color: white;
+    }
+}
+
+.editor {
+    min-width: 50%;
+}
+
+.htmldiv {
+    margin: -8px;        /* Set so that the .ProseMirror padding starts from edges */
+    margin-left: 8px;
+    width: 0;
+    display: block;
+}
+
+.htmldiv-body {
+    background-color: #F8F8F8;
+    padding: 8px;
+    white-space: pre-wrap;
+    font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+    .htmldiv-body {
+        background-color: #808080;
+    }
+}
