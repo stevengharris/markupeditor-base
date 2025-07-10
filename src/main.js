@@ -48,8 +48,7 @@ import {
   endModalInput,
   getSelectionState,
   selectionChanged,
-  clicked,
-  stateChanged,
+  callbackInput,
   undoCommand,
   redoCommand,
   resetSelectedID,
@@ -72,8 +71,22 @@ import {
   borderTable,
 } from "./markup.js"
 
+import { 
+  MenuItem, 
+  Dropdown, 
+  DropdownSubmenu, 
+  cmdItem, 
+  renderGrouped, 
+  renderDropdownItems 
+} from "./setup/menu.js"
+
+import { 
+  prependToolbar, 
+  appendToolbar 
+} from "./setup/index.js"
+
 /**
- * The public MarkupEditor API callable from Swift as "MU.<function name>"
+ * The public MarkupEditor API callable as "MU.<function name>"
  */
 export {
   setTopLevelAttributes,
@@ -133,6 +146,16 @@ export {
   addHeader,
   deleteTableArea,
   borderTable,
+  // Helpers to create toolbar items
+  MenuItem, 
+  Dropdown, 
+  DropdownSubmenu, 
+  cmdItem, 
+  renderGrouped, 
+  renderDropdownItems,
+  // Helpers to add items to the toolbar
+  prependToolbar, 
+  appendToolbar 
 }
 
 /**
@@ -160,9 +183,9 @@ window.view = new EditorView(document.querySelector("#editor"), {
     div(node, view, getPos) { return new DivView(node, view, getPos) },
   },
   // All text input notifies Swift that the document state has changed.
-  handleTextInput() {
-    stateChanged();
-    return false; // All the default behavior should occur
+  // For history, used handleTextInput, but that fires *before* input happens.
+  handleDOMEvents: {
+    'input' : () => { callbackInput() }
   },
   // Use createSelectionBetween to handle selection and click both.
   // Here we guard against selecting across divs.
@@ -181,7 +204,7 @@ window.view = new EditorView(document.querySelector("#editor"), {
     };
     resetSelectedID(fromDiv?.attrs.id ?? toDiv?.attrs.id ?? null)  // Set the selectedID to the div's id or null.
     selectionChanged();
-    clicked();
+    // clicked(); // TODO: Removed, but is it needed in Swift MarkupEditor?
     return null;                        // Default behavior should occur
   }
 })
