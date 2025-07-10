@@ -64,7 +64,6 @@ import {
   handleDelete, 
   handleEnter, 
   handleShiftEnter,
-  toggleFormat
 } from "../markup"
 
 let prefix;
