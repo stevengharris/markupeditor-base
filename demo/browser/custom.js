@@ -1,10 +1,7 @@
-/**
- * Return a user-provided array of MenuItems
- */
-
+/** Return an array of MenuItems */
 function buildMenuItems() {
     let newItem = MU.cmdItem(
-        MU.emptyDocument, 
+        newDocument, 
         {
             enable: () => { return true },
             title: 'New document',
@@ -30,12 +27,23 @@ function buildMenuItems() {
     return [newItem, openItem, htmlItem]
 }
 
+function newDocument() {
+    hideHTML()
+    MU.emptyDocument()
+    updateHTML()
+}
+
+/** Open the picker as listen for changes in the input element */
 function openDocument() {
     let picker = document.getElementById('docpicker');
     picker.addEventListener('change', loadDocument);
     picker.showPicker();
 }
 
+/** 
+ * When the user selects an HTML file from the picker, get its contents, update the document in 
+ * the editor and the HTML that shows in `htmldiv`.
+ */
 function loadDocument() {
     let picker = document.getElementById('docpicker');
     picker.removeEventListener('change', loadDocument);
@@ -45,6 +53,7 @@ function loadDocument() {
         const reader = new FileReader();
         reader.addEventListener('load', (event) => {
             const text = event.target.result; // The file contents
+            hideHTML()
             MU.setHTML(text)
             updateHTML()
         });
@@ -52,18 +61,37 @@ function loadDocument() {
     }
 }
 
+/** Hide/show the `htmldiv` that shows the underlying HTML in the document. */
 function toggleHTML() {
-    let htmldiv = document.getElementById('htmldiv')
-    let width = htmldiv.style.width;
-    let show = (width.length == 0) || (width == '0px')
-    if (show) {
-        updateHTML()
-        htmldiv.style.width = '50%'
+    if (!isShowingHTML()) {
+        showHTML()
     } else {
-        htmldiv.style.width = '0'
+        hideHTML()
     }
 }
 
+function isShowingHTML() {
+    let htmldiv = document.getElementById('htmldiv')
+    let flexGrow = htmldiv.style.flexGrow;
+    return flexGrow && (flexGrow == '1')
+}
+
+function showHTML() {
+    updateHTML()
+    let htmldiv = document.getElementById('htmldiv')
+    htmldiv.style.flex = 'auto'
+    htmldiv.style.minWidth = '50%'
+}
+
+function hideHTML() {
+    let htmldiv = document.getElementById('htmldiv')
+    htmldiv.style.flex = '0'
+    htmldiv.style.minWidth = '0'
+    let editor = document.getElementById('editor')
+    editor.style.flex = 'auto'
+}
+
+/** Get the HTML from the document in the editor and update the `htmldiv`. */
 function updateHTML() {
     let body = document.getElementById('htmldiv-body');
     let html = MU.getHTML()
@@ -76,6 +104,14 @@ function updateHTML() {
     }
 }
 
+/** The HTML we will load initially, as soon as the MarkupEditor lets us know it's ready. */
+const html = `
+<h1>Welcome to the MarkupEditor</h1>
+
+<p>Start editing or use the <img src="newdoc.png" alt="New document"> button to open an HTML document like <a href="demo.html">demo.html</a>.
+`
+
+/** SVG defining icons by key, obtained from https://fonts.google.com/icons under https://openfontlicense.org license. */
 const icons = {
     new: {
         // <span class="material-symbols-outlined">note_add</span>
@@ -92,20 +128,37 @@ const icons = {
     }
 }
 
-class MessageCoordinator {
-    constructor() {}
+/**
+ * The instance that will receive `postMessage` from the MarkupEditor as the document state changes.
+ */
+class MessageHandler {
 
+    /**
+     * Take action when messages we care about come in.
+     * @param {string | JSON} message   The message passed from the MarkupEditor as the state changes. 
+     */
     postMessage(message) {
-        // If we triggered an input callback, update the HTML.
-        // This is way too heavyweight for a real app, but it works nice in the demo to show changes.
-        console.log('message: ' + message)
-        if (message && (message.substring(0, 5) === 'input')) {
+        if (message.substring(0, 5) === 'input') {
+            // Some input or change happened in the document, so update the HTML in the `htmldiv`.
+            // This is way too heavyweight for a real app, but it works nicely in the demo to show changes.
             updateHTML()
+            return;
         }
-    };   
+        switch (message) {
+            // The editor posts `ready` when all scripts are loaded, so we can set the HTML.
+            case 'ready': {
+                MU.setHTML(html)
+                hideHTML()
+                updateHTML()
+                return;
+            }
+        }
+    }
 }
 
+// Place the MenuItems created in `buildMenuItems` at the front of the toolbar.
 MU.prependToolbar(buildMenuItems())
-let messageCoordinator = new MessageCoordinator()
-MU.setMessageHandler(messageCoordinator);
-MU.setHTML(document.getElementById("content").innerHTML);
+
+// Let the MarkupEditor know to use our MessageHandler instance for callbacks.
+let messageHandler = new MessageHandler()
+MU.setMessageHandler(messageHandler);

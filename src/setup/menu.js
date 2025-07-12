@@ -1360,7 +1360,6 @@ export function buildKeymap(config, schema) {
   // Table navigation by Tab/Shift-Tab
   bind('Tab', goToNextCell(1))
   bind('Shift-Tab', goToNextCell(-1))
-  //bind(['Mod+c', 'Mod+C'], commandFrom(pasteHTML, ))
   
   // Text formatting
   bind(keymap.bold, toggleFormatCommand('B'))

@@ -49,6 +49,7 @@ import {
   getSelectionState,
   selectionChanged,
   callbackInput,
+  clicked,
   undoCommand,
   redoCommand,
   resetSelectedID,
@@ -69,6 +70,7 @@ import {
   addHeader,
   deleteTableArea,
   borderTable,
+  stateChanged,
 } from "./markup.js"
 
 import { 
@@ -185,7 +187,13 @@ window.view = new EditorView(document.querySelector("#editor"), {
   // All text input notifies Swift that the document state has changed.
   // For history, used handleTextInput, but that fires *before* input happens.
   handleDOMEvents: {
-    'input' : () => { callbackInput() }
+    'input' : () => { callbackInput() },
+    'cut' : () => { setTimeout(()=>{ callbackInput() }, 0) },
+    'click': () => { setTimeout(()=>{ clicked() }, 0) }
+  },
+  handlePaste(view, event, slice) {
+    setTimeout(()=>{ callbackInput() }, 0)
+    return false;
   },
   // Use createSelectionBetween to handle selection and click both.
   // Here we guard against selecting across divs.

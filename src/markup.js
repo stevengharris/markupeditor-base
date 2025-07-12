@@ -2743,7 +2743,7 @@ export function selectionChanged() {
  * Report a click.
  */
 export function clicked() {
-    if (searcher.isActive) deactivateSearch()
+    deactivateSearch()
     _callback('clicked')
 }
 
@@ -2755,7 +2755,7 @@ export function clicked() {
  * @returns Bool    Return false so we can use in chainCommands directly
  */
 export function stateChanged() {
-    if (searcher.isActive) deactivateSearch()
+    deactivateSearch()
     selectionChanged()
     callbackInput()
     return false;
