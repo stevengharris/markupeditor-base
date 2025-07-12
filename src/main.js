@@ -70,7 +70,7 @@ import {
   addHeader,
   deleteTableArea,
   borderTable,
-  stateChanged,
+  handleEnter,
 } from "./markup.js"
 
 import { 
@@ -186,14 +186,25 @@ window.view = new EditorView(document.querySelector("#editor"), {
   },
   // All text input notifies Swift that the document state has changed.
   // For history, used handleTextInput, but that fires *before* input happens.
+  // Note the `setTimeout` is used to have the function called after the change.
   handleDOMEvents: {
     'input' : () => { callbackInput() },
     'cut' : () => { setTimeout(()=>{ callbackInput() }, 0) },
-    'click': () => { setTimeout(()=>{ clicked() }, 0) }
+    'click': () => { setTimeout(()=>{ clicked() }, 0) },
+    'delete' : () => { setTimeout(()=>{ callbackInput() }, 0) },
   },
   handlePaste(view, event, slice) {
     setTimeout(()=>{ callbackInput() }, 0)
-    return false;
+    return false
+  },
+  handleKeyDown(view, event) {
+    switch (event.key) {
+      case 'Enter':
+      case 'Delete':
+      case 'Backspace':
+        { setTimeout(()=>{ handleEnter() }, 0) }
+    }
+    return false
   },
   // Use createSelectionBetween to handle selection and click both.
   // Here we guard against selecting across divs.
