@@ -2939,7 +2939,6 @@ export function testPasteTextPreprocessing(html) {
 export function insertLink(url) {
     let command = insertLinkCommand(url);
     let result = command(view.state, view.dispatch, view);
-    stateChanged();
     return result
 };
 
@@ -2953,9 +2952,13 @@ export function insertLinkCommand(url) {
             const linkSelection = TextSelection.create(transaction.doc, selection.from, selection.from + textNode.nodeSize);
             transaction.setSelection(linkSelection);
             dispatch(transaction);
+            stateChanged();
         } else {
             const toggle = toggleMark(linkMark.type, linkMark.attrs);
-            if (toggle) toggle(state, dispatch);
+            if (toggle) {
+                toggle(state, dispatch);
+                stateChanged();
+            }
         };
 
         return true;
@@ -3145,8 +3148,6 @@ export function insertTable(rows, cols) {
     if ((rows < 1) || (cols < 1)) return;
     let command = insertTableCommand(rows, cols);
     let result = command(view.state, view.dispatch, view);
-    view.focus();
-    stateChanged();
     return result;
 };
 
@@ -3186,6 +3187,8 @@ export function insertTableCommand(rows, cols) {
             transaction = transaction.setSelection(textSelection);
             state = state.apply(transaction);
             view.updateState(state);
+            view.focus();
+            stateChanged();
         }
         
         return true;
