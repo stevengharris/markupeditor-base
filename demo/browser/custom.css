@@ -1,6 +1,8 @@
 .editor-wrapper {
     display: flex;
-    margin: -8px;        /* Set so that the .ProseMirror padding starts from edges */
+    overflow-x: clip;       /* Clip the raw HTML to avoid sideways scroll when hidden */
+    overflow-y: hidden;     /* Hide the raw HTML when it extends beyond the editor */
+    margin: -8px;           /* Set so that the .ProseMirror padding starts from edges */
     padding: 8px;
     background: white;
     color: black;
@@ -13,17 +15,15 @@
 }
 
 .editor {
-    min-width: 50%;
-    flex: auto;
-    overflow-x: hidden;
+    min-width: 50%;         /* Keep the editor half the screen when the raw HTML shows up */
 }
 
 .htmldiv {
     display: block;
-    overflow-x: hidden;
     flex: min-content;
-    min-width: 0;
-    max-width: 50%;
+    min-width: 0;           /* When we flex to zero, this will be the width */
+    max-width: 50%;         /* When we flex to 1, this will be the width */
+    max-height: 100vh;      /* Even when we flex to 0 to hide, keep height limited to avoid a scroll mess */
 }
 
 .htmldiv-body {
@@ -32,7 +32,7 @@
     margin-left: 8px;
     white-space: pre-wrap;
     font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
-    overflow-x: hidden;
+    overflow: hidden;       /* Text will likely extend below the editor, but we can scroll to see it */
 }
 @media (prefers-color-scheme: dark) {
     .htmldiv-body {
