@@ -1978,7 +1978,6 @@ export function toggleListItem(listType) {
         command(view.state, (transaction) => {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
-            stateChanged();
         });
     };
 };
@@ -2082,8 +2081,11 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
     const commandAdapter = (state, dispatch) => {
         const inTargetNodeType = getListType(state) === listTypeFor(targetNodeType, state.schema)
         const command = inTargetNodeType ? liftListItem(state.schema.nodes.list_item) : wrapInList(targetNodeType, attrs);
-        const result = command(state);
-        if (result) return command(state, dispatch);
+        if (command(state)) {
+            let result = command(state, dispatch);
+            if (dispatch) stateChanged()
+            return result;
+        }
 
         const commonListNode = findCommonListNode(state, listTypes);
         if (!commonListNode) return false;
@@ -2113,8 +2115,8 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
             );
 
             dispatch(tr);
+            stateChanged();
         }
-
         return true;
     };
 
