@@ -321,7 +321,10 @@ class SearchItem {
   hideSearchbar() {
     let searchbar = getSearchbar();
     searchbar.parentElement.removeChild(searchbar);
-    setClass(getSpacer(), searchbarShowing(), false);
+    // In case we have multiple spacers (like in the demo), remove the class of each of them
+    for (let spacer of getAllSpacers()) {
+      setClass(spacer, searchbarShowing(), false);
+    };
     this.matchCaseDom = null;
     this.matchCaseItem = null;
     this.stopSearching();
@@ -355,7 +358,10 @@ class SearchItem {
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
     this.addSearchButtons(view, searchbar);
     toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
-    setClass(getSpacer(), searchbarShowing(), true);
+    // In case we have multiple spacers (like in the demo), set the class of each of them
+    for (let spacer of getAllSpacers()) {
+      setClass(spacer, searchbarShowing(), true);
+    };
   }
 
   setStatus() {
@@ -1403,8 +1409,16 @@ function getSearchbar() {
   return document.getElementById(prefix + "-searchbar");
 }
 
+function getSpacerName() {
+  return prefix + "-toolbar-spacer"
+}
+
 function getSpacer() {
-  return document.getElementById(prefix + "-toolbar-spacer")
+  return document.getElementById(getSpacerName())
+}
+
+function getAllSpacers() {
+  return document.getElementsByClassName(getSpacerName())
 }
 
 function getWrapper() {
