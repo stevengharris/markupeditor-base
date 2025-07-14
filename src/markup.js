@@ -2857,7 +2857,7 @@ export function getTestHTML(sel) {
 export function undoCommand() {
     let commandAdapter = (state, dispatch) => {
         let result = undo(state, dispatch);
-        if (result) {
+        if (result && dispatch) {
             stateChanged()
         }
         return result
@@ -2871,7 +2871,7 @@ export function undoCommand() {
 export function redoCommand() {
     let commandAdapter = (state, dispatch) => {
         let result = redo(state, dispatch);
-        if (result) {
+        if (result && dispatch) {
             stateChanged()
         }
         return result

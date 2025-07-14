@@ -3,7 +3,6 @@ import {EditorView} from "prosemirror-view"
 import {DOMParser} from "prosemirror-model"
 import {schema} from "./schema/index.js"
 import {markupSetup} from "./setup/index.js"
-import {MenuConfig} from "./menuconfig.js"
 
 import {
   DivView,
@@ -148,7 +147,7 @@ export {
   addHeader,
   deleteTableArea,
   borderTable,
-  // Helpers to create toolbar items
+  // Helpers to create custom toolbar items
   MenuItem, 
   Dropdown, 
   DropdownSubmenu, 
@@ -175,18 +174,16 @@ window.view = new EditorView(document.querySelector("#editor"), {
     // For the MarkupEditor, we can just use the editor element. 
     // There is no need to use a separate content element.
     doc: DOMParser.fromSchema(schema).parse(document.querySelector("#editor")),
-    plugins: markupSetup({
-      config: markupConfig ?? MenuConfig.standard(),
-      schema: schema
-    })
+    plugins: markupSetup(schema)
   }),
   nodeViews: {
     image(node, view, getPos) { return new ImageView(node, view, getPos) },
     div(node, view, getPos) { return new DivView(node, view, getPos) },
   },
-  // All text input notifies Swift that the document state has changed.
+  // All text input makes callbacks to indicate the document state has changed.
   // For history, used handleTextInput, but that fires *before* input happens.
-  // Note the `setTimeout` is used to have the function called after the change.
+  // Note the `setTimeout` hack is used to have the function called after the change
+  // for things things other than the `input` event.
   handleDOMEvents: {
     'input' : () => { callbackInput() },
     'cut' : () => { setTimeout(()=>{ callbackInput() }, 0) },

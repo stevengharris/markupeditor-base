@@ -12,6 +12,7 @@ import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 
 import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive} from "../markup"
+import { Schema } from "prosemirror-model"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 
@@ -148,43 +149,100 @@ export function appendToolbar(menuItems) {
   toolbarView.append(items)
 }
 
-// :: (Object) → [Plugin]
-// A convenience plugin that bundles together a simple menu with basic
-// key bindings, input rules, and styling for the example schema.
-// Probably only useful for quickly setting up a passable
-// editor—you'll need more control over your settings in most
-// real-world situations.
-//
-//   options::- The following options are recognized:
-//
-//     schema:: Schema
-//     The schema to generate key bindings and menu items for.
-//
-//     mapKeys:: ?Object
-//     Can be used to [adjust](#example-setup.buildKeymap) the key bindings created.
-//
-//     config:: ?Object
-//     Configuration for the MarkupEditor, including toolbar.visibility and content.
-//
-//     history:: ?bool
-//     Set to false to disable the history plugin.
-export function markupSetup(options) {
+/**
+ * The `standardMenuConfig` is the default for the MarkupEditor. It can be overridden
+ * by defining a `customMenuConfig` constant in the document before loading the 
+ * rolled-up MarkupEditor script (dist/markupeditor.umd.js). See `src/menuconfig` 
+ * for an example of a file you can load in as a script.
+ */
+const standardMenuConfig = {
+  "visibility": {             // Control the visibility of toolbars, etc
+    "toolbar": true,          // Whether the toolbar is visible at all
+    "correctionBar": false,   // Whether the correction bar (undo/redo) is visible
+    "insertBar": true,        // Whether the insert bar (link, image, table) is visible
+    "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
+    "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
+    "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
+    "tableMenu": true,        // Whether the table menu (create, add, delete, border) is visible
+    "search": true            // Whether the search menu item (hide/show search bar) is visible
+  }, 
+  "insertBar": { 
+    "link": true,             // Whether the link menu item is visible
+    "image": true,            // Whether the image menu item is visible
+    "table": true             // Whether the table menu is visible
+  }, 
+  "formatBar": { 
+    "bold": true,             // Whether the bold menu item is visible
+    "italic": true,           // Whether the italic menu item is visible
+    "underline": true,        // Whether the underline menu item is visible
+    "code": true,             // Whether the code menu item is visible
+    "strikethrough": true,    // Whether the strikethrough menu item is visible
+    "subscript": false,       // Whether the subscript menu item is visible
+    "superscript": false      // Whether the superscript menu item is visible
+  }, 
+  "styleMenu": { 
+    "p": true, 
+    "h1": true, 
+    "h2": true, 
+    "h3": true, 
+    "h4": true, 
+    "h5": true, 
+    "h6": true, 
+    "codeblock": true 
+  }, 
+  "styleBar": { 
+    "list": true, 
+    "dent": true 
+  }, 
+  "tableMenu": { 
+    "border": true, 
+    "header": true 
+  }, 
+  "keymap": { 
+    "bold": ["Mod-b", "Mod-B"], 
+    "italic": ["Mod-i", "Mod-I"], 
+    "underline": ["Mod-u", "Mod-U"], 
+    "code": "Mod-`", 
+    "strikethrough": "Ctrl-Mod-x", 
+    "subscript": "Ctrl-Mod--", 
+    "superscript": "Ctrl-Mod-+", 
+    "undo": "Mod-z", 
+    "redo": "Shift-Mod-z", 
+    "bullet": "Mod-.", 
+    "number": "Shift-Mod-.", 
+    "indent": ["Mod-]", "Mod->"], 
+    "outdent": ["Mod-[", "Mod-<"], 
+    "link": ["Mod-k", "Mod-K"], 
+    "image": "", 
+    "table": "", 
+    "search": "Shift-Mod-F" 
+  }
+}
+
+/**
+ * Return an array of Plugins used for the MarkupEditor
+ * @param {Schema} schema The schema used for the MarkupEditor
+ * @returns 
+ */
+export function markupSetup(schema) {
   let prefix = "Markup"
+  // Use the `standardMenuConfig` unless `customMenuConfig` is defined
+  let menuConfig = (typeof customMenuConfig == 'undefined') ? standardMenuConfig : customMenuConfig
   let plugins = [
-    buildInputRules(options.schema),
-    keymap(buildKeymap(options.config, options.schema)),
+    buildInputRules(schema),
+    keymap(buildKeymap(menuConfig, schema)),
     keymap(baseKeymap),
     dropCursor(),
     gapCursor(),
   ]
 
-  // Only show the toolbar if options enable it
-  if (options.config?.visibility.toolbar) {
-    let content = buildMenuItems(prefix, options.config, options.schema);
+  // Only show the toolbar if the config indicates it is visible
+  if (menuConfig.visibility.toolbar) {
+    let content = buildMenuItems(prefix, menuConfig, schema);
     plugins.push(toolbar(prefix, content));
   }
 
-  if (options.history !== false) plugins.push(history())
+  plugins.push(history())
 
   // Add the plugin that handles table borders
   plugins.push(tablePlugin);
