@@ -426,6 +426,14 @@
   width: 300px;
 }
 
+.Markup-prompt img {
+  display: inline-block;
+  vertical-align: middle;
+  min-width: 28px;
+  height: 28px;
+  margin-right: 4px;
+}
+
 .Markup-prompt p {
   margin: 0 0 4px 0;
   font-weight: normal;
@@ -457,6 +465,15 @@
     color: rgb(250, 249, 246);
     background: rgb(40, 40, 43);
     border: 1px solid gray;
+  }
+}
+
+.Markup-prompt input.invalid {
+  color: red;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-prompt input.invalid {
+    color: pink;
   }
 }
 
