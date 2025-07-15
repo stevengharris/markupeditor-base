@@ -1,7 +1,7 @@
 /**
  * Define a `customMenuConfig` object that controls which toolbars and menus are visible in the 
  * MarkupEditor, and the contents of each one. The `customMenuConfig` provided below shows all 
- * menu bars and options, whereas the `standardMenuBar` in `setup/index.j`s suppresses some elements. 
+ * menu bars and options, whereas the `standardMenuBar` in `setup/index.js` suppresses some elements. 
  * To customize the menu bar, load this file as a script before the rolled-up MarkupEditor script.
  * For example, in your index.html:
  * 
