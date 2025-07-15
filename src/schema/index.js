@@ -84,8 +84,7 @@ let baseNodes = OrderedMap.from({
       src: {},
       alt: {default: null},
       width: {default: null},
-      height: {default: null},
-      scale: {default: null}
+      height: {default: null}
     },
     group: "inline",
     parseDOM: [{
@@ -93,17 +92,23 @@ let baseNodes = OrderedMap.from({
       getAttrs(dom) {
         const width = dom.getAttribute("width") && parseInt(dom.getAttribute("width"));
         const height = dom.getAttribute("height") && parseInt(dom.getAttribute("height"));
-        const scale = (width && dom.naturalWidth) ? 100 * width / dom.naturalWidth : null;
         return {
           src: dom.getAttribute("src"),
           alt: dom.getAttribute("alt"),
           width: width,
-          height: height,
-          scale: scale
+          height: height
         }
       }
     }],
-    toDOM(node) { let {src, alt, width, height, scale} = node.attrs; return ["img", {src, alt, width, height, scale}] }
+    toDOM(node) { 
+      let {src, alt, width, height} = node.attrs; 
+      let minAttrs = {}
+      minAttrs.src = src
+      if (alt) minAttrs.alt = alt
+      minAttrs.width = width ?? "20"
+      minAttrs.height = height ?? "20"
+      return ["img", minAttrs] 
+    }
   },
 
   // :: NodeSpec A hard line break, represented in the DOM as `<br>`.
