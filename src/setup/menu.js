@@ -810,6 +810,7 @@ class ImageItem {
     this.item = cmdItem(this.command, options);
     this.dialog = null;
     this.selectionDiv = null;
+    this.isValid = false;
   }
 
   /**
@@ -850,8 +851,7 @@ class ImageItem {
 
     this.setInputArea(view)
     this.setButtons(view)
-    this.okUpdate(view.state);
-    this.cancelUpdate(view.state);
+    this.updateSrc()
 
     let wrapper = getWrapper();
     wrapper.appendChild(this.dialog);
@@ -889,18 +889,14 @@ class ImageItem {
     this.srcArea = crel('input', { type: 'text', placeholder: 'Enter url...' })
     this.srcArea.value = this.src ?? '';
     this.srcArea.addEventListener('input', () => {
-      if (this.isValid()) {
-        setClass(this.okDom, 'Markup-menuitem-disabled', false);
-      } else {
-        setClass(this.okDom, 'Markup-menuitem-disabled', true);
-      };
-      this.okUpdate(view.state);
-      this.cancelUpdate(view.state);
+      // Update the img src as we type, which will cause this.preview to load, which may result in 
+      // "Not allowed to load local resource" at every keystroke until the image loads properly.
+      this.updateSrc()
     });
     this.srcArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (this.isValid()) {
+        if (this.isValid) {
           this.insertImage(view.state, view.dispatch, view);
         } else {
           this.closeDialog()
@@ -919,7 +915,7 @@ class ImageItem {
     this.altArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (this.isValid()) {
+        if (this.isValid) {
           this.insertImage(view.state, view.dispatch, view);
         } else {
           this.closeDialog()
@@ -946,35 +942,29 @@ class ImageItem {
     let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
     this.dialog.appendChild(buttonsDiv)
 
-    // TODO: When local images are allowed, we should insert a "Select..." button on the 
-    // left that will bring up a file chooser. For it to really work for editing, the 
+    // TODO: When local images are allowed, we should insert a "Select..." button  
+    // somewhere that will bring up a file chooser. For it to really work for editing, the 
     // choosing has to be followed by copying from the selection into the current working 
     // dieectory or a "resources" type of directory below. In Swift, this is all handled 
     // by the app itself, which is notified of the UUID file that is placed in the temp 
     // directory, so the app can do what it wants with it.
-    //if (this.isValid()) {
-    //  let removeItem = cmdItem(this.deleteIm.bind(this), {
-    //    class: prefix + '-menuitem',
-    //    title: 'Remove',
-    //    enable: () => { return true }
-    //  })
-    //  let {dom} = removeItem.render(view)
-    //  buttonsDiv.appendChild(dom);
-    //} else {
-      let spacer = crel('div', {class: prefix + '-menuitem'})
-      spacer.style.visibility = 'hidden';
-      buttonsDiv.appendChild(spacer)
-    //};
+
+    this.preview = this.getPreview()
+    buttonsDiv.appendChild(this.preview)
 
     let group = crel('div', {class: prefix + '-prompt-buttongroup'});
     let okItem = cmdItem(this.insertImage.bind(this), {
       class: prefix + '-menuitem',
       title: 'OK',
       active: () => {
-        return this.isValid()
+        return this.isValid
       },
       enable: () => {
-        return this.isValid()
+        // We enable the OK button to allow saving even invalid src values. For example, 
+        // maybe you are offline and can't reach a URL or you will later put the image 
+        // file into place. However, pressing Enter will result in `closeDialog` being 
+        // executed unless the OK button is active; i.e., only if `srcValue()` is valid.
+        return this.srcValue().length > 0
       }
     })
     let {dom: okDom, update: okUpdate} = okItem.render(view)
@@ -986,7 +976,7 @@ class ImageItem {
       class: prefix + '-menuitem',
       title: 'Cancel',
       active: () => {
-        return !this.isValid()
+        return !this.isValid
       },
       enable: () => {
         return true
@@ -998,6 +988,32 @@ class ImageItem {
     group.appendChild(this.cancelDom)
 
     buttonsDiv.appendChild(group);
+  }
+
+  getPreview() {
+    let preview = crel('img')
+    preview.style.visibility = 'hidden';
+    preview.addEventListener('load', () => {
+      this.isValid = true
+      preview.style.visibility = 'visible'
+      setClass(this.okDom, 'Markup-menuitem-disabled', false)
+      setClass(this.srcArea, 'invalid', false)
+      this.okUpdate(view.state)
+      this.cancelUpdate(view.state)
+    })
+    preview.addEventListener('error', (e) => {
+      this.isValid = false
+      preview.style.visibility = 'hidden'
+      setClass(this.okDom, 'Markup-menuitem-disabled', true)
+      setClass(this.srcArea, 'invalid', true)
+      this.okUpdate(view.state)
+      this.cancelUpdate(view.state)
+    })
+    return preview
+  }
+
+  updateSrc() {
+    this.preview.src = this.srcValue()
   }
 
   /**
@@ -1072,12 +1088,6 @@ class ImageItem {
     }
   }
 
-  isValid() {
-    // TODO: file:steve.png loads properly in the browser because it is local and exists, but it is not a valid url. 
-    // Validation should allow relative file name references.
-    return URL.canParse(this.srcValue())
-  }
-
   /**
    * Return the string from the `srcArea`.
    * @returns {string}
@@ -1092,13 +1102,13 @@ class ImageItem {
 
   /**
    * Insert the image provided in the srcArea if it's valid, modifying image if it exists. Close if it worked.
+   * Note that the image that is saved might be not exist or be properly formed.
    * 
    * @param {EditorState} state 
    * @param {fn(tr: Transaction)} dispatch 
    * @param {EditorView} view 
    */
   insertImage(state, dispatch, view) {
-    if (!this.isValid()) return;
     let newSrc = this.srcValue();
     let newAlt = this.altValue();
     let command = (this.src) ? modifyImageCommand(newSrc, newAlt) : insertImageCommand(newSrc, newAlt);
