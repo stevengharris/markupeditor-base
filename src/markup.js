@@ -212,16 +212,27 @@ class ResizableImage {
                 img.setAttribute('width', node.attrs.width)
                 img.setAttribute('height', node.attrs.height)
             } else {
-                node.attrs.width = e.target.naturalWidth
-                img.setAttribute('width', e.target.naturalWidth)
-                node.attrs.height = e.target.naturalHeight
-                img.setAttribute('height', e.target.naturalHeight)
+                // naturalWidth and naturalHeight will be zero if not known
+                let width = Math.max(e.target.naturalWidth, this._minImageSize)
+                node.attrs.width = width
+                img.setAttribute('width', width)
+                let height = Math.max(e.target.naturalHeight, this._minImageSize)
+                node.attrs.height = height
+                img.setAttribute('height', height)
             }
             this.imageLoaded(src)
         })
 
-        // Notify of any errors. Use => style function to reference this.
+        // Display a broken image background and notify of any errors.
         img.addEventListener('error', e => {
+            // https://fonts.google.com/icons?selected=Material+Symbols+Outlined:broken_image:FILL@0;wght@400;GRAD@0;opsz@20&icon.query=missing&icon.size=18&icon.color=%231f1f1f
+            const imageSvg = '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1f1f1f"><path d="M216-144q-29 0-50.5-21.5T144-216v-528q0-29.7 21.5-50.85Q187-816 216-816h528q29.7 0 50.85 21.15Q816-773.7 816-744v528q0 29-21.15 50.5T744-144H216Zm48-303 144-144 144 144 144-144 48 48v-201H216v249l48 48Zm-48 231h528v-225l-48-48-144 144-144-144-144 144-48-48v177Zm0 0v-240 63-351 528Z"/></svg>';
+            const image64 = btoa(imageSvg);
+            const imageUrl = `url("data:image/svg+xml;base64,${image64}")`
+            img.style.background = "lightgray"  // So we can see it in light or dark mode
+            img.style.backgroundImage = imageUrl
+            img.setAttribute('width', this._minImageSize)
+            img.setAttribute('height', this._minImageSize)
             this.imageLoaded(src)
         });
         
