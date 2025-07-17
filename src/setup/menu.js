@@ -25,10 +25,6 @@
  */
 
 import crel from "crelt"
-import {chainCommands} from "prosemirror-commands"
-import {splitListItem} from "prosemirror-schema-list"
-import {goToNextCell} from 'prosemirror-tables'
-import {undoInputRule} from "prosemirror-inputrules"
 import {
   setStyleCommand,
   indentCommand,
@@ -61,9 +57,6 @@ import {
   getImageAttributes,
   insertImageCommand,
   modifyImageCommand,
-  handleDelete, 
-  handleEnter, 
-  handleShiftEnter,
 } from "../markup"
 
 let prefix;
@@ -290,7 +283,7 @@ export class DropdownSubmenu {
 /**
  * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
  */
-class SearchItem {
+export class SearchItem {
 
   constructor() {
     let options = {
@@ -480,7 +473,7 @@ class SearchItem {
 /**
  * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
  */
-class LinkItem {
+export class LinkItem {
 
   constructor() {
     let options = {
@@ -797,7 +790,7 @@ class LinkItem {
 /**
  * Represents the image MenuItem in the toolbar, which opens the image dialog and maintains its state.
  */
-class ImageItem {
+export class ImageItem {
 
   constructor() {
     let options = {
@@ -1234,7 +1227,7 @@ class TableCreateSubmenu {
  * A MenuItem that inserts a table of size rows/cols and invokes `onMouseover` when 
  * the mouse is over it to communicate the size of table it will create when selected.
  */
-class TableInsertItem {
+export class TableInsertItem {
 
   constructor(rows, cols, onMouseover, options) {
     this.prefix = prefix + "-menuitem"
@@ -1337,72 +1330,72 @@ export function buildMenuItems(basePrefix, config, schema) {
   return itemGroups;
 }
 
-/**
- * Return a map of Commands that will be invoked when key combos are pressed.
- * 
- * @param {Object}  config      The configuration of the menu.
- * @param {Schema}  schema      The schema that holds node and mark types.
- * @returns [String : Command]  Commands bound to keys identified by strings (e.g., "Mod-b")
- */
-export function buildKeymap(config, schema) {
-  let keymap = config.keymap
-  let keys = {}
-
-  /** Allow keyString to be a string or array of strings identify the map from keys to cmd */
-  function bind(keyString, cmd) {
-    if (keyString instanceof Array) {
-      for (let key of keyString) { keys[key] = cmd }
-    } else {
-      if (keyString?.length > 0) {
-        keys[keyString] = cmd
-      } else {
-        delete keys[keyString]
-      }
-    }
-  }
-
-  // MarkupEditor-specific
-  // We need to know when Enter is pressed, so we can identify a change on the Swift side.
-  // In ProseMirror, empty paragraphs don't change the doc until they contain something, 
-  // so we don't get a notification until something is put in the paragraph. By chaining 
-  // the handleEnter with splitListItem that is bound to Enter here, it always executes, 
-  // but splitListItem will also execute, as will anything else beyond it in the chain 
-  // if splitListItem returns false (i.e., it doesn't really split the list).
-  bind("Enter", chainCommands(handleEnter, splitListItem(schema.nodes.list_item)))
-  // The MarkupEditor handles Shift-Enter as searchBackward when search is active.
-  bind("Shift-Enter", handleShiftEnter)
-  // The MarkupEditor needs to be notified of state changes on Delete, like Backspace
-  bind("Delete", handleDelete)
-  // Table navigation by Tab/Shift-Tab
-  bind('Tab', goToNextCell(1))
-  bind('Shift-Tab', goToNextCell(-1))
-  
-  // Text formatting
-  bind(keymap.bold, toggleFormatCommand('B'))
-  bind(keymap.italic, toggleFormatCommand('I'))
-  bind(keymap.underline, toggleFormatCommand('U'))
-  bind(keymap.code, toggleFormatCommand('CODE'))
-  bind(keymap.strikethrough, toggleFormatCommand('DEL'))
-  bind(keymap.subscript, toggleFormatCommand('SUB'))
-  bind(keymap.superscript, toggleFormatCommand('SUP'))
-  // Correction (needs to be chained with stateChanged also)
-  bind(keymap.undo, undoCommand())
-  bind(keymap.redo, redoCommand())
-  bind("Backspace", chainCommands(handleDelete, undoInputRule))
-  // List types
-  bind(keymap.bullet, wrapInListCommand(schema, schema.nodes.bullet_list))
-  bind(keymap.number, wrapInListCommand(schema, schema.nodes.ordered_list))
-    // Denting
-  bind(keymap.indent, indentCommand())
-  bind(keymap.outdent, outdentCommand())
-    // Insert
-  bind(keymap.link, new LinkItem().command)
-  bind(keymap.image, new ImageItem().command)
-  bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
-    // Search
-  bind(keymap.search, new SearchItem().command)
-  return keys
-}
+///**
+// * Return a map of Commands that will be invoked when key combos are pressed.
+// * 
+// * @param {Object}  config      The configuration of the menu.
+// * @param {Schema}  schema      The schema that holds node and mark types.
+// * @returns [String : Command]  Commands bound to keys identified by strings (e.g., "Mod-b")
+// */
+//export function buildKeymap(config, schema) {
+//  let keymap = config.keymap
+//  let keys = {}
+//
+//  /** Allow keyString to be a string or array of strings identify the map from keys to cmd */
+//  function bind(keyString, cmd) {
+//    if (keyString instanceof Array) {
+//      for (let key of keyString) { keys[key] = cmd }
+//    } else {
+//      if (keyString?.length > 0) {
+//        keys[keyString] = cmd
+//      } else {
+//        delete keys[keyString]
+//      }
+//    }
+//  }
+//
+//  // MarkupEditor-specific
+//  // We need to know when Enter is pressed, so we can identify a change on the Swift side.
+//  // In ProseMirror, empty paragraphs don't change the doc until they contain something, 
+//  // so we don't get a notification until something is put in the paragraph. By chaining 
+//  // the handleEnter with splitListItem that is bound to Enter here, it always executes, 
+//  // but splitListItem will also execute, as will anything else beyond it in the chain 
+//  // if splitListItem returns false (i.e., it doesn't really split the list).
+//  bind("Enter", chainCommands(handleEnter, splitListItem(schema.nodes.list_item)))
+//  // The MarkupEditor handles Shift-Enter as searchBackward when search is active.
+//  bind("Shift-Enter", handleShiftEnter)
+//  // The MarkupEditor needs to be notified of state changes on Delete, like Backspace
+//  bind("Delete", handleDelete)
+//  // Table navigation by Tab/Shift-Tab
+//  bind('Tab', goToNextCell(1))
+//  bind('Shift-Tab', goToNextCell(-1))
+//  
+//  // Text formatting
+//  bind(keymap.bold, toggleFormatCommand('B'))
+//  bind(keymap.italic, toggleFormatCommand('I'))
+//  bind(keymap.underline, toggleFormatCommand('U'))
+//  bind(keymap.code, toggleFormatCommand('CODE'))
+//  bind(keymap.strikethrough, toggleFormatCommand('DEL'))
+//  bind(keymap.subscript, toggleFormatCommand('SUB'))
+//  bind(keymap.superscript, toggleFormatCommand('SUP'))
+//  // Correction (needs to be chained with stateChanged also)
+//  bind(keymap.undo, undoCommand())
+//  bind(keymap.redo, redoCommand())
+//  bind("Backspace", chainCommands(handleDelete, undoInputRule))
+//  // List types
+//  bind(keymap.bullet, wrapInListCommand(schema, schema.nodes.bullet_list))
+//  bind(keymap.number, wrapInListCommand(schema, schema.nodes.ordered_list))
+//    // Denting
+//  bind(keymap.indent, indentCommand())
+//  bind(keymap.outdent, outdentCommand())
+//    // Insert
+//  bind(keymap.link, new LinkItem().command)
+//  bind(keymap.image, new ImageItem().command)
+//  bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
+//    // Search
+//  bind(keymap.search, new SearchItem().command)
+//  return keys
+//}
 
 /* Utility functions */
 

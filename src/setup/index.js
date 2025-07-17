@@ -1,13 +1,13 @@
 import {keymap} from "prosemirror-keymap"
 import {history} from "prosemirror-history"
 import {baseKeymap} from "prosemirror-commands"
-import {AllSelection, NodeSelection, Plugin, PluginKey} from "prosemirror-state"
+import {AllSelection, NodeSelection, Plugin} from "prosemirror-state"
 import {dropCursor} from "prosemirror-dropcursor"
 import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search} from "prosemirror-search"
-
-import {buildMenuItems, buildKeymap} from "./menu"
+import {buildKeymap} from "./keymap"
+import {buildMenuItems} from "./menu"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 
