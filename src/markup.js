@@ -123,7 +123,7 @@ class ResizableImage {
     
     constructor(node, pos) {
         this._pos = pos;                    // How to find node in view.state.doc
-        this._minImageSize = 20             // Large enough for visibility and for the handles to display properly
+        this._minImageSize = 18             // Large enough for visibility and for the handles to display properly
         this._imageElement = this.imageElementFrom(node);
         this._imageContainer = this.containerFor(this.imageElement);
         this._startDimensions = this.dimensionsFrom(this.imageElement);

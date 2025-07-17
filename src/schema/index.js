@@ -105,8 +105,8 @@ let baseNodes = OrderedMap.from({
       let minAttrs = {}
       minAttrs.src = src
       if (alt) minAttrs.alt = alt
-      minAttrs.width = width ?? "20"
-      minAttrs.height = height ?? "20"
+      minAttrs.width = width ?? "18"
+      minAttrs.height = height ?? "18"
       return ["img", minAttrs] 
     }
   },
