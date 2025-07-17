@@ -17,7 +17,7 @@ import {
     LinkItem,
     ImageItem,
     TableInsertItem,
-    SearchItem
+    SearchItem,
 } from "./menu"
 
 /**

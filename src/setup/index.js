@@ -12,7 +12,7 @@ import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 
 import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive} from "../markup"
-import { Schema } from "prosemirror-model"
+import {Schema} from "prosemirror-model"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 
@@ -152,7 +152,7 @@ export function appendToolbar(menuItems) {
 /**
  * The `standardMenuConfig` is the default for the MarkupEditor. It can be overridden
  * by defining a `customMenuConfig` constant in the document before loading the 
- * rolled-up MarkupEditor script (dist/markupeditor.umd.js). See `src/menuconfig` 
+ * rolled-up MarkupEditor script (src/markupeditor.umd.js). See `src/menuconfig` 
  * for an example of a file you can load in as a script.
  */
 const standardMenuConfig = {
@@ -164,21 +164,21 @@ const standardMenuConfig = {
     "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
     "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
     "tableMenu": true,        // Whether the table menu (create, add, delete, border) is visible
-    "search": true            // Whether the search menu item (hide/show search bar) is visible
+    "search": true,           // Whether the search menu item (hide/show search bar) is visible
   }, 
   "insertBar": { 
     "link": true,             // Whether the link menu item is visible
     "image": true,            // Whether the image menu item is visible
-    "table": true             // Whether the table menu is visible
+    "table": true,            // Whether the table menu is visible
   }, 
   "formatBar": { 
     "bold": true,             // Whether the bold menu item is visible
     "italic": true,           // Whether the italic menu item is visible
-    "underline": true,        // Whether the underline menu item is visible
+    "underline": false,       // Whether the underline menu item is visible
     "code": true,             // Whether the code menu item is visible
     "strikethrough": true,    // Whether the strikethrough menu item is visible
     "subscript": false,       // Whether the subscript menu item is visible
-    "superscript": false      // Whether the superscript menu item is visible
+    "superscript": false,     // Whether the superscript menu item is visible
   }, 
   "styleMenu": { 
     "p": true, 
@@ -188,34 +188,39 @@ const standardMenuConfig = {
     "h4": true, 
     "h5": true, 
     "h6": true, 
-    "codeblock": true 
+    "codeblock": true ,
   }, 
   "styleBar": { 
     "list": true, 
-    "dent": true 
+    "dent": true,
   }, 
   "tableMenu": { 
-    "border": true, 
-    "header": true 
+    "header": true,
+    "border": false, 
   }, 
   "keymap": { 
+    // Correction
+    "undo": "Mod-z", 
+    "redo": "Shift-Mod-z", 
+    // Insert
+    "link": ["Mod-k", "Mod-K"], 
+    "image": ["Mod-g", "Mod-G"], 
+    "table": ["Mod-t", "Mod-T"], 
+    // Stylebar
+    "bullet": ["Ctrl-u", "Ctrl-U"], 
+    "number": ["Ctrl-o", "Ctrl-O"], 
+    "indent": ["Mod-]", "Ctrl-q"], 
+    "outdent": ["Mod-[", "Shift-Ctrl-q"], 
+    // Format
     "bold": ["Mod-b", "Mod-B"], 
     "italic": ["Mod-i", "Mod-I"], 
     "underline": ["Mod-u", "Mod-U"], 
+    "strikethrough": ["Ctrl-s", "Ctrl-S"], 
     "code": "Mod-`", 
-    "strikethrough": "Ctrl-Mod-x", 
-    "subscript": "Ctrl-Mod--", 
-    "superscript": "Ctrl-Mod-+", 
-    "undo": "Mod-z", 
-    "redo": "Shift-Mod-z", 
-    "bullet": "Mod-.", 
-    "number": "Shift-Mod-.", 
-    "indent": ["Mod-]", "Mod->"], 
-    "outdent": ["Mod-[", "Mod-<"], 
-    "link": ["Mod-k", "Mod-K"], 
-    "image": "", 
-    "table": "", 
-    "search": "Shift-Mod-F" 
+    "subscript": "Ctrl-,", 
+    "superscript": "Ctrl-.", 
+    // Search
+    "search": "Shift-Mod-F",
   }
 }
 
