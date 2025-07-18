@@ -285,11 +285,11 @@ export class DropdownSubmenu {
  */
 export class SearchItem {
 
-  constructor() {
+  constructor(config) {
     let options = {
       enable: (state) => { return true },
       active: (state) => { return this.showing() },
-      title: 'Open search',
+      title: 'Toggle search' + keyString('search', config.keymap),
       icon: icons.search
     };
     this.command = this.toggleSearch.bind(this);
@@ -475,11 +475,11 @@ export class SearchItem {
  */
 export class LinkItem {
 
-  constructor() {
+  constructor(config) {
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
-      title: 'Insert/edit link',
+      title: 'Insert/edit link' + keyString('link', config.keymap),
       icon: icons.link
     };
     this.command = this.openLinkDialog.bind(this);
@@ -792,11 +792,11 @@ export class LinkItem {
  */
 export class ImageItem {
 
-  constructor() {
+  constructor(config) {
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return getImageAttributes(state).src  },
-      title: 'Insert/edit image',
+      title: 'Insert/edit image' + keyString('image', config.keymap),
       icon: icons.image
     };
     this.command = this.openImageDialog.bind(this);
@@ -1321,81 +1321,14 @@ export function buildMenuItems(basePrefix, config, schema) {
   prefix = basePrefix;
   let itemGroups = [];
   let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.visibility;
-  if (correctionBar) itemGroups.push(correctionBarItems());
+  if (correctionBar) itemGroups.push(correctionBarItems(config));
   if (insertBar) itemGroups.push(insertBarItems(config, schema));
   if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
   if (styleBar) itemGroups.push(styleBarItems(config, schema));
   if (formatBar) itemGroups.push(formatItems(config, schema));
-  if (search) itemGroups.push([new SearchItem()])
+  if (search) itemGroups.push([new SearchItem(config)])
   return itemGroups;
 }
-
-///**
-// * Return a map of Commands that will be invoked when key combos are pressed.
-// * 
-// * @param {Object}  config      The configuration of the menu.
-// * @param {Schema}  schema      The schema that holds node and mark types.
-// * @returns [String : Command]  Commands bound to keys identified by strings (e.g., "Mod-b")
-// */
-//export function buildKeymap(config, schema) {
-//  let keymap = config.keymap
-//  let keys = {}
-//
-//  /** Allow keyString to be a string or array of strings identify the map from keys to cmd */
-//  function bind(keyString, cmd) {
-//    if (keyString instanceof Array) {
-//      for (let key of keyString) { keys[key] = cmd }
-//    } else {
-//      if (keyString?.length > 0) {
-//        keys[keyString] = cmd
-//      } else {
-//        delete keys[keyString]
-//      }
-//    }
-//  }
-//
-//  // MarkupEditor-specific
-//  // We need to know when Enter is pressed, so we can identify a change on the Swift side.
-//  // In ProseMirror, empty paragraphs don't change the doc until they contain something, 
-//  // so we don't get a notification until something is put in the paragraph. By chaining 
-//  // the handleEnter with splitListItem that is bound to Enter here, it always executes, 
-//  // but splitListItem will also execute, as will anything else beyond it in the chain 
-//  // if splitListItem returns false (i.e., it doesn't really split the list).
-//  bind("Enter", chainCommands(handleEnter, splitListItem(schema.nodes.list_item)))
-//  // The MarkupEditor handles Shift-Enter as searchBackward when search is active.
-//  bind("Shift-Enter", handleShiftEnter)
-//  // The MarkupEditor needs to be notified of state changes on Delete, like Backspace
-//  bind("Delete", handleDelete)
-//  // Table navigation by Tab/Shift-Tab
-//  bind('Tab', goToNextCell(1))
-//  bind('Shift-Tab', goToNextCell(-1))
-//  
-//  // Text formatting
-//  bind(keymap.bold, toggleFormatCommand('B'))
-//  bind(keymap.italic, toggleFormatCommand('I'))
-//  bind(keymap.underline, toggleFormatCommand('U'))
-//  bind(keymap.code, toggleFormatCommand('CODE'))
-//  bind(keymap.strikethrough, toggleFormatCommand('DEL'))
-//  bind(keymap.subscript, toggleFormatCommand('SUB'))
-//  bind(keymap.superscript, toggleFormatCommand('SUP'))
-//  // Correction (needs to be chained with stateChanged also)
-//  bind(keymap.undo, undoCommand())
-//  bind(keymap.redo, redoCommand())
-//  bind("Backspace", chainCommands(handleDelete, undoInputRule))
-//  // List types
-//  bind(keymap.bullet, wrapInListCommand(schema, schema.nodes.bullet_list))
-//  bind(keymap.number, wrapInListCommand(schema, schema.nodes.ordered_list))
-//    // Denting
-//  bind(keymap.indent, indentCommand())
-//  bind(keymap.outdent, outdentCommand())
-//    // Insert
-//  bind(keymap.link, new LinkItem().command)
-//  bind(keymap.image, new ImageItem().command)
-//  bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
-//    // Search
-//  bind(keymap.search, new SearchItem().command)
-//  return keys
-//}
 
 /* Utility functions */
 
@@ -1489,12 +1422,23 @@ function markActive(state, type) {
   else return state.doc.rangeHasMark(from, to, type)
 }
 
+function keyString(itemName, keymap) {
+  let keyString = keymap[itemName]
+  if (!keyString) return ''
+  if (keyString instanceof Array) keyString = keyString[0]  // Use the first if there are multiple
+  // Clean up to something more understandable
+  keyString = keyString.replaceAll("Mod", "Cmd")
+  keyString = keyString.replaceAll("-", "+")
+  return ' (' + keyString + ')'
+}
+
 /* Correction Bar (Undo, Redo) */
 
-function correctionBarItems() {
+function correctionBarItems(config) {
+  let keymap = config.keymap;
   let items = [];
-  items.push(undoItem({ title: 'Undo', icon: icons.undo }));
-  items.push(redoItem({ title: 'Redo', icon: icons.redo }));
+  items.push(undoItem({ title: 'Undo' + keyString('undo', keymap), icon: icons.undo }));
+  items.push(redoItem({ title: 'Redo' + keyString('redo', keymap), icon: icons.redo }));
   return items;
 }
 
@@ -1527,8 +1471,8 @@ function redoItem(options) {
 function insertBarItems(config, schema) {
   let items = [];
   let { link, image, table } = config.insertBar;
-  if (link) items.push(new LinkItem())
-  if (image) items.push(new ImageItem())
+  if (link) items.push(new LinkItem(config))
+  if (image) items.push(new ImageItem(config))
   if (table) items.push(tableMenuItems(config, schema))
   return items;
 }
@@ -1611,15 +1555,28 @@ function tableBorderItem(command, options) {
  * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
  */
 function styleBarItems(config, schema) {
-  let items = [];
-  let { list, dent } = config.styleBar;
+  let keymap = config.keymap
+  let items = []
+  let { list, dent } = config.styleBar
   if (list) {
-    items.push(toggleListItem(schema, schema.nodes.bullet_list, { title: 'Toggle bulleted list', icon: icons.bulletList }))
-    items.push(toggleListItem(schema, schema.nodes.ordered_list, { title: 'Toggle numbered list', icon: icons.orderedList }))
+    let bullet = toggleListItem(
+      schema,
+      schema.nodes.bullet_list,
+      { title: 'Toggle bulleted list' + keyString('bullet', keymap), icon: icons.bulletList }
+    )
+    let number = toggleListItem(
+      schema,
+      schema.nodes.ordered_list,
+      { title: 'Toggle numbered list' + keyString('number', keymap), icon: icons.orderedList }
+    )
+    items.push(bullet)
+    items.push(number)
   }
   if (dent) {
-    items.push(indentItem({ title: 'Increase indent', icon: icons.blockquote }))
-    items.push(outdentItem({ title: 'Decrease indent', icon: icons.lift }))
+    let indent = indentItem({ title: 'Increase indent' + keyString('indent', keymap), icon: icons.blockquote })
+    let outdent = outdentItem({ title: 'Decrease indent' + keyString('outdent', keymap), icon: icons.lift })
+    items.push(indent)
+    items.push(outdent)
   }
   return items;
 }
@@ -1665,15 +1622,16 @@ function outdentItem(options) {
  * @returns [MenuItem]      The array of MenuItems that show as passed in `config`
  */
 function formatItems(config, schema) {
+  let keymap = config.keymap;
   let items = []
   let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.formatBar;
-  if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold', icon: icons.strong }))
-  if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic', icon: icons.em }))
-  if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline', icon: icons.u }))
-  if (code) items.push(formatItem(schema.marks.code, 'CODE', { title: 'Toggle code', icon: icons.code }))
-  if (strikethrough) items.push(formatItem(schema.marks.s, 'DEL', { title: 'Toggle strikethrough', icon: icons.s }))
-  if (subscript) items.push(formatItem(schema.marks.sub, 'SUB', { title: 'Toggle subscript', icon: icons.sub }))
-  if (superscript) items.push(formatItem(schema.marks.sup, 'SUP', { title: 'Toggle superscript', icon: icons.sup }))
+  if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }))
+  if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic' + keyString('italic', keymap), icon: icons.em }))
+  if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline' + keyString('underline', keymap), icon: icons.u }))
+  if (code) items.push(formatItem(schema.marks.code, 'CODE', { title: 'Toggle code' + keyString('code', keymap), icon: icons.code }))
+  if (strikethrough) items.push(formatItem(schema.marks.s, 'DEL', { title: 'Toggle strikethrough' + keyString('strikethrough', keymap), icon: icons.s }))
+  if (subscript) items.push(formatItem(schema.marks.sub, 'SUB', { title: 'Toggle subscript' + keyString('subscript', keymap), icon: icons.sub }))
+  if (superscript) items.push(formatItem(schema.marks.sup, 'SUP', { title: 'Toggle superscript' + keyString('superscript', keymap), icon: icons.sup }))
   return items;
 }
 

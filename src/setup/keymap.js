@@ -79,10 +79,10 @@ export function buildKeymap(config, schema) {
     bind(keymap.indent, indentCommand())
     bind(keymap.outdent, outdentCommand())
     // Insert
-    bind(keymap.link, new LinkItem().command)
-    bind(keymap.image, new ImageItem().command)
+    bind(keymap.link, new LinkItem(config).command)
+    bind(keymap.image, new ImageItem(config).command)
     bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
     // Search
-    bind(keymap.search, new SearchItem().command)
+    bind(keymap.search, new SearchItem(config).command)
     return keys
 }

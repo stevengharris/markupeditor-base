@@ -18,7 +18,7 @@
  * default in the MarkupEditor. You can remove a key mapping by settings its value to an empty
  * string. 
  */
-const standardMenuConfig = {
+export const standardMenuConfig = {
   "visibility": {             // Control the visibility of toolbars, etc
     "toolbar": true,          // Whether the toolbar is visible at all
     "correctionBar": false,   // Whether the correction bar (undo/redo) is visible
@@ -83,6 +83,6 @@ const standardMenuConfig = {
     "subscript": "Ctrl-,", 
     "superscript": "Ctrl-.", 
     // Search
-    "search": "Shift-Mod-F",
+    "search": ["Ctrl-f", "Ctrl-F"],
   }
 }
