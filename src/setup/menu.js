@@ -308,7 +308,7 @@ export class SearchItem {
     } else {
       this.showSearchbar(state, dispatch, view);
     }
-    this.update(state);
+    this.update && this.update(state)
   }
 
   hideSearchbar() {
