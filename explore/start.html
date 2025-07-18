@@ -18,6 +18,30 @@
         </div> 
         <input id="docpicker" type="file" accept=".html" style="display: none">
         <script src="src/markupeditor.umd.js"></script>
+        <script>
+            const markupEditor = new MU.MarkupEditor(
+                document.querySelector('#editor'),
+                `
+                    <h1>Welcome to the MarkupEditor</h1>
+                    <p>Start editing this document or use the <File toolbar</em> on the left to...</p>
+                    <ul>
+                        <li>
+                            <p>Edit a new HTML document using the <em>New document</em> button.</p>
+                        </li>
+                        <li>
+                            <p>Open an existing HTML document, like the <a href="guide.html">MarkupEditor Guide</a>, using the <em>Open document</em> button.</p>
+                        </li>
+                    </ul>
+                    <p>You can view the underlying HTML and see it change as you edit by selecting the <em>Show HTML</em> button. The <em>Copy HTML</em> button copies the underlying HTML into the clipboard.</p>
+                    <h4>Enjoy!</h4>
+                `,
+                {
+                    placeholder: 'Edit document...',
+                    // You can modify `MU.markupKeymapConfig` directly or set a custom keymap config using `keymap: myKeymap`
+                    // You can modify `MU.markupMenuConfig` directly or set custom menu config using `menu: myMenu`
+                }
+            )
+        </script>
         <script src="src/custom.js"></script>
     </body>
 </html>

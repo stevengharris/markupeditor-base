@@ -62,6 +62,67 @@ import {
 let prefix;
 
 /**
+ * The `markupMenuConfig` is the default for the MarkupEditor. It can be overridden
+ * by modifying it before you instantiate the MarkupEditor.
+ * 
+ * To customize the menu bar, for example, in your index.html:
+ * 
+ *    let menuConfig = MU.markupMenuConfig;         // Grab the standard menu config as a baseline
+ *    menuConfig.visibility.correctionBar = true;   // Turn on undo/redo
+ *    const markupEditor = new MU.MarkupEditor(
+ *      document.querySelector('#editor'),
+ *      '<h1>Hello, world!</h1>'
+ *    )
+ *    
+ * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
+ * within a toolbar or menu using the settings specific to that toolbar or menu.
+ */
+export const markupMenuConfig = {
+  "visibility": {             // Control the visibility of toolbars, etc
+    "toolbar": true,          // Whether the toolbar is visible at all
+    "correctionBar": false,   // Whether the correction bar (undo/redo) is visible
+    "insertBar": true,        // Whether the insert bar (link, image, table) is visible
+    "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
+    "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
+    "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
+    "tableMenu": true,        // Whether the table menu (create, add, delete, border) is visible
+    "search": true,           // Whether the search menu item (hide/show search bar) is visible
+  }, 
+  "insertBar": { 
+    "link": true,             // Whether the link menu item is visible
+    "image": true,            // Whether the image menu item is visible
+    "table": true,            // Whether the table menu is visible
+  }, 
+  "formatBar": { 
+    "bold": true,             // Whether the bold menu item is visible
+    "italic": true,           // Whether the italic menu item is visible
+    "underline": false,       // Whether the underline menu item is visible
+    "code": true,             // Whether the code menu item is visible
+    "strikethrough": true,    // Whether the strikethrough menu item is visible
+    "subscript": false,       // Whether the subscript menu item is visible
+    "superscript": false,     // Whether the superscript menu item is visible
+  }, 
+  "styleMenu": { 
+    "p": true, 
+    "h1": true, 
+    "h2": true, 
+    "h3": true, 
+    "h4": true, 
+    "h5": true, 
+    "h6": true, 
+    "codeblock": true ,
+  }, 
+  "styleBar": { 
+    "list": true, 
+    "dent": true,
+  }, 
+  "tableMenu": { 
+    "header": true,
+    "border": true, 
+  },
+}
+
+/**
 An icon or label that, when clicked, executes a command.
 */
 export class MenuItem {
@@ -285,11 +346,11 @@ export class DropdownSubmenu {
  */
 export class SearchItem {
 
-  constructor(config) {
+  constructor(keymap) {
     let options = {
       enable: (state) => { return true },
       active: (state) => { return this.showing() },
-      title: 'Toggle search' + keyString('search', config.keymap),
+      title: 'Toggle search' + keyString('search', keymap),
       icon: icons.search
     };
     this.command = this.toggleSearch.bind(this);
@@ -475,11 +536,11 @@ export class SearchItem {
  */
 export class LinkItem {
 
-  constructor(config) {
+  constructor(keymap) {
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
-      title: 'Insert/edit link' + keyString('link', config.keymap),
+      title: 'Insert/edit link' + keyString('link', keymap),
       icon: icons.link
     };
     this.command = this.openLinkDialog.bind(this);
@@ -792,11 +853,11 @@ export class LinkItem {
  */
 export class ImageItem {
 
-  constructor(config) {
+  constructor(keymap) {
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return getImageAttributes(state).src  },
-      title: 'Insert/edit image' + keyString('image', config.keymap),
+      title: 'Insert/edit image' + keyString('image', keymap),
       icon: icons.image
     };
     this.command = this.openImageDialog.bind(this);
@@ -1317,16 +1378,16 @@ class ParagraphStyleItem {
  * @param {Schema}  schema      The schema that holds node and mark types.
  * @returns [MenuItem]    The array of MenuItems or nested MenuItems used by `renderGrouped`.
  */
-export function buildMenuItems(basePrefix, config, schema) {
+export function buildMenuItems(basePrefix, menuConfig, keymap, schema) {
   prefix = basePrefix;
   let itemGroups = [];
-  let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.visibility;
-  if (correctionBar) itemGroups.push(correctionBarItems(config));
-  if (insertBar) itemGroups.push(insertBarItems(config, schema));
-  if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
-  if (styleBar) itemGroups.push(styleBarItems(config, schema));
-  if (formatBar) itemGroups.push(formatItems(config, schema));
-  if (search) itemGroups.push([new SearchItem(config)])
+  let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = menuConfig.visibility;
+  if (correctionBar) itemGroups.push(correctionBarItems(keymap));
+  if (insertBar) itemGroups.push(insertBarItems(menuConfig, keymap, schema));
+  if (styleMenu) itemGroups.push(styleMenuItems(menuConfig, keymap, schema));
+  if (styleBar) itemGroups.push(styleBarItems(menuConfig, keymap, schema));
+  if (formatBar) itemGroups.push(formatItems(menuConfig, keymap, schema));
+  if (search) itemGroups.push([new SearchItem(keymap)])
   return itemGroups;
 }
 
@@ -1434,8 +1495,7 @@ function keyString(itemName, keymap) {
 
 /* Correction Bar (Undo, Redo) */
 
-function correctionBarItems(config) {
-  let keymap = config.keymap;
+function correctionBarItems(keymap) {
   let items = [];
   items.push(undoItem({ title: 'Undo' + keyString('undo', keymap), icon: icons.undo }));
   items.push(redoItem({ title: 'Redo' + keyString('redo', keymap), icon: icons.redo }));
@@ -1468,18 +1528,18 @@ function redoItem(options) {
  * @param {Schema} schema 
  * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
  */
-function insertBarItems(config, schema) {
+function insertBarItems(menuConfig, keymap, schema) {
   let items = [];
-  let { link, image, table } = config.insertBar;
-  if (link) items.push(new LinkItem(config))
-  if (image) items.push(new ImageItem(config))
-  if (table) items.push(tableMenuItems(config, schema))
+  let { link, image, table } = menuConfig.insertBar;
+  if (link) items.push(new LinkItem(keymap))
+  if (image) items.push(new ImageItem(keymap))
+  if (table) items.push(tableMenuItems(menuConfig, keymap, schema))
   return items;
 }
 
-function tableMenuItems(config, schema) {
+function tableMenuItems(menuConfig, keymap, schema) {
   let items = []
-  let { header, border } = config.tableMenu;
+  let { header, border } = menuConfig.tableMenu;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))
   let addItems = []
   addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}))
@@ -1554,10 +1614,9 @@ function tableBorderItem(command, options) {
  * @param {Schema} schema 
  * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
  */
-function styleBarItems(config, schema) {
-  let keymap = config.keymap
+function styleBarItems(menuConfig, keymap, schema) {
   let items = []
-  let { list, dent } = config.styleBar
+  let { list, dent } = menuConfig.styleBar
   if (list) {
     let bullet = toggleListItem(
       schema,
@@ -1621,10 +1680,9 @@ function outdentItem(options) {
  * @param {Object} config   The markupConfig that is passed-in, with boolean values in config.formatBar.
  * @returns [MenuItem]      The array of MenuItems that show as passed in `config`
  */
-function formatItems(config, schema) {
-  let keymap = config.keymap;
+function formatItems(menuConfig, keymap, schema) {
   let items = []
-  let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.formatBar;
+  let { bold, italic, underline, code, strikethrough, subscript, superscript } = menuConfig.formatBar;
   if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }))
   if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic' + keyString('italic', keymap), icon: icons.em }))
   if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline' + keyString('underline', keymap), icon: icons.u }))
@@ -1652,9 +1710,9 @@ function formatItem(markType, markName, options) {
  * @param {*} config    The markupConfig that is passed-in, with boolean values in config.styleMenu.
  * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
  */
-function styleMenuItems(config, schema) {
+function styleMenuItems(menuConfig, keymap, schema) {
   let items = []
-  let { p, h1, h2, h3, h4, h5, h6, codeblock } = config.styleMenu;
+  let { p, h1, h2, h3, h4, h5, h6, codeblock } = menuConfig.styleMenu;
   if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P'))
   if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { attrs: { level: 1 }}))
   if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { attrs: { level: 2 }}))

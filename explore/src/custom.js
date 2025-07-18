@@ -1,19 +1,3 @@
-/** The HTML we will load initially, as soon as the MarkupEditor lets us know it's ready. */
-const html = `
-<h1>Welcome to the MarkupEditor</h1>
-<p>Start editing this document or use the <File toolbar</em> on the left to...</p>
-<ul>
-    <li>
-        <p>Edit a new HTML document using the <em>New document</em> button.</p>
-    </li>
-    <li>
-        <p>Open an existing HTML document, like the <a href="guide.html">MarkupEditor Guide</a>, using the <em>Open document</em> button.</p>
-    </li>
-</ul>
-<p>You can view the underlying HTML and see it change as you edit by selecting the <em>Show HTML</em> button. The <em>Copy HTML</em> button copies the underlying HTML into the clipboard.</p>
-<h4>Enjoy!</h4>
-`
-
 /** A class holding the command items and functionality for a File toolbar that is prepended to the MarkupEditor toolbar */
 class FileToolbar {
   constructor() { 
@@ -137,8 +121,7 @@ class FileToolbar {
     htmldiv.style.flex = '0'
     htmldiv.style.minWidth = '0'
     htmldiv.style.maxHeight = '100vh'
-    let editor = document.getElementById('editor')
-    editor.style.flex = 'auto'
+    markupEditor.element.style.flex = 'auto'
   }
 
   /** Get the HTML from the document in the editor and update the `htmldiv-body`. */
@@ -204,8 +187,8 @@ class MessageHandler {
         switch (message) {
             // The editor posts `ready` when all scripts are loaded, so we can set the HTML.
             case 'ready': {
-                MU.setHTML(html)
                 fileToolbar.hideRaw()
+                MU.setHTML(markupEditor.html, true)
                 return;
             }
         }

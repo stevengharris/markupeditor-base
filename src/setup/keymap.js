@@ -21,14 +21,57 @@ import {
 } from "./menu"
 
 /**
+ * The `markupKeymapConfig` is the default for the MarkupEditor. It can be overridden
+ * by modifying it before you instantiate the MarkupEditor.
+ * 
+ * To customize the key mapping, for example, in your index.html:
+ * 
+ *    let keymapConfig = MU.markupKeymapConfig;     // Grab the standard keymap config as a baseline
+ *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];     // Use Control+L instead of Command+k
+ *    const markupEditor = new MU.MarkupEditor(
+ *      document.querySelector('#editor'),
+ *      '<h1>Hello, world!</h1>'
+ *    )
+ *    
+ * Note that the key mapping will exist and work regardless of whether you disable a toolbar 
+ * or a specific item in a menu. For example, undo/redo by default map to Mod-z/Shift-Mod-z even  
+ * though the "correctionBar" is off by default in the MarkupEditor. You can remove a key mapping 
+ * by setting its value to null or an empty string. 
+ */
+export const markupKeymapConfig = {
+    // Correction
+    "undo": "Mod-z",
+    "redo": "Shift-Mod-z",
+    // Insert
+    "link": ["Mod-K", "Mod-k"],
+    "image": ["Mod-G", "Mod-g"],
+    "table": ["Mod-T", "Mod-t"],
+    // Stylebar
+    "bullet": ["Ctrl-U", "Ctrl-u"],
+    "number": ["Ctrl-O", "Ctrl-o"],
+    "indent": ["Mod-]", "Ctrl-q"],
+    "outdent": ["Mod-[", "Shift-Ctrl-q"],
+    // Format
+    "bold": ["Mod-B", "Mod-b"],
+    "italic": ["Mod-I", "Mod-i"],
+    "underline": ["Mod-U", "Mod-u"],
+    "strikethrough": ["Ctrl-S", "Ctrl-s"],
+    "code": "Mod-`",
+    "subscript": "Ctrl-,",
+    "superscript": "Ctrl-.",
+    // Search
+    "search": ["Ctrl-F", "Ctrl-f"],
+}
+
+/**
  * Return a map of Commands that will be invoked when key combos are pressed.
  * 
- * @param {Object}  config      The configuration of the menu.
- * @param {Schema}  schema      The schema that holds node and mark types.
- * @returns [String : Command]  Commands bound to keys identified by strings (e.g., "Mod-b")
+ * @param {Object}  keymapConfig    The keymap configuration, markupKeymapConfig by default.
+ * @param {Schema}  schema          The schema that holds node and mark types.
+ * @returns [String : Command]      Commands bound to keys identified by strings (e.g., "Mod-b")
  */
-export function buildKeymap(config, schema) {
-    let keymap = config.keymap
+export function buildKeymap(keymapConfig, schema) {
+    let keymap = keymapConfig   // Shorthand
     let keys = {}
 
     /** Allow keyString to be a string or array of strings identify the map from keys to cmd */
@@ -79,10 +122,10 @@ export function buildKeymap(config, schema) {
     bind(keymap.indent, indentCommand())
     bind(keymap.outdent, outdentCommand())
     // Insert
-    bind(keymap.link, new LinkItem(config).command)
-    bind(keymap.image, new ImageItem(config).command)
+    bind(keymap.link, new LinkItem(keymap).command)
+    bind(keymap.image, new ImageItem(keymap).command)
     bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
     // Search
-    bind(keymap.search, new SearchItem(config).command)
+    bind(keymap.search, new SearchItem(keymap).command)
     return keys
 }

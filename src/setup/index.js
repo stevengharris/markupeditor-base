@@ -6,13 +6,12 @@ import {dropCursor} from "prosemirror-dropcursor"
 import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search} from "prosemirror-search"
-import {buildKeymap} from "./keymap"
-import {buildMenuItems} from "./menu"
-import {standardMenuConfig} from "./menuconfig"
+import {buildMenuItems, markupMenuConfig} from "./menu"
+import {buildKeymap, markupKeymapConfig} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 
-import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive} from "../markup"
+import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive, setPlaceholder} from "../markup"
 import {Schema} from "prosemirror-model"
 
 /**
@@ -155,13 +154,13 @@ export function appendToolbar(menuItems) {
  * @param {Schema} schema The schema used for the MarkupEditor
  * @returns 
  */
-export function markupSetup(schema) {
+export function markupSetup(schema, config) {
   let prefix = "Markup"
-  // Use the `standardMenuConfig` unless `customMenuConfig` is defined
-  let menuConfig = (typeof customMenuConfig == 'undefined') ? standardMenuConfig : customMenuConfig
+  let menuConfig = config?.menu ? config.menu : markupMenuConfig
+  let keymapConfig = config?.keymap ? config.keymap: markupKeymapConfig
   let plugins = [
     buildInputRules(schema),
-    keymap(buildKeymap(menuConfig, schema)),
+    keymap(buildKeymap(keymapConfig, schema)),
     keymap(baseKeymap),
     dropCursor(),
     gapCursor(),
@@ -169,7 +168,7 @@ export function markupSetup(schema) {
 
   // Only show the toolbar if the config indicates it is visible
   if (menuConfig.visibility.toolbar) {
-    let content = buildMenuItems(prefix, menuConfig, schema);
+    let content = buildMenuItems(prefix, menuConfig, keymapConfig, schema);
     plugins.push(toolbar(prefix, content));
   }
 
@@ -179,6 +178,7 @@ export function markupSetup(schema) {
   plugins.push(tablePlugin);
 
   // Add the plugin that handles placeholder display for an empty document
+  if (config?.placeholder) setPlaceholder(config.placeholder)
   plugins.push(placeholderPlugin)
 
   // Add the plugin to handle notifying the Swift side of images loading
