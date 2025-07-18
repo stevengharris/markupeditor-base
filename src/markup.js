@@ -1253,8 +1253,12 @@ function _minimalLink(div) {
  */
 export function emptyDocument() {
     selectedID = null;
-    setHTML('<p></p>');
+    setHTML(emptyHTML());
 };
+
+export function emptyHTML() {
+    return '<p></p>'
+}
 
 /**
  * Set the `selectedID` to `id`, a byproduct of clicking or otherwise iteractively
@@ -1394,6 +1398,8 @@ export function setHTML(contents, focusAfterLoad=true) {
     const tr = state.tr;
     const node = _nodeFromHTML(contents);
     const selection = new AllSelection(doc);
+    // To avoid flashing it, only set the placeholder early if contents is empty
+    if (_placeholderText && (contents == emptyHTML())) placeholderText = _placeholderText;
     let transaction = tr
         .setSelection(selection)
         .replaceSelectionWith(node, false)
@@ -1403,6 +1409,7 @@ export function setHTML(contents, focusAfterLoad=true) {
         .setSelection(TextSelection.near($pos))
         .scrollIntoView();
     view.dispatch(transaction);
+    // But always set placeholder in the end so it will appear when the doc is empty
     placeholderText = _placeholderText;
     if (focusAfterLoad) view.focus();
 };
@@ -1542,7 +1549,7 @@ export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, 
         div = buttonGroupDiv;
     } else {
         div = document.createElement('div');
-        div.innerHTML = (htmlContents?.length > 0) ? htmlContents : '<p></p>';
+        div.innerHTML = (htmlContents?.length > 0) ? htmlContents : emptyHTML();
         if (buttonGroupDiv) div.appendChild(buttonGroupDiv);
     }
     const divSlice = _sliceFromHTML(div.innerHTML);
