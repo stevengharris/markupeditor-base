@@ -4,7 +4,7 @@
  * 
  * Adaptations:
  *  - Modify buildMenuItems to use a `config` object that specifies visibility and content
- *  - Modify buildKeymap to use a `config` object that specifies key mappings
+ *  - Use separate buildKeymap in keymap.js with a `config` object that specifies key mappings
  *  - Modify icons to use SVG from Google Material Fonts
  *  - Allow Dropdown menus to be icons, not just labels
  *  - Replace use of prompt with custom dialogs for links and images
@@ -1150,6 +1150,10 @@ export class ImageItem {
     return this.srcArea.value
   }
 
+  /**
+   * Return the string from the `altArea`.
+   * @returns {string}
+   */
   altValue() {
     return this.altArea.value
   }
@@ -1227,6 +1231,11 @@ class TableCreateSubmenu {
     }
   }
 
+  /**
+   * Track rowSize and columnSize as we drag over an item in the `sizer`.
+   * @param {number} rows 
+   * @param {number} cols 
+   */
   onMouseover(rows, cols) {
     this.rowSize = rows
     this.colSize = cols
@@ -1469,6 +1478,12 @@ function markActive(state, type) {
   else return state.doc.rangeHasMark(from, to, type)
 }
 
+/**
+ * Return a string intended for the user to see showing the first key mapping for `itemName`.
+ * @param {string} itemName           The name of the item in the keymap
+ * @param {[string : string]} keymap  The mapping between item names and hotkeys
+ * @returns string
+ */
 function keyString(itemName, keymap) {
   let keyString = keymap[itemName]
   if (!keyString) return ''
