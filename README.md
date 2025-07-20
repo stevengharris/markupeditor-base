@@ -1,8 +1,8 @@
 <p align="center">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/457e1186-ef4f-42ab-add7-77e6b33dc108">
-        <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/c2f486f2-9730-4b39-b3f1-06544e187344">
-        <img alt="The MarkupEditor logo" src="https://github.com/user-attachments/assets/c2f486f2-9730-4b39-b3f1-06544e187344" width="104px" height="64px" >
+            <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/cb8a06a1-28ff-4aab-8e67-cf0572344e16">
+            <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/67104f81-055f-43f5-bf4f-b7655eecb2bb">
+            <img alt="The MarkupEditor logo" src="https://github.com/user-attachments/assets/67104f81-055f-43f5-bf4f-b7655eecb2bb" width="104px" height="64px" >
     </picture>
 </p>
 
