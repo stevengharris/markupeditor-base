@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/stevengharris/markupeditor-base/markup-mark.svg" width="104px" height="64px" >
+    <img src="https://github.com/stevengharris/markupeditor-base/blob/264c007e23d4e9d14642b2acccd099a01c9b3195/markup-mark.svg" width="104px" height="64px" >
 </p>
 
 # MarkupEditor
