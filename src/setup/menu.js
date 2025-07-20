@@ -103,22 +103,22 @@ export const markupMenuConfig = {
     "superscript": false,     // Whether the superscript menu item is visible
   }, 
   "styleMenu": { 
-    "p": true, 
-    "h1": true, 
-    "h2": true, 
-    "h3": true, 
-    "h4": true, 
-    "h5": true, 
-    "h6": true, 
-    "codeblock": true ,
+    "p": "Body",              // The label in the menu for "P" style
+    "h1": "H1",               // The label in the menu for "H1" style
+    "h2": "H2",               // The label in the menu for "H2" style
+    "h3": "H3",               // The label in the menu for "H3" style
+    "h4": "H4",               // The label in the menu for "H4" style
+    "h5": "H5",               // The label in the menu for "H5" style
+    "h6": "H6",               // The label in the menu for "H6" style
+    "pre": "Code" ,           // The label in the menu for "PRE" aka code_block style
   }, 
   "styleBar": { 
-    "list": true, 
-    "dent": true,
+    "list": true,             // Whether bullet and numbered list items are visible
+    "dent": true,             // Whether indent and outdent items are visible
   }, 
   "tableMenu": { 
-    "header": true,
-    "border": true, 
+    "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
+    "border": true,           // Whether the "Border" item is visible in the "Table" menu
   },
 }
 
@@ -1322,23 +1322,9 @@ export class TableInsertItem {
 class ParagraphStyleItem {
 
   constructor(nodeType, style, options) {
-    let styleLabels = {
-      'P': 'Body',
-      'H1': 'Header 1',
-      'H2': 'Header 2',
-      'H3': 'Header 3',
-      'H4': 'Header 4',
-      'H5': 'Header 5',
-      'H6': 'Header 6',
-      'PRE': 'Code'
-    }
     this.style = style
-    this.styleLabel = styleLabels[this.style] ?? "Normal"
-    let passedOptions = {label: this.styleLabel}
-    if (options) {
-      for (let prop in options) passedOptions[prop] = options[prop]
-    }
-    this.item = this.paragraphStyleItem(nodeType, style, passedOptions)
+    this.styleLabel = options["label"] ?? "Unknown" // It should always be specified
+    this.item = this.paragraphStyleItem(nodeType, style, options)
   }
 
   paragraphStyleItem(nodeType, style, options) {
@@ -1712,15 +1698,15 @@ function formatItem(markType, markName, options) {
  */
 function styleMenuItems(menuConfig, keymap, schema) {
   let items = []
-  let { p, h1, h2, h3, h4, h5, h6, codeblock } = menuConfig.styleMenu;
-  if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P'))
-  if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { attrs: { level: 1 }}))
-  if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { attrs: { level: 2 }}))
-  if (h3) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H3', { attrs: { level: 3 }}))
-  if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { attrs: { level: 4 }}))
-  if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { attrs: { level: 5 }}))
-  if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { attrs: { level: 6 }}))
-  if (codeblock) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE'))
+  let { p, h1, h2, h3, h4, h5, h6, pre } = menuConfig.styleMenu;
+  if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p }))
+  if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, attrs: { level: 1 }}))
+  if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, attrs: { level: 2 }}))
+  if (h3) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H3', { label: h3, attrs: { level: 3 }}))
+  if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { label: h4, attrs: { level: 4 }}))
+  if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, attrs: { level: 5 }}))
+  if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, attrs: { level: 6 }}))
+  if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }))
   return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
 }
 
