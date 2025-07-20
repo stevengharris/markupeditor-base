@@ -12,11 +12,11 @@ The MarkupEditor provides the functionality for WYSIWYG editing in a web browser
 
 The MarkupEditor aims to support the same functionality as [GitHub flavored Markdown](https://github.github.com/gfm/). However, instead of dealing with the distractions in Markdown-based text and the mysteries of how that text is translated and presented elsewhere, the MarkupEditor always presents the HTML directly as you edit it.
 
-It is primarily meant to be used as a dependency of a larger project that contains a web view that loads this project's JavaScript as a script along with the css styling to support editing. However, by cloning the standalone markupeditor-base project, you can exercise the WYSIWYG editing functionality by opening `explore/index.html` in a web browser. This makes debugging or reproducing issues completely self-contained to a browser environment, without requiring a web view being embedded in a larger project. You can also open `explore/index.js` in a node.js server to see and edit the same content.
+The `markupeditor-base` project is primarily meant to be used as a dependency of a larger project that contains a web view that in turn loads this project's JavaScript as a script along with the css styling to support editing. By cloning the `markupeditor-base` project, you can exercise the WYSIWYG editing functionality by opening `explore/index.html` in a web browser. This makes debugging or reproducing issues completely self-contained in a browser environment, without requiring a web view being embedded in a larger project. You can also open `explore/index.js` in a node.js server to see and edit the same content.
 
-There are currently two projects that use markupeditor-base:
+There are currently two projects that use `markupeditor-base`:
 
-* [MarkupEditor](https://github.com/stevengharris/MarkupEditor): A WYSIWYG editing for SwiftUI and UIKit. This has been the primary driver for work on the base project.
-* [markupeditor-vs](https://github.com/stevengharris/markupeditor-vs): A WYSIWYG editing for VSCode. This project is under development. It is a VSCode extension.
+* [MarkupEditor](https://github.com/stevengharris/MarkupEditor): WYSIWYG editing for SwiftUI and UIKit. This has been the primary driver for work on the base project.
+* [markupeditor-vs](https://github.com/stevengharris/markupeditor-vs): WYSIWYG editing for VSCode. This project is under development. It is a VSCode extension.
 
 This project is a work in progress under active development.
