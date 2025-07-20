@@ -1,5 +1,9 @@
 <p align="center">
-    <img src="https://github.com/stevengharris/markupeditor-base/blob/264c007e23d4e9d14642b2acccd099a01c9b3195/markup-mark.svg" width="104px" height="64px" >
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/stevengharris/markupeditor-base/blob/264c007e23d4e9d14642b2acccd099a01c9b3195/markup-mark-solid.svg">
+        <source media="(prefers-color-scheme: light)" srcset="https://github.com/stevengharris/markupeditor-base/blob/264c007e23d4e9d14642b2acccd099a01c9b3195/markup-mark.svg">
+        <img alt="The MarkupEditor logo" src="https://github.com/stevengharris/markupeditor-base/blob/264c007e23d4e9d14642b2acccd099a01c9b3195/markup-mark.svg" width="104px" height="64px" >
+    </picture>
 </p>
 
 # MarkupEditor
