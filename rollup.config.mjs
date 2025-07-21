@@ -29,8 +29,8 @@ export default [
 		input: 'src/main.js',
 		external: [
 			'ms',
-			'orderedmap',
 			'crelt',
+			'orderedmap',
 			'prosemirror-state',
 			'prosemirror-view',
 			'prosemirror-model',

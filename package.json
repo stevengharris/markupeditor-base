@@ -4,11 +4,15 @@
   "main": "dist/markupeditor.cjs.js",
   "module": "dist/markupeditor.esm.js",
   "browser": "dist/markupeditor.umd.js",
+  "sideEffects": false,
+  "license": "MIT",
+  "author": "Steven G. Harris <stevengharris@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/stevengharris/markupeditor-base.git"
+  },
   "dependencies": {
-    "@material-design-icons/font": "^0.14.15",
     "crelt": "^1.0.6",
-    "express": "^5.1.0",
-    "ms": "^2.0.0",
     "prosemirror-commands": "^1.0.0",
     "prosemirror-dropcursor": "^1.8.1",
     "prosemirror-gapcursor": "^1.3.2",
@@ -20,20 +24,20 @@
     "prosemirror-search": "^1.0.0",
     "prosemirror-state": "^1.4.3",
     "prosemirror-tables": "^1.6.1",
-    "prosemirror-view": "^1.34.3",
-    "rollup-plugin-import-css": "^3.5.8"
+    "prosemirror-view": "^1.34.3"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
-    "rollup": "^4.31.0"
+    "rollup-plugin-import-css": "4.0.1",
+    "rollup": "^4.31.0",
+    "express": "^5.1.0"
   },
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "test": "node test/test.js",
-    "pretest": "npm run build",
-    "explore": "node explore"
+    "pretest": "npm run build"
   },
   "files": [
     "dist"
