@@ -12,7 +12,6 @@ import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 
 import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive, setPlaceholder} from "../markup"
-import {Schema} from "prosemirror-model"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 

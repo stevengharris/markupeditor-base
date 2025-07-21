@@ -1,5 +1,5 @@
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
-import {DOMParser, DOMSerializer, ResolvedPos} from 'prosemirror-model'
+import {DOMParser, DOMSerializer} from 'prosemirror-model'
 import {toggleMark, wrapIn, lift} from 'prosemirror-commands'
 import {undo, redo} from 'prosemirror-history'
 import {wrapInList, liftListItem, splitListItem} from 'prosemirror-schema-list'
