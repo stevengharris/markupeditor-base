@@ -90,6 +90,8 @@ import {
   appendToolbar 
 } from "./setup/index.js"
 
+import {toolbarView} from "./setup/toolbar.js"
+
 /**
  * The public MarkupEditor API callable as "MU.<function name>"
  */
@@ -160,6 +162,7 @@ export {
   cmdItem, 
   renderGrouped, 
   renderDropdownItems,
+  toolbarView,
   // Helpers to add items to the toolbar
   prependToolbar, 
   appendToolbar,
