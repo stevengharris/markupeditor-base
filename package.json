@@ -26,7 +26,6 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
-    "@vscode/codicons": "0.0.20",
     "rollup": "^4.31.0"
   },
   "scripts": {
