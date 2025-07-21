@@ -25,12 +25,28 @@ export default [
 	// builds from a single configuration where possible, using
 	// an array for the `output` option, where we can specify
 	// `file` and `format` for each target)
-	//{
-	//	input: 'src/main.js',
-	//	external: ['ms'],
-	//	output: [
-	//		{ file: pkg.main, format: 'cjs' },
-	//		{ file: pkg.module, format: 'es' }
-	//	]
-	//}
+	{
+		input: 'src/main.js',
+		external: [
+			'ms',
+			'orderedmap',
+			'crelt',
+			'prosemirror-state',
+			'prosemirror-view',
+			'prosemirror-model',
+			'prosemirror-commands',
+			'prosemirror-schema-list',
+			'prosemirror-tables',
+			'prosemirror-inputrules',
+			'prosemirror-keymap',
+			'prosemirror-history',
+			'prosemirror-dropcursor',
+			'prosemirror-gapcursor',
+			'prosemirror-search',
+		],
+		output: [
+			{ file: pkg.main, format: 'cjs' },
+			{ file: pkg.module, format: 'es' }
+		]
+	}
 ];
