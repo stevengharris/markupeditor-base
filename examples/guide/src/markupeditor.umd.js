@@ -1,0 +1,1 @@
+../../src/markupeditor.umd.js

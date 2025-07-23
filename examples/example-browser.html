@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>MarkupEditor Document</title>
+        <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
+        <link href="styles/markupeditor.css" rel="stylesheet">
+        <link href="styles/example.css" rel="stylesheet">
+        <link rel="icon" href="resources/favicon.svg" type="image/svg+xml">
+    </head>
+    <body>
+        <div class="editor-wrapper">
+            <div id="editor"></div>
+            <div id="htmldiv" class="htmldiv">
+                <div class="Markup-toolbar-spacer"></div>
+                <pre id="htmldiv-body" class="htmldiv-body"></pre>
+            </div>
+        </div> 
+        <input id="docpicker" type="file" accept=".html" style="display: none">
+        <script src="src/markupeditor.umd.js"></script>
+        <script>
+            const markupEditor = new MU.MarkupEditor(
+                document.querySelector('#editor'),
+                {
+                    html: `
+                        <h1>Welcome to the MarkupEditor</h1>
+                        <h5>The HTML shown here was loaded into your browser when you loaded example-browser.html.</h5>
+                        <p>Start editing this document or use the buttons on the left to...</p>
+                        <ul>
+                            <li>
+                                <p>Edit a new HTML document using the <em>New document</em> button.</p>
+                            </li>
+                            <li>
+                                <p>Open an existing HTML document, like the <a href="guide.html">MarkupEditor Guide</a>, using the <em>Open document</em> button.</p>
+                            </li>
+                        </ul>
+                        <p>In this example, the standard MarkupEditor toolbar has a custom <em>File toolbar</em> prepended on the left. It let you view the underlying HTML and see it change as you edit by selecting the <em>Show HTML</em> button. The <em>Copy HTML</em> button copies the underlying HTML into the clipboard.</p>
+                        <p>Follow <a href="helloworld/index.html">this link</a> to see the simplest possible MarkupEditor "Hello, world" demo.</p>
+                        <p>Open the <a href="guide/index.html">MarkupEditor Guide</a> for viewing and editing.</p>
+                        <h4>Enjoy!</h4>
+                    `,
+                    placeholder: 'Edit document...',
+                    // You can modify `MU.markupKeymapConfig` directly or set a custom keymap config using `keymap: myKeymap`
+                    // You can modify `MU.markupMenuConfig` directly or set custom menu config using `menu: myMenu`
+                }
+            )
+        </script>
+        <script src="src/filetoolbar.js"></script>
+        <script src="src/messagehandler-browser.js"></script>
+        <script>
+            // Instantiate the FileToolbar and place its `menuItems` at the front of the toolbar.
+            const fileToolbar = new FileToolbar()
+            MU.prependToolbar(fileToolbar.menuItems)
+
+            // Let the MarkupEditor know to use our custom MessageHandler instance for callbacks.
+            let messageHandler = new MessageHandler()
+            MU.setMessageHandler(messageHandler);
+        </script>
+    </body>
+</html>

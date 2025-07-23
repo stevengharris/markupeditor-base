@@ -1,5 +1,7 @@
+import {cmdItem, emptyDocument, getHTML, setHTML } from './markupeditor.umd.js'
+
 /** A class holding the command items and functionality for a File toolbar that is prepended to the MarkupEditor toolbar */
-class FileToolbar {
+export class FileToolbar {
   constructor() { 
     this.menuItems = this.buildMenuItems()
   }
@@ -26,7 +28,7 @@ class FileToolbar {
 
   /** Return an array of MenuItems */
   buildMenuItems() {
-    let newItem = MU.cmdItem(
+    let newItem = cmdItem(
       this.newDocument.bind(this),
       {
         enable: () => { return true },
@@ -34,7 +36,7 @@ class FileToolbar {
         icon: this.icons.new
       }
     )
-    let openItem = MU.cmdItem(
+    let openItem = cmdItem(
       this.openDocument.bind(this),
       {
         enable: () => { return true },
@@ -42,7 +44,7 @@ class FileToolbar {
         icon: this.icons.open
       }
     )
-    let htmlItem = MU.cmdItem(
+    let htmlItem = cmdItem(
       this.toggleRaw.bind(this),
       {
         enable: () => { return true },
@@ -50,7 +52,7 @@ class FileToolbar {
         icon: this.icons.html
       }
     )
-    let copyItem = MU.cmdItem(
+    let copyItem = cmdItem(
       this.copyRaw.bind(this),
       {
         enable: () => { return true },
@@ -62,7 +64,7 @@ class FileToolbar {
   }
 
   newDocument() {
-    MU.emptyDocument()
+    emptyDocument()
     this.updateRaw()
   }
 
@@ -86,7 +88,7 @@ class FileToolbar {
       const reader = new FileReader();
       reader.addEventListener('load', (event) => {
         const text = event.target.result; // The file contents
-        MU.setHTML(text)
+        setHTML(text)
         this.updateRaw()
       });
       reader.readAsText(file);
@@ -126,7 +128,7 @@ class FileToolbar {
 
   /** Get the HTML from the document in the editor and update the `htmldiv-body`. */
   updateRaw() {
-    let html = MU.getHTML()
+    let html = getHTML()
     this.updateRawBody(html)
   }
 
@@ -162,39 +164,3 @@ class FileToolbar {
     selection.addRange(oldRange);
   }
 }
-
-// Instantiate the FileToolbar and place its `menuItems` at the front of the toolbar.
-const fileToolbar = new FileToolbar()
-MU.prependToolbar(fileToolbar.menuItems)
-
-/**
- * The instance that will receive `postMessage` from the MarkupEditor as the document state changes.
- */
-class MessageHandler {
-
-    /**
-     * Take action when messages we care about come in.
-     * @param {string | JSON} message   The message passed from the MarkupEditor as the state changes. 
-     */
-    postMessage(message) {
-        if (message.startsWith('input')) {
-            // Some input or change happened in the document, so update the raw HTML in the `htmldiv`.
-            // Generally, it will be too heavyweight for a real app to pull back the full HTML contents
-            // at every keystroke (or do much of anything), but it works nicely in the demo to show changes.
-            fileToolbar.updateRaw()
-            return;
-        }
-        switch (message) {
-            // The editor posts `ready` when all scripts are loaded, so we can set the HTML.
-            case 'ready': {
-                fileToolbar.hideRaw()
-                MU.setHTML(markupEditor.html, true)
-                return;
-            }
-        }
-    }
-}
-
-// Let the MarkupEditor know to use our MessageHandler instance for callbacks.
-let messageHandler = new MessageHandler()
-MU.setMessageHandler(messageHandler);
