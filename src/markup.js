@@ -947,7 +947,7 @@ export function setTopLevelAttributes(jsonString) {
  * However, to allow embedding of MarkupEditor in other environments, such 
  * as VSCode, allow it to be set externally.
  */
-let messageHandler = window?.webkit?.messageHandlers?.markup;
+let messageHandler = (typeof window == 'undefined') ? null : window.webkit?.messageHandlers?.markup;
 export function setMessageHandler(handler) {
     messageHandler = handler;
 };
@@ -1030,34 +1030,36 @@ function _loadUserCSSFile(file) {
     head.appendChild(link);
 };
 
-/**
- * The 'ready' callback indicated that the editor and this js is properly loaded.
- *
- * Note for history, replaced window.onload with this eventListener.
- */
-window.addEventListener('load', function() {
-    _callback('ready');
-});
+if (typeof window != 'undefined') {
+    /**
+     * The 'ready' callback indicated that the editor and this js is properly loaded.
+     *
+     * Note for history, replaced window.onload with this eventListener.
+     */
+    window.addEventListener('load', function () {
+        _callback('ready');
+    });
 
-/**
- * Capture all unexpected runtime errors in this script, report for debugging.
- *
- * There is not any useful debug information for users, but as a developer,
- * you can place a break in this method to examine the call stack.
- * Please file issues for any errors captured by this function,
- * with the call stack and reproduction instructions if at all possible.
- */
-window.addEventListener('error', function(ev) {
-    const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... in Safari Web Inspector to debug.');
-    muError.callback()
-});
+    /**
+     * Capture all unexpected runtime errors in this script, report for debugging.
+     *
+     * There is not any useful debug information for users, but as a developer,
+     * you can place a break in this method to examine the call stack.
+     * Please file issues for any errors captured by this function,
+     * with the call stack and reproduction instructions if at all possible.
+     */
+    window.addEventListener('error', function (ev) {
+        const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... in Safari Web Inspector to debug.');
+        muError.callback()
+    });
 
-/**
- * If the window is resized, call back so that the holder can adjust its height tracking if needed.
- */
-window.addEventListener('resize', function() {
-    _callback('updateHeight');
-});
+    /**
+     * If the window is resized, call back so that the holder can adjust its height tracking if needed.
+     */
+    window.addEventListener('resize', function () {
+        _callback('updateHeight');
+    });
+}
 
 /********************************************************************************
  * Search
