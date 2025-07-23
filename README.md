@@ -8,11 +8,13 @@
 
 # MarkupEditor
 
-The MarkupEditor provides the functionality for WYSIWYG editing in a web browser. The "source of truth" for the MarkupEditor is standard HTML, styled using standard CSS.
+The MarkupEditor supports WYSIWYG editing in a web view. The "source of truth" for the MarkupEditor is standard HTML, styled using standard CSS.
 
-The MarkupEditor aims to support the same functionality as [GitHub flavored Markdown](https://github.github.com/gfm/). However, instead of dealing with the distractions in Markdown-based text and the mysteries of how that text is translated and presented elsewhere, the MarkupEditor always presents the HTML directly as you edit it.
+The MarkupEditor aims to support the same functionality as [GitHub flavored Markdown](https://github.github.com/gfm/). However, instead of dealing with the distractions in Markdown-based text and the mysteries of how that text is translated to HTML and presented, the MarkupEditor always presents the HTML directly as you edit it.
 
-The `markupeditor-base` project is primarily meant to be used as a dependency of a larger project that contains a web view that in turn loads this project's JavaScript as a script along with the css styling to support editing. By cloning the `markupeditor-base` project, you can exercise the WYSIWYG editing functionality by opening `explore/index.html` in a web browser. This makes debugging or reproducing issues completely self-contained in a browser environment, without requiring a web view being embedded in a larger project. You can also open `explore/index.js` in a node.js server to see and edit the same content.
+The `markupeditor-base` project is primarily meant to be used as a dependency of a separate project that presents a web view. Along with the HTML content you're editing, web view must load the `markupeditor` JavaScript as a script along with the css styling to support editing. 
+
+By cloning the `markupeditor-base` project and building it, you can exercise the WYSIWYG editing functionality by opening `explore/index.html` in a web browser. This makes debugging or reproducing issues completely self-contained in a browser environment, without requiring a web view being embedded in a larger project. You can also open `explore/index.js` in a node.js server to see and edit the same content.
 
 There are currently two projects that use `markupeditor-base`:
 
