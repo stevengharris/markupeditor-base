@@ -182,10 +182,11 @@ export {
  * If `markupConfig` is undefined, the "standard" config is supplied by `MenuConfig.standard()`.
  */
 class MarkupEditor {
-  constructor(target, html, config) {
+  constructor(target, config) {
     this.element = target ?? document.querySelector("#editor")
-    this.html = html ?? emptyHTML()
     this.config = config ?? {}
+    this.html = this.config.html ?? emptyHTML()
+    setMessageHandler(this.config.messageHandler ?? new MessageHandler(this));
     window.view = new EditorView(this.element, {
       state: EditorState.create({
         // For the MarkupEditor, we can just use the editor element. 
@@ -241,5 +242,30 @@ class MarkupEditor {
         return null;                        // Default behavior should occur
       }
     })
+  }
+}
+
+/** A default message handler class if one is not passed in config. */
+class MessageHandler {
+  constructor(markupEditor) {
+    this.markupEditor = markupEditor;
+  }
+  
+  /**
+   * Take action when messages we care about come in.
+   * @param {string | JSON} message   The message passed from the MarkupEditor as the state changes. 
+   */
+  postMessage(message) {
+      // Intercept input changes. Do something very lightweight, but better, nothing at all.
+      if (message.startsWith('input')) {
+          return;
+      }
+      switch (message) {
+          // The editor posts `ready` when all scripts are loaded, so we can set the HTML.
+          case 'ready': {
+              setHTML(this.markupEditor.html, true)
+              return;
+          }
+      }
   }
 }
