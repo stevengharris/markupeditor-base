@@ -8,9 +8,9 @@
     <body>
         <p align="center">
             <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/073b1dcc-c81b-4e2d-a46c-2f819e5a0a44">
-                <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/67104f81-055f-43f5-bf4f-b7655eecb2bb">
-                <img alt="The MarkupEditor logo" src="https://github.com/user-attachments/assets/67104f81-055f-43f5-bf4f-b7655eecb2bb" width="104px" height="64px" >
+                <source media="(prefers-color-scheme: dark)" srcset="resources/markup-mark-dark.svg">
+                <source media="(prefers-color-scheme: light)" srcset="resources/markup-mark-light.svg">
+                <img alt="The MarkupEditor logo" src="resources/markup-mark-light.svg" width="104px" height="64px" >
             </picture>
         </p>
         <h1>Welcome to the MarkupEditor</h1>
@@ -20,7 +20,9 @@
             the MarkupEditor always presents the HTML directly as you edit it.</p>
         <h2>Try it out</h2>
         <p>The editor below uses the default toolbar and hotkeys.</p>
-        <div id="editor" align="center" width="80%" height="300px"></div>
+        <div class="editor-wrapper" align="center" width="80%" height="300px">
+            <div id="editor"></div>
+        </div>
         <script src="src/markupeditor.umd.js"></script>
         <script>
             new MU.MarkupEditor(
