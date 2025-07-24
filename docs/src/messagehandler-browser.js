@@ -19,7 +19,15 @@ class MessageHandler {
             // The editor posts `ready` when all scripts are loaded, so we can set the HTML.
             case 'ready': {
                 fileToolbar.hideRaw()
-                MU.setHTML(markupEditor.html, true)
+                let filename = markupEditor.config.filename;
+                if (filename) {
+                    fetch(filename)
+                    .then((response) => response.text())
+                    .then((text) => {
+                        MU.setHTML(text, true)
+                    })
+                }
+                return
             }
         }
     }

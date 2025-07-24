@@ -20,29 +20,36 @@
             the MarkupEditor always presents the HTML directly as you edit it.</p>
         <h2>Try it out</h2>
         <p>The editor below uses the default toolbar and hotkeys.</p>
-        <div class="editor-wrapper" align="center" width="80%" height="300px">
+        <blockquote>
             <div id="editor"></div>
-        </div>
+        </blockquote>
         <script src="src/markupeditor.umd.js"></script>
         <script>
+            document.querySelector('#editor').style.border = "solid 1px lightgray"
+            document.querySelector('#editor').style.width = "80%"
+            document.querySelector('#editor').style.height = "300px"
+            document.querySelector('#editor').style.overflowY = "scroll"
             new MU.MarkupEditor(
                 document.querySelector('#editor'), 
-                `
-                <p>The MarkupEditor comes with a standard toolbar. You can...</p>
-                <ul>
-                    <li><p>Insert and edit links, images, and tables.</p></li>
-                    <li><p>Set paragraph styles.</p></li>
-                    <li><p>Add lists and indenting.<p></li>
-                    <li><p>Set text formatting.</p>
-                </ul>
-                <p>Learn about using and customizing the MarkupEditor for your application in the Resources below.</p>
-                `
+                { 
+                    html: `
+                        <p>The MarkupEditor comes with a standard toolbar. You can...</p>
+                        <ul>
+                            <li><p>Insert and edit links, images, and tables.</p></li>
+                            <li><p>Set paragraph styles.</p></li>
+                            <li><p>Add lists and indenting.</p></li>
+                            <li><p>Set text formatting.</p></li>
+                            <li><p>Search for text.</p></li>
+                        </ul>
+                        <p>Learn about using and customizing the MarkupEditor for your application in the Resources below.</p>
+                    `
+                }
             )
         </script>
         <h2>Resources</h2>
         <ul>
             <li><a href="demo.html">Demo</a>: A demonstration of all of the elements supported by the MarkupEditor.</li>
-            <li><a href="guide.html"></a>: Guide to using the MarkupEdito</li>
+            <li><a href="guide.html">Guide</a>: A developer guide to using the MarkupEditor.</li>
         </ul>
     </body>
 </html>
