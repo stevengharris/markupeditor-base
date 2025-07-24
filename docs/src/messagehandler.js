@@ -26,6 +26,14 @@ class MessageHandler {
                     .then((text) => {
                         MU.setHTML(text, true)
                     })
+                    .catch(error => {
+                        MU.setHTML(
+                            `<p>
+                                Failed to load ${filename}. 
+                                You may be using the MarkupEditor in a browser but trying to load HTML from a local file.
+                            </p>`
+                        )
+                    });
                 }
                 return
             }
