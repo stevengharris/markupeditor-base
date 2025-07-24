@@ -1,1 +1,3 @@
-../../styles/markupeditor.css
+@import url("mirror.css");
+@import url("markup.css");
+@import url("toolbar.css");
