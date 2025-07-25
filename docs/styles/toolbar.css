@@ -2,13 +2,21 @@
 /* Note that toolbar-overlay below  is also set to these values */
 
 .Markup-toolbar-spacer {
-  position: relative;
-  top: -38px;
+  position: sticky;
+  top: 38px;
   height: 38px;
 }
 
 .Markup-searchbar-showing {
-  height: 76px;
+  height: 38px;
+  top: 76px;
+}
+
+/* The wrapper lets us automatically embed a toolbar and scroll under it */
+.Markup-toolbar-wrapper {
+  height: inherit;
+  overflow-y: scroll;
+  position: relative; 
 }
 
 /* Z-indexes in one place */
@@ -48,9 +56,8 @@
   vertical-align: middle;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
-  position: relative;
-  top: -38px;
-  /* width: 100%; */
+  position: sticky;
+  top: 0;
   max-height: 38px;
   padding: 2px 8px;
   color: blue;
@@ -58,7 +65,7 @@
   border-bottom: 1px solid lightgray;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  overflow: scroll;
+  overflow: visible;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar {
@@ -310,8 +317,8 @@
   display: inline-block;
   font-size: 24px;
   vertical-align: middle;
-  position: relative;
-  top: -38px;
+  position: sticky;
+  top: 37px;
   width: 100%;
   line-height: 30px;
   height: 37px;

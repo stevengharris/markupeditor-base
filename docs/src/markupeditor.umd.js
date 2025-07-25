@@ -20407,10 +20407,7 @@
     hideSearchbar() {
       let searchbar = getSearchbar();
       searchbar.parentElement.removeChild(searchbar);
-      // In case we have multiple spacers (like in the demo), remove the class of each of them
-      for (let spacer of getAllSpacers()) {
-        setClass(spacer, searchbarShowing(), false);
-      }    this.matchCaseDom = null;
+      this.matchCaseDom = null;
       this.matchCaseItem = null;
       this.stopSearching();
     }
@@ -20443,10 +20440,7 @@
       let searchbar = crelt("div", { class: idClass, id: idClass }, input);
       this.addSearchButtons(view, searchbar);
       toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
-      // In case we have multiple spacers (like in the demo), set the class of each of them
-      for (let spacer of getAllSpacers()) {
-        setClass(spacer, searchbarShowing(), true);
-      }  }
+    }
 
     setStatus() {
       let count = matchCount();
@@ -20754,19 +20748,25 @@
      * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
      */
     getSelectionDivRect() {
+      let wrapper = view.dom.parentElement;
+      let originY = wrapper.getBoundingClientRect().top;
+      let originX = wrapper.getBoundingClientRect().left;
+      let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+      let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
       let selrect = getSelectionRect();
-      let top = selrect.top + window.scrollY;
-      let left = selrect.left + window.scrollX;
+      let top = selrect.top + scrollY - originY;
+      let left = selrect.left + scrollX - originX;
       let right = selrect.right;
       let width = selrect.right - selrect.left;
       let height = selrect.bottom - selrect.top;
       let bottom = selrect.bottom;
-      return {top: top, left: left, right: right, width: width, height: height, bottom: bottom}
+      return { top: top, left: left, right: right, width: width, height: height, bottom: bottom }
     }
 
     /**
      * Set the `dialog` location on the screen so it is adjacent to the selection.
      */
+
     setDialogLocation() {
       // selRect is the position within the document. So, doesn't change even if the document is scrolled.
       let selrect = this.selectionDivRect;
@@ -20785,20 +20785,24 @@
       // or below, whichever fits, biasing alignment as close as we can to the horizontal center.
       // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
       // it with the best chance of showing the entire dialog.
+      let wrapper = view.dom.parentElement;
+      let originX = wrapper.getBoundingClientRect().left;
+      let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+      let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
       let style = this.dialog.style;
-      let toolbarHeight = getSpacer().getBoundingClientRect().height;
+      let toolbarHeight = getToolbar().getBoundingClientRect().height;
       let minTop = toolbarHeight + scrollY + 4;
       let maxTop = scrollY + innerHeight - dialogHeight - 4;
       let minLeft = scrollX + 4;
       let maxLeft = innerWidth - dialogWidth - 4;
-      let fitsRight = window.innerWidth - selrect.right - window.scrollX > dialogWidth + 4;
-      let fitsLeft = selrect.left - window.scrollX > dialogWidth + 4;
-      let fitsTop = selrect.top - window.scrollY - toolbarHeight > dialogHeight + 4;
+      let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
+      let fitsLeft = selrect.left - scrollX > dialogWidth + 4;
+      let fitsTop = selrect.top - scrollY - toolbarHeight > dialogHeight + 4;
       if (fitsRight) {           // Put dialog right of selection
-        style.left = selrect.right + 4 + scrollX + 'px';
+        style.left = selrect.right + 4 + scrollX - originX + 'px';
         style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
       } else if (fitsLeft) {     // Put dialog left of selection
-        style.left = selrect.left - dialogWidth - 4 + scrollX + 'px';
+        style.left = selrect.left - dialogWidth - 4 + scrollX - originX + 'px';
         style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
       } else if (fitsTop) {     // Put dialog above selection
         style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
@@ -21114,14 +21118,19 @@
      * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
      */
     getSelectionDivRect() {
+      let wrapper = view.dom.parentElement;
+      let originY = wrapper.getBoundingClientRect().top;
+      let originX = wrapper.getBoundingClientRect().left;
+      let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+      let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
       let selrect = getSelectionRect();
-      let top = selrect.top + window.scrollY;
-      let left = selrect.left + window.scrollX;
+      let top = selrect.top + scrollY - originY;
+      let left = selrect.left + scrollX - originX;
       let right = selrect.right;
       let width = selrect.right - selrect.left;
       let height = selrect.bottom - selrect.top;
       let bottom = selrect.bottom;
-      return {top: top, left: left, right: right, width: width, height: height, bottom: bottom}
+      return { top: top, left: left, right: right, width: width, height: height, bottom: bottom }
     }
 
     /**
@@ -21145,20 +21154,24 @@
       // or below, whichever fits, biasing alignment as close as we can to the horizontal center.
       // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
       // it with the best chance of showing the entire dialog.
+      let wrapper = view.dom.parentElement;
+      let originX = wrapper.getBoundingClientRect().left;
+      let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+      let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
       let style = this.dialog.style;
-      let toolbarHeight = getSpacer().getBoundingClientRect().height;
+      let toolbarHeight = getToolbar().getBoundingClientRect().height;
       let minTop = toolbarHeight + scrollY + 4;
       let maxTop = scrollY + innerHeight - dialogHeight - 4;
       let minLeft = scrollX + 4;
       let maxLeft = innerWidth - dialogWidth - 4;
-      let fitsRight = window.innerWidth - selrect.right - window.scrollX > dialogWidth + 4;
-      let fitsLeft = selrect.left - window.scrollX > dialogWidth + 4;
-      let fitsTop = selrect.top - window.scrollY - toolbarHeight > dialogHeight + 4;
+      let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
+      let fitsLeft = selrect.left - scrollX > dialogWidth + 4;
+      let fitsTop = selrect.top - scrollY - toolbarHeight > dialogHeight + 4;
       if (fitsRight) {           // Put dialog right of selection
-        style.left = selrect.right + 4 + scrollX + 'px';
+        style.left = selrect.right + 4 + scrollX - originX + 'px';
         style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
       } else if (fitsLeft) {     // Put dialog left of selection
-        style.left = selrect.left - dialogWidth - 4 + scrollX + 'px';
+        style.left = selrect.left - dialogWidth - 4 + scrollX - originX + 'px';
         style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
       } else if (fitsTop) {     // Put dialog above selection
         style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
@@ -21428,20 +21441,8 @@
     return document.getElementById(prefix + "-searchbar");
   }
 
-  function getSpacerName() {
-    return prefix + "-toolbar-spacer"
-  }
-
-  function getSpacer() {
-    return document.getElementById(getSpacerName())
-  }
-
-  function getAllSpacers() {
-    return document.getElementsByClassName(getSpacerName())
-  }
-
   function getWrapper() {
-    return getSpacer().parentElement;
+    return getToolbar().parentElement;
   }
 
   function searchbarShowing() {
@@ -22306,7 +22307,6 @@
       this.prefix = prefix + "-toolbar";
       this.editorView = editorView;
       this.content = content;
-      this.spacer = null;
       this.root = editorView.root;
       this.wrapper = crelt("div", {class: this.prefix + "-wrapper"});
       this.menu = this.wrapper.appendChild(crelt("div", {class: this.prefix, id: this.prefix}));
@@ -22325,11 +22325,6 @@
       if (this.editorView.root != this.root) {
         this.refresh();
         this.root = this.editorView.root;
-      }
-      if (!this.spacer) {
-        let idClass = this.prefix + "-spacer";
-        this.spacer = crelt("div", { class: idClass, id: idClass });
-        this.wrapper.insertBefore(this.spacer, this.menu);
       }
       return this.contentUpdate(this.editorView.state);
     }

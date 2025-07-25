@@ -31,6 +31,7 @@ class MessageHandler {
                             `<p>
                                 Failed to load ${filename}. 
                                 You may be using the MarkupEditor in a browser but trying to load HTML from a local file.
+                                You can still select a file to open from the <em>File toolbar</em>.
                             </p>`
                         )
                     });

@@ -8,7 +8,8 @@
 
  .ProseMirror {
     position: relative;
-    top: -38px;
+    /* height: 100vh; */ /* calc(100dvh - 38px); */
+    /* overflow-y: scroll; */
     padding: 4px 8px 4px 8px;
     line-height: 1.2;
     outline: none;

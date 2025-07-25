@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>MarkupEditor API</title>
+        <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
+        <link href="styles/markup.css" rel="stylesheet">
+    </head>
+    <body>
+        <p align="center">
+            <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="resources/markup-mark-dark.svg">
+                <source media="(prefers-color-scheme: light)" srcset="resources/markup-mark-light.svg">
+                <img alt="The MarkupEditor logo" src="resources/markup-mark-light.svg" width="104px" height="64px" >
+            </picture>
+        </p>
+        <div id="content"></div>
+        <script>
+            let filename = 'api-content.html';
+            fetch(filename)
+            .then((response) => response.text())
+            .then((text) => {
+                document.getElementById('content').innerHTML = text
+            })
+            .catch(error => {
+                document.getElementById('content').innerHTML = 
+                    `<p>
+                        Failed to load ${filename}. 
+                        You may be trying to load HTML from a local file in a browser.
+                    </p>`
+            });
+        </script>
+    </body>
+</html>

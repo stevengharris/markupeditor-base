@@ -29,9 +29,10 @@
 .htmldiv-body {
     background-color: #F8F8F8;
     padding: 8px;
-    margin-left: 8px;
+    margin: 30px 0 0 16px;
     white-space: pre-wrap;
     font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+    font-size: inherit;
     overflow: hidden;       /* Text will likely extend below the editor, but we can scroll to see it */
 }
 @media (prefers-color-scheme: dark) {
