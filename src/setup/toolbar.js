@@ -32,7 +32,6 @@ class ToolbarView {
     this.prefix = prefix + "-toolbar";
     this.editorView = editorView;
     this.content = content;
-    this.spacer = null;
     this.root = editorView.root
     this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
     this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
@@ -51,11 +50,6 @@ class ToolbarView {
     if (this.editorView.root != this.root) {
       this.refresh()
       this.root = this.editorView.root;
-    }
-    if (!this.spacer) {
-      let idClass = this.prefix + "-spacer";
-      this.spacer = crel("div", { class: idClass, id: idClass });
-      this.wrapper.insertBefore(this.spacer, this.menu);
     }
     return this.contentUpdate(this.editorView.state);
   }

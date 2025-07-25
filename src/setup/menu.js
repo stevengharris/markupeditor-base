@@ -375,10 +375,6 @@ export class SearchItem {
   hideSearchbar() {
     let searchbar = getSearchbar();
     searchbar.parentElement.removeChild(searchbar);
-    // In case we have multiple spacers (like in the demo), remove the class of each of them
-    for (let spacer of getAllSpacers()) {
-      setClass(spacer, searchbarShowing(), false);
-    };
     this.matchCaseDom = null;
     this.matchCaseItem = null;
     this.stopSearching();
@@ -412,10 +408,6 @@ export class SearchItem {
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
     this.addSearchButtons(view, searchbar);
     toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
-    // In case we have multiple spacers (like in the demo), set the class of each of them
-    for (let spacer of getAllSpacers()) {
-      setClass(spacer, searchbarShowing(), true);
-    };
   }
 
   setStatus() {
@@ -727,29 +719,35 @@ export class LinkItem {
    * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
    */
   getSelectionDivRect() {
+    let wrapper = view.dom.parentElement;
+    let originY = wrapper.getBoundingClientRect().top;
+    let originX = wrapper.getBoundingClientRect().left;
+    let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+    let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
     let selrect = getSelectionRect();
-    let top = selrect.top + window.scrollY
-    let left = selrect.left + window.scrollX
+    let top = selrect.top + scrollY - originY;
+    let left = selrect.left + scrollX - originX;
     let right = selrect.right;
-    let width = selrect.right - selrect.left
-    let height = selrect.bottom - selrect.top
+    let width = selrect.right - selrect.left;
+    let height = selrect.bottom - selrect.top;
     let bottom = selrect.bottom;
-    return {top: top, left: left, right: right, width: width, height: height, bottom: bottom}
+    return { top: top, left: left, right: right, width: width, height: height, bottom: bottom }
   }
 
   /**
    * Set the `dialog` location on the screen so it is adjacent to the selection.
    */
+
   setDialogLocation() {
     // selRect is the position within the document. So, doesn't change even if the document is scrolled.
-    let selrect = this.selectionDivRect
+    let selrect = this.selectionDivRect;
 
     // We need the dialogHeight and width because we can only position the dialog top and left. 
     // You would think that an element could be positioned by specifying right and bottom, but 
     // apparently not. Even when width is fixed, specifying right doesn't work. The values below
     // are dependent on toolbar.css for .Markup-prompt-link.
-    let dialogHeight = 104
-    let dialogWidth = 317
+    let dialogHeight = 104;
+    let dialogWidth = 317;
 
     // The dialog needs to be positioned within the document regardless of scroll, too, but the position is
     // set based on the direction from selrect that has the most screen real-estate. We always prefer right 
@@ -758,27 +756,31 @@ export class LinkItem {
     // or below, whichever fits, biasing alignment as close as we can to the horizontal center.
     // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
     // it with the best chance of showing the entire dialog.
-    let style = this.dialog.style
-    let toolbarHeight = getSpacer().getBoundingClientRect().height
-    let minTop = toolbarHeight + scrollY + 4
-    let maxTop = scrollY + innerHeight - dialogHeight - 4
+    let wrapper = view.dom.parentElement;
+    let originX = wrapper.getBoundingClientRect().left;
+    let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+    let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
+    let style = this.dialog.style;
+    let toolbarHeight = getToolbar().getBoundingClientRect().height;
+    let minTop = toolbarHeight + scrollY + 4;
+    let maxTop = scrollY + innerHeight - dialogHeight - 4;
     let minLeft = scrollX + 4;
-    let maxLeft = innerWidth - dialogWidth - 4
-    let fitsRight = window.innerWidth - selrect.right - window.scrollX > dialogWidth + 4
-    let fitsLeft = selrect.left - window.scrollX > dialogWidth + 4
-    let fitsTop = selrect.top - window.scrollY - toolbarHeight > dialogHeight + 4
+    let maxLeft = innerWidth - dialogWidth - 4;
+    let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
+    let fitsLeft = selrect.left - scrollX > dialogWidth + 4;
+    let fitsTop = selrect.top - scrollY - toolbarHeight > dialogHeight + 4;
     if (fitsRight) {           // Put dialog right of selection
-      style.left = selrect.right + 4 + scrollX + 'px'
+      style.left = selrect.right + 4 + scrollX - originX + 'px';
       style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
     } else if (fitsLeft) {     // Put dialog left of selection
-      style.left = selrect.left - dialogWidth - 4 + scrollX + 'px'
+      style.left = selrect.left - dialogWidth - 4 + scrollX - originX + 'px';
       style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
     } else if (fitsTop) {     // Put dialog above selection
       style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
-      style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px'
+      style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px';
     } else {                                          // Put dialog below selection, even if it's off the screen somewhat
       style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
-      style.top = Math.min((selrect.bottom + 4), maxTop) + 'px'
+      style.top = Math.min((selrect.bottom + 4), maxTop) + 'px';
     }
   }
 
@@ -1087,14 +1089,19 @@ export class ImageItem {
    * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
    */
   getSelectionDivRect() {
+    let wrapper = view.dom.parentElement;
+    let originY = wrapper.getBoundingClientRect().top;
+    let originX = wrapper.getBoundingClientRect().left;
+    let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+    let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
     let selrect = getSelectionRect();
-    let top = selrect.top + window.scrollY
-    let left = selrect.left + window.scrollX
+    let top = selrect.top + scrollY - originY;
+    let left = selrect.left + scrollX - originX;
     let right = selrect.right;
-    let width = selrect.right - selrect.left
-    let height = selrect.bottom - selrect.top
+    let width = selrect.right - selrect.left;
+    let height = selrect.bottom - selrect.top;
     let bottom = selrect.bottom;
-    return {top: top, left: left, right: right, width: width, height: height, bottom: bottom}
+    return { top: top, left: left, right: right, width: width, height: height, bottom: bottom }
   }
 
   /**
@@ -1102,14 +1109,14 @@ export class ImageItem {
    */
   setDialogLocation() {
     // selRect is the position within the document. So, doesn't change even if the document is scrolled.
-    let selrect = this.selectionDivRect
+    let selrect = this.selectionDivRect;
 
     // We need the dialogHeight and width because we can only position the dialog top and left. 
     // You would think that an element could be positioned by specifying right and bottom, but 
     // apparently not. Even when width is fixed, specifying right doesn't work. The values below
     // are dependent on toolbar.css for .Markup-prompt-image.
-    let dialogHeight = 134
-    let dialogWidth = 317
+    let dialogHeight = 134;
+    let dialogWidth = 317;
 
     // The dialog needs to be positioned within the document regardless of scroll, too, but the position is
     // set based on the direction from selrect that has the most screen real-estate. We always prefer right 
@@ -1118,27 +1125,31 @@ export class ImageItem {
     // or below, whichever fits, biasing alignment as close as we can to the horizontal center.
     // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
     // it with the best chance of showing the entire dialog.
-    let style = this.dialog.style
-    let toolbarHeight = getSpacer().getBoundingClientRect().height
-    let minTop = toolbarHeight + scrollY + 4
-    let maxTop = scrollY + innerHeight - dialogHeight - 4
+    let wrapper = view.dom.parentElement;
+    let originX = wrapper.getBoundingClientRect().left;
+    let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+    let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
+    let style = this.dialog.style;
+    let toolbarHeight = getToolbar().getBoundingClientRect().height;
+    let minTop = toolbarHeight + scrollY + 4;
+    let maxTop = scrollY + innerHeight - dialogHeight - 4;
     let minLeft = scrollX + 4;
-    let maxLeft = innerWidth - dialogWidth - 4
-    let fitsRight = window.innerWidth - selrect.right - window.scrollX > dialogWidth + 4
-    let fitsLeft = selrect.left - window.scrollX > dialogWidth + 4
-    let fitsTop = selrect.top - window.scrollY - toolbarHeight > dialogHeight + 4
+    let maxLeft = innerWidth - dialogWidth - 4;
+    let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
+    let fitsLeft = selrect.left - scrollX > dialogWidth + 4;
+    let fitsTop = selrect.top - scrollY - toolbarHeight > dialogHeight + 4;
     if (fitsRight) {           // Put dialog right of selection
-      style.left = selrect.right + 4 + scrollX + 'px'
+      style.left = selrect.right + 4 + scrollX - originX + 'px';
       style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
     } else if (fitsLeft) {     // Put dialog left of selection
-      style.left = selrect.left - dialogWidth - 4 + scrollX + 'px'
+      style.left = selrect.left - dialogWidth - 4 + scrollX - originX + 'px';
       style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
     } else if (fitsTop) {     // Put dialog above selection
       style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
-      style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px'
+      style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px';
     } else {                                          // Put dialog below selection, even if it's off the screen somewhat
       style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
-      style.top = Math.min((selrect.bottom + 4), maxTop) + 'px'
+      style.top = Math.min((selrect.bottom + 4), maxTop) + 'px';
     }
   }
 
@@ -1401,20 +1412,8 @@ function getSearchbar() {
   return document.getElementById(prefix + "-searchbar");
 }
 
-function getSpacerName() {
-  return prefix + "-toolbar-spacer"
-}
-
-function getSpacer() {
-  return document.getElementById(getSpacerName())
-}
-
-function getAllSpacers() {
-  return document.getElementsByClassName(getSpacerName())
-}
-
 function getWrapper() {
-  return getSpacer().parentElement;
+  return getToolbar().parentElement;
 }
 
 function searchbarShowing() {
