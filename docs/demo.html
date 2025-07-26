@@ -15,24 +15,21 @@
         </div> 
         <input id="docpicker" type="file" accept=".html" style="display: none">
         <script src="src/markupeditor.umd.js"></script>
+        <script src="src/markupdelegate.js"></script>
         <script>
             const markupEditor = new MU.MarkupEditor(
                 document.querySelector('#editor'),
                 {
+                    delegate: new MarkupDelegate(),
                     placeholder: 'Edit document...',
                     filename: 'demo-content.html',
                 }
             )
         </script><script src="src/filetoolbar.js"></script>
-        <script src="src/messagehandler.js"></script>
         <script>
             // Instantiate the FileToolbar and place its `menuItems` at the front of the toolbar.
             const fileToolbar = new FileToolbar()
             MU.prependToolbar(fileToolbar.menuItems)
-
-            // Let the MarkupEditor know to use our custom MessageHandler instance for callbacks.
-            let messageHandler = new MessageHandler()
-            MU.setMessageHandler(messageHandler);
         </script>
     </body>
 </html>

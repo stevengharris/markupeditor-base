@@ -90,6 +90,7 @@ import {
   appendToolbar 
 } from "./setup/index.js"
 
+import {MessageHandler} from "./messagehandler.js"
 import {toolbarView} from "./setup/toolbar.js"
 
 /**
@@ -242,30 +243,5 @@ class MarkupEditor {
         return null;                        // Default behavior should occur
       }
     })
-  }
-}
-
-/** A default message handler class if one is not passed in config. */
-class MessageHandler {
-  constructor(markupEditor) {
-    this.markupEditor = markupEditor;
-  }
-  
-  /**
-   * Take action when messages we care about come in.
-   * @param {string | JSON} message   The message passed from the MarkupEditor as the state changes. 
-   */
-  postMessage(message) {
-      // Intercept input changes. Do something very lightweight, but better, nothing at all.
-      if (message.startsWith('input')) {
-          return;
-      }
-      switch (message) {
-          // The editor posts `ready` when all scripts are loaded, so we can set the HTML.
-          case 'ready': {
-              setHTML(this.markupEditor.html, true)
-              return;
-          }
-      }
   }
 }
