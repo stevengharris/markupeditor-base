@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>MarkupEditor API</title>
+        <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
+        <link href="styles/markup.css" rel="stylesheet">
+    </head>
+    <body>
+        <pre id="content"></pre>
+        <script>
+            let filename = 'helloworld.html';
+            fetch(filename)
+            .then((response) => response.text())
+            .then((text) => {
+                document.getElementById('content').innerText = text
+            })
+            .catch(error => {
+                document.getElementById('content').innerHTML = 
+                    `<p>
+                        Failed to load ${filename}. 
+                        You may be trying to load HTML from a local file in a browser.
+                    </p>`
+            });
+        </script>
+    </body>
+</html>
