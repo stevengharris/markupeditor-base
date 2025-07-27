@@ -582,6 +582,7 @@ export class LinkItem {
     this.cancelUpdate(view.state);
     
     let wrapper = getWrapper();
+    addPromptShowing();
     wrapper.appendChild(this.dialog);
 
     // Add an overlay so we can get a modal effect without using showModal
@@ -594,16 +595,16 @@ export class LinkItem {
       this.closeDialog()
     });
     wrapper.appendChild(this.overlay);
-    this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
-    if (getSearchbar()) {
-      setClass(this.toolbarOverlay, searchbarShowing(), true);
-    } else {
-      setClass(this.toolbarOverlay, searchbarHidden(), true);
-    }
-    this.toolbarOverlay.addEventListener('click', e => {
-      this.closeDialog()
-    });
-    wrapper.appendChild(this.toolbarOverlay);
+    //this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
+    //if (getSearchbar()) {
+    //  setClass(this.toolbarOverlay, searchbarShowing(), true);
+    //} else {
+    //  setClass(this.toolbarOverlay, searchbarHidden(), true);
+    //}
+    //this.toolbarOverlay.addEventListener('click', e => {
+    //  this.closeDialog()
+    //});
+    //wrapper.appendChild(this.toolbarOverlay);
   }
 
   /**
@@ -828,6 +829,7 @@ export class LinkItem {
    * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
    */
   closeDialog() {
+    removePromptShowing()
     this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
     this.overlay?.parentElement?.removeChild(this.overlay)
     this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
@@ -910,6 +912,7 @@ export class ImageItem {
     this.updateSrc()
 
     let wrapper = getWrapper();
+    addPromptShowing()
     wrapper.appendChild(this.dialog);
 
     // Add an overlay so we can get a modal effect without using showModal
@@ -1189,6 +1192,7 @@ export class ImageItem {
    * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
    */
   closeDialog() {
+    removePromptShowing()
     this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
     this.overlay?.parentElement?.removeChild(this.overlay)
     this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
@@ -1414,6 +1418,20 @@ function getSearchbar() {
 
 function getWrapper() {
   return getToolbar().parentElement;
+}
+
+/** Adding promptShowing class on wrapper lets us suppress scroll while the prompt is showing */
+function addPromptShowing() {
+  setClass(getWrapper(), promptShowing(), true)
+}
+
+/** Removing promptShowing class on wrapper lets wrapper scroll again */
+function removePromptShowing() {
+  setClass(getWrapper(), promptShowing(), false)
+}
+
+function promptShowing() {
+  return prefix + "-prompt-showing"
 }
 
 function searchbarShowing() {

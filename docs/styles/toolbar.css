@@ -1,12 +1,6 @@
 /* Spacing at the top */
 /* Note that toolbar-overlay below  is also set to these values */
 
-.Markup-toolbar-spacer {
-  position: sticky;
-  top: 38px;
-  height: 38px;
-}
-
 .Markup-searchbar-showing {
   height: 38px;
   top: 76px;
@@ -17,6 +11,11 @@
   height: inherit;
   overflow-y: scroll;
   position: relative; 
+}
+
+/* We add Markup-prompt-showing to the wrapper to prevent scroll, and remove it when done */
+.Markup-prompt-showing {
+  overflow-y: hidden;
 }
 
 /* Z-indexes in one place */
