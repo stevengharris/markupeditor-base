@@ -595,16 +595,16 @@ export class LinkItem {
       this.closeDialog()
     });
     wrapper.appendChild(this.overlay);
-    //this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
-    //if (getSearchbar()) {
-    //  setClass(this.toolbarOverlay, searchbarShowing(), true);
-    //} else {
-    //  setClass(this.toolbarOverlay, searchbarHidden(), true);
-    //}
-    //this.toolbarOverlay.addEventListener('click', e => {
-    //  this.closeDialog()
-    //});
-    //wrapper.appendChild(this.toolbarOverlay);
+    this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
+    if (getSearchbar()) {
+      setClass(this.toolbarOverlay, searchbarShowing(), true);
+    } else {
+      setClass(this.toolbarOverlay, searchbarHidden(), true);
+    }
+    this.toolbarOverlay.addEventListener('click', e => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.toolbarOverlay);
   }
 
   /**

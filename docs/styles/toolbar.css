@@ -404,7 +404,6 @@
   }
 }
 
-/*
 .Markup-toolbar-overlay.Markup-searchbar-hidden {
   height: 38px;
 }
@@ -412,7 +411,6 @@
 .Markup-toolbar-overlay.Markup-searchbar-showing {
   height: 76px;
 }
-*/
 
 .Markup-prompt {
   margin: 0;
