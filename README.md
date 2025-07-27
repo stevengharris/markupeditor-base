@@ -9,16 +9,47 @@
 # MarkupEditor
 
 The MarkupEditor supports WYSIWYG editing in a web view. The "source of truth" for the MarkupEditor is standard HTML, styled using standard CSS.
+The MarkupEditor comes with a toolbar and hot key bindings to access its editing functionality. The toolbar visibility and contents, 
+as well as the key bindings, are configurable and extensible.
 
-The MarkupEditor aims to support the same functionality as [GitHub flavored Markdown](https://github.github.com/gfm/). However, instead of dealing with the distractions in Markdown-based text and the mysteries of how that text is translated to HTML and presented, the MarkupEditor always presents the HTML directly as you edit it.
+### Motivation
 
-The `markupeditor-base` project is primarily meant to be used as a dependency of a separate project that presents a web view. Along with the HTML content you're editing, web view must load the `markupeditor` JavaScript as a script along with the css styling to support editing. 
+Like Markdown, the MarkupEditor keeps the focus on what you're writing, with a minimum of distractions. Like Markdown, it supports just enough 
+functionality to help you organize and format your writing to get your points across effectively. Unlike Markdown, the MarkupEditor's WYSIWYG 
+approach means you always see what you're writing presented properly as you write it, instead of dealing with the distractions of composing 
+text with embedded notations and the uncertainty of how that text is later translated to HTML and presented.
 
-By cloning the `markupeditor-base` project and building it, you can exercise the WYSIWYG editing functionality by opening `explore/index.html` in a web browser. This makes debugging or reproducing issues completely self-contained in a browser environment, without requiring a web view being embedded in a larger project. You can also open `explore/index.js` in a node.js server to see and edit the same content.
+## Try
 
-There are currently two projects that use `markupeditor-base`:
+You can try the MarkupEditor out right from the [project web site](https://stevengharris.github.io/markupeditor-base/). The web site has all the information you need to use the MarkupEditor in your application.
 
-* [MarkupEditor](https://github.com/stevengharris/MarkupEditor): WYSIWYG editing for SwiftUI and UIKit. This has been the primary driver for work on the base project.
-* [markupeditor-vs](https://github.com/stevengharris/markupeditor-vs): WYSIWYG editing for VSCode. This project is under development. It is a VSCode extension.
+## Install
 
-This project is a work in progress under active development.
+Clone the repository.
+
+```
+git clone https://github.com/stevengharris/markupeditor-base.git
+```
+
+You need node/npm installed. Install the dependencies.
+
+```
+cd markupeditor-base
+npm install
+```
+
+Build the project.
+
+```
+npm run build
+```
+
+Use the web site docs to test:
+
+```
+node docs
+```
+
+## TBD
+
+
