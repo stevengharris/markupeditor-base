@@ -20626,6 +20626,7 @@
         this.closeDialog();
       });
       wrapper.appendChild(this.overlay);
+
       this.toolbarOverlay = crelt('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
       if (getSearchbar()) {
         setClass(this.toolbarOverlay, searchbarShowing(), true);

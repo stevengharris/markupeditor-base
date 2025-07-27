@@ -595,6 +595,7 @@ export class LinkItem {
       this.closeDialog()
     });
     wrapper.appendChild(this.overlay);
+
     this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
     if (getSearchbar()) {
       setClass(this.toolbarOverlay, searchbarShowing(), true);
@@ -604,7 +605,7 @@ export class LinkItem {
     this.toolbarOverlay.addEventListener('click', e => {
       this.closeDialog()
     });
-    wrapper.appendChild(this.toolbarOverlay);
+    wrapper.appendChild(this.toolbarOverlay)
   }
 
   /**
