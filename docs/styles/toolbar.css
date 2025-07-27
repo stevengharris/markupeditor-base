@@ -78,6 +78,7 @@
 
 .Markup-menuitem {
   display: inline-block;
+  flex-shrink: 0;  /* Otherwise, the drop-downs with icons shrink */
   overflow-y: visible;
   vertical-align: middle;
   min-width: 28px;
@@ -187,7 +188,6 @@
 
 .Markup-menu-dropdown-icon-wrap {
   display: inline-block;
-  flex-shrink: 0;  /* Otherwise, the drop-downs with icons shrink */
   padding-right: 4px;
   width: calc(1.8em);
   height: calc(1em + 4px);
