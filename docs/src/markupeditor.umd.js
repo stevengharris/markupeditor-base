@@ -20616,7 +20616,7 @@
       wrapper.appendChild(this.dialog);
 
       // Add an overlay so we can get a modal effect without using showModal
-      // showModal puts the dialog in the top-laver, so it slides over the toolbar 
+      // showModal puts the dialog in the top-layer, so it slides over the toolbar 
       // when scrolling and ignores z-order. Good article: https://bitsofco.de/accessible-modal-dialog/.
       // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
       // because it sits at a higher z-level than the prompt and overlay.
