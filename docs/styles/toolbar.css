@@ -51,7 +51,8 @@
 /* Toolbar, menu item, and dropdown styling */
 
 .Markup-toolbar {
-  display: flex;
+  display: inline-flex;
+  width: 100%;
   font-size: 24px;
   vertical-align: middle;
   border-top-left-radius: inherit;
@@ -65,8 +66,7 @@
   border-bottom: 1px solid lightgray;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  overflow-x: scroll;
-  overflow-y: hidden;
+  overflow: visible;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar {
@@ -78,7 +78,7 @@
 
 .Markup-menuitem {
   display: inline-block;
-  flex-shrink: 0;   /* Otherwise, the drop-downs with icons shrink */
+  overflow-y: visible;
   vertical-align: middle;
   min-width: 28px;
   height: 28px;
@@ -187,6 +187,7 @@
 
 .Markup-menu-dropdown-icon-wrap {
   display: inline-block;
+  flex-shrink: 0;  /* Otherwise, the drop-downs with icons shrink */
   padding-right: 4px;
   width: calc(1.8em);
   height: calc(1em + 4px);
