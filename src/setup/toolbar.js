@@ -14,7 +14,7 @@
 
 import crel from "crelt"
 import {Plugin} from "prosemirror-state"
-import {renderGrouped} from  "./menu"
+import {renderGrouped, renderGroupedFit, separator} from  "./menu"
 
 export let toolbarView;
 
@@ -48,10 +48,12 @@ class ToolbarView {
 
   update() {
     if (this.editorView.root != this.root) {
-      this.refresh()
+      this.refreshFit()
       this.root = this.editorView.root;
     }
-    return this.contentUpdate(this.editorView.state);
+    // Returning this.fitMenu() will return this.contentUpdate(this.editorView.state) for 
+    // the menu that fits in the width.
+    return this.fitMenu();
   }
 
   /**
@@ -60,7 +62,7 @@ class ToolbarView {
    */
   prepend(items) {
     this.content = [items].concat(this.content)
-    this.refresh()
+    this.refreshFit()
   }
 
   /**
@@ -69,15 +71,35 @@ class ToolbarView {
    */
   append(items) {
     this.content = this.content.concat([items])
-    this.refresh()
+    this.refreshFit()
   }
 
-  refresh() {
-      let { dom, update } = renderGrouped(this.editorView, this.content);
+  refreshFit(wrapAtIndex) {
+      let { dom, update } = renderGroupedFit(this.editorView, this.content, wrapAtIndex);
       this.contentUpdate = update;
       // dom is an HTMLDocumentFragment and needs to replace all of menu
       this.menu.innerHTML = '';
       this.menu.appendChild(dom);
+  }
+
+  fitMenu() {
+    let items = this.menu.children;
+    let menuRight = this.menu.getBoundingClientRect().right;
+    let separatorHTML = separator().outerHTML
+    let wrapAtIndex = -1; // Track the last non-separator (i.e., content) item that was fully in-width
+    for (let i = 0; i < items.length; i++) {
+      let item = items[i]
+      let itemRight = item.getBoundingClientRect().right
+      if (item.outerHTML != separatorHTML) {
+        if (itemRight > menuRight) {
+          wrapAtIndex = Math.max(wrapAtIndex, 0);
+          this.refreshFit(wrapAtIndex, 0); // Wrap starting at the item before this one, so the new DropDown fits
+          return this.contentUpdate(this.editorView.state);;
+        }
+        wrapAtIndex++;  // Only count items that are not separators
+      } 
+    }
+    return this.contentUpdate(this.editorView.state);
   }
 
   destroy() {

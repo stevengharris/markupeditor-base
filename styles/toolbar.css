@@ -8,6 +8,7 @@
 
 /* The wrapper lets us automatically embed a toolbar and scroll under it */
 .Markup-toolbar-wrapper {
+  margin-right: -12px;    /* Prevent side scroll even when menu fits */
   height: inherit;
   overflow-y: scroll;
   position: relative; 
@@ -52,12 +53,13 @@
 
 .Markup-toolbar {
   display: inline-flex;
+  position: sticky;
+  overflow: visible;
   width: 100%;
   font-size: 24px;
   vertical-align: middle;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
-  position: sticky;
   top: 0;
   max-height: 38px;
   padding: 2px 8px;
@@ -66,7 +68,6 @@
   border-bottom: 1px solid lightgray;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  overflow: visible;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar {
@@ -180,7 +181,7 @@
 .Markup-menu-dropdown-wrap {
   display: inline-block;
   padding: 0 4px;
-  width: calc(4.5em);
+  width: 4.5em;
   height: calc(1em + 4px);
   border-radius: 4px;
   background: inherit;
@@ -189,7 +190,16 @@
 .Markup-menu-dropdown-icon-wrap {
   display: inline-block;
   padding-right: 4px;
-  width: calc(1.8em);
+  width: 1.8em;
+  height: calc(1em + 4px);
+  border-radius: 4px;
+  background: inherit;
+}
+
+.Markup-menu-dropdown-icon-wrap-noindicator {
+  display: inline-flex;
+  padding-right: 4px;
+  width: 1em;
   height: calc(1em + 4px);
   border-radius: 4px;
   background: inherit;
@@ -198,7 +208,7 @@
 .Markup-menu-dropdown {
   display: inline-flex;
   justify-content: space-between;
-  width: calc(4.5em);
+  width: 4.5em;
   height: calc(1em + 4px);
   background: inherit;
   position: absolute;
@@ -207,7 +217,7 @@
 .Markup-menu-dropdown-icon {
   display: inline-flex;
   justify-content: space-between;
-  width: calc(1.8em);
+  width: 1.8em;
   cursor: pointer;
   position: absolute;
 }

@@ -199,6 +199,7 @@ export class Dropdown {
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu";
     this.options = options;
+    if (this.options.indicator == undefined) this.options.indicator = true;
     this.content = Array.isArray(content) ? content : [content];
   }
   /**
@@ -213,7 +214,7 @@ export class Dropdown {
     let label;
     if (this.options.icon) {
       label = getIcon(view.root, this.options.icon)
-      label.appendChild(indicator)
+      if (options.indicator) label.appendChild(indicator)
       setClass(label, this.prefix + "-dropdown-icon", true)
     } else {
       label = crel("span", {
@@ -232,7 +233,8 @@ export class Dropdown {
       enabled = this.options.enable(state) || false;
       setClass(dom, this.prefix + "-disabled", !enabled);
     }
-    let wrapClass = (this.options.icon) ? this.prefix + "-dropdown-icon-wrap" : this.prefix + "-dropdown-wrap"
+    let iconWrapClass = this.options.indicator ? "-dropdown-icon-wrap" : "-dropdown-icon-wrap-noindicator"
+    let wrapClass = (this.options.icon) ? this.prefix + iconWrapClass : this.prefix + "-dropdown-wrap"
     let wrap = crel("span", { class: wrapClass }, label);
     let open = null;
     let listeningOnClose = null;
@@ -1787,6 +1789,54 @@ export function renderGrouped(view, content) {
     return { dom: result, update };
 }
 
+export function renderGroupedFit(view, content, wrapAtIndex) {
+  let result = document.createDocumentFragment();
+  let updates = [], separators = [];
+  let itemIndex = 0;
+  let moreItems = [];
+  for (let i = 0; i < content.length; i++) {
+    let items = content[i], localUpdates = [], localNodes = [];
+    for (let j = 0; j < items.length; j++) {
+      if (itemIndex >= wrapAtIndex) {
+        // Track the items to be later rendered in the "more" dropdown
+        moreItems.push(items[j]);
+      } else {
+        let { dom, update } = items[j].render(view);
+        let span = crel("span", { class: prefix + "-menuitem" }, dom);
+        result.appendChild(span);
+        localNodes.push(span);
+        localUpdates.push(update);
+      }
+      itemIndex++;
+    }
+    if (localUpdates.length) {
+      updates.push(combineUpdates(localUpdates, localNodes));
+      if (i < content.length - 1)
+        separators.push(result.appendChild(separator()));
+    }
+  }
+  if (moreItems.length > 0) {
+    let more = new Dropdown(moreItems, { title: 'More...', icon: icons.more, indicator: false })
+    let {dom, update} = more.render(view);
+    let span = crel("span", { class: prefix + "-menuitem" }, dom);
+    result.appendChild(span);
+    updates.push(update);
+  }
+  function update(state) {
+    let something = false, needSep = false;
+    for (let i = 0; i < updates.length; i++) {
+      let hasContent = updates[i](state);
+      if (i)
+        separators[i - 1].style.display = needSep && hasContent ? "" : "none";
+      needSep = hasContent;
+      if (hasContent)
+        something = true;
+    }
+    return something;
+  }
+  return { dom: result, update };
+}
+
 /**
  * Return a MenuItem that runs the command when selected.
  * 
@@ -1818,7 +1868,7 @@ export function renderDropdownItems(items, view) {
     return { dom: rendered, update: combineUpdates(updates, rendered) };
 }
 
-function separator() {
+export function separator() {
     return crel("span", { class: prefix + "-menuseparator" });
 }
 
@@ -1935,8 +1985,12 @@ export const icons = {
     svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="m131-252 165-440h79l165 440h-76l-39-112H247l-40 112h-76Zm139-176h131l-64-182h-4l-63 182Zm395 186q-51 0-81-27.5T554-342q0-44 34.5-72.5T677-443q23 0 45 4t38 11v-12q0-29-20.5-47T685-505q-23 0-42 9.5T610-468l-47-35q24-29 54.5-43t68.5-14q69 0 103 32.5t34 97.5v178h-63v-37h-4q-14 23-38 35t-53 12Zm12-54q35 0 59.5-24t24.5-56q-14-8-33.5-12.5T689-393q-32 0-50 14t-18 37q0 20 16 33t40 13Z"/></svg>'
   },
   paragraphStyle: {
-    // <span class="material-symbols-outlined">format_paragraph/span>
+    // <span class="material-symbols-outlined">format_paragraph</span>
     svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M360-160v-240q-83 0-141.5-58.5T160-600q0-83 58.5-141.5T360-800h360v80h-80v560h-80v-560H440v560h-80Z"/></svg>'
+  },
+  more: {
+    // <span class="material-symbols-outlined">more_horiz</span>
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>'
   }
 }
 

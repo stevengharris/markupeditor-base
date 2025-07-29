@@ -31,6 +31,10 @@
         <div id="editor" style="margin: 8px; height: 300px; border: solid 1px lightgray;"></div>
         <script src="src/markupeditor.umd.js"></script>
         <script>
+            let config = MU.markupMenuConfig;
+            //config.visibility.styleMenu = false;
+            //config.visibility.styleBar = false;
+            //config.visibility.formatBar = false;
             new MU.MarkupEditor(
                 document.querySelector('#editor'), 
                 { 
@@ -46,7 +50,8 @@
                         <p>
                             Learn more about the MarkupEditor in the <a href="#resources">Resources</a> section below.
                         </p>
-                    `
+                    `,
+                    menu: config
                 }
             )
         </script>
