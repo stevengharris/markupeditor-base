@@ -1,7 +1,7 @@
-class MarkupDelegate {
+class DemoDelegate {
 
     markupReady(markupEditor) {
-        fileToolbar.hideRaw()
+        demoToolbar.hideRaw()
         let filename = markupEditor.config.filename;
         if (filename) {
             fetch(filename)
@@ -22,6 +22,6 @@ class MarkupDelegate {
     }
 
     markupInput() {
-        fileToolbar.updateRaw()
+        demoToolbar.updateRaw()
     }
 }

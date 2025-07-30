@@ -4,6 +4,9 @@
   "main": "dist/markupeditor.cjs.js",
   "module": "dist/markupeditor.esm.js",
   "browser": "dist/markupeditor.umd.js",
+  "bin": {
+    "markup": "./src/markupeditor.js"
+  },
   "sideEffects": false,
   "license": "MIT",
   "author": "Steven G. Harris <stevengharris@gmail.com>",

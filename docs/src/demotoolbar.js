@@ -1,5 +1,5 @@
 /** A class holding the command items and functionality for a File toolbar that is prepended to the MarkupEditor toolbar */
-class FileToolbar {
+class DemoToolbar {
   constructor() { 
     this.menuItems = this.buildMenuItems()
   }
