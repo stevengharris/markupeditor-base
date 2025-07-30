@@ -6,7 +6,6 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-const port = 3000;
 
 const options = {
   'help': { 
@@ -14,6 +13,10 @@ const options = {
     default: false,
     short: 'h'
   },
+  'port': {
+    type: 'string',
+    default: '3000'
+  }
 }
 
 try {
@@ -22,11 +25,12 @@ try {
   var values = {help: true}
 }
 if ((values.help) || (positionals.length != 1)) {
-  console.log('Usage: markup <filename.html>')
+  console.log('Usage: markup [--port number] <filename.html>')
   return
 }
 
 filename = positionals[0]
+const port = parseInt(values.port)
 
 const cwd = process.cwd()
 let config = {}
