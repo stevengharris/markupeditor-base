@@ -14348,8 +14348,8 @@
         let minAttrs = {};
         minAttrs.src = src;
         if (alt) minAttrs.alt = alt;
-        minAttrs.width = width ?? "18";
-        minAttrs.height = height ?? "18";
+        if (width) minAttrs.width = width;
+        if (height) minAttrs.height = height;
         return ["img", minAttrs] 
       }
     },
@@ -19301,6 +19301,12 @@
       div.appendChild(htmlElement);
       return div.innerHTML;
   }
+  function doUndo() {
+      let command = undoCommand();
+      let result = command(view.state, view.dispatch, view);
+      return result
+  }
+
   /**
    * Return a command to undo and do the proper callbacks.
    */
@@ -19314,6 +19320,12 @@
       };
       return commandAdapter
   }
+  function doRedo() {
+      let command = redoCommand();
+      let result = command(view.state, view.dispatch, view);
+      return result
+  }
+
   /**
    * Return a command to redo and do the proper callbacks.
    */
@@ -22812,6 +22824,8 @@
   exports.deactivateSearch = deactivateSearch;
   exports.deleteLink = deleteLink;
   exports.deleteTableArea = deleteTableArea;
+  exports.doRedo = doRedo;
+  exports.doUndo = doUndo;
   exports.emptyDocument = emptyDocument;
   exports.endModalInput = endModalInput;
   exports.focus = focus;
@@ -22833,7 +22847,6 @@
   exports.pasteHTML = pasteHTML;
   exports.pasteText = pasteText;
   exports.prependToolbar = prependToolbar;
-  exports.redoCommand = redoCommand;
   exports.removeAllDivs = removeAllDivs;
   exports.removeButton = removeButton;
   exports.removeDiv = removeDiv;
@@ -22862,6 +22875,5 @@
   exports.toggleSubscript = toggleSubscript;
   exports.toggleSuperscript = toggleSuperscript;
   exports.toggleUnderline = toggleUnderline;
-  exports.undoCommand = undoCommand;
 
 }));
