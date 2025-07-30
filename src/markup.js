@@ -2871,6 +2871,12 @@ export function getTestHTML(sel) {
     return div.innerHTML;
 };
 
+export function doUndo() {
+    let command = undoCommand();
+    let result = command(view.state, view.dispatch, view);
+    return result
+}
+
 /**
  * Return a command to undo and do the proper callbacks.
  */
@@ -2884,6 +2890,12 @@ export function undoCommand() {
     }
     return commandAdapter
 };
+
+export function doRedo() {
+    let command = redoCommand();
+    let result = command(view.state, view.dispatch, view);
+    return result
+}
 
 /**
  * Return a command to redo and do the proper callbacks.
