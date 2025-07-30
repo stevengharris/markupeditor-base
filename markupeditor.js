@@ -1,22 +1,42 @@
 #!/usr/bin/env node
-const { argv } = require('node:process');
+
+const {argv} = require('node:process');
+const {parseArgs} = require('node:util');
 const express = require('express');
 const path = require('path');
 
 const app = express();
 const port = 3000;
 
-const cwd = process.cwd()
+const options = {
+  'help': { 
+    type: 'boolean',
+    default: false,
+    short: 'h'
+  },
+}
 
-let filename = argv[2]
-let options = {}
+try {
+  var {values, positionals} = parseArgs({ argv, options, allowPositionals: true })
+} catch {
+  var values = {help: true}
+}
+if ((values.help) || (positionals.length != 1)) {
+  console.log('Usage: markup <filename.html>')
+  return
+}
+
+filename = positionals[0]
+
+const cwd = process.cwd()
+let config = {}
 if (filename) {
   // base needs a trailing slash
-  options.base = path.relative(__dirname, cwd) + '/'
-  options.filename = filename
-  options.html = '<p>Loading...</p>'
+  config.base = path.relative(__dirname, cwd) + '/'
+  config.filename = filename
+  config.html = '<p>Loading...</p>'
 } else {
-  options.html = '<p>No file was specified.</p>'
+  config.html = '<p>No file was specified.</p>'
 }
 
 let markupeditorcss = 'styles/markupeditor.css'
@@ -44,12 +64,12 @@ app.get('/', (req, res) => {
           <div id="editor"></div>
           <script src="${markupeditorscript}"></script>
           <script src="${markupdelegatescript}"></script>
-          <base href="${options.base}"/>     <!-- So the relative references work-->
+          <base href="${config.base}"/>     <!-- So the relative references work-->
           <script>
             new MU.MarkupEditor(document.querySelector('#editor'), {
-              filename: "${options.filename}",
-              base: "${options.base}",
-              html: "${options.html}",
+              filename: "${config.filename}",
+              base: "${config.base}",
+              html: "${config.html}",
               delegate: new MarkupDelegate()
             })
           </script>
@@ -60,5 +80,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port} in ${__dirname}`);
+  console.log(`Server listening at http://localhost:${port}`);
 });

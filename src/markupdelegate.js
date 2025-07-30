@@ -2,20 +2,17 @@ class MarkupDelegate {
 
     markupReady(markupEditor) {
         let filename = markupEditor.config.filename;
+        let focusAfterLoad = markupEditor.config.focusAfterLoad;
         if (filename) {
             fetch(filename)
                 .then((response) => response.text())
                 .then((text) => {
-                    MU.setHTML(text, true)
+                    // Note that a fetch failure will typically return a 'Cannot GET <filename with path>'
+                    MU.setHTML(text, focusAfterLoad)
                 })
                 .catch(error => {
-                    MU.setHTML(
-                        `<p>
-                            Failed to load ${filename}. 
-                            You may be using the MarkupEditor in a browser but trying to load HTML from a local file.
-                            You can still select a file to open from the <em>File toolbar</em>.
-                        </p>`
-                    )
+                    // But just in case, report a failure if needed.
+                    MU.setHTML(`<p>Failed to load ${filename}.</p>`, focusAfterLoad)
                 });
         }
     }
