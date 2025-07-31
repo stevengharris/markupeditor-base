@@ -1,27 +1,34 @@
 class DemoDelegate {
 
-    markupReady(markupEditor) {
+    markupReady() {
         demoToolbar.hideRaw()
-        let filename = markupEditor.config.filename;
-        if (filename) {
-            fetch(filename)
-                .then((response) => response.text())
-                .then((text) => {
-                    MU.setHTML(text, true)
-                })
-                .catch(error => {
-                    MU.setHTML(
-                        `<p>
-                            Failed to load ${filename}. 
-                            You may be using the MarkupEditor in a browser but trying to load HTML from a local file.
-                            You can still select a file to open from the <em>File toolbar</em>.
-                        </p>`
-                    )
-                });
-        }
     }
 
     markupInput() {
         demoToolbar.updateRaw()
     }
+
+    /** Other messages the delegate could receive and act on... */
+    /*
+    markupUpdateHeight(height, editor) {
+        console.log('DemoDelegate received updateHeight')
+    }
+
+    markupSelectionChanged(editor) {
+        console.log('DemoDelegate received selectionChanged')
+    }
+
+    markupClicked(editor) {
+        console.log('DemoDelegate received clicked')
+    }
+
+    markupSearched(editor) {
+        console.log('DemoDelegate received searched')
+    }
+
+    markupImageAdded(editor, src, divId) {
+        console.log('DemoDelegate received markupImageAdded')
+    }
+    */
+
 }

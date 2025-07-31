@@ -29,23 +29,17 @@ if ((values.help) || (positionals.length != 1)) {
   return
 }
 
-filename = positionals[0]
+filename = positionals[0] // We know the value exists, but may not load
 const port = parseInt(values.port)
 
 const cwd = process.cwd()
 let config = {}
-if (filename) {
-  // base needs a trailing slash
-  config.base = path.relative(__dirname, cwd) + '/'
-  config.filename = filename
-  config.html = '<p>Loading...</p>'
-} else {
-  config.html = '<p>No file was specified.</p>'
-}
+// base needs a trailing slash
+config.base = path.relative(__dirname, cwd) + '/'
+config.filename = filename
 
 let markupeditorcss = 'styles/markupeditor.css'
 let markupeditorscript = 'dist/markupeditor.umd.js'
-let markupdelegatescript = 'src/markupdelegate.js'
 
 // Allow the relative references for css and scripts to work in index.html
 app.use(express.static(`${__dirname}`))
@@ -67,14 +61,11 @@ app.get('/', (req, res) => {
         <body>
           <div id="editor"></div>
           <script src="${markupeditorscript}"></script>
-          <script src="${markupdelegatescript}"></script>
           <base href="${config.base}"/>     <!-- So the relative references work-->
           <script>
             new MU.MarkupEditor(document.querySelector('#editor'), {
               filename: "${config.filename}",
-              base: "${config.base}",
               html: "${config.html}",
-              delegate: new MarkupDelegate()
             })
           </script>
         </body>
