@@ -671,6 +671,9 @@ class MUError {
  * 
  * The searcher uses the ProseMirror search plugin https://github.com/proseMirror/prosemirror-search to create 
  * and track ranges within the doc that match a given SearchQuery.
+ * 
+ * Note that `isActive` and intercepting Enter/Shift-Enter is only relevant in the Swift case, where the search 
+ * bar is implemented in Swift.
  */
 class Searcher {
     
@@ -807,7 +810,7 @@ class Searcher {
      * Deactivate search mode where Enter is being intercepted
      */
     deactivate(view) {
-        //if (!this.isActive) return;
+        if (this.isActive) _callback('deactivateSearch');
         view.dom.classList.remove("searching");
         this._isActive = false;
         this._searchQuery = new SearchQuery({search: "", caseSensitive: this._caseSensitive});
@@ -815,7 +818,6 @@ class Searcher {
         view.dispatch(transaction);
         this._matchCount = null;
         this._matchIndex = null;
-        _callback('deactivateSearch');
     }
     
     /**
