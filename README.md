@@ -1,9 +1,5 @@
 <p align="center">
-    <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/073b1dcc-c81b-4e2d-a46c-2f819e5a0a44">
-            <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/67104f81-055f-43f5-bf4f-b7655eecb2bb">
-            <img alt="The MarkupEditor logo" src="https://github.com/user-attachments/assets/67104f81-055f-43f5-bf4f-b7655eecb2bb" width="104px" height="64px" >
-    </picture>
+    <img alt="The MarkupEditor logo" src="[https://github.com/user-attachments/assets/67104f81-055f-43f5-bf4f-b7655eecb2bb](https://github.com/user-attachments/assets/c67b6aa0-2576-4a0b-81d0-229ee501b59d)" width="64px" height="64px" >
 </p>
 
 # MarkupEditor
