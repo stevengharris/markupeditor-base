@@ -3,7 +3,8 @@
     <head>
         <title>MarkupEditor Demo</title>
         <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-        <link href="styles/markupeditor.css" rel="stylesheet">
+        <meta http-equiv="Content-Security-Policy" content="script-src-elem 'self' 'unsafe-inline' src/*; style-src-elem 'self' styles/*" />
+        <link href="../styles/markupeditor.css" rel="stylesheet">
         <link href="styles/demo.css" rel="stylesheet">
     </head>
     <body>
@@ -14,10 +15,9 @@
             </div>
         </div> 
         <input id="docpicker" type="file" accept=".html" style="display: none">
-        <script src="src/markupeditor.umd.js"></script>
+        <script src="../src/markupeditor.umd.js"></script>
         <script src="src/demodelegate.js"></script>
         <script src="src/demotoolbar.js"></script>
-        <base href="content/"/>     <!-- So the relative references work-->
         <script>
             const markupEditor = new MU.MarkupEditor(
                 document.querySelector('#editor'),

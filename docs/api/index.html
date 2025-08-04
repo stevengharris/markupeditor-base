@@ -3,16 +3,20 @@
     <head>
         <title>MarkupEditor API</title>
         <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-        <link href="styles/markup.css" rel="stylesheet">
+        <link href="../styles/markup.css" rel="stylesheet">
     </head>
     <body>
-        <pre id="content"></pre>
+        <p align="center">
+            <img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" >
+        </p>
+        </p>
+        <div id="content"></div>
         <script>
-            let filename = 'helloworld.html';
+            let filename = 'api.html';
             fetch(filename)
             .then((response) => response.text())
             .then((text) => {
-                document.getElementById('content').innerText = text
+                document.getElementById('content').innerHTML = text
             })
             .catch(error => {
                 document.getElementById('content').innerHTML = 
