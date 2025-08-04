@@ -1388,8 +1388,13 @@ const _isInlined = function(node) {
     return _isTextNode(node) || _isFormatElement(node) || _isLinkNode(node) || _isVoidNode(node)
 };
 
-/** Set the base element for the body to `string`. Used so relative hrefs and srcs work. */
-export function setBase(string) {
+/** 
+ * Set the base element for the body to `string`. 
+ * 
+ * Used so relative hrefs and srcs work. 
+ * If `string` is undefined, then the base element is removed if it exists.
+ */
+function setBase(string) {
     let base = document.getElementsByTagName('base')[0]
     if (string) {
         if (!base) {
@@ -1412,7 +1417,10 @@ export function setBase(string) {
  * @param {string}  contents            The HTML for the editor
  * @param {boolean} selectAfterLoad     Whether we should focus after load
  */
-export function setHTML(contents, focusAfterLoad=true) {
+export function setHTML(contents, focusAfterLoad=true, base) {
+    // If defined, set base; else remove base if it exists. This way, when setHTML is used to,
+    // say, create a new empty document, base will be reset.
+    setBase(base);
     const state = view.state;
     const doc = state.doc;
     const tr = state.tr;
