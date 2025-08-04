@@ -17895,6 +17895,22 @@
       return _isTextNode(node) || _isFormatElement(node) || _isLinkNode(node) || _isVoidNode(node)
   };
 
+  /** Set the base element for the body to `string`. Used so relative hrefs and srcs work. */
+  function setBase(string) {
+      let base = document.getElementsByTagName('base')[0];
+      if (string) {
+          if (!base) {
+              base = document.createElement('base');
+              document.body.insertBefore(base, document.body.firstChild);
+          }
+          base.setAttribute('href', string);
+      } else {
+          if (base) {
+              base.parentElement.removeChild(base);
+          }
+      }
+  }
+
   /**
    * Set the contents of the editor.
    * 
@@ -22702,7 +22718,7 @@
   }
 
   /**
-   * The instance that will receive `postMessage` from the MarkupEditor as the document state changes.
+   * The MessageHandler receives `postMessage` from the MarkupEditor as the document state changes.
    * 
    * You can set the MessageHandler used by the MarkupEditor using `MU.setMessageHandler`. This is how 
    * the MarkupEditor is embedded in Swift and VSCode. If you don't set your own MessageHandler, then 
@@ -22760,6 +22776,12 @@
                   delegate?.markupSearched && delegate?.markupSearched(this.markupEditor);
                   return
               default:
+                  // By default, try to process the message as a JSON object, and if it's not parseable, 
+                  // then log to the console so we know about it during development. Between the `postMessage` 
+                  // method and its companion `receivedMessageData`, every message received from the 
+                  // MarkupEditor should be handled, with no exceptions. Otherwise, something is going 
+                  // on over in the web view that we are ignoring, and while we might want to ignore it, 
+                  // we don't want anything to slip thru the cracks here.
                   try {
                       const messageData = JSON.parse(message);
                       this.receivedMessageData(messageData);
@@ -22769,9 +22791,15 @@
           }
       }
 
+      /**
+       * Examine the `messageData.messageType` and take appropriate action with the other 
+       * data that is supplied in the `messageData`.
+       * 
+       * @param {Object} messageData The object obtained by parsing the JSON of a message.
+       */
       receivedMessageData(messageData) {
           let delegate = this.markupEditor.config.delegate;
-          let messageType = messageData["messageType"];
+          let messageType = messageData.messageType;
           switch (messageType) {
               case "log":
                   console.log(messageData.log);
@@ -22815,6 +22843,7 @@
           }
       }
 
+      /** This really doesn't do anything for now, but it a placeholder */
       loadUserFiles(config) {
           let scriptFiles = config.userScriptFiles;
           let cssFiles = config.userCssFiles;
@@ -22964,6 +22993,7 @@
   exports.replaceStyle = replaceStyle;
   exports.resetSelection = resetSelection;
   exports.searchFor = searchFor;
+  exports.setBase = setBase;
   exports.setHTML = setHTML;
   exports.setMessageHandler = setMessageHandler;
   exports.setPlaceholder = setPlaceholder;

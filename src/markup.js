@@ -1388,6 +1388,22 @@ const _isInlined = function(node) {
     return _isTextNode(node) || _isFormatElement(node) || _isLinkNode(node) || _isVoidNode(node)
 };
 
+/** Set the base element for the body to `string`. Used so relative hrefs and srcs work. */
+export function setBase(string) {
+    let base = document.getElementsByTagName('base')[0]
+    if (string) {
+        if (!base) {
+            base = document.createElement('base')
+            document.body.insertBefore(base, document.body.firstChild)
+        }
+        base.setAttribute('href', string)
+    } else {
+        if (base) {
+            base.parentElement.removeChild(base)
+        }
+    }
+}
+
 /**
  * Set the contents of the editor.
  * 
