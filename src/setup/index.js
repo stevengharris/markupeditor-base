@@ -6,7 +6,7 @@ import {dropCursor} from "prosemirror-dropcursor"
 import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search} from "prosemirror-search"
-import {buildMenuItems, markupMenuConfig} from "./menu"
+import {buildMenuItems, MenuConfig} from "./menu"
 import {buildKeymap, markupKeymapConfig} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
@@ -155,7 +155,7 @@ export function appendToolbar(menuItems) {
  */
 export function markupSetup(schema, config) {
   let prefix = "Markup"
-  let menuConfig = config?.menu ? config.menu : markupMenuConfig
+  let menuConfig = config?.menu ? config.menu : MenuConfig.standard()
   let keymapConfig = config?.keymap ? config.keymap: markupKeymapConfig
   let plugins = [
     buildInputRules(schema),

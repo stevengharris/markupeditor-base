@@ -74,13 +74,13 @@ import {
 } from "./markup.js"
 
 import { 
+  MenuConfig,
   MenuItem, 
   Dropdown, 
   DropdownSubmenu, 
   cmdItem, 
   renderGrouped, 
   renderDropdownItems,
-  markupMenuConfig,
 } from "./setup/menu.js"
 
 import {markupKeymapConfig} from "./setup/keymap.js"
@@ -168,7 +168,7 @@ export {
   prependToolbar, 
   appendToolbar,
   // Config access
-  markupMenuConfig,
+  MenuConfig,
   markupKeymapConfig,
 }
 

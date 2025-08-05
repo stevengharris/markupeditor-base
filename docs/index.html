@@ -27,10 +27,6 @@
         <div id="editor" style="margin: 8px; height: 300px; border: solid 1px lightgray;"></div>
         <script src="src/markupeditor.umd.js"></script>
         <script>
-            let config = MU.markupMenuConfig;
-            //config.visibility.styleMenu = false;
-            //config.visibility.styleBar = false;
-            //config.visibility.formatBar = false;
             new MU.MarkupEditor(
                 document.querySelector('#editor'), 
                 { 
@@ -47,7 +43,6 @@
                             Learn more about the MarkupEditor in the <a href="#resources">Resources</a> section below.
                         </p>
                     `,
-                    menu: config
                 }
             )
         </script>
@@ -55,12 +50,12 @@
         <h3>Demos</h3>
         <ul>
             <li><p>
-                <strong><a href="demo">MarkupEditor Demo</a></strong>. 
+                <strong><a href="demo/index.html">MarkupEditor Demo</a></strong>. 
                 A demo of all of the elements supported by the MarkupEditor. The demo includes a 
                 customized toolbar and the ability to watch the underlying HTML update as you edit.
             </p></li>
             <li><p>
-                <strong><a href="helloworld">Hello, world</a></strong>. 
+                <strong><a href="helloworld/index.html">Hello, world</a></strong>. 
                 Every project needs a "Hello, world!" demo to highlight the simplest possible case. 
                 Follow <a href="helloworld/content.html">this link</a> to see the page source or 
                 "view source" in your browser to see what's required to present "Hello, world!" in 
@@ -70,14 +65,14 @@
         <h3>Documentation</h3>
         <ul>
             <li><p>
-                <strong><a href="guide">Developer's Guide</a></strong>. 
+                <strong><a href="guide/index.html">Developer's Guide</a></strong>. 
                 Learn how to customize the toolbar and key mappings. 
                 Learn how to embed the MarkupEditor in a web site like this one and how to 
                 edit documents locally using the MarkupEditor.
                 Learn about the architecture of the MarkupEditor and how to modify its code.
             </p></li>
             <li><p>
-                <strong><a href="api">MarkupEditor API</a></strong>.
+                <strong><a href="api/index.html">MarkupEditor API</a></strong>.
             </p></li>
         </ul>
         <h3>Code and Tools</h3>
@@ -91,8 +86,8 @@
                 <strong><a href="https://github.com/stevengharris/markupeditor-desktop">Desktop MarkupEditor</a></strong>.
                 A desktop app version of the MarkupEditor, which also comes with a command line tool to open the 
                 MarkupEditor on any file. You can edit, save, open other files, and create new files. The content 
-                provided in the <a href="demo">Demo</a>, <a href="guide">Developer's Guide</a>,  
-                and <a href="api">API</a> documents was all edited entirely using the MarkupEditor desktop app.
+                provided in the <a href="demo/index.html">Demo</a>, <a href="guide/index.html">Developer's Guide</a>,  
+                and <a href="api/index.html">API</a> documents was all edited entirely using the MarkupEditor desktop app.
             </p></li>
             <li><p>
                 <strong><a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a></strong>.
