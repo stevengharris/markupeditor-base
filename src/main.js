@@ -83,7 +83,7 @@ import {
   renderDropdownItems,
 } from "./setup/menu.js"
 
-import {markupKeymapConfig} from "./setup/keymap.js"
+import {KeymapConfig} from "./setup/keymap.js"
 
 import { 
   prependToolbar, 
@@ -169,7 +169,7 @@ export {
   appendToolbar,
   // Config access
   MenuConfig,
-  markupKeymapConfig,
+  KeymapConfig,
 }
 
 /**

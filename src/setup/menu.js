@@ -131,26 +131,26 @@ export class MenuConfig {
     },
   }
 
-  static markdown(correction=false) {
-    let markdown = this.full(correction)
-    markdown.formatBar.strikethrough = false
-    markdown.formatBar.subscript = false
-    markdown.formatBar.superscript = false
-    return markdown
-  }
-
   static full(correction=false) {
     let full = this.all
     full.visibility.correctionBar = correction
     return full
   }
 
+  static standard(correction=false) {
+    return this.markdown(correction)
+  }
+
   static desktop(correction=false) {
     return this.full(correction)
   }
 
-  static standard(correction=false) {
-    return this.markdown(correction)
+  static markdown(correction=false) {
+    let markdown = this.full(correction)
+    markdown.formatBar.underline = false
+    markdown.formatBar.subscript = false
+    markdown.formatBar.superscript = false
+    return markdown
   }
 }
 

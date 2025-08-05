@@ -20201,26 +20201,26 @@
       },
     }
 
-    static markdown(correction=false) {
-      let markdown = this.full(correction);
-      markdown.formatBar.strikethrough = false;
-      markdown.formatBar.subscript = false;
-      markdown.formatBar.superscript = false;
-      return markdown
-    }
-
     static full(correction=false) {
       let full = this.all;
       full.visibility.correctionBar = correction;
       return full
     }
 
+    static standard(correction=false) {
+      return this.markdown(correction)
+    }
+
     static desktop(correction=false) {
       return this.full(correction)
     }
 
-    static standard(correction=false) {
-      return this.markdown(correction)
+    static markdown(correction=false) {
+      let markdown = this.full(correction);
+      markdown.formatBar.underline = false;
+      markdown.formatBar.subscript = false;
+      markdown.formatBar.superscript = false;
+      return markdown
     }
   }
 
@@ -22310,16 +22310,20 @@
   }
 
   /**
-   * The `markupKeymapConfig` is the default for the MarkupEditor. It can be overridden
-   * by modifying it before you instantiate the MarkupEditor.
+   * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
+   * passing a new KeymapConfig when instantiating the MarkupEditor. You can use the pre-defined 
+   * static methods like `standard()` or customize what it returns.
    * 
    * To customize the key mapping, for example, in your index.html:
    * 
-   *    let keymapConfig = MU.markupKeymapConfig;     // Grab the standard keymap config as a baseline
-   *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];     // Use Control+L instead of Command+k
+   *    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
+   *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
    *    const markupEditor = new MU.MarkupEditor(
    *      document.querySelector('#editor'),
-   *      '<h1>Hello, world!</h1>'
+   *      {
+   *        html: '<h1>Hello, world!</h1>',
+   *        keymap: keymapConfig,
+   *      }
    *    )
    *    
    * Note that the key mapping will exist and work regardless of whether you disable a toolbar 
@@ -22327,35 +22331,57 @@
    * though the "correctionBar" is off by default in the MarkupEditor. You can remove a key mapping 
    * by setting its value to null or an empty string. 
    */
-  const markupKeymapConfig = {
-      // Correction
-      "undo": "Mod-z",
-      "redo": "Shift-Mod-z",
-      // Insert
-      "link": ["Mod-K", "Mod-k"],
-      "image": ["Mod-G", "Mod-g"],
-      "table": ["Mod-T", "Mod-t"],
-      // Stylebar
-      "bullet": ["Ctrl-U", "Ctrl-u"],
-      "number": ["Ctrl-O", "Ctrl-o"],
-      "indent": ["Mod-]", "Ctrl-q"],
-      "outdent": ["Mod-[", "Shift-Ctrl-q"],
-      // Format
-      "bold": ["Mod-B", "Mod-b"],
-      "italic": ["Mod-I", "Mod-i"],
-      "underline": ["Mod-U", "Mod-u"],
-      "strikethrough": ["Ctrl-S", "Ctrl-s"],
-      "code": "Mod-`",
-      "subscript": "Ctrl-,",
-      "superscript": "Ctrl-.",
-      // Search
-      "search": ["Ctrl-F", "Ctrl-f"],
-  };
+  class KeymapConfig {
+      static all = {
+          // Correction
+          "undo": "Mod-z",
+          "redo": "Shift-Mod-z",
+          // Insert
+          "link": ["Mod-K", "Mod-k"],
+          "image": ["Mod-G", "Mod-g"],
+          "table": ["Mod-T", "Mod-t"],
+          // Stylebar
+          "bullet": ["Ctrl-U", "Ctrl-u"],
+          "number": ["Ctrl-O", "Ctrl-o"],
+          "indent": ["Mod-]", "Ctrl-q"],
+          "outdent": ["Mod-[", "Shift-Ctrl-q"],
+          // Format
+          "bold": ["Mod-B", "Mod-b"],
+          "italic": ["Mod-I", "Mod-i"],
+          "underline": ["Mod-U", "Mod-u"],
+          "strikethrough": ["Ctrl-S", "Ctrl-s"],
+          "code": "Mod-`",
+          "subscript": "Ctrl-,",
+          "superscript": "Ctrl-.",
+          // Search
+          "search": ["Ctrl-F", "Ctrl-f"],
+      }
+
+      static full() {
+          return this.all
+      }
+
+      static standard() {
+          return this.markdown()
+      }
+
+      static desktop() {
+          return this.full()
+      }
+
+      static markdown() {
+          let markdown = this.full();
+          markdown.underline = null;
+          markdown.subscript = null;
+          markdown.superscript = null;
+          return markdown
+      }
+  }
 
   /**
    * Return a map of Commands that will be invoked when key combos are pressed.
    * 
-   * @param {Object}  keymapConfig    The keymap configuration, markupKeymapConfig by default.
+   * @param {Object}  keymapConfig    The keymap configuration, KeymapConfig.standard() by default.
    * @param {Schema}  schema          The schema that holds node and mark types.
    * @returns [String : Command]      Commands bound to keys identified by strings (e.g., "Mod-b")
    */
@@ -22722,7 +22748,7 @@
   function markupSetup(schema, config) {
     let prefix = "Markup";
     let menuConfig = config?.menu ? config.menu : MenuConfig.standard();
-    let keymapConfig = config?.keymap ? config.keymap: markupKeymapConfig;
+    let keymapConfig = config?.keymap ? config.keymap : KeymapConfig.standard();
     let plugins = [
       buildInputRules(schema),
       keymap(buildKeymap(keymapConfig, schema)),
@@ -22987,6 +23013,7 @@
 
   exports.Dropdown = Dropdown;
   exports.DropdownSubmenu = DropdownSubmenu;
+  exports.KeymapConfig = KeymapConfig;
   exports.MarkupEditor = MarkupEditor;
   exports.MenuConfig = MenuConfig;
   exports.MenuItem = MenuItem;
@@ -23018,7 +23045,6 @@
   exports.insertLink = insertLink;
   exports.insertTable = insertTable;
   exports.loadUserFiles = loadUserFiles;
-  exports.markupKeymapConfig = markupKeymapConfig;
   exports.modifyImage = modifyImage;
   exports.outdent = outdent;
   exports.padBottom = padBottom;
