@@ -2,9 +2,17 @@
 
 <h6>Version 1.0</h6>
 
-<p>The file you're looking at is just a simple HTML file that includes all the kinds of elements supported by the MarkupEditor by default. The document was created and edited using the MarkupEditor.</p>
+<p>The file you're looking at is just a simple HTML file that includes all the kinds of elements supported by the MarkupEditor by default. The file was created and edited using the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor desktop app</a>. The desktop app is just a simple Electron application built from the <a href="https://github.com/stevengharris/markupeditor-base">MarkupEditor base</a> toolkit. In addition to the desktop app, the MarkupEditor base is re-used to deliver WYSIWYG editing capabilities in <a href="https://github.com/stevengharris/MarkupEditor">Swift</a> and <a href="https://github.com/stevengharris/markupeditor-vs">VSCode</a>. It can be re-used in any environment that loads a web view, including a web browser.</p>
 
 <h2>The Toolbar</h2>
+
+<p>The MarkupEditor comes with a default toolbar that looks like this:</p>
+
+<p> <img src="resources/defaulttoolbar.png" width="495" height="33"></p>
+
+<p>That’s also the version you’ll see from the desktop app, because the desktop app’s <em>File</em> menu gives you access to standard file operations. The default toolbar is built to support the kind of editing you would do with Markdown, but it’s also extensible. If you arrived at this document from the link at the <a href="https://stevengharris.github.io/markupeditor-base/">project web site</a>, then you’ll see a version that has another toolbar prepended to it, like this:</p>
+
+<p>  <img src="resources/demotoolbar.png" width="663" height="34"></p>
 
 <p>If you opened this file from the MarkupEditor example index.html, then you will see a toolbar that looks like this at the top:</p>
 
@@ -53,10 +61,7 @@
 
 <blockquote>
     <blockquote>
-        <pre><code>
-            // Here is an example of code that has been indented twice.
-            print("Hello, world!")
-        </code></pre>
+        <pre><code>            // Here is an example of code that has been indented twice.            print("Hello, world!")        </code></pre>
     </blockquote>
 </blockquote>
 
