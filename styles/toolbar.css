@@ -515,6 +515,16 @@
   margin-bottom: 8px;
 }
 
+.Markup-prompt-buttongroup {
+  flex-shrink: 0;
+}
+
+.Markup-prompt-buttons img {
+  aspect-ratio: auto;
+  height: auto;
+  object-fit: contain;
+}
+
 .Markup-prompt-buttons .Markup-menuitem {
   display: inline-flex;
   padding-right: 4px;
