@@ -1274,6 +1274,41 @@ export function resetSelectedID(id) {
 };
 
 /**
+ * Return an array of `src` attributes for images that are encoded as data, empty if there are none.
+ * 
+ * @returns {[string]}
+ */
+export function getDataImages() {
+    let images = document.getElementsByTagName('img');
+    let dataImages = []
+    for (let i = 0; i < images.length; i++) {
+        let src = images[i].getAttribute('src');
+        if (src && src.startsWith('data')) dataImages.push(src)
+    }
+    return dataImages
+}
+
+/**
+ * We saved an image at a new location or translated it from data to a file reference, 
+ * so we need to update the document to reflect it.
+ * 
+ * @param {string} oldSrc Some or all of the original src for the image
+ * @param {string} newSrc The src that should replace the old src
+ */
+export function savedDataImage(oldSrc, newSrc) {
+    let images = document.getElementsByTagName('img');
+    for (let i = 0; i < images.length; i++) {
+        let img = images[i]
+        let src = img.getAttribute('src');
+        if (src && src.startsWith(oldSrc)) {
+            let imgPos = view.posAtDOM(img, 0)
+            const transaction = view.state.tr.setNodeAttribute(imgPos, 'src', newSrc)
+            view.dispatch(transaction)
+        }
+    }
+}
+
+/**
  * Get the contents of the div with id `divID` or of the full doc.
  *
  * If pretty, then the text will be nicely formatted for reading.
