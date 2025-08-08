@@ -108,9 +108,9 @@ export class MessageHandler {
                 // use the old call without divid to maintain compatibility with earlier versions
                 // that did not support multi-contenteditable divs.
                 if ((divId.length == 0) || (divId == "editor")) {
-                    delegate.markupImageAdded(messageData.src)
+                    delegate.markupImageAdded(this.markupEditor, messageData.src)
                 } else if (!divId.length == 0) {
-                    delegate?.markupImageAdded(this.markupEditor, src, divId)
+                    delegate?.markupImageAdded(this.markupEditor, messageData.src, divId)
                 } else {
                     console.log("Error: The div id for the image could not be decoded.")
                 }
