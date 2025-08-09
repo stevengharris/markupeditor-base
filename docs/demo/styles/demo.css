@@ -14,8 +14,9 @@
     }
 }
 
-.editor {
+#editor, .editor {
     min-width: 50%;         /* Keep the editor half the screen when the raw HTML shows up */
+    padding-right: 8px;
 }
 
 .htmldiv {

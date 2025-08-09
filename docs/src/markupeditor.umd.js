@@ -17791,6 +17791,41 @@
       selectedID = id;
   }
   /**
+   * Return an array of `src` attributes for images that are encoded as data, empty if there are none.
+   * 
+   * @returns {[string]}
+   */
+  function getDataImages() {
+      let images = document.getElementsByTagName('img');
+      let dataImages = [];
+      for (let i = 0; i < images.length; i++) {
+          let src = images[i].getAttribute('src');
+          if (src && src.startsWith('data')) dataImages.push(src);
+      }
+      return dataImages
+  }
+
+  /**
+   * We saved an image at a new location or translated it from data to a file reference, 
+   * so we need to update the document to reflect it.
+   * 
+   * @param {string} oldSrc Some or all of the original src for the image
+   * @param {string} newSrc The src that should replace the old src
+   */
+  function savedDataImage(oldSrc, newSrc) {
+      let images = document.getElementsByTagName('img');
+      for (let i = 0; i < images.length; i++) {
+          let img = images[i];
+          let src = img.getAttribute('src');
+          if (src && src.startsWith(oldSrc)) {
+              let imgPos = view.posAtDOM(img, 0);
+              const transaction = view.state.tr.setNodeAttribute(imgPos, 'src', newSrc);
+              view.dispatch(transaction);
+          }
+      }
+  }
+
+  /**
    * Get the contents of the div with id `divID` or of the full doc.
    *
    * If pretty, then the text will be nicely formatted for reading.
@@ -22526,9 +22561,17 @@
         this.menu.appendChild(dom);
     }
 
+    /**
+     * Fit the items in the menu into the menu width,
+     * 
+     * If the menu as currently rendered does not fit in the width, then execute `refreshFit`,
+     * identifying the item to be replaced by a "more" button. That button will be a DropDown
+     * that contains the items starting with the one at wrapAtIndex.
+     */
     fitMenu() {
       let items = this.menu.children;
-      let menuRight = this.menu.getBoundingClientRect().right;
+      let menuRect = this.menu.getBoundingClientRect();
+      let menuRight = menuRect.right;
       let separatorHTML = separator().outerHTML;
       let wrapAtIndex = -1; // Track the last non-separator (i.e., content) item that was fully in-width
       for (let i = 0; i < items.length; i++) {
@@ -23036,6 +23079,7 @@
   exports.endModalInput = endModalInput;
   exports.focus = focus;
   exports.focusOn = focusOn;
+  exports.getDataImages = getDataImages;
   exports.getHTML = getHTML;
   exports.getHeight = getHeight;
   exports.getSelectionState = getSelectionState;
@@ -23058,6 +23102,7 @@
   exports.renderGrouped = renderGrouped;
   exports.replaceStyle = replaceStyle;
   exports.resetSelection = resetSelection;
+  exports.savedDataImage = savedDataImage;
   exports.searchFor = searchFor;
   exports.setHTML = setHTML;
   exports.setMessageHandler = setMessageHandler;

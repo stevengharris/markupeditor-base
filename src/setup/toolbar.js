@@ -82,9 +82,17 @@ class ToolbarView {
       this.menu.appendChild(dom);
   }
 
+  /**
+   * Fit the items in the menu into the menu width,
+   * 
+   * If the menu as currently rendered does not fit in the width, then execute `refreshFit`,
+   * identifying the item to be replaced by a "more" button. That button will be a DropDown
+   * that contains the items starting with the one at wrapAtIndex.
+   */
   fitMenu() {
     let items = this.menu.children;
-    let menuRight = this.menu.getBoundingClientRect().right;
+    let menuRect = this.menu.getBoundingClientRect();
+    let menuRight = menuRect.right;
     let separatorHTML = separator().outerHTML
     let wrapAtIndex = -1; // Track the last non-separator (i.e., content) item that was fully in-width
     for (let i = 0; i < items.length; i++) {
