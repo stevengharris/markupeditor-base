@@ -20480,6 +20480,59 @@
     }
   }
 
+  /** A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar */
+  class MoreItem {
+
+    constructor(items) {
+      let options = {
+        enable: (state) => { return true },
+        active: (state) => { return this.showing() },
+        title: 'Show more',
+        icon: icons.more
+      };
+      this.command = this.toggleMore.bind(this);
+      this.item = cmdItem(this.command, options);
+      this.items = items;
+    }
+
+    showing() {
+      return getToolbarMore() != null;
+    }
+
+    toggleMore(state, dispatch, view) {
+      if (this.showing()) {
+        this.hideMore();
+      } else {
+        this.showMore(state, dispatch, view);
+      }
+      this.update && this.update(state);
+    }
+
+    hideMore() {
+      let toolbarMore = getToolbarMore();
+      toolbarMore.parentElement.removeChild(toolbarMore);
+    }
+
+    showMore(state, dispatch, view) {
+      let toolbar = getToolbar();
+      if (!toolbar) return;
+      let idClass = prefix + "-toolbar-more";
+      let toolbarMore = crelt('div', { class: idClass, id: idClass } );
+      let {dom, update} = renderGrouped(view, [this.items]);
+      toolbarMore.appendChild(dom);
+      toolbar.parentElement.insertBefore(toolbarMore, toolbar.nextSibling);
+      // Then update the moreItem to show it's active
+      update(view.state);
+    }
+
+    render(view) {
+      let {dom, update} = this.item.render(view);
+      this.update = update;
+      return {dom, update};
+    }
+
+  }
+
   /**
    * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
    */
@@ -20546,7 +20599,8 @@
       let idClass = prefix + "-searchbar";
       let searchbar = crelt("div", { class: idClass, id: idClass }, input);
       this.addSearchButtons(view, searchbar);
-      toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
+      let beforeTarget = getToolbarMore() ? getToolbarMore().nextSibling : toolbar.nextSibling;
+      toolbar.parentElement.insertBefore(searchbar, beforeTarget);
     }
 
     setStatus() {
@@ -21553,6 +21607,10 @@
     return document.getElementById(prefix + "-searchbar");
   }
 
+  function getToolbarMore() {
+    return document.getElementById(prefix + "-toolbar-more")
+  }
+
   function getWrapper() {
     return getToolbar().parentElement;
   }
@@ -21935,7 +21993,8 @@
       }
     }
     if (moreItems.length > 0) {
-      let more = new Dropdown(moreItems, { title: 'More...', icon: icons.more, indicator: false });
+      let more = new MoreItem(moreItems);
+      //let more = new Dropdown(moreItems, { title: 'More...', icon: icons.more, indicator: false })
       let {dom, update} = more.render(view);
       let span = crelt("span", { class: prefix + "-menuitem" }, dom);
       result.appendChild(span);

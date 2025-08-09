@@ -375,6 +375,59 @@ export class DropdownSubmenu {
   }
 }
 
+/** A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar */
+export class MoreItem {
+
+  constructor(items) {
+    let options = {
+      enable: (state) => { return true },
+      active: (state) => { return this.showing() },
+      title: 'Show more',
+      icon: icons.more
+    };
+    this.command = this.toggleMore.bind(this);
+    this.item = cmdItem(this.command, options);
+    this.items = items
+  }
+
+  showing() {
+    return getToolbarMore() != null;
+  }
+
+  toggleMore(state, dispatch, view) {
+    if (this.showing()) {
+      this.hideMore()
+    } else {
+      this.showMore(state, dispatch, view);
+    }
+    this.update && this.update(state)
+  }
+
+  hideMore() {
+    let toolbarMore = getToolbarMore();
+    toolbarMore.parentElement.removeChild(toolbarMore);
+  }
+
+  showMore(state, dispatch, view) {
+    let toolbar = getToolbar();
+    if (!toolbar) return;
+    let idClass = prefix + "-toolbar-more";
+    let toolbarMore = crel('div', { class: idClass, id: idClass } )
+    let {dom, update} = renderGrouped(view, [this.items]);
+    toolbarMore.appendChild(dom)
+    toolbar.parentElement.insertBefore(toolbarMore, toolbar.nextSibling);
+    // Then update the moreItem to show it's active
+    update(view.state)
+  }
+
+  render(view) {
+    let {dom, update} = this.item.render(view);
+    this.update = update;
+    return {dom, update};
+  }
+
+}
+
 /**
  * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
  */
@@ -441,7 +494,8 @@ export class SearchItem {
     let idClass = prefix + "-searchbar";
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
     this.addSearchButtons(view, searchbar);
-    toolbar.parentElement.insertBefore(searchbar, toolbar.nextSibling);
+    let beforeTarget = getToolbarMore() ? getToolbarMore().nextSibling : toolbar.nextSibling;
+    toolbar.parentElement.insertBefore(searchbar, beforeTarget);
   }
 
   setStatus() {
@@ -1451,6 +1505,10 @@ function getSearchbar() {
   return document.getElementById(prefix + "-searchbar");
 }
 
+function getToolbarMore() {
+  return document.getElementById(prefix + "-toolbar-more")
+}
+
 function getWrapper() {
   return getToolbar().parentElement;
 }
@@ -1821,6 +1879,18 @@ export function renderGrouped(view, content) {
     return { dom: result, update };
 }
 
+/**
+ * Like `renderGrouped`, but at `wrapIndex` in the `content`, place a `MoreItem` that 
+ * will display a subtoolbar of `content` items starting at `wrapIndex` when it is 
+ * pressed. The `MoreItem` renders using `renderGrouped`, not `renderGroupedFit`. Let's 
+ * face it, if you need to wrap a toolbar into more than two lines, you need to think
+ * through your life choices.
+ * 
+ * @param {EditorView} view 
+ * @param {[MenuItem | [MenuItem]]} content 
+ * @param {number}  wrapAtIndex             The index in  content` to wrap in another toolbar
+ * @returns 
+ */
 export function renderGroupedFit(view, content, wrapAtIndex) {
   let result = document.createDocumentFragment();
   let updates = [], separators = [];
@@ -1848,7 +1918,7 @@ export function renderGroupedFit(view, content, wrapAtIndex) {
     }
   }
   if (moreItems.length > 0) {
-    let more = new Dropdown(moreItems, { title: 'More...', icon: icons.more, indicator: false })
+    let more = new MoreItem(moreItems)
     let {dom, update} = more.render(view);
     let span = crel("span", { class: prefix + "-menuitem" }, dom);
     result.appendChild(span);
