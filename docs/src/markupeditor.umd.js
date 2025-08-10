@@ -21966,6 +21966,18 @@
       return { dom: result, update };
   }
 
+  /**
+   * Like `renderGrouped`, but at `wrapIndex` in the `content`, place a `MoreItem` that 
+   * will display a subtoolbar of `content` items starting at `wrapIndex` when it is 
+   * pressed. The `MoreItem` renders using `renderGrouped`, not `renderGroupedFit`. Let's 
+   * face it, if you need to wrap a toolbar into more than two lines, you need to think
+   * through your life choices.
+   * 
+   * @param {EditorView} view 
+   * @param {[MenuItem | [MenuItem]]} content 
+   * @param {number}  wrapAtIndex             The index in  content` to wrap in another toolbar
+   * @returns 
+   */
   function renderGroupedFit(view, content, wrapAtIndex) {
     let result = document.createDocumentFragment();
     let updates = [], separators = [];
@@ -21994,7 +22006,6 @@
     }
     if (moreItems.length > 0) {
       let more = new MoreItem(moreItems);
-      //let more = new Dropdown(moreItems, { title: 'More...', icon: icons.more, indicator: false })
       let {dom, update} = more.render(view);
       let span = crelt("span", { class: prefix + "-menuitem" }, dom);
       result.appendChild(span);
