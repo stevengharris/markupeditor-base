@@ -4,12 +4,13 @@
   "main": "dist/markupeditor.cjs.js",
   "module": "dist/markupeditor.esm.js",
   "browser": "dist/markupeditor.umd.js",
-  "bin": {
-    "markup": "./src/markupeditor.js"
-  },
+  "files": [
+    "dist",
+    "styles"
+  ],
   "sideEffects": false,
   "license": "MIT",
-  "author": "Steven G. Harris <stevengharris@gmail.com>",
+  "author": "Steven G. Harris <steven.g.harris@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git://github.com/stevengharris/markupeditor-base.git"
@@ -32,9 +33,9 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
-    "rollup-plugin-import-css": "4.0.1",
+    "express": "^5.1.0",
     "rollup": "^4.31.0",
-    "express": "^5.1.0"
+    "rollup-plugin-import-css": "4.0.1"
   },
   "scripts": {
     "build": "rollup -c",
@@ -43,8 +44,5 @@
     "pretest": "npm run build",
     "docs": "node ./docs/index.js",
     "predocs": "sh predocs.sh"
-  },
-  "files": [
-    "dist"
-  ]
+  }
 }
