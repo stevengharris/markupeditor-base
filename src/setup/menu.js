@@ -62,99 +62,6 @@ import {
 let prefix;
 
 /**
- * `MenuConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
- * to GitHub flavored markdown. It can be overridden by passing it a new config when instantiating
- * the MarkupEditor. You can use the pre-defined static methods like `full` or customize what they 
- * return. The predefined statics each allow you to turn on or off the `correctionBar` visibility.
- * The `correctionBar` visibility is off by default, because while it's useful for touch devices 
- * without a keyboard, undo/redo are mapped to the hotkeys most people have in muscle memory.
- * 
- * To customize the menu bar, for example, in your index.html:
- * 
- *    let menuConfig = MU.MenuConfig.full(true);    // Grab the full menu bar, including correction, as a baseline
- *    menuConfig.insertBar.table = false;           // Turn off table insert
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        menu: menuConfig,
- *      }
- *    )
- *    
- * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
- * within a toolbar or menu using the settings specific to that toolbar or menu.
- */
-export class MenuConfig {
-
-  static all = {
-    "visibility": {             // Control the visibility of toolbars, etc
-      "toolbar": true,          // Whether the toolbar is visible at all
-      "correctionBar": true,    // Whether the correction bar (undo/redo) is visible
-      "insertBar": true,        // Whether the insert bar (link, image, table) is visible
-      "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
-      "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
-      "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
-      "tableMenu": true,        // Whether the table menu (create, add, delete, border) is visible
-      "search": true,           // Whether the search menu item (hide/show search bar) is visible
-    },
-    "insertBar": {
-      "link": true,             // Whether the link menu item is visible
-      "image": true,            // Whether the image menu item is visible
-      "table": true,            // Whether the table menu is visible
-    },
-    "formatBar": {
-      "bold": true,             // Whether the bold menu item is visible
-      "italic": true,           // Whether the italic menu item is visible
-      "underline": true,        // Whether the underline menu item is visible
-      "code": true,             // Whether the code menu item is visible
-      "strikethrough": true,    // Whether the strikethrough menu item is visible
-      "subscript": true,        // Whether the subscript menu item is visible
-      "superscript": true,      // Whether the superscript menu item is visible
-    },
-    "styleMenu": {
-      "p": "Body",              // The label in the menu for "P" style
-      "h1": "H1",               // The label in the menu for "H1" style
-      "h2": "H2",               // The label in the menu for "H2" style
-      "h3": "H3",               // The label in the menu for "H3" style
-      "h4": "H4",               // The label in the menu for "H4" style
-      "h5": "H5",               // The label in the menu for "H5" style
-      "h6": "H6",               // The label in the menu for "H6" style
-      "pre": "Code",            // The label in the menu for "PRE" aka code_block style
-    },
-    "styleBar": {
-      "list": true,             // Whether bullet and numbered list items are visible
-      "dent": true,             // Whether indent and outdent items are visible
-    },
-    "tableMenu": {
-      "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
-      "border": true,           // Whether the "Border" item is visible in the "Table" menu
-    },
-  }
-
-  static full(correction=false) {
-    let full = this.all
-    full.visibility.correctionBar = correction
-    return full
-  }
-
-  static standard(correction=false) {
-    return this.markdown(correction)
-  }
-
-  static desktop(correction=false) {
-    return this.full(correction)
-  }
-
-  static markdown(correction=false) {
-    let markdown = this.full(correction)
-    markdown.formatBar.underline = false
-    markdown.formatBar.subscript = false
-    markdown.formatBar.superscript = false
-    return markdown
-  }
-}
-
-/**
 An icon or label that, when clicked, executes a command.
 */
 export class MenuItem {
@@ -433,7 +340,8 @@ export class MoreItem {
  */
 export class SearchItem {
 
-  constructor(keymap) {
+  constructor(config) {
+    let keymap = config.keymap
     let options = {
       enable: (state) => { return true },
       active: (state) => { return this.showing() },
@@ -616,7 +524,8 @@ export class SearchItem {
  */
 export class LinkItem {
 
-  constructor(keymap) {
+  constructor(config) {
+    let keymap = config.keymap
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
@@ -946,11 +855,12 @@ export class LinkItem {
  */
 export class ImageItem {
 
-  constructor(keymap) {
+  constructor(config) {
+    this.config = config
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return getImageAttributes(state).src  },
-      title: 'Insert/edit image' + keyString('image', keymap),
+      title: 'Insert/edit image' + keyString('image', this.config.keymap),
       icon: icons.image
     };
     this.command = this.openImageDialog.bind(this);
@@ -958,6 +868,7 @@ export class ImageItem {
     this.dialog = null;
     this.selectionDiv = null;
     this.isValid = false;
+    this.preview = null;
   }
 
   /**
@@ -998,7 +909,7 @@ export class ImageItem {
 
     this.setInputArea(view)
     this.setButtons(view)
-    this.updateSrc()
+    this.updatePreview()
 
     let wrapper = getWrapper();
     addPromptShowing()
@@ -1039,7 +950,7 @@ export class ImageItem {
     this.srcArea.addEventListener('input', () => {
       // Update the img src as we type, which will cause this.preview to load, which may result in 
       // "Not allowed to load local resource" at every keystroke until the image loads properly.
-      this.updateSrc()
+      this.updatePreview()
     });
     this.srcArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
@@ -1097,8 +1008,20 @@ export class ImageItem {
     // by the app itself, which is notified of the UUID file that is placed in the temp 
     // directory, so the app can do what it wants with it.
 
-    this.preview = this.getPreview()
-    buttonsDiv.appendChild(this.preview)
+    if (this.config.behavior.localImages) {
+      this.preview = null;
+      let selectItem = cmdItem(this.selectImage.bind(this), {
+        class: prefix + '-menuitem',
+        title: 'Select...',
+        active: () => { return false },
+        enable: () => { return true }
+      })
+      let {dom, update} = selectItem.render(view);
+      buttonsDiv.appendChild(dom)
+    } else {
+      this.preview = this.getPreview()
+      buttonsDiv.appendChild(this.preview)
+    }
 
     let group = crel('div', {class: prefix + '-prompt-buttongroup'});
     let okItem = cmdItem(this.insertImage.bind(this), {
@@ -1160,8 +1083,8 @@ export class ImageItem {
     return preview
   }
 
-  updateSrc() {
-    this.preview.src = this.srcValue()
+  updatePreview() {
+    if (this.preview) this.preview.src = this.srcValue()
   }
 
   /**
@@ -1259,6 +1182,13 @@ export class ImageItem {
    */
   altValue() {
     return this.altArea.value
+  }
+
+  /** Tell the delegate to select an image to insert, because we don't know how to do that */
+  selectImage(state, dispatch, view) {
+    this.closeDialog()
+    let markupInsertImage = this.config.delegate?.markupInsertImage
+    if (markupInsertImage) markupInsertImage(view)
   }
 
   /**
@@ -1472,21 +1402,21 @@ class ParagraphStyleItem {
  * This is the first entry point for menu that is called from `setup/index.js', returning the 
  * contents that `renderGrouped` can display. It also sets the prefix used locally.
  * 
- * @param {string}  basePrefix  The prefix used when building style strings, "Markup" by default.
- * @param {Object}  config      The configuration of the menu.
- * @param {Schema}  schema      The schema that holds node and mark types.
- * @returns [MenuItem]    The array of MenuItems or nested MenuItems used by `renderGrouped`.
+ * @param {string}  basePrefix      The prefix used when building style strings, "Markup" by default.
+ * @param {Object}  config          The MarkupEditor.config.
+ * @param {Schema}  schema          The schema that holds node and mark types.
+ * @returns [MenuItem]              The array of MenuItems or nested MenuItems used by `renderGrouped`.
  */
-export function buildMenuItems(basePrefix, menuConfig, keymap, schema) {
+export function buildMenuItems(basePrefix, config, schema) {
   prefix = basePrefix;
   let itemGroups = [];
-  let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = menuConfig.visibility;
-  if (correctionBar) itemGroups.push(correctionBarItems(keymap));
-  if (insertBar) itemGroups.push(insertBarItems(menuConfig, keymap, schema));
-  if (styleMenu) itemGroups.push(styleMenuItems(menuConfig, keymap, schema));
-  if (styleBar) itemGroups.push(styleBarItems(menuConfig, keymap, schema));
-  if (formatBar) itemGroups.push(formatItems(menuConfig, keymap, schema));
-  if (search) itemGroups.push([new SearchItem(keymap)])
+  let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.menu.visibility;
+  if (correctionBar) itemGroups.push(correctionBarItems(config));
+  if (insertBar) itemGroups.push(insertBarItems(config, schema));
+  if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
+  if (styleBar) itemGroups.push(styleBarItems(config, schema));
+  if (formatBar) itemGroups.push(formatItems(config, schema));
+  if (search) itemGroups.push([new SearchItem(config)])
   return itemGroups;
 }
 
@@ -1606,7 +1536,8 @@ function keyString(itemName, keymap) {
 
 /* Correction Bar (Undo, Redo) */
 
-function correctionBarItems(keymap) {
+function correctionBarItems(config) {
+  let keymap = config.keymap;
   let items = [];
   items.push(undoItem({ title: 'Undo' + keyString('undo', keymap), icon: icons.undo }));
   items.push(redoItem({ title: 'Redo' + keyString('redo', keymap), icon: icons.redo }));
@@ -1639,18 +1570,18 @@ function redoItem(options) {
  * @param {Schema} schema 
  * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
  */
-function insertBarItems(menuConfig, keymap, schema) {
+function insertBarItems(config, schema) {
   let items = [];
-  let { link, image, table } = menuConfig.insertBar;
-  if (link) items.push(new LinkItem(keymap))
-  if (image) items.push(new ImageItem(keymap))
-  if (table) items.push(tableMenuItems(menuConfig, keymap, schema))
+  let { link, image, table } = config.menu.insertBar;
+  if (link) items.push(new LinkItem(config))
+  if (image) items.push(new ImageItem(config))
+  if (table) items.push(tableMenuItems(config))
   return items;
 }
 
-function tableMenuItems(menuConfig, keymap, schema) {
+function tableMenuItems(config, schema) {
   let items = []
-  let { header, border } = menuConfig.tableMenu;
+  let { header, border } = config.menu.tableMenu;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))
   let addItems = []
   addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}))
@@ -1725,9 +1656,10 @@ function tableBorderItem(command, options) {
  * @param {Schema} schema 
  * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
  */
-function styleBarItems(menuConfig, keymap, schema) {
+function styleBarItems(config, schema) {
+  let keymap = config.keymap
   let items = []
-  let { list, dent } = menuConfig.styleBar
+  let { list, dent } = config.menu.styleBar
   if (list) {
     let bullet = toggleListItem(
       schema,
@@ -1788,12 +1720,13 @@ function outdentItem(options) {
 /**
  * Return the array of formatting MenuItems that should show per the config.
  * 
- * @param {Object} config   The markupConfig that is passed-in, with boolean values in config.formatBar.
+ * @param {Object} config   The MarkupEditor.config with boolean values in config.menu.formatBar.
  * @returns [MenuItem]      The array of MenuItems that show as passed in `config`
  */
-function formatItems(menuConfig, keymap, schema) {
+function formatItems(config, schema) {
+  let keymap = config.keymap;
   let items = []
-  let { bold, italic, underline, code, strikethrough, subscript, superscript } = menuConfig.formatBar;
+  let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.menu.formatBar;
   if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }))
   if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic' + keyString('italic', keymap), icon: icons.em }))
   if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline' + keyString('underline', keymap), icon: icons.u }))
@@ -1818,12 +1751,12 @@ function formatItem(markType, markName, options) {
 /**
  * Return the Dropdown containing the styling MenuItems that should show per the config.
  * 
- * @param {*} config    The markupConfig that is passed-in, with boolean values in config.styleMenu.
- * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
+ * @param {*} menuConfig  The menuConfig that is passed-in, with boolean values in menuConfig.styleMenu.
+ * @returns [Dropdown]    The array of MenuItems that show as passed in `config`
  */
-function styleMenuItems(menuConfig, keymap, schema) {
+function styleMenuItems(config, schema) {
   let items = []
-  let { p, h1, h2, h3, h4, h5, h6, pre } = menuConfig.styleMenu;
+  let { p, h1, h2, h3, h4, h5, h6, pre } = config.menu.styleMenu;
   if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p }))
   if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, attrs: { level: 1 }}))
   if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, attrs: { level: 2 }}))

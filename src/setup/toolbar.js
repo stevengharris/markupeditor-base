@@ -1,17 +1,3 @@
-/**
- * The markupeditor-base holds its configuration in a global `markupConfig` which is referenced in 
- * `main.js`. This object needs to be set up before a MarkupEditor web page is launched. This needs to be  
- * done as a script before `dist/markupeditor.umd.js` is loaded. You can see this in the `demo/index.html`, and
- * in markupeditor-vs, the VSCode extension, in the webview panel setup done in `markupCoordinator.js`.
- * It's a bit odd that the markupeditor-base package references something like `markupConfig` but itself
- * never defines it. The intent is that something external creates an actual web page that holds onto the
- * MarkupEditor and loads all of its scripts - like `demo/index.html` does in the simplest case. That external
- * thing is what controls and defines the `markupConfig`. In the VSCode extension, that is done via the standard 
- * VSCode extension settings mechanisms. In Swift, it is done using the MarkupEditor settings. In the
- * markupeditor-base demo, the global `markupConfig` exists but is `undefined`, which results in `main.js` using
- * the value returned from `MenuConfig.standard()`.
- */
-
 import crel from "crelt"
 import {Plugin} from "prosemirror-state"
 import {renderGrouped, renderGroupedFit, separator} from  "./menu"
@@ -33,8 +19,12 @@ class ToolbarView {
     this.editorView = editorView;
     this.content = content;
     this.root = editorView.root
+
+    // Embed the toolbar and editorView in a wrapper.
     this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
     this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
+    // Since the menu adjusts to fit using a `MoreItem` for contents that doesn't fit, 
+    // we need to refresh how it is rendered when resizing takes place.
     window.addEventListener('resize', ()=>{ this.refresh() })
     this.menu.className = this.prefix
     if (editorView.dom.parentNode)

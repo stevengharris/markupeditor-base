@@ -76,7 +76,6 @@ import {
 } from "./markup.js"
 
 import { 
-  MenuConfig,
   MenuItem, 
   Dropdown, 
   DropdownSubmenu, 
@@ -85,7 +84,9 @@ import {
   renderDropdownItems,
 } from "./setup/menu.js"
 
-import {KeymapConfig} from "./setup/keymap.js"
+import {MenuConfig} from "./setup/menuconfig.js"
+import {KeymapConfig} from "./setup/keymapconfig.js"
+import {BehaviorConfig} from "./setup/behaviorconfig.js"
 
 import { 
   prependToolbar, 
@@ -174,22 +175,22 @@ export {
   // Config access
   MenuConfig,
   KeymapConfig,
+  BehaviorConfig,
 }
 
 /**
- * The MarkupEditor holds the properly set-up EditorView and any additional 
- * 
- * Note that `markupConfig` is a global that must already exist, but which can be undefined.
- * This is typically accomplished by setting it in the first script loaded into the view, 
- * something as simple as `<script>let markupConfig;</script>'. For an environment like VSCode, 
- * which has a rich configuration capability, it can be set using `vscode.getConfiguration()`.
- * 
- * If `markupConfig` is undefined, the "standard" config is supplied by `MenuConfig.standard()`.
+ * The MarkupEditor holds the properly set-up EditorView and any additional configuration.
  */
 class MarkupEditor {
   constructor(target, config) {
     this.element = target ?? document.querySelector("#editor")
+
+    // Make sure config always contains menu, keymap, and behavior
     this.config = config ?? {}
+    if (!this.config.menu) this.config.menu = MenuConfig.standard()
+    if (!this.config.keymap) this.config.keymap = KeymapConfig.standard()
+    if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard()
+
     this.html = this.config.html ?? emptyHTML()
     setMessageHandler(this.config.messageHandler ?? new MessageHandler(this));
     window.view = new EditorView(this.element, {
@@ -197,7 +198,7 @@ class MarkupEditor {
         // For the MarkupEditor, we can just use the editor element. 
         // There is no need to use a separate content element.
         doc: DOMParser.fromSchema(schema).parse(this.element),
-        plugins: markupSetup(schema, config)
+        plugins: markupSetup(config, schema)
       }),
       nodeViews: {
         image(node, view, getPos) { return new ImageView(node, view, getPos) },

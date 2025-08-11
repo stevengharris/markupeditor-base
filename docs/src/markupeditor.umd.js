@@ -20167,99 +20167,6 @@
   let prefix;
 
   /**
-   * `MenuConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
-   * to GitHub flavored markdown. It can be overridden by passing it a new config when instantiating
-   * the MarkupEditor. You can use the pre-defined static methods like `full` or customize what they 
-   * return. The predefined statics each allow you to turn on or off the `correctionBar` visibility.
-   * The `correctionBar` visibility is off by default, because while it's useful for touch devices 
-   * without a keyboard, undo/redo are mapped to the hotkeys most people have in muscle memory.
-   * 
-   * To customize the menu bar, for example, in your index.html:
-   * 
-   *    let menuConfig = MU.MenuConfig.full(true);    // Grab the full menu bar, including correction, as a baseline
-   *    menuConfig.insertBar.table = false;           // Turn off table insert
-   *    const markupEditor = new MU.MarkupEditor(
-   *      document.querySelector('#editor'),
-   *      {
-   *        html: '<h1>Hello, world!</h1>',
-   *        menu: menuConfig,
-   *      }
-   *    )
-   *    
-   * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
-   * within a toolbar or menu using the settings specific to that toolbar or menu.
-   */
-  class MenuConfig {
-
-    static all = {
-      "visibility": {             // Control the visibility of toolbars, etc
-        "toolbar": true,          // Whether the toolbar is visible at all
-        "correctionBar": true,    // Whether the correction bar (undo/redo) is visible
-        "insertBar": true,        // Whether the insert bar (link, image, table) is visible
-        "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
-        "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
-        "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
-        "tableMenu": true,        // Whether the table menu (create, add, delete, border) is visible
-        "search": true,           // Whether the search menu item (hide/show search bar) is visible
-      },
-      "insertBar": {
-        "link": true,             // Whether the link menu item is visible
-        "image": true,            // Whether the image menu item is visible
-        "table": true,            // Whether the table menu is visible
-      },
-      "formatBar": {
-        "bold": true,             // Whether the bold menu item is visible
-        "italic": true,           // Whether the italic menu item is visible
-        "underline": true,        // Whether the underline menu item is visible
-        "code": true,             // Whether the code menu item is visible
-        "strikethrough": true,    // Whether the strikethrough menu item is visible
-        "subscript": true,        // Whether the subscript menu item is visible
-        "superscript": true,      // Whether the superscript menu item is visible
-      },
-      "styleMenu": {
-        "p": "Body",              // The label in the menu for "P" style
-        "h1": "H1",               // The label in the menu for "H1" style
-        "h2": "H2",               // The label in the menu for "H2" style
-        "h3": "H3",               // The label in the menu for "H3" style
-        "h4": "H4",               // The label in the menu for "H4" style
-        "h5": "H5",               // The label in the menu for "H5" style
-        "h6": "H6",               // The label in the menu for "H6" style
-        "pre": "Code",            // The label in the menu for "PRE" aka code_block style
-      },
-      "styleBar": {
-        "list": true,             // Whether bullet and numbered list items are visible
-        "dent": true,             // Whether indent and outdent items are visible
-      },
-      "tableMenu": {
-        "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
-        "border": true,           // Whether the "Border" item is visible in the "Table" menu
-      },
-    }
-
-    static full(correction=false) {
-      let full = this.all;
-      full.visibility.correctionBar = correction;
-      return full
-    }
-
-    static standard(correction=false) {
-      return this.markdown(correction)
-    }
-
-    static desktop(correction=false) {
-      return this.full(correction)
-    }
-
-    static markdown(correction=false) {
-      let markdown = this.full(correction);
-      markdown.formatBar.underline = false;
-      markdown.formatBar.subscript = false;
-      markdown.formatBar.superscript = false;
-      return markdown
-    }
-  }
-
-  /**
   An icon or label that, when clicked, executes a command.
   */
   class MenuItem {
@@ -20538,7 +20445,8 @@
    */
   class SearchItem {
 
-    constructor(keymap) {
+    constructor(config) {
+      let keymap = config.keymap;
       let options = {
         enable: (state) => { return true },
         active: (state) => { return this.showing() },
@@ -20720,7 +20628,8 @@
    */
   class LinkItem {
 
-    constructor(keymap) {
+    constructor(config) {
+      let keymap = config.keymap;
       let options = {
         enable: () => { return true }, // Always enabled because it is presented modally
         active: (state) => { return markActive(state, state.schema.marks.link) },
@@ -21048,11 +20957,12 @@
    */
   class ImageItem {
 
-    constructor(keymap) {
+    constructor(config) {
+      this.config = config;
       let options = {
         enable: () => { return true }, // Always enabled because it is presented modally
         active: (state) => { return getImageAttributes(state).src  },
-        title: 'Insert/edit image' + keyString('image', keymap),
+        title: 'Insert/edit image' + keyString('image', this.config.keymap),
         icon: icons.image
       };
       this.command = this.openImageDialog.bind(this);
@@ -21060,6 +20970,7 @@
       this.dialog = null;
       this.selectionDiv = null;
       this.isValid = false;
+      this.preview = null;
     }
 
     /**
@@ -21100,7 +21011,7 @@
 
       this.setInputArea(view);
       this.setButtons(view);
-      this.updateSrc();
+      this.updatePreview();
 
       let wrapper = getWrapper();
       addPromptShowing();
@@ -21141,7 +21052,7 @@
       this.srcArea.addEventListener('input', () => {
         // Update the img src as we type, which will cause this.preview to load, which may result in 
         // "Not allowed to load local resource" at every keystroke until the image loads properly.
-        this.updateSrc();
+        this.updatePreview();
       });
       this.srcArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
         if (e.key === 'Enter') {
@@ -21199,8 +21110,20 @@
       // by the app itself, which is notified of the UUID file that is placed in the temp 
       // directory, so the app can do what it wants with it.
 
-      this.preview = this.getPreview();
-      buttonsDiv.appendChild(this.preview);
+      if (this.config.behavior.localImages) {
+        this.preview = null;
+        let selectItem = cmdItem(this.selectImage.bind(this), {
+          class: prefix + '-menuitem',
+          title: 'Select...',
+          active: () => { return false },
+          enable: () => { return true }
+        });
+        let {dom, update} = selectItem.render(view);
+        buttonsDiv.appendChild(dom);
+      } else {
+        this.preview = this.getPreview();
+        buttonsDiv.appendChild(this.preview);
+      }
 
       let group = crelt('div', {class: prefix + '-prompt-buttongroup'});
       let okItem = cmdItem(this.insertImage.bind(this), {
@@ -21262,8 +21185,8 @@
       return preview
     }
 
-    updateSrc() {
-      this.preview.src = this.srcValue();
+    updatePreview() {
+      if (this.preview) this.preview.src = this.srcValue();
     }
 
     /**
@@ -21361,6 +21284,13 @@
      */
     altValue() {
       return this.altArea.value
+    }
+
+    /** Tell the delegate to select an image to insert, because we don't know how to do that */
+    selectImage(state, dispatch, view) {
+      this.closeDialog();
+      let markupInsertImage = this.config.delegate?.markupInsertImage;
+      if (markupInsertImage) markupInsertImage(view);
     }
 
     /**
@@ -21574,21 +21504,21 @@
    * This is the first entry point for menu that is called from `setup/index.js', returning the 
    * contents that `renderGrouped` can display. It also sets the prefix used locally.
    * 
-   * @param {string}  basePrefix  The prefix used when building style strings, "Markup" by default.
-   * @param {Object}  config      The configuration of the menu.
-   * @param {Schema}  schema      The schema that holds node and mark types.
-   * @returns [MenuItem]    The array of MenuItems or nested MenuItems used by `renderGrouped`.
+   * @param {string}  basePrefix      The prefix used when building style strings, "Markup" by default.
+   * @param {Object}  config          The MarkupEditor.config.
+   * @param {Schema}  schema          The schema that holds node and mark types.
+   * @returns [MenuItem]              The array of MenuItems or nested MenuItems used by `renderGrouped`.
    */
-  function buildMenuItems(basePrefix, menuConfig, keymap, schema) {
+  function buildMenuItems(basePrefix, config, schema) {
     prefix = basePrefix;
     let itemGroups = [];
-    let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = menuConfig.visibility;
-    if (correctionBar) itemGroups.push(correctionBarItems(keymap));
-    if (insertBar) itemGroups.push(insertBarItems(menuConfig, keymap));
-    if (styleMenu) itemGroups.push(styleMenuItems(menuConfig, keymap, schema));
-    if (styleBar) itemGroups.push(styleBarItems(menuConfig, keymap, schema));
-    if (formatBar) itemGroups.push(formatItems(menuConfig, keymap, schema));
-    if (search) itemGroups.push([new SearchItem(keymap)]);
+    let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.menu.visibility;
+    if (correctionBar) itemGroups.push(correctionBarItems(config));
+    if (insertBar) itemGroups.push(insertBarItems(config));
+    if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
+    if (styleBar) itemGroups.push(styleBarItems(config, schema));
+    if (formatBar) itemGroups.push(formatItems(config, schema));
+    if (search) itemGroups.push([new SearchItem(config)]);
     return itemGroups;
   }
 
@@ -21693,7 +21623,8 @@
 
   /* Correction Bar (Undo, Redo) */
 
-  function correctionBarItems(keymap) {
+  function correctionBarItems(config) {
+    let keymap = config.keymap;
     let items = [];
     items.push(undoItem({ title: 'Undo' + keyString('undo', keymap), icon: icons.undo }));
     items.push(redoItem({ title: 'Redo' + keyString('redo', keymap), icon: icons.redo }));
@@ -21726,18 +21657,18 @@
    * @param {Schema} schema 
    * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
    */
-  function insertBarItems(menuConfig, keymap, schema) {
+  function insertBarItems(config, schema) {
     let items = [];
-    let { link, image, table } = menuConfig.insertBar;
-    if (link) items.push(new LinkItem(keymap));
-    if (image) items.push(new ImageItem(keymap));
-    if (table) items.push(tableMenuItems(menuConfig));
+    let { link, image, table } = config.menu.insertBar;
+    if (link) items.push(new LinkItem(config));
+    if (image) items.push(new ImageItem(config));
+    if (table) items.push(tableMenuItems(config));
     return items;
   }
 
-  function tableMenuItems(menuConfig, keymap, schema) {
+  function tableMenuItems(config, schema) {
     let items = [];
-    let { header, border } = menuConfig.tableMenu;
+    let { header, border } = config.menu.tableMenu;
     items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}));
     let addItems = [];
     addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}));
@@ -21812,9 +21743,10 @@
    * @param {Schema} schema 
    * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
    */
-  function styleBarItems(menuConfig, keymap, schema) {
+  function styleBarItems(config, schema) {
+    let keymap = config.keymap;
     let items = [];
-    let { list, dent } = menuConfig.styleBar;
+    let { list, dent } = config.menu.styleBar;
     if (list) {
       let bullet = toggleListItem(
         schema,
@@ -21875,12 +21807,13 @@
   /**
    * Return the array of formatting MenuItems that should show per the config.
    * 
-   * @param {Object} config   The markupConfig that is passed-in, with boolean values in config.formatBar.
+   * @param {Object} config   The MarkupEditor.config with boolean values in config.menu.formatBar.
    * @returns [MenuItem]      The array of MenuItems that show as passed in `config`
    */
-  function formatItems(menuConfig, keymap, schema) {
+  function formatItems(config, schema) {
+    let keymap = config.keymap;
     let items = [];
-    let { bold, italic, underline, code, strikethrough, subscript, superscript } = menuConfig.formatBar;
+    let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.menu.formatBar;
     if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }));
     if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic' + keyString('italic', keymap), icon: icons.em }));
     if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline' + keyString('underline', keymap), icon: icons.u }));
@@ -21905,12 +21838,12 @@
   /**
    * Return the Dropdown containing the styling MenuItems that should show per the config.
    * 
-   * @param {*} config    The markupConfig that is passed-in, with boolean values in config.styleMenu.
-   * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
+   * @param {*} menuConfig  The menuConfig that is passed-in, with boolean values in menuConfig.styleMenu.
+   * @returns [Dropdown]    The array of MenuItems that show as passed in `config`
    */
-  function styleMenuItems(menuConfig, keymap, schema) {
+  function styleMenuItems(config, schema) {
     let items = [];
-    let { p, h1, h2, h3, h4, h5, h6, pre } = menuConfig.styleMenu;
+    let { p, h1, h2, h3, h4, h5, h6, pre } = config.menu.styleMenu;
     if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p }));
     if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, attrs: { level: 1 }}));
     if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, attrs: { level: 2 }}));
@@ -22415,83 +22348,14 @@
   }
 
   /**
-   * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
-   * passing a new KeymapConfig when instantiating the MarkupEditor. You can use the pre-defined 
-   * static methods like `standard()` or customize what it returns.
-   * 
-   * To customize the key mapping, for example, in your index.html:
-   * 
-   *    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
-   *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
-   *    const markupEditor = new MU.MarkupEditor(
-   *      document.querySelector('#editor'),
-   *      {
-   *        html: '<h1>Hello, world!</h1>',
-   *        keymap: keymapConfig,
-   *      }
-   *    )
-   *    
-   * Note that the key mapping will exist and work regardless of whether you disable a toolbar 
-   * or a specific item in a menu. For example, undo/redo by default map to Mod-z/Shift-Mod-z even  
-   * though the "correctionBar" is off by default in the MarkupEditor. You can remove a key mapping 
-   * by setting its value to null or an empty string. 
-   */
-  class KeymapConfig {
-      static all = {
-          // Correction
-          "undo": "Mod-z",
-          "redo": "Shift-Mod-z",
-          // Insert
-          "link": ["Mod-K", "Mod-k"],
-          "image": ["Mod-G", "Mod-g"],
-          "table": ["Mod-T", "Mod-t"],
-          // Stylebar
-          "bullet": ["Ctrl-U", "Ctrl-u"],
-          "number": ["Ctrl-O", "Ctrl-o"],
-          "indent": ["Mod-]", "Ctrl-q"],
-          "outdent": ["Mod-[", "Shift-Ctrl-q"],
-          // Format
-          "bold": ["Mod-B", "Mod-b"],
-          "italic": ["Mod-I", "Mod-i"],
-          "underline": ["Mod-U", "Mod-u"],
-          "strikethrough": ["Ctrl-S", "Ctrl-s"],
-          "code": "Mod-`",
-          "subscript": "Ctrl-,",
-          "superscript": "Ctrl-.",
-          // Search
-          "search": ["Ctrl-F", "Ctrl-f"],
-      }
-
-      static full() {
-          return this.all
-      }
-
-      static standard() {
-          return this.markdown()
-      }
-
-      static desktop() {
-          return this.full()
-      }
-
-      static markdown() {
-          let markdown = this.full();
-          markdown.underline = null;
-          markdown.subscript = null;
-          markdown.superscript = null;
-          return markdown
-      }
-  }
-
-  /**
    * Return a map of Commands that will be invoked when key combos are pressed.
    * 
-   * @param {Object}  keymapConfig    The keymap configuration, KeymapConfig.standard() by default.
-   * @param {Schema}  schema          The schema that holds node and mark types.
-   * @returns [String : Command]      Commands bound to keys identified by strings (e.g., "Mod-b")
+   * @param {Object}  config      The MarkupEditor.config
+   * @param {Schema}  schema      The schema that holds node and mark types.
+   * @returns [String : Command]  Commands bound to keys identified by strings (e.g., "Mod-b")
    */
-  function buildKeymap(keymapConfig, schema) {
-      let keymap = keymapConfig;   // Shorthand
+  function buildKeymap(config, schema) {
+      let keymap = config.keymap;   // Shorthand
       let keys = {};
 
       /** Allow keyString to be a string or array of strings identify the map from keys to cmd */
@@ -22542,28 +22406,13 @@
       bind(keymap.indent, indentCommand());
       bind(keymap.outdent, outdentCommand());
       // Insert
-      bind(keymap.link, new LinkItem(keymap).command);
-      bind(keymap.image, new ImageItem(keymap).command);
+      bind(keymap.link, new LinkItem(config).command);
+      bind(keymap.image, new ImageItem(config).command);
       bind(keymap.table, new TableInsertItem().command); // TODO: Doesn't work properly
       // Search
-      bind(keymap.search, new SearchItem(keymap).command);
+      bind(keymap.search, new SearchItem(config).command);
       return keys
   }
-
-  /**
-   * The markupeditor-base holds its configuration in a global `markupConfig` which is referenced in 
-   * `main.js`. This object needs to be set up before a MarkupEditor web page is launched. This needs to be  
-   * done as a script before `dist/markupeditor.umd.js` is loaded. You can see this in the `demo/index.html`, and
-   * in markupeditor-vs, the VSCode extension, in the webview panel setup done in `markupCoordinator.js`.
-   * It's a bit odd that the markupeditor-base package references something like `markupConfig` but itself
-   * never defines it. The intent is that something external creates an actual web page that holds onto the
-   * MarkupEditor and loads all of its scripts - like `demo/index.html` does in the simplest case. That external
-   * thing is what controls and defines the `markupConfig`. In the VSCode extension, that is done via the standard 
-   * VSCode extension settings mechanisms. In Swift, it is done using the MarkupEditor settings. In the
-   * markupeditor-base demo, the global `markupConfig` exists but is `undefined`, which results in `main.js` using
-   * the value returned from `MenuConfig.standard()`.
-   */
-
 
   exports.toolbarView = void 0;
 
@@ -22582,8 +22431,12 @@
       this.editorView = editorView;
       this.content = content;
       this.root = editorView.root;
+
+      // Embed the toolbar and editorView in a wrapper.
       this.wrapper = crelt("div", {class: this.prefix + "-wrapper"});
       this.menu = this.wrapper.appendChild(crelt("div", {class: this.prefix, id: this.prefix}));
+      // Since the menu adjusts to fit using a `MoreItem` for contents that doesn't fit, 
+      // we need to refresh how it is rendered when resizing takes place.
       window.addEventListener('resize', ()=>{ this.refresh(); });
       this.menu.className = this.prefix;
       if (editorView.dom.parentNode)
@@ -22873,21 +22726,19 @@
    * @param {Schema} schema The schema used for the MarkupEditor
    * @returns 
    */
-  function markupSetup(schema, config) {
+  function markupSetup(config, schema) {
     let prefix = "Markup";
-    let menuConfig = config?.menu ? config.menu : MenuConfig.standard();
-    let keymapConfig = config?.keymap ? config.keymap : KeymapConfig.standard();
     let plugins = [
       buildInputRules(schema),
-      keymap(buildKeymap(keymapConfig, schema)),
+      keymap(buildKeymap(config, schema)),
       keymap(baseKeymap),
       dropCursor(),
       gapCursor(),
     ];
 
     // Only show the toolbar if the config indicates it is visible
-    if (menuConfig.visibility.toolbar) {
-      let content = buildMenuItems(prefix, menuConfig, keymapConfig, schema);
+    if (config.menu.visibility.toolbar) {
+      let content = buildMenuItems(prefix, config, schema);
       plugins.push(toolbar(prefix, content));
     }
 
@@ -22909,6 +22760,191 @@
     //plugins.push(searchModePlugin)
 
     return plugins;
+  }
+
+  /**
+   * `MenuConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
+   * to GitHub flavored markdown. It can be overridden by passing it a new config when instantiating
+   * the MarkupEditor. You can use the pre-defined static methods like `full` or customize what they 
+   * return. The predefined statics each allow you to turn on or off the `correctionBar` visibility.
+   * The `correctionBar` visibility is off by default, because while it's useful for touch devices 
+   * without a keyboard, undo/redo are mapped to the hotkeys most people have in muscle memory.
+   * 
+   * To customize the menu bar, for example, in your index.html:
+   * 
+   *    let menuConfig = MU.MenuConfig.full(true);    // Grab the full menu bar, including correction, as a baseline
+   *    menuConfig.insertBar.table = false;           // Turn off table insert
+   *    const markupEditor = new MU.MarkupEditor(
+   *      document.querySelector('#editor'),
+   *      {
+   *        html: '<h1>Hello, world!</h1>',
+   *        menu: menuConfig,
+   *      }
+   *    )
+   *    
+   * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
+   * within a toolbar or menu using the settings specific to that toolbar or menu.
+   */
+  class MenuConfig {
+
+    static all = {
+      "visibility": {             // Control the visibility of toolbars, etc
+        "toolbar": true,          // Whether the toolbar is visible at all
+        "correctionBar": true,    // Whether the correction bar (undo/redo) is visible
+        "insertBar": true,        // Whether the insert bar (link, image, table) is visible
+        "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
+        "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
+        "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
+        "tableMenu": true,        // Whether the table menu (create, add, delete, border) is visible
+        "search": true,           // Whether the search menu item (hide/show search bar) is visible
+      },
+      "insertBar": {
+        "link": true,             // Whether the link menu item is visible
+        "image": true,            // Whether the image menu item is visible
+        "table": true,            // Whether the table menu is visible
+      },
+      "formatBar": {
+        "bold": true,             // Whether the bold menu item is visible
+        "italic": true,           // Whether the italic menu item is visible
+        "underline": true,        // Whether the underline menu item is visible
+        "code": true,             // Whether the code menu item is visible
+        "strikethrough": true,    // Whether the strikethrough menu item is visible
+        "subscript": true,        // Whether the subscript menu item is visible
+        "superscript": true,      // Whether the superscript menu item is visible
+      },
+      "styleMenu": {
+        "p": "Body",              // The label in the menu for "P" style
+        "h1": "H1",               // The label in the menu for "H1" style
+        "h2": "H2",               // The label in the menu for "H2" style
+        "h3": "H3",               // The label in the menu for "H3" style
+        "h4": "H4",               // The label in the menu for "H4" style
+        "h5": "H5",               // The label in the menu for "H5" style
+        "h6": "H6",               // The label in the menu for "H6" style
+        "pre": "Code",            // The label in the menu for "PRE" aka code_block style
+      },
+      "styleBar": {
+        "list": true,             // Whether bullet and numbered list items are visible
+        "dent": true,             // Whether indent and outdent items are visible
+      },
+      "tableMenu": {
+        "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
+        "border": true,           // Whether the "Border" item is visible in the "Table" menu
+      },
+    }
+
+    static full(correction=false) {
+      let full = this.all;
+      full.visibility.correctionBar = correction;
+      return full
+    }
+
+    static standard(correction=false) {
+      return this.markdown(correction)
+    }
+
+    static desktop(correction=false) {
+      return this.full(correction)
+    }
+
+    static markdown(correction=false) {
+      let markdown = this.full(correction);
+      markdown.formatBar.underline = false;
+      markdown.formatBar.subscript = false;
+      markdown.formatBar.superscript = false;
+      return markdown
+    }
+  }
+
+  /**
+   * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
+   * passing a new KeymapConfig when instantiating the MarkupEditor. You can use the pre-defined 
+   * static methods like `standard()` or customize what it returns.
+   * 
+   * To customize the key mapping, for example, in your index.html:
+   * 
+   *    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
+   *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
+   *    const markupEditor = new MU.MarkupEditor(
+   *      document.querySelector('#editor'),
+   *      {
+   *        html: '<h1>Hello, world!</h1>',
+   *        keymap: keymapConfig,
+   *      }
+   *    )
+   *    
+   * Note that the key mapping will exist and work regardless of whether you disable a toolbar 
+   * or a specific item in a menu. For example, undo/redo by default map to Mod-z/Shift-Mod-z even  
+   * though the "correctionBar" is off by default in the MarkupEditor. You can remove a key mapping 
+   * by setting its value to null or an empty string. 
+   */
+  class KeymapConfig {
+      static all = {
+          // Correction
+          "undo": "Mod-z",
+          "redo": "Shift-Mod-z",
+          // Insert
+          "link": ["Mod-K", "Mod-k"],
+          "image": ["Mod-G", "Mod-g"],
+          "table": ["Mod-T", "Mod-t"],
+          // Stylebar
+          "bullet": ["Ctrl-U", "Ctrl-u"],
+          "number": ["Ctrl-O", "Ctrl-o"],
+          "indent": ["Mod-]", "Ctrl-q"],
+          "outdent": ["Mod-[", "Shift-Ctrl-q"],
+          // Format
+          "bold": ["Mod-B", "Mod-b"],
+          "italic": ["Mod-I", "Mod-i"],
+          "underline": ["Mod-U", "Mod-u"],
+          "strikethrough": ["Ctrl-S", "Ctrl-s"],
+          "code": "Mod-`",
+          "subscript": "Ctrl-,",
+          "superscript": "Ctrl-.",
+          // Search
+          "search": ["Ctrl-F", "Ctrl-f"],
+      }
+
+      static full() {
+          return this.all
+      }
+
+      static standard() {
+          return this.markdown()
+      }
+
+      static desktop() {
+          return this.full()
+      }
+
+      static markdown() {
+          let markdown = this.full();
+          markdown.underline = null;
+          markdown.subscript = null;
+          markdown.superscript = null;
+          return markdown
+      }
+  }
+
+  /**
+   * `BehaviorConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
+   * passing a new BehaviorConfig when instantiating the MarkupEditor.
+   * 
+   * To customize the behavior config, for example, in your index.html:
+   * 
+   *    let behaviorConfig = MU.BehaviorConfig.desktop();    // Use the desktop editor config as a baseline
+   *    const markupEditor = new MU.MarkupEditor(
+   *      document.querySelector('#editor'),
+   *      {
+   *        html: '<h1>Hello, world!</h1>',
+   *        behavior: behaviorConfig,
+   *      }
+   *    )
+   */
+  class BehaviorConfig {
+
+      static standard() { return {"localImages": false} }
+
+      static desktop() { return {"localImages": true} }
+      
   }
 
   /**
@@ -23067,19 +23103,18 @@
   }
 
   /**
-   * The MarkupEditor holds the properly set-up EditorView and any additional 
-   * 
-   * Note that `markupConfig` is a global that must already exist, but which can be undefined.
-   * This is typically accomplished by setting it in the first script loaded into the view, 
-   * something as simple as `<script>let markupConfig;</script>'. For an environment like VSCode, 
-   * which has a rich configuration capability, it can be set using `vscode.getConfiguration()`.
-   * 
-   * If `markupConfig` is undefined, the "standard" config is supplied by `MenuConfig.standard()`.
+   * The MarkupEditor holds the properly set-up EditorView and any additional configuration.
    */
   class MarkupEditor {
     constructor(target, config) {
       this.element = target ?? document.querySelector("#editor");
+
+      // Make sure config always contains menu, keymap, and behavior
       this.config = config ?? {};
+      if (!this.config.menu) this.config.menu = MenuConfig.standard();
+      if (!this.config.keymap) this.config.keymap = KeymapConfig.standard();
+      if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard();
+
       this.html = this.config.html ?? emptyHTML();
       setMessageHandler(this.config.messageHandler ?? new MessageHandler(this));
       window.view = new EditorView(this.element, {
@@ -23087,7 +23122,7 @@
           // For the MarkupEditor, we can just use the editor element. 
           // There is no need to use a separate content element.
           doc: DOMParser.fromSchema(schema).parse(this.element),
-          plugins: markupSetup(schema, config)
+          plugins: markupSetup(config, schema)
         }),
         nodeViews: {
           image(node, view, getPos) { return new ImageView(node, view, getPos) },
@@ -23139,6 +23174,7 @@
     }
   }
 
+  exports.BehaviorConfig = BehaviorConfig;
   exports.Dropdown = Dropdown;
   exports.DropdownSubmenu = DropdownSubmenu;
   exports.KeymapConfig = KeymapConfig;

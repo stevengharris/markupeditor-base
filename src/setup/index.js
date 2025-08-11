@@ -6,8 +6,8 @@ import {dropCursor} from "prosemirror-dropcursor"
 import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {search} from "prosemirror-search"
-import {buildMenuItems, MenuConfig} from "./menu"
-import {buildKeymap, KeymapConfig} from "./keymap"
+import {buildMenuItems} from "./menu"
+import {buildKeymap} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 
@@ -153,21 +153,19 @@ export function appendToolbar(menuItems) {
  * @param {Schema} schema The schema used for the MarkupEditor
  * @returns 
  */
-export function markupSetup(schema, config) {
+export function markupSetup(config, schema) {
   let prefix = "Markup"
-  let menuConfig = config?.menu ? config.menu : MenuConfig.standard()
-  let keymapConfig = config?.keymap ? config.keymap : KeymapConfig.standard()
   let plugins = [
     buildInputRules(schema),
-    keymap(buildKeymap(keymapConfig, schema)),
+    keymap(buildKeymap(config, schema)),
     keymap(baseKeymap),
     dropCursor(),
     gapCursor(),
   ]
 
   // Only show the toolbar if the config indicates it is visible
-  if (menuConfig.visibility.toolbar) {
-    let content = buildMenuItems(prefix, menuConfig, keymapConfig, schema);
+  if (config.menu.visibility.toolbar) {
+    let content = buildMenuItems(prefix, config, schema);
     plugins.push(toolbar(prefix, content));
   }
 

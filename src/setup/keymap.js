@@ -21,83 +21,14 @@ import {
 } from "./menu"
 
 /**
- * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
- * passing a new KeymapConfig when instantiating the MarkupEditor. You can use the pre-defined 
- * static methods like `standard()` or customize what it returns.
- * 
- * To customize the key mapping, for example, in your index.html:
- * 
- *    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
- *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        keymap: keymapConfig,
- *      }
- *    )
- *    
- * Note that the key mapping will exist and work regardless of whether you disable a toolbar 
- * or a specific item in a menu. For example, undo/redo by default map to Mod-z/Shift-Mod-z even  
- * though the "correctionBar" is off by default in the MarkupEditor. You can remove a key mapping 
- * by setting its value to null or an empty string. 
- */
-export class KeymapConfig {
-    static all = {
-        // Correction
-        "undo": "Mod-z",
-        "redo": "Shift-Mod-z",
-        // Insert
-        "link": ["Mod-K", "Mod-k"],
-        "image": ["Mod-G", "Mod-g"],
-        "table": ["Mod-T", "Mod-t"],
-        // Stylebar
-        "bullet": ["Ctrl-U", "Ctrl-u"],
-        "number": ["Ctrl-O", "Ctrl-o"],
-        "indent": ["Mod-]", "Ctrl-q"],
-        "outdent": ["Mod-[", "Shift-Ctrl-q"],
-        // Format
-        "bold": ["Mod-B", "Mod-b"],
-        "italic": ["Mod-I", "Mod-i"],
-        "underline": ["Mod-U", "Mod-u"],
-        "strikethrough": ["Ctrl-S", "Ctrl-s"],
-        "code": "Mod-`",
-        "subscript": "Ctrl-,",
-        "superscript": "Ctrl-.",
-        // Search
-        "search": ["Ctrl-F", "Ctrl-f"],
-    }
-
-    static full() {
-        return this.all
-    }
-
-    static standard() {
-        return this.markdown()
-    }
-
-    static desktop() {
-        return this.full()
-    }
-
-    static markdown() {
-        let markdown = this.full()
-        markdown.underline = null
-        markdown.subscript = null
-        markdown.superscript = null
-        return markdown
-    }
-}
-
-/**
  * Return a map of Commands that will be invoked when key combos are pressed.
  * 
- * @param {Object}  keymapConfig    The keymap configuration, KeymapConfig.standard() by default.
- * @param {Schema}  schema          The schema that holds node and mark types.
- * @returns [String : Command]      Commands bound to keys identified by strings (e.g., "Mod-b")
+ * @param {Object}  config      The MarkupEditor.config
+ * @param {Schema}  schema      The schema that holds node and mark types.
+ * @returns [String : Command]  Commands bound to keys identified by strings (e.g., "Mod-b")
  */
-export function buildKeymap(keymapConfig, schema) {
-    let keymap = keymapConfig   // Shorthand
+export function buildKeymap(config, schema) {
+    let keymap = config.keymap   // Shorthand
     let keys = {}
 
     /** Allow keyString to be a string or array of strings identify the map from keys to cmd */
@@ -148,10 +79,10 @@ export function buildKeymap(keymapConfig, schema) {
     bind(keymap.indent, indentCommand())
     bind(keymap.outdent, outdentCommand())
     // Insert
-    bind(keymap.link, new LinkItem(keymap).command)
-    bind(keymap.image, new ImageItem(keymap).command)
+    bind(keymap.link, new LinkItem(config).command)
+    bind(keymap.image, new ImageItem(config).command)
     bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
     // Search
-    bind(keymap.search, new SearchItem(keymap).command)
+    bind(keymap.search, new SearchItem(config).command)
     return keys
 }
