@@ -35,6 +35,7 @@ class ToolbarView {
     this.root = editorView.root
     this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
     this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
+    window.addEventListener('resize', ()=>{ this.refresh() })
     this.menu.className = this.prefix
     if (editorView.dom.parentNode)
       editorView.dom.parentNode.replaceChild(this.wrapper, editorView.dom)
@@ -74,20 +75,34 @@ class ToolbarView {
     this.refreshFit()
   }
 
+  /** Refresh the menu, wrapping at the item at `wrapAtIndex` */
   refreshFit(wrapAtIndex) {
-      let { dom, update } = renderGroupedFit(this.editorView, this.content, wrapAtIndex);
-      this.contentUpdate = update;
-      // dom is an HTMLDocumentFragment and needs to replace all of menu
-      this.menu.innerHTML = '';
-      this.menu.appendChild(dom);
+    let { dom, update } = renderGroupedFit(this.editorView, this.content, wrapAtIndex);
+    this.contentUpdate = update;
+    // dom is an HTMLDocumentFragment and needs to replace all of menu
+    this.menu.innerHTML = '';
+    this.menu.appendChild(dom);
+  }
+
+  /** 
+   * Refresh the menu with all items and then fit it. 
+   * We need to do this because when resize makes the menu wider, we don't want to keep 
+   * the same `MoreItem` in place if more fits in the menu itself.
+   */
+  refresh() {
+    let { dom, update } = renderGrouped(this.editorView, this.content);
+    this.contentUpdate = update;
+    this.menu.innerHTML = '';
+    this.menu.appendChild(dom);
+    this.fitMenu()
   }
 
   /**
    * Fit the items in the menu into the menu width,
    * 
    * If the menu as currently rendered does not fit in the width, then execute `refreshFit`,
-   * identifying the item to be replaced by a "more" button. That button will be a DropDown
-   * that contains the items starting with the one at wrapAtIndex.
+   * identifying the item to be replaced by a "more" button. That button will be a MoreItem
+   * that toggles a sub-toolbar containing the items starting with the one at wrapAtIndex.
    */
   fitMenu() {
     let items = this.menu.children;

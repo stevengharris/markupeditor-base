@@ -8,7 +8,9 @@
     "dist",
     "styles"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./styles/*.css"
+  ],
   "license": "MIT",
   "author": "Steven G. Harris <steven.g.harris@gmail.com>",
   "repository": {
