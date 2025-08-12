@@ -36,21 +36,66 @@ git clone https://github.com/stevengharris/markupeditor-base.git
 You need node/npm installed. Install the dependencies.
 
 ```
-cd markupeditor-base
-npm install
+$ cd markupeditor-base/
+$ npm install
+
+added 126 packages, and audited 127 packages in 5s
+
+18 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+$ 
 ```
 
 Build the project.
 
 ```
-npm run build
+$ npm run build
+
+> markupeditor-base@0.8.0 build
+> rollup -c
+
+
+src/main.js → dist/markupeditor.umd.js...
+created dist/markupeditor.umd.js in 321ms
+
+src/main.js → dist/markupeditor.cjs.js, dist/markupeditor.esm.js...
+created dist/markupeditor.cjs.js, dist/markupeditor.esm.js in 60ms
+$ 
 ```
 
-Use the web site docs to test:
+Open the editor on a doc using node.js. You can use the demo.html file that is part of the docs:
 
 ```
-npm run docs
+$ node markupeditor.js docs/demo/demo.html 
+Server listening at http://localhost:3000
 ```
+
+Then open http://localhost:3000 in your browser. The port can be passed to node as `--port <number>`.
+
+You can also use the web site docs to test:
+
+```
+$ npm run docs
+
+> markupeditor-base@0.8.0 predocs
+> sh predocs.sh
+
+Updating ./docs dependencies...
+cp -f ./dist/markupeditor.umd.js ./docs/src/markupeditor.umd.js
+cp -f ./styles/markupeditor.css ./docs/styles/markupeditor.css
+cp -f ./styles/markup.css ./docs/styles/markup.css
+cp -f ./styles/mirror.css ./docs/styles/mirror.css
+cp -f ./styles/toolbar.css ./docs/styles/toolbar.css
+
+> markupeditor-base@0.8.0 docs
+> node ./docs/index.js
+
+Server listening at http://localhost:3000
+```
+
+What http://localhost:3000 shows now is the contents hosted at https://stevengharris.github.io/markupeditor-base.
 
 ## Resources
 
