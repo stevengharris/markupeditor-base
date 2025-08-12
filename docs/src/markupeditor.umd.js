@@ -21103,14 +21103,12 @@
       let buttonsDiv = crelt('div', { class: prefix + '-prompt-buttons' });
       this.dialog.appendChild(buttonsDiv);
 
-      // TODO: When local images are allowed, we should insert a "Select..." button  
-      // somewhere that will bring up a file chooser. For it to really work for editing, the 
-      // choosing has to be followed by copying from the selection into the current working 
-      // dieectory or a "resources" type of directory below. In Swift, this is all handled 
-      // by the app itself, which is notified of the UUID file that is placed in the temp 
-      // directory, so the app can do what it wants with it.
-
-      if (this.config.behavior.localImages) {
+      // When local images are allowed, we insert a "Select..." button that will bring up a 
+      // file chooser. However, the MarkupEditor can't do that itself, so it invokes the 
+      // delegate's `markupSelectImage` method if it exists. Thus, when `selectImage` is 
+      // true in BehaviorConfig, that method should exist. It should bring up a file chooser
+      // and then invoke `MU.insertImage`.
+      if (this.config.behavior.selectImage) {
         this.preview = null;
         let selectItem = cmdItem(this.selectImage.bind(this), {
           class: prefix + '-menuitem',
@@ -21121,6 +21119,7 @@
         let {dom, update} = selectItem.render(view);
         buttonsDiv.appendChild(dom);
       } else {
+        // If there is no Select button, we insert a tiny preview to help.
         this.preview = this.getPreview();
         buttonsDiv.appendChild(this.preview);
       }
@@ -21289,8 +21288,7 @@
     /** Tell the delegate to select an image to insert, because we don't know how to do that */
     selectImage(state, dispatch, view) {
       this.closeDialog();
-      let markupInsertImage = this.config.delegate?.markupInsertImage;
-      if (markupInsertImage) markupInsertImage(view);
+      if (this.config.delegate?.markupSelectImage) this.config.delegate?.markupSelectImage(view);
     }
 
     /**
@@ -22941,10 +22939,10 @@
    */
   class BehaviorConfig {
 
-      static standard() { return {"localImages": false} }
+      static standard() { return {"selectImage": false} }
 
-      static desktop() { return {"localImages": true} }
-      
+      static desktop() { return {"selectImage": true} }
+
   }
 
   /**

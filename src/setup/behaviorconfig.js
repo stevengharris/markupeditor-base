@@ -15,8 +15,8 @@
  */
 export class BehaviorConfig {
 
-    static standard() { return {"localImages": false} }
+    static standard() { return {"selectImage": false} }
 
-    static desktop() { return {"localImages": true} }
-    
+    static desktop() { return {"selectImage": true} }
+
 }
