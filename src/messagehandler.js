@@ -136,13 +136,14 @@ export class MessageHandler {
     /** Load the contents from `filename`, or if not specified, from `html` */
     loadContents(config) {
         let filename = config.filename;
+        let base = config.base;
         let focusAfterLoad = config.focusAfterLoad;
         if (filename) {
             fetch(filename)
                 .then((response) => response.text())
                 .then((text) => {
                     // A fetch failure returns 'Cannot GET <filename with path>'
-                    MU.setHTML(text, focusAfterLoad)
+                    MU.setHTML(text, focusAfterLoad, base)
                 })
                 .catch(() => {
                     // But just in case, report a failure if needed.
