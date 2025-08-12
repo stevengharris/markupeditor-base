@@ -1,2 +1,54 @@
 <h1>Developer's Guide</h1>
-<p>TBD</p>
+
+<h2>Concepts</h2>
+
+<p>The MarkupEditor in its “base” form is a WYSIWYG editor meant to be embedded in an application of some kind. It comes with a configurable and extensible toolbar that provides UI access to its underlying editing functionality. The document you edit with the MarkupEditor is standard HTML with a limited set of supported tags. The document is styled using CSS which you can override and supplement. As you edit the HTML document, the editor calls back to a <code>MarkupDelegate</code> (that you provide) to let you when changes occur, so you can take action based on your specific application context.</p>
+
+<p>You’ll be using the MarkupEditor in some kind of application you are building. The <em>application environment</em> needs to support a web view, so you can load the MarkupEditor script and use the CSS styling that comes with it. Here we’re using the nebulous term “application environment” because that could be <em>node.js</em> or <em>electron</em> or <em>MacOS AppKit</em> or <em>iOS SwiftUI</em> or… the list goes on. The language you’re writing your application in could be JavaScript or any other language, as long as the application environment supports a web view and the mechanics of communicating to/from the web view and the MarkupEditor within it.</p>
+
+<h3>Using the MarkupEditor in a Browser</h3>
+
+<p>By this nebulous definition, a web browser provides an application environment. Here’s an <a href="https://stevengharris.github.io/markupeditor-base/helloworld/index.html"><code>index.html</code></a> you can load in your browser to display an editable version of “Hello, world!”:</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+    &lt;head&gt;
+        &lt;title&gt;Hello MarkupEditor&lt;/title&gt;
+        &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
+        &lt;link href="../styles/markupeditor.css" rel="stylesheet"&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div id="editor"&gt;&lt;/div&gt;
+        &lt;script src="../src/markupeditor.umd.js"&gt;&lt;/script&gt;
+        &lt;script&gt;
+            new MU.MarkupEditor(document.querySelector('#editor'), {html: '&lt;h1&gt;Hello, world!&lt;/h1&gt;'})
+        &lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>The essentials involve:</p>
+
+<ol>
+    <li>
+        <p>Linking to the MarkupEditor style sheets that are gathered together in <code>markupeditor.css</code>.</p>
+    </li>
+    <li>
+        <p>Creating an empty <code>editor</code> div to edit in.</p>
+    </li>
+    <li>
+        <p>Loading the MarkupEditor script <code>markupeditor.umd.js</code> which exposes its public API as <code>MU</code>.</p>
+    </li>
+    <li>
+        <p>Creating an instance of the MarkupEditor in the editor element.  with “Hello, world!” as its initial HTML</p>
+    </li>
+</ol>
+
+<p>These essentials are common whenever you use the MarkupEditor, but the details will vary.</p>
+
+<p><img src="c4f425be-396a-40b0-a219-4e599b921872.png" width="432" height="237"></p>
+
+<p>Above, you see the result in the Vivaldi browser. Note the default toolbar shows up without any work on your part. The MarkupEditor itself only lets you edit the document, and there is a very security-limited set of things you can do from a browser. The browser is pretty much the simplest possible environment to use the MarkupEditor, and it provides access to an array of development tools for debugging.</p>
+
+<h3>Using the MarkupEditor in Node.js</h3>
+
+<p></p>
