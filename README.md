@@ -20,6 +20,25 @@ functionality to help you organize and format your writing to get your points ac
 approach means you always see what you're writing presented properly as you write it, instead of dealing with the distractions of composing 
 text with embedded notations and the uncertainty of how that text is later translated to HTML and presented.
 
+## Features
+
+The MarkupEditor's standard editing features are generally limited to what 
+[Github Flavored Markdown](https://github.github.com/gfm/) supports. It does, however, have support 
+for some functionality beyond that baseline. As a WYSIWYG editor, it supports the kind of functionality that 
+even non-developers expect when they edit a document, like image resizing and search.
+
+* Customizable and extensible toolbar providing access to all editing features, auto-sized to width.
+* Customizable key mappings for hot-key access to editing features.
+* Paragraph styles corresponding to P, H1-H6, and `CODE`.
+* Bold, italic, underline, strikethrough, subscript, superscript, and code text formatting.
+* Insert and edit links, images (local and https src), and tables.
+* Bulleted and numbered lists.
+* Indent/outdent.
+* Comprehensive undo/redo.
+* Search.
+* Image resizing using gestures.
+* Table editing: visually select table size, add/remove row/column/header, border options.
+
 ## Try
 
 You can try the MarkupEditor out right from the [project web site](https://stevengharris.github.io/markupeditor-base/). The web site has all 

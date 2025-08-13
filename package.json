@@ -1,6 +1,13 @@
 {
   "name": "markupeditor-base",
-  "version": "0.8.0",
+  "version": "0.8.1",
+  "description": "MarkupEditor",
+  "keywords": [
+    "wysiwyg",
+    "html",
+    "editor",
+    "rich text"
+  ],
   "main": "dist/markupeditor.cjs.js",
   "module": "dist/markupeditor.esm.js",
   "browser": "dist/markupeditor.umd.js",
@@ -13,6 +20,7 @@
   ],
   "license": "MIT",
   "author": "Steven G. Harris <steven.g.harris@gmail.com>",
+  "homepage": "https://stevengharris.github.io/markupeditor-base/",
   "repository": {
     "type": "git",
     "url": "git://github.com/stevengharris/markupeditor-base.git"
