@@ -4,7 +4,7 @@
 
 <p>The MarkupEditor in its “base” form is a WYSIWYG editor meant to be embedded in an application of some kind. It comes with a configurable and extensible toolbar that provides UI access to its underlying editing functionality. The document you edit with the MarkupEditor is standard HTML with a limited set of supported tags. The document is styled using CSS which you can override and supplement. As you edit the HTML document, the editor calls back to a <code>MarkupDelegate</code> (that you provide) to let you when changes occur, so you can take action based on your specific application context.</p>
 
-<p>You’ll be using the MarkupEditor in some kind of application you are building. The <em>application environment</em> needs to support a web view, so you can load the MarkupEditor script and use the CSS styling that comes with it. Here we’re using the nebulous term “application environment” because that could be <em>node.js</em> or <em>electron</em> or <em>MacOS AppKit</em> or <em>iOS SwiftUI</em> or… the list goes on. The language you’re writing your application in could be JavaScript or any other language, as long as the application environment supports a web view and the mechanics of communicating to/from the web view and the MarkupEditor within it.</p>
+<p>You’ll be using the MarkupEditor in some kind of application you are building. The <em>application environment</em> needs to support a web view, so you can load the MarkupEditor script and use the CSS styling that comes with it. Here we’re using the nebulous term “application environment” because that could be <em>Node.js</em> or <em>Electron</em> or <em>MacOS AppKit</em> or <em>iOS SwiftUI</em> or… the list goes on. The language you’re writing your application in could be JavaScript or any other language, as long as the application environment supports a web view and the mechanics of communicating to/from the web view and the MarkupEditor within it.</p>
 
 <h3>Using the MarkupEditor in a Browser</h3>
 
@@ -39,7 +39,7 @@
         <p>Loading the MarkupEditor script <code>markupeditor.umd.js</code> which exposes its public API as <code>MU</code>.</p>
     </li>
     <li>
-        <p>Creating an instance of the MarkupEditor in the editor element.  with “Hello, world!” as its initial HTML</p>
+        <p>Creating an instance of the MarkupEditor in the editor element. with “Hello, world!” as its initial HTML.</p>
     </li>
 </ol>
 
@@ -47,8 +47,133 @@
 
 <p><img src="c4f425be-396a-40b0-a219-4e599b921872.png" width="432" height="237"></p>
 
-<p>Above, you see the result in the Vivaldi browser. Note the default toolbar shows up without any work on your part. The MarkupEditor itself only lets you edit the document, and there is a very security-limited set of things you can do from a browser. The browser is pretty much the simplest possible environment to use the MarkupEditor, and it provides access to an array of development tools for debugging.</p>
+<p>Above, you see the result in the Vivaldi browser. Note the default toolbar shows up without any work on your part. The MarkupEditor itself only lets you edit the document, and there is a very security-limited set of things you can do from a browser. The browser is pretty much the simplest possible environment to use the MarkupEditor, but it provides access to an array of development tools for debugging. <strong>Note</strong>: If you encounter a MarkupEditor bug, providing a test or usage flow that reproduces the bug in a browser will ensure it can be debugged with no setup barriers, increasing the likelihood of it being worked on.</p>
 
 <h3>Using the MarkupEditor in Node.js</h3>
+
+<p>When you use the MarkupEditor in Node.js, you get access to the file system among other things. In concrete terms, this means you can fetch file contents without the requirement that the access be gated by a trusted user action, as is required in the browser. The MarkupEditor lets you identify a <code>filename</code> containing the HTML contents it will show, but the contents are obtained using <code>fetch</code>, which will typically fail when used with a file source in a browser. Here’s how the contents of this <code>guide.html</code> document are loaded into the MarkupEditor:</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;title&gt;docs/demo/demo.html&lt;/title&gt;
+    &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;link href="styles/markupeditor.css" rel="stylesheet"&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div id="editor"&gt;&lt;/div&gt;
+    &lt;script src="dist/markupeditor.umd.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+      new MU.MarkupEditor(document.querySelector('#editor'), {filename: "docs/guide/guide.html", base: "docs/guide/"})
+    &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>Note that if you saved this HTML as a file and attempted to load it in your browser, say by double-clicking on the file, it would fail with <code>Failed to load docs/guide/guide.html</code>. You would see the toolbar show up, but the browser fails when fetching <code>guide.html</code>. You can, however, do it with Node.js. Here is a script, <code>guide.js</code>, that can be executed from the <code>markupeditor-base</code> directory using <code>node guide.js</code>:</p>
+
+<pre><code>const express = require('express');
+
+const app = express();
+
+// Allow the relative references for css and scripts to work in guide.html
+app.use(express.static(`${__dirname}`, { index: false }))
+
+// For parsing application/json
+app.use(express.json())
+
+// Load when loading http://localhost:${port}
+app.get('/', (req, res) =&gt; {
+  res.send(
+    `
+      &lt;!DOCTYPE html&gt;
+      &lt;html lang="en"&gt;
+        &lt;head&gt;
+          &lt;title&gt;docs/demo/demo.html&lt;/title&gt;
+          &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
+          &lt;link href="styles/markupeditor.css" rel="stylesheet"&gt;
+        &lt;/head&gt;
+        &lt;body&gt;
+          &lt;div id="editor"&gt;&lt;/div&gt;
+          &lt;script src="dist/markupeditor.umd.js"&gt;&lt;/script&gt;
+          &lt;script&gt;
+            new MU.MarkupEditor(document.querySelector('#editor'), {filename: "docs/guide/guide.html", base: "docs/guide/"})
+          &lt;/script&gt;
+        &lt;/body&gt;
+      &lt;/html&gt;
+    `
+  )
+});
+
+app.listen('3000', () =&gt; {
+  console.log(`Server listening at http://localhost:3000`);
+});</code></pre>
+
+<p>Here we use <a href="https://expressjs.com">Express</a> to respond with the HTML we showed earlier when you open your browser on <code>http://localhost:3000</code>. Note that <code>base</code> is passed as part of the MarkupEditor configuration. Under the covers, this ends up adding an <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/base">HTML base element</a> to the document, so that the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img"><code>img src</code></a> attribute and other references in the document are specified relative to the HTML document being edited.</p>
+
+<p>There is a more robust version of this script - <a href="https://github.com/stevengharris/markupeditor-base">markupeditor.js in the markupeditor-base project</a> - that allows you to execute from anywhere, identifying the HTML file to open (or none if you just want an empty document) and the port to listen on. For example:</p>
+
+<pre><code>$ node markupeditor.js docs/demo/demo.html --port 8000
+Server listening at http://localhost:8000</code></pre>
+
+<p>The MarkupEditor documentation, including this Developer Guide, is hosted using GitHub Pages, but you can use npm/node to view the docs locally using:</p>
+
+<pre><code>$ npm run docs
+
+&gt; markupeditor-base@0.8.0 predocs
+&gt; sh predocs.sh
+
+Updating ./docs dependencies...
+cp -f ./dist/markupeditor.umd.js ./docs/src/markupeditor.umd.js
+cp -f ./styles/markupeditor.css ./docs/styles/markupeditor.css
+cp -f ./styles/markup.css ./docs/styles/markup.css
+cp -f ./styles/mirror.css ./docs/styles/mirror.css
+cp -f ./styles/toolbar.css ./docs/styles/toolbar.css
+
+&gt; markupeditor-base@0.8.0 docs
+&gt; node ./docs/index.js
+
+Server listening at http://localhost:3000</code></pre>
+
+<p>Besides invoking node on the <code>index.js</code> in the docs directory, the script runs a “predocs” step that copies the current required MarkupEditor files into locations in the docs directory. When the changes are pushed to GitHub, it kicks off a refresh of the project web site. This process makes for a nice closed loop - edit the project web site contents using the MarkupEditor, and then update the site when the changes are pushed to GitHub.</p>
+
+<p>This is the extent of “application environments” that are supported out-of-the-box when you install the MarkupEditor base project. It’s the minimum needed to develop and debug the MarkupEditor in its base form. The MarkupEditor can, however, be embedded in other environments. Before we cover that, let’s cover how you use the MarkupEditor API and how to hook into the notifications it provides as you edit a document.</p>
+
+<h2>Communicating With the MarkupEditor</h2>
+
+<p>Generally, the MarkupEditor with its toolbar provides a clean, self-contained world to edit an HTML document. So far, we have seen how to pass the initial HTML to edit or to identify a filename to open using Node.js. When you want to call into the MarkupEditor, you do that by invoking the public API exposed via the <code>MU</code> object. We saw <code>MU</code> used earlier when we created an instance of MarkupEditor using <code>new MU.MarkupEditor(&lt;target div&gt;, &lt;config&gt;)</code>. Let’s start by examining the configuration passed when the MarkupEditor instance is created.</p>
+
+<h3>Configuration</h3>
+
+<p>There are three configuration classes:</p>
+
+<ul>
+    <li>
+        <p><code>MenuConfig</code> specifies whether the toolbar itself is visible, which sub-toolbars/dropdowns are visible, and which items are included in each.</p>
+    </li>
+    <li>
+        <p><code>KeymapConfig</code> specifies how editing actions map to key combos (aka hotkeys).</p>
+    </li>
+    <li>
+        <p><code>BehaviorConfig</code> specifies various ways the MarkupEditor behaves that are not specific to the menu/toolbar or keymap configurations.</p>
+    </li>
+</ul>
+
+<p>You can view the full set of options in each configuration class in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Each config provides a <code>standard()</code> static function that returns the default configuration when you don’t specify a configuration. Note that <code>MenuConfig</code> is independent of <code>KeymapConfig</code> because, for example, you may not want to display undo and redo buttons in the toolbar, but you <em>will</em> want to map them to hotkeys like <code>Cmd+S</code> and <code>Shift+Cmd+S</code> (the default in both cases).</p>
+
+<p>A simple way to customize configuration is to use one of the pre-defined static methods to get a config object back. You can then modify that config object as needed.  Going all the way back to our “Hello, world!” example, we could add the undo/redo buttons in by making the correction sub-toolbar visible, turn off the ability for users to insert tables, and we could change the hotkey used for adding a link:</p>
+
+<pre><code>&lt;script&gt;
+    let menuConfig = MU.MenuConfig.standard(true)     // The standard menu but with undo/redo on
+    menuConfig.insertBar.table = false;               // Turn off table insert
+    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
+    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
+    new MU.MarkupEditor(
+        document.querySelector('#editor'), {
+            html: '&lt;h1&gt;Hello, world!&lt;/h1&gt;',
+            menu: menuConfig,
+            keymap: keymapConfig
+        }
+    )
+&lt;/script&gt;</code></pre>
 
 <p></p>
