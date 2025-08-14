@@ -4,7 +4,7 @@
 
 <p>The MarkupEditor in its “base” form is a WYSIWYG editor meant to be embedded in an application of some kind. It comes with a configurable and extensible toolbar that provides UI access to its underlying editing functionality. The document you edit with the MarkupEditor is standard HTML with a limited set of supported tags. The document is styled using CSS which you can override and supplement. As you edit the HTML document, the editor calls back to a <code>MarkupDelegate</code> (that you provide) to let you when changes occur, so you can take action based on your specific application context.</p>
 
-<p>You’ll be using the MarkupEditor in some kind of application you are building. The <em>application environment</em> needs to support a web view, so you can load the MarkupEditor script and use the CSS styling that comes with it. Here we’re using the nebulous term “application environment” because that could be <em>Node.js</em> or <em>Electron</em> or <em>MacOS AppKit</em> or <em>iOS SwiftUI</em> or… the list goes on. The language you’re writing your application in could be JavaScript or any other language, as long as the application environment supports a web view and the mechanics of communicating to/from the web view and the MarkupEditor within it.</p>
+<p>You’ll be using the MarkupEditor in some kind of application you are building. The <em>application environment</em> needs to support a web view, so you can load the MarkupEditor script and use the CSS styling that comes with it. We’re using the nebulous term “application environment” in this document, because that could be <em>Node.js</em> or <em>Electron</em> or <em>MacOS AppKit</em> or <em>iOS SwiftUI</em> or… the list goes on. The language you’re writing your application in could be JavaScript or any other language, as long as the application environment supports a web view and the mechanics of communicating to/from the web view and the MarkupEditor within it.</p>
 
 <h3>Using the MarkupEditor in a Browser</h3>
 
@@ -138,11 +138,11 @@ Server listening at http://localhost:3000</code></pre>
 
 <p>This is the extent of “application environments” that are supported out-of-the-box when you install the MarkupEditor base project. It’s the minimum needed to develop and debug the MarkupEditor in its base form. The MarkupEditor can, however, be embedded in other environments. Before we cover that, let’s cover how you use the MarkupEditor API and how to hook into the notifications it provides as you edit a document.</p>
 
-<h2>Communicating With the MarkupEditor</h2>
+<h2>Configuration</h2>
 
-<p>Generally, the MarkupEditor with its toolbar provides a clean, self-contained world to edit an HTML document. So far, we have seen how to pass the initial HTML to edit or to identify a filename to open using Node.js. When you want to call into the MarkupEditor, you do that by invoking the public API exposed via the <code>MU</code> object. We saw <code>MU</code> used earlier when we created an instance of MarkupEditor using <code>new MU.MarkupEditor(&lt;target div&gt;, &lt;config&gt;)</code>. Let’s start by examining the configuration passed when the MarkupEditor instance is created.</p>
+<p>Generally, the MarkupEditor with its built-in toolbar provides a clean, self-contained world to edit an HTML document. So far, we have seen how to pass the initial HTML to edit and how to identify a <code>filename</code> to open using Node.js. When you want to call into the MarkupEditor, you do that by invoking the public API exposed via the <code>MU</code> object. We saw <code>MU</code> used earlier when we created an instance of MarkupEditor using <code>new MU.MarkupEditor(&lt;target div&gt;, &lt;config&gt;)</code>. Let’s examine the configuration passed when the MarkupEditor instance is created.</p>
 
-<h3>Configuration</h3>
+<h3>Configuration Classes</h3>
 
 <p>There are three configuration classes:</p>
 
@@ -160,10 +160,10 @@ Server listening at http://localhost:3000</code></pre>
 
 <p>You can view the full set of options in each configuration class in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Each config provides a <code>standard()</code> static function that returns the default configuration when you don’t specify a configuration. Note that <code>MenuConfig</code> is independent of <code>KeymapConfig</code> because, for example, you may not want to display undo and redo buttons in the toolbar, but you <em>will</em> want to map them to hotkeys like <code>Cmd+S</code> and <code>Shift+Cmd+S</code> (the default in both cases).</p>
 
-<p>A simple way to customize configuration is to use one of the pre-defined static methods to get a config object back. You can then modify that config object as needed.  Going all the way back to our “Hello, world!” example, we could add the undo/redo buttons in by making the correction sub-toolbar visible, turn off the ability for users to insert tables, and we could change the hotkey used for adding a link:</p>
+<p>A simple way to customize configuration is to use one of the pre-defined static methods to get a config object back. You can then modify that config object as needed. Going all the way back to our “Hello, world!” example, we could add the undo/redo buttons in by making the correction sub-toolbar visible, turn off the ability for users to insert tables, and we could change the hotkey used for adding a link:</p>
 
 <pre><code>&lt;script&gt;
-    let menuConfig = MU.MenuConfig.standard(true)     // The standard menu but with undo/redo on
+    let menuConfig = MU.MenuConfig.standard(true)     // The standard toolbar but with undo/redo showing
     menuConfig.insertBar.table = false;               // Turn off table insert
     let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
     keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
@@ -175,5 +175,218 @@ Server listening at http://localhost:3000</code></pre>
         }
     )
 &lt;/script&gt;</code></pre>
+
+<h2>Communicating with the MarkupEditor</h2>
+
+<p>It’s important to recognize <em>where</em> your code is executing when using the MarkupEditor. In the configuration example, we are executing a script that is running inside of the web view itself. The global <code>MU</code> was created when you loaded <code>markupeditor.umd.js</code> earlier in <code>index.html</code>, so it’s available for you to reference directly in any script you load <em>after</em> <code>markupeditor.umd.js</code>. When you are executing in the application environment that created and holds the web view, like Node.js or an iOS app, you will have to access <code>MU</code> with a call to something like <code>executeJavaScript</code>. We will cover that a little later.</p>
+
+<h3>MarkupDelegate</h3>
+
+<p>The MarkupEditor makes callbacks to a delegate, aka the <em>MarkupDelegate</em>, as you edit the document and its state changes. You can view the full set callbacks in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Let’s take a look at how to set up your MarkupDelegate and make use of the callbacks.</p>
+
+<p>Here’s a simple MarkupDelegate we can put in a <code>demodelegate.js</code> file and then load via a script. Its methods will be called when the MarkupEditor is “ready” and when you type into the document or otherwise make editing changes to it:</p>
+
+<pre><code>class MarkupDelegate {
+
+    // Do something in your app when all scripts are loaded and it's ready.
+    markupReady() {
+        // For now, just log...
+        console.log('The MarkupEditor is ready')
+    }
+
+    // Do something in your app when the document received input from typing or pasting, etc.
+    // For example, you might track changes to enable an auto-save feature.
+    markupInput() {
+        // For now, just log...
+        console.log('The MarkupEditor received input')
+    }
+}</code></pre>
+
+<p>You can load the script and pass the MarkupDelegate instance to the MarkupEditor. Here is what it would look like to load a <code>demo.html</code> file and pass this delegate instance to the MarkupEditor:</p>
+
+<pre><code>&lt;script src="../src/markupeditor.umd.js"&gt;&lt;/script&gt;
+&lt;script src="src/demodelegate.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+    const markupEditor = new MU.MarkupEditor(
+        document.querySelector('#editor'), {
+            delegate: new DemoDelegate(),
+            placeholder: 'Edit document...',
+            filename: 'demo.html',
+        }
+    )
+&lt;/script&gt;</code></pre>
+
+<p>You can call your MarkupDelegate anything you want. The MarkupEditor will only invoke the callbacks if the delegate if it exists and the function is defined. For example, if you don’t define <code>markupInput</code>, it just won’t be called.</p>
+
+<p>Again, the code in the MarkupDelegate above will execute in the web view. It has access to all of the MarkupEditor functionality via the <code>MU</code> global. Sometimes that is enough to be useful in itself. For example, the <a href="https://stevengharris.github.io/markupeditor-base/demo/index.html">MarkupEditor demo</a> uses <code>markupInput</code> to update the view of the “raw HTML” as the user edits the document. You can also use the MarkupDelegate to communicate with your application environment, but the mechanism for doing that will be specific to the application environment.</p>
+
+<h3>Round-Trip from the MarkupEditor</h3>
+
+<p>At this point we have covered:</p>
+
+<ul>
+    <li>
+        <p>How to set up up a web view containing the MarkupEditor and its associated scripts and styling.</p>
+    </li>
+    <li>
+        <p>How to set up a web view containing the MarkupEditor in a Node.js server using Express.</p>
+    </li>
+    <li>
+        <p>How to pass configuration options to the MarkupEditor.</p>
+    </li>
+    <li>
+        <p>How to use a MarkupDelegate to receive notifications as the state changes in the document you’re editing.</p>
+    </li>
+    <li>
+        <p>How to invoke MarkupEditor functionality from with the web view using the <code>MU</code> global.</p>
+    </li>
+</ul>
+
+<p>What remains is how to access to your application environment, and then in turn, to invoke MarkupEditor functionality from your application environment. The “how” is specific to your environment. We will use a concrete example of selecting an image from the file system when using the MarkupEditor with Electron. The code will all be Electron-specific, but the concepts will be similar in other environments. Ultimately they all need to deal with interprocess communication.</p>
+
+<h4>Selecting an Image</h4>
+
+<p>If you enable “selectImage” in BehaviorConfig, the MarkupEditor shows a “Select…” button in the dialog for inserting images:</p>
+
+<blockquote>
+    <p><img src="d505d8fc-ea35-4736-a022-7f6e6a183f1e.png" width="244" height="112"></p>
+</blockquote>
+
+<p>Why even make “selectImage” an option? Because:</p>
+
+<ul>
+    <li>
+        <p>You need access to the file system, which is dependent on your application environment.</p>
+    </li>
+    <li>
+        <p>The MarkupEditor itself doesn’t know how to do this and has very restricted access to the file system.</p>
+    </li>
+    <li>
+        <p>You may be using the MarkupEditor in an environment where you don’t want to allow image selection but still be able to insert images by URL.</p>
+    </li>
+    <li>
+        <p>As an app developer, you take on a lot of issues when you allow local images to be inserted in your document. For example… What do you do with the image once you’ve selected it? Do you point your image in the document to the file, or do you encode the file data and embed it? If you point to the file, then what happens when you move your document around or the image file no longer exists? These are all the kinds of issues that separate a demo from a product!</p>
+    </li>
+</ul>
+
+<p>When you hit the “Select…” button, the MarkupEditor closes the dialog and invokes <code>selectImage</code> in your MarkupDelegate. Remember, your MarkupDelegate is executing in the web view and still has very restricted access to the file system. In the Electron app, your MarkupDelegate would look like this:</p>
+
+<pre><code>class MarkupDelegate {
+
+    markupSelectImage() {
+        // Reference the definition in preload.js
+        window.markupAPI.selectImage()
+    }
+}</code></pre>
+
+<p>The <code>window.markupAPI</code> is defined in an <a href="https://www.electronjs.org/docs/latest/tutorial/tutorial-preload">Electron preload script</a> <code>preload.js</code>:</p>
+
+<pre><code>const { contextBridge, ipcRenderer } = require('electron');
+
+/** Define the markupAPI endpoints exposed via windowEvents in main.js */
+contextBridge.exposeInMainWorld('markupAPI', {
+    selectImage: () =&gt; { ipcRenderer.send('selectImage') },
+});</code></pre>
+
+<p>Meanwhile, in our Electron app’s main.js, when the app is ready, we set the app to respond to this new custom event, <code>selectImage</code>:</p>
+
+<pre><code>ipcMain.on('selectImage', handleSelectImage)</code></pre>
+
+<p>When the event is triggered, it will invoke our <code>handleSelectImage</code>. Finally(!!!) we can use Electron’s <code>showOpenDialog</code> to select the file with a native dialog and insert that image data into the MarkupEditor document:</p>
+
+<pre><code>async function handleSelectImage() {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [
+            { name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'gif'] }
+        ]
+    });
+
+    if (!canceled) {
+        let filePath = filePaths[0]
+        fs.readFile(filePath, 'base64', (err, data) =&gt; {
+            if (err) {
+                console.error('Error reading file:', err);
+                return;
+            }
+            let src = srcFromData(filePath, data)
+            if (!src) {
+                console.error('Unsupported media type')
+                return
+            }
+            let insertImageCommand = `MU.insertImage("${src}")`
+            getWebContents()?.executeJavaScript(insertImageCommand)
+                .then(()=&gt;{console.log("Done insertImage")})
+                .catch((error) =&gt; {
+                    console.error('Error inserting image:', error);
+                });
+        });
+    }
+}</code></pre>
+
+<p>We decided above to encode the image data from the selected file. We can then pass the data as the image src using <code>MU.insertImage</code>. But at this point, we are executing in the Electron main process, not in the web view which is part of Electron’s renderer process. We have to invoke <code>MU.insertImage</code> using the Electron WebContents and its <code>executeJavaScript</code> method, passing the command to invoke in the web view along with the <code>src</code> data we got from the selected file. <code>MU.insertImage</code> inserts the image at the selection point and updates the document.</p>
+
+<h4>Other Round-Trip Use Cases</h4>
+
+<p>The three “insert” options in the MarkupEditor toolbar - insert link, image, and table - all involve user input of some kind. Each comes with a dialog (or a drop-down menu in the case of a table) which may or may not be appropriate in your application context. Each can be replaced with your own code without modifying the MarkupEditor itself. Do this by setting <code>insertLink</code>, <code>insertImage</code>, and/or <code>insertTable</code> to <code>true</code> in BehaviorConfig. When you do this with <code>insertLink</code> for example, your MarkupDelegate’s <code>markupInsertLink</code> method will be called instead of presenting the default MarkupEditor LinkDialog. If you are using Electron, you can follow the exact flow discussed above for <code>selectImage</code>.</p>
+
+<h4>More Electron Resources</h4>
+
+<p>You can find the Electron-specific code discussed here in the source of the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor Desktop app</a>. It supports local images and saves their contents to file at “save time” alongside the document being edited. The desktop app was used to edit this entire Developer’s Guide.</p>
+
+<h4>The MessageHandler</h4>
+
+<p>In some environments - specifically iOS apps and VSCode - you will want to get document state change and other messages at a lower level than the MarkupDelegate. That level is the <em>MessageHandler</em>. The MessageHandler receives and processes <code>postMessage</code> as the document state changes, which it then passes-on to the MarkupDelegate (if the delegate exists and if the callback method exists in the delegate). The MarkupEditor includes a default MessageHandler that most people will probably not even be aware exists. The MarkupDelegate callbacks will be sufficient for most users.</p>
+
+<p>The MessageHandler responds to the same kind messages as the MarkupDelegate, but it sometimes does its own processing before informing the MarkupDelegate of the specific state change. For example, in the case of “ready”, the MessageHandler loads the initial HTML that was provided in the configuration or retrieves the contents of the filename, and then it loads that HTML into the document.</p>
+
+<pre><code>postMessage(message) {
+    let config = this.markupEditor.config
+    let delegate = config.delegate
+
+    switch (message) {
+        // The editor posts `ready` when all scripts are loaded, so we can set the HTML. If HTML
+        // is an empty document, then the config.placeholder will be shown.
+        case 'ready':
+            this.loadContents(config)
+            delegate?.markupReady && delegate?.markupReady(this.markupEditor)
+            return
+        ... more cases
+    }
+...
+}</code></pre>
+
+<p>By the time your <code>delegate</code> receives <code>markupReady</code>, the document has been loaded and is ready to edit. This approach hides the complexity of fetching the file contents and dealing with failures. It reduces your input simply to providing a file name and avoids the MarkupDelegate having to switch based on message types like the MessageHandler does.</p>
+
+<p>For environments like iOS or VSCode, you should set the MarkupEditor’s MessageHandler to one that is appropriate for the specific environment.</p>
+
+<h5>VSCode</h5>
+
+<p>In VSCode, you would set the MessageHandler like this:</p>
+
+<pre><code>// Assign vscode so we can send messages
+vscode = acquireVsCodeApi();
+
+// We want vscode to receive the callbacks from the MarkupEditor
+MU.setMessageHandler(vscode);</code></pre>
+
+<p>Now when the MarkupEditor executes its callbacks about document state changes (which it does in a VSCode WebviewPanel using <code>messageHandler?.postMessage(message)</code>), the <code>messageHandler</code> is <code>vscode</code>. When we created the VSCode WebviewPanel, we told it how to respond to message:</p>
+
+<pre><code>// Set up the message handler for messages coming from the webview
+webviewPanel.webview.onDidReceiveMessage(this.handleMessage.bind(this));</code></pre>
+
+<p>The messages in VSCode are JSON objects that include a <code>command</code> property which contains the message sent by the MarkupEditor callback.</p>
+
+<p>You can review the source code for the <a href="https://github.com/stevengharris/markupeditor-vs">MarkupEditor VSCode extension</a> project for more details. Its MarkupCoordinator does the setup of the WebviewPanel, loading the MarkupEditor and dealing with the callbacks.</p>
+
+<h5>UIKit and SwiftUI</h5>
+
+<p>In an iOS project, you don’t have to set the MessageHandler explicitly, because the MarkupEditor sets it to <code>window.webkit?.messageHandlers?.markup</code> by default. This handy bit of legacy to iOS (and Mac Catalyst) developers exists because of the legacy of the MarkupEditor emerging first for Swift developers looking for WYSIWYG editing functionality.</p>
+
+<p>In the MarkupEditor embedded in an iOS app’s WKWebView, when <code>messageHandler?.postMessage(message)</code> is invoked, the message is handled by the WKScriptMessageHandler. The WKScriptMessageHandler for the MarkupEditor in Swift is an instance of MarkupCoordinator, and messages are received in u<code>serContentController(_:didReceive:).</code></p>
+
+<p>You can review the source code and README for the <a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a> project for more details.</p>
+
+<h2>Customizing the Toolbar</h2>
 
 <p></p>
