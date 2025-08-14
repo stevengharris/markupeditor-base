@@ -96,7 +96,9 @@ const imagePlugin = new Plugin({
           srcMap.set(src, true)
           postMessage({ 'messageType': 'addedImage', 'src': src, 'divId': (selectedID ?? '') });
         }
-        stateChanged()
+          // We already notified of a state change, and this one causes callbackInput which 
+          // is used to track changes
+          //stateChanged();
       }
       return srcMap
     }

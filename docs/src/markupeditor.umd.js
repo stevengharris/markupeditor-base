@@ -818,9 +818,11 @@
   function insertInto(content, dist, insert, parent) {
       let { index, offset } = content.findIndex(dist), child = content.maybeChild(index);
       if (offset == dist || child.isText) {
+          if (parent && !parent.canReplace(index, index, insert))
+              return null;
           return content.cut(0, dist).append(insert).append(content.cut(dist));
       }
-      let inner = insertInto(child.content, dist - offset - 1, insert);
+      let inner = insertInto(child.content, dist - offset - 1, insert, child);
       return inner && content.replaceChild(index, child.copy(inner));
   }
   function replace($from, $to, slice) {
@@ -17162,7 +17164,7 @@
   const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', 'META', 'PARAM']; // Tags that are self-closing
 
   /**
-   * selectedID is the id of the contentEditable DIV containing the currently selected element.
+   * `selectedID` is the id of the contentEditable DIV containing the currently selected element.
    */
   let selectedID = null;
 
@@ -17412,6 +17414,13 @@
   const searcher = new Searcher();
   function searchIsActive() { return searcher.isActive }
 
+  /** changed tracks whether the document has changed since `setHTML` */
+  let changed = false;
+
+  function isChanged() {
+      return changed
+  }
+
   /**
    * Handle pressing Enter.
    * 
@@ -17531,6 +17540,7 @@
    * callback means the change happened in the 'editor' div.
    */
   function callbackInput() {
+      changed = true;
       _callback('input' + (selectedID ?? ''));
   }
   /**
@@ -17982,6 +17992,8 @@
       // But always set placeholder in the end so it will appear when the doc is empty
       placeholderText = _placeholderText;
       if (focusAfterLoad) view.focus();
+      // Reset change tracking
+      changed = false;
   }
   /**
    * Internal value of placeholder text
@@ -22667,7 +22679,9 @@
             srcMap.set(src, true);
             postMessage({ 'messageType': 'addedImage', 'src': src, 'divId': (selectedID ?? '') });
           }
-          stateChanged();
+            // We already notified of a state change, and this one causes callbackInput which 
+            // is used to track changes
+            //stateChanged();
         }
         return srcMap
       }
@@ -23208,6 +23222,7 @@
   exports.insertImage = insertImage;
   exports.insertLink = insertLink;
   exports.insertTable = insertTable;
+  exports.isChanged = isChanged;
   exports.loadUserFiles = loadUserFiles;
   exports.modifyImage = modifyImage;
   exports.outdent = outdent;

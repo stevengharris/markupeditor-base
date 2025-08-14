@@ -615,7 +615,7 @@ const _minimalStyleTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PR
 const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', 'META', 'PARAM'] // Tags that are self-closing
 
 /**
- * selectedID is the id of the contentEditable DIV containing the currently selected element.
+ * `selectedID` is the id of the contentEditable DIV containing the currently selected element.
  */
 export let selectedID = null;
 
@@ -871,6 +871,13 @@ class Searcher {
 const searcher = new Searcher();
 export function searchIsActive() { return searcher.isActive }
 
+/** changed tracks whether the document has changed since `setHTML` */
+let changed = false;
+
+export function isChanged() {
+    return changed
+}
+
 /**
  * Handle pressing Enter.
  * 
@@ -996,6 +1003,7 @@ function _callback(message) {
  * callback means the change happened in the 'editor' div.
  */
 export function callbackInput() {
+    changed = true;
     _callback('input' + (selectedID ?? ''))
 };
 
@@ -1475,6 +1483,8 @@ export function setHTML(contents, focusAfterLoad=true, base) {
     // But always set placeholder in the end so it will appear when the doc is empty
     placeholderText = _placeholderText;
     if (focusAfterLoad) view.focus();
+    // Reset change tracking
+    changed = false;
 };
 
 /**
