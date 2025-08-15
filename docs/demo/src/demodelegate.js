@@ -10,6 +10,15 @@ class DemoDelegate {
 
     /** Other messages the delegate could receive and act on... */
     /*
+
+    markupInsertLink(state, dispatch, view) {
+        console.log("Insert the link using your own dialog")
+    }
+
+    markupInsertImage(state, dispatch, view) {
+        console.log("Insert the image using your own dialog")
+    }
+
     markupUpdateHeight(height, editor) {
         console.log('DemoDelegate received updateHeight')
     }

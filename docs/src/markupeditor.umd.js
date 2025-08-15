@@ -20648,7 +20648,15 @@
         title: 'Insert/edit link' + keyString('link', keymap),
         icon: icons.link
       };
-      this.command = this.openLinkDialog.bind(this);
+
+      // If `behavior.insertLink` is true, the LinkItem just invokes the delegate's 
+      // `markupInsertLink` method, passing the `state`, `dispatch`, and `view` like any 
+      // other command. Otherwise, we use the default dialog.
+      if ((config.behavior.insertLink) && (config.delegate?.markupInsertLink)) {
+        this.command = config.delegate.markupInsertLink;
+      } else {
+        this.command = this.openLinkDialog.bind(this);
+      }
       this.item = cmdItem(this.command, options);
       this.dialog = null;
       this.selectionDiv = null;
@@ -20974,10 +20982,19 @@
       let options = {
         enable: () => { return true }, // Always enabled because it is presented modally
         active: (state) => { return getImageAttributes(state).src  },
-        title: 'Insert/edit image' + keyString('image', this.config.keymap),
+        title: 'Insert/edit image' + keyString('image', config.keymap),
         icon: icons.image
       };
-      this.command = this.openImageDialog.bind(this);
+
+      // If `behavior.insertImage` is true, the ImageItem just invokes the delegate's 
+      // `markupInsertImage` method, passing the `state`, `dispatch`, and `view` like any 
+      // other command. Otherwise, we use the default dialog.
+      if ((config.behavior.insertImage) && (config.delegate?.markupInsertImage)) {
+        this.command = config.delegate.markupInsertImage;
+      } else {
+        this.command = this.openImageDialog.bind(this);
+      }
+
       this.item = cmdItem(this.command, options);
       this.dialog = null;
       this.selectionDiv = null;
@@ -22959,7 +22976,6 @@
           "selectImage": false,
           "insertLink": false,
           "insertImage": false,
-          "insertTable": false,
       }
 
       static standard() { 
