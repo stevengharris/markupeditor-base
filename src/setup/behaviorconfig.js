@@ -20,7 +20,6 @@ export class BehaviorConfig {
         "selectImage": false,
         "insertLink": false,
         "insertImage": false,
-        "insertTable": false,
     }
 
     static standard() { 
