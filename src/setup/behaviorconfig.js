@@ -15,8 +15,22 @@
  */
 export class BehaviorConfig {
 
-    static standard() { return {"selectImage": false} }
+    static all = {
+        "focusAfterLoad": true,
+        "selectImage": false,
+        "insertLink": false,
+        "insertImage": false,
+        "insertTable": false,
+    }
 
-    static desktop() { return {"selectImage": true} }
+    static standard() { 
+        return this.all
+    }
+
+    static desktop() { 
+        let desktop = this.all
+        desktop.selectImage = true
+        return desktop
+    }
 
 }

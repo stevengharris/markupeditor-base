@@ -137,7 +137,7 @@ export class MessageHandler {
     loadContents(config) {
         let filename = config.filename;
         let base = config.base;
-        let focusAfterLoad = config.focusAfterLoad;
+        let focusAfterLoad = config.behavior.focusAfterLoad;
         if (filename) {
             fetch(filename)
                 .then((response) => response.text())
