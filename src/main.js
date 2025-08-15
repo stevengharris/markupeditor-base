@@ -85,7 +85,7 @@ import {
   renderDropdownItems,
 } from "./setup/menu.js"
 
-import {MenuConfig} from "./setup/menuconfig.js"
+import {ToolbarConfig} from "./setup/toolbarconfig.js"
 import {KeymapConfig} from "./setup/keymapconfig.js"
 import {BehaviorConfig} from "./setup/behaviorconfig.js"
 
@@ -175,7 +175,7 @@ export {
   prependToolbar, 
   appendToolbar,
   // Config access
-  MenuConfig,
+  ToolbarConfig,
   KeymapConfig,
   BehaviorConfig,
 }
@@ -189,7 +189,7 @@ class MarkupEditor {
 
     // Make sure config always contains menu, keymap, and behavior
     this.config = config ?? {}
-    if (!this.config.menu) this.config.menu = MenuConfig.standard()
+    if (!this.config.toolbar) this.config.toolbar = ToolbarConfig.standard()
     if (!this.config.keymap) this.config.keymap = KeymapConfig.standard()
     if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard()
 

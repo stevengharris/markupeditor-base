@@ -1408,7 +1408,7 @@ class ParagraphStyleItem {
 export function buildMenuItems(basePrefix, config, schema) {
   prefix = basePrefix;
   let itemGroups = [];
-  let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.menu.visibility;
+  let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.toolbar.visibility;
   if (correctionBar) itemGroups.push(correctionBarItems(config));
   if (insertBar) itemGroups.push(insertBarItems(config, schema));
   if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
@@ -1570,7 +1570,7 @@ function redoItem(options) {
  */
 function insertBarItems(config, schema) {
   let items = [];
-  let { link, image, table } = config.menu.insertBar;
+  let { link, image, table } = config.toolbar.insertBar;
   if (link) items.push(new LinkItem(config))
   if (image) items.push(new ImageItem(config))
   if (table) items.push(tableMenuItems(config))
@@ -1579,7 +1579,7 @@ function insertBarItems(config, schema) {
 
 function tableMenuItems(config, schema) {
   let items = []
-  let { header, border } = config.menu.tableMenu;
+  let { header, border } = config.toolbar.tableMenu;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))
   let addItems = []
   addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}))
@@ -1657,7 +1657,7 @@ function tableBorderItem(command, options) {
 function styleBarItems(config, schema) {
   let keymap = config.keymap
   let items = []
-  let { list, dent } = config.menu.styleBar
+  let { list, dent } = config.toolbar.styleBar
   if (list) {
     let bullet = toggleListItem(
       schema,
@@ -1718,13 +1718,13 @@ function outdentItem(options) {
 /**
  * Return the array of formatting MenuItems that should show per the config.
  * 
- * @param {Object} config   The MarkupEditor.config with boolean values in config.menu.formatBar.
+ * @param {Object} config   The MarkupEditor.config with boolean values in config.toolbar.formatBar.
  * @returns [MenuItem]      The array of MenuItems that show as passed in `config`
  */
 function formatItems(config, schema) {
   let keymap = config.keymap;
   let items = []
-  let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.menu.formatBar;
+  let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.toolbar.formatBar;
   if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }))
   if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic' + keyString('italic', keymap), icon: icons.em }))
   if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline' + keyString('underline', keymap), icon: icons.u }))
@@ -1749,12 +1749,13 @@ function formatItem(markType, markName, options) {
 /**
  * Return the Dropdown containing the styling MenuItems that should show per the config.
  * 
- * @param {*} menuConfig  The menuConfig that is passed-in, with boolean values in menuConfig.styleMenu.
- * @returns [Dropdown]    The array of MenuItems that show as passed in `config`
+ * @param {Object}  config          The MarkupEditor.config.
+ * @param {Schema}  schema          The schema that holds node and mark types.
+ * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
  */
 function styleMenuItems(config, schema) {
   let items = []
-  let { p, h1, h2, h3, h4, h5, h6, pre } = config.menu.styleMenu;
+  let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
   if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p }))
   if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, attrs: { level: 1 }}))
   if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, attrs: { level: 2 }}))

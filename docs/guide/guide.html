@@ -148,7 +148,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <ul>
     <li>
-        <p><code>MenuConfig</code> specifies whether the toolbar itself is visible, which sub-toolbars/dropdowns are visible, and which items are included in each.</p>
+        <p><code>ToolbarConfig</code> specifies whether the toolbar itself is visible, which sub-toolbars/dropdowns are visible, and which items are included in each.</p>
     </li>
     <li>
         <p><code>KeymapConfig</code> specifies how editing actions map to key combos (aka hotkeys).</p>
@@ -158,19 +158,19 @@ Server listening at http://localhost:3000</code></pre>
     </li>
 </ul>
 
-<p>You can view the full set of options in each configuration class in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Each config provides a <code>standard()</code> static function that returns the default configuration when you don’t specify a configuration. Note that <code>MenuConfig</code> is independent of <code>KeymapConfig</code> because, for example, you may not want to display undo and redo buttons in the toolbar, but you <em>will</em> want to map them to hotkeys like <code>Cmd+S</code> and <code>Shift+Cmd+S</code> (the default in both cases).</p>
+<p>You can view the full set of options in each configuration class in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Each config provides a <code>standard()</code> static function that returns the default configuration when you don’t specify a configuration. Note that <code>ToolbarConfig</code> is independent of <code>KeymapConfig</code> because, for example, you may not want to display undo and redo buttons in the toolbar, but you <em>will</em> want to map them to hotkeys like <code>Cmd+S</code> and <code>Shift+Cmd+S</code> (the default in both cases).</p>
 
 <p>A simple way to customize configuration is to use one of the pre-defined static methods to get a config object back. You can then modify that config object as needed. Going all the way back to our “Hello, world!” example, we could add the undo/redo buttons in by making the correction sub-toolbar visible, turn off the ability for users to insert tables, and we could change the hotkey used for adding a link:</p>
 
 <pre><code>&lt;script&gt;
-    let menuConfig = MU.MenuConfig.standard(true)     // The standard toolbar but with undo/redo showing
-    menuConfig.insertBar.table = false;               // Turn off table insert
-    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
-    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
+    let toolbarConfig = MU.ToolbarConfig.standard(true)   // The standard toolbar but with undo/redo showing
+    toolbarConfig.insertBar.table = false;                // Turn off table insert
+    let keymapConfig = MU.KeymapConfig.standard();        // Grab the standard keymap config as a baseline
+    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];             // Use Control+L instead of Command+k
     new MU.MarkupEditor(
         document.querySelector('#editor'), {
             html: '&lt;h1&gt;Hello, world!&lt;/h1&gt;',
-            menu: menuConfig,
+            toolbar: toolbarConfig,
             keymap: keymapConfig
         }
     )

@@ -1,5 +1,5 @@
 /**
- * `MenuConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
+ * `ToolbarConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
  * to GitHub flavored markdown. It can be overridden by passing it a new config when instantiating
  * the MarkupEditor. You can use the pre-defined static methods like `full` or customize what they 
  * return. The predefined statics each allow you to turn on or off the `correctionBar` visibility.
@@ -8,20 +8,20 @@
  * 
  * To customize the menu bar, for example, in your index.html:
  * 
- *    let menuConfig = MU.MenuConfig.full(true);    // Grab the full menu bar, including correction, as a baseline
- *    menuConfig.insertBar.table = false;           // Turn off table insert
+ *    let toolbarConfig = MU.ToolbarConfig.full(true);  // Grab the full toolbar, including correction, as a baseline
+ *    toolbarConfig.insertBar.table = false;               // Turn off table insert
  *    const markupEditor = new MU.MarkupEditor(
  *      document.querySelector('#editor'),
  *      {
  *        html: '<h1>Hello, world!</h1>',
- *        menu: menuConfig,
+ *        toolbar: toolbarConfig,
  *      }
  *    )
  *    
  * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
  * within a toolbar or menu using the settings specific to that toolbar or menu.
  */
-export class MenuConfig {
+export class ToolbarConfig {
 
   static all = {
     "visibility": {             // Control the visibility of toolbars, etc

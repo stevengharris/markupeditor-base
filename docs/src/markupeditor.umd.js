@@ -21522,7 +21522,7 @@
   function buildMenuItems(basePrefix, config, schema) {
     prefix = basePrefix;
     let itemGroups = [];
-    let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.menu.visibility;
+    let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.toolbar.visibility;
     if (correctionBar) itemGroups.push(correctionBarItems(config));
     if (insertBar) itemGroups.push(insertBarItems(config));
     if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
@@ -21669,7 +21669,7 @@
    */
   function insertBarItems(config, schema) {
     let items = [];
-    let { link, image, table } = config.menu.insertBar;
+    let { link, image, table } = config.toolbar.insertBar;
     if (link) items.push(new LinkItem(config));
     if (image) items.push(new ImageItem(config));
     if (table) items.push(tableMenuItems(config));
@@ -21678,7 +21678,7 @@
 
   function tableMenuItems(config, schema) {
     let items = [];
-    let { header, border } = config.menu.tableMenu;
+    let { header, border } = config.toolbar.tableMenu;
     items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}));
     let addItems = [];
     addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}));
@@ -21756,7 +21756,7 @@
   function styleBarItems(config, schema) {
     let keymap = config.keymap;
     let items = [];
-    let { list, dent } = config.menu.styleBar;
+    let { list, dent } = config.toolbar.styleBar;
     if (list) {
       let bullet = toggleListItem(
         schema,
@@ -21817,13 +21817,13 @@
   /**
    * Return the array of formatting MenuItems that should show per the config.
    * 
-   * @param {Object} config   The MarkupEditor.config with boolean values in config.menu.formatBar.
+   * @param {Object} config   The MarkupEditor.config with boolean values in config.toolbar.formatBar.
    * @returns [MenuItem]      The array of MenuItems that show as passed in `config`
    */
   function formatItems(config, schema) {
     let keymap = config.keymap;
     let items = [];
-    let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.menu.formatBar;
+    let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.toolbar.formatBar;
     if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }));
     if (italic) items.push(formatItem(schema.marks.em, 'I', { title: 'Toggle italic' + keyString('italic', keymap), icon: icons.em }));
     if (underline) items.push(formatItem(schema.marks.u, 'U', { title: 'Toggle underline' + keyString('underline', keymap), icon: icons.u }));
@@ -21848,12 +21848,13 @@
   /**
    * Return the Dropdown containing the styling MenuItems that should show per the config.
    * 
-   * @param {*} menuConfig  The menuConfig that is passed-in, with boolean values in menuConfig.styleMenu.
-   * @returns [Dropdown]    The array of MenuItems that show as passed in `config`
+   * @param {Object}  config          The MarkupEditor.config.
+   * @param {Schema}  schema          The schema that holds node and mark types.
+   * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
    */
   function styleMenuItems(config, schema) {
     let items = [];
-    let { p, h1, h2, h3, h4, h5, h6, pre } = config.menu.styleMenu;
+    let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
     if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p }));
     if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, attrs: { level: 1 }}));
     if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, attrs: { level: 2 }}));
@@ -22444,18 +22445,18 @@
 
       // Embed the toolbar and editorView in a wrapper.
       this.wrapper = crelt("div", {class: this.prefix + "-wrapper"});
-      this.menu = this.wrapper.appendChild(crelt("div", {class: this.prefix, id: this.prefix}));
+      this.toolbar = this.wrapper.appendChild(crelt("div", {class: this.prefix, id: this.prefix}));
       // Since the menu adjusts to fit using a `MoreItem` for contents that doesn't fit, 
       // we need to refresh how it is rendered when resizing takes place.
       window.addEventListener('resize', ()=>{ this.refresh(); });
-      this.menu.className = this.prefix;
+      this.toolbar.className = this.prefix;
       if (editorView.dom.parentNode)
         editorView.dom.parentNode.replaceChild(this.wrapper, editorView.dom);
       this.wrapper.appendChild(editorView.dom);
 
       let {dom, update} = renderGrouped(editorView, this.content);
       this.contentUpdate = update;
-      this.menu.appendChild(dom);
+      this.toolbar.appendChild(dom);
       this.update();
     }
 
@@ -22464,9 +22465,9 @@
         this.refreshFit();
         this.root = this.editorView.root;
       }
-      // Returning this.fitMenu() will return this.contentUpdate(this.editorView.state) for 
+      // Returning this.fitToolbar() will return this.contentUpdate(this.editorView.state) for 
       // the menu that fits in the width.
-      return this.fitMenu();
+      return this.fitToolbar();
     }
 
     /**
@@ -22487,38 +22488,38 @@
       this.refreshFit();
     }
 
-    /** Refresh the menu, wrapping at the item at `wrapAtIndex` */
+    /** Refresh the toolbar, wrapping at the item at `wrapAtIndex` */
     refreshFit(wrapAtIndex) {
       let { dom, update } = renderGroupedFit(this.editorView, this.content, wrapAtIndex);
       this.contentUpdate = update;
       // dom is an HTMLDocumentFragment and needs to replace all of menu
-      this.menu.innerHTML = '';
-      this.menu.appendChild(dom);
+      this.toolbar.innerHTML = '';
+      this.toolbar.appendChild(dom);
     }
 
     /** 
-     * Refresh the menu with all items and then fit it. 
-     * We need to do this because when resize makes the menu wider, we don't want to keep 
-     * the same `MoreItem` in place if more fits in the menu itself.
+     * Refresh the toolbar with all items and then fit it. 
+     * We need to do this because when resize makes the toolbar wider, we don't want to keep 
+     * the same `MoreItem` in place if more fits in the toolbar itself.
      */
     refresh() {
       let { dom, update } = renderGrouped(this.editorView, this.content);
       this.contentUpdate = update;
-      this.menu.innerHTML = '';
-      this.menu.appendChild(dom);
-      this.fitMenu();
+      this.toolbar.innerHTML = '';
+      this.toolbar.appendChild(dom);
+      this.fitToolbar();
     }
 
     /**
-     * Fit the items in the menu into the menu width,
+     * Fit the items in the toolbar into the toolbar width,
      * 
-     * If the menu as currently rendered does not fit in the width, then execute `refreshFit`,
+     * If the toolbar as currently rendered does not fit in the width, then execute `refreshFit`,
      * identifying the item to be replaced by a "more" button. That button will be a MoreItem
      * that toggles a sub-toolbar containing the items starting with the one at wrapAtIndex.
      */
-    fitMenu() {
-      let items = this.menu.children;
-      let menuRect = this.menu.getBoundingClientRect();
+    fitToolbar() {
+      let items = this.toolbar.children;
+      let menuRect = this.toolbar.getBoundingClientRect();
       let menuRight = menuRect.right;
       let separatorHTML = separator().outerHTML;
       let wrapAtIndex = -1; // Track the last non-separator (i.e., content) item that was fully in-width
@@ -22749,7 +22750,7 @@
     ];
 
     // Only show the toolbar if the config indicates it is visible
-    if (config.menu.visibility.toolbar) {
+    if (config.toolbar.visibility.toolbar) {
       let content = buildMenuItems(prefix, config, schema);
       plugins.push(toolbar(prefix, content));
     }
@@ -22775,7 +22776,7 @@
   }
 
   /**
-   * `MenuConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
+   * `ToolbarConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
    * to GitHub flavored markdown. It can be overridden by passing it a new config when instantiating
    * the MarkupEditor. You can use the pre-defined static methods like `full` or customize what they 
    * return. The predefined statics each allow you to turn on or off the `correctionBar` visibility.
@@ -22784,20 +22785,20 @@
    * 
    * To customize the menu bar, for example, in your index.html:
    * 
-   *    let menuConfig = MU.MenuConfig.full(true);    // Grab the full menu bar, including correction, as a baseline
-   *    menuConfig.insertBar.table = false;           // Turn off table insert
+   *    let toolbarConfig = MU.ToolbarConfig.full(true);  // Grab the full toolbar, including correction, as a baseline
+   *    toolbarConfig.insertBar.table = false;               // Turn off table insert
    *    const markupEditor = new MU.MarkupEditor(
    *      document.querySelector('#editor'),
    *      {
    *        html: '<h1>Hello, world!</h1>',
-   *        menu: menuConfig,
+   *        toolbar: toolbarConfig,
    *      }
    *    )
    *    
    * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
    * within a toolbar or menu using the settings specific to that toolbar or menu.
    */
-  class MenuConfig {
+  class ToolbarConfig {
 
     static all = {
       "visibility": {             // Control the visibility of toolbars, etc
@@ -23124,7 +23125,7 @@
 
       // Make sure config always contains menu, keymap, and behavior
       this.config = config ?? {};
-      if (!this.config.menu) this.config.menu = MenuConfig.standard();
+      if (!this.config.toolbar) this.config.toolbar = ToolbarConfig.standard();
       if (!this.config.keymap) this.config.keymap = KeymapConfig.standard();
       if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard();
 
@@ -23192,8 +23193,8 @@
   exports.DropdownSubmenu = DropdownSubmenu;
   exports.KeymapConfig = KeymapConfig;
   exports.MarkupEditor = MarkupEditor;
-  exports.MenuConfig = MenuConfig;
   exports.MenuItem = MenuItem;
+  exports.ToolbarConfig = ToolbarConfig;
   exports.addButton = addButton;
   exports.addCol = addCol;
   exports.addDiv = addDiv;

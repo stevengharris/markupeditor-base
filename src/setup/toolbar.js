@@ -22,18 +22,18 @@ class ToolbarView {
 
     // Embed the toolbar and editorView in a wrapper.
     this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
-    this.menu = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
+    this.toolbar = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
     // Since the menu adjusts to fit using a `MoreItem` for contents that doesn't fit, 
     // we need to refresh how it is rendered when resizing takes place.
     window.addEventListener('resize', ()=>{ this.refresh() })
-    this.menu.className = this.prefix
+    this.toolbar.className = this.prefix
     if (editorView.dom.parentNode)
       editorView.dom.parentNode.replaceChild(this.wrapper, editorView.dom)
     this.wrapper.appendChild(editorView.dom)
 
     let {dom, update} = renderGrouped(editorView, this.content);
     this.contentUpdate = update;
-    this.menu.appendChild(dom)
+    this.toolbar.appendChild(dom)
     this.update();
   }
 
@@ -42,9 +42,9 @@ class ToolbarView {
       this.refreshFit()
       this.root = this.editorView.root;
     }
-    // Returning this.fitMenu() will return this.contentUpdate(this.editorView.state) for 
+    // Returning this.fitToolbar() will return this.contentUpdate(this.editorView.state) for 
     // the menu that fits in the width.
-    return this.fitMenu();
+    return this.fitToolbar();
   }
 
   /**
@@ -65,38 +65,38 @@ class ToolbarView {
     this.refreshFit()
   }
 
-  /** Refresh the menu, wrapping at the item at `wrapAtIndex` */
+  /** Refresh the toolbar, wrapping at the item at `wrapAtIndex` */
   refreshFit(wrapAtIndex) {
     let { dom, update } = renderGroupedFit(this.editorView, this.content, wrapAtIndex);
     this.contentUpdate = update;
     // dom is an HTMLDocumentFragment and needs to replace all of menu
-    this.menu.innerHTML = '';
-    this.menu.appendChild(dom);
+    this.toolbar.innerHTML = '';
+    this.toolbar.appendChild(dom);
   }
 
   /** 
-   * Refresh the menu with all items and then fit it. 
-   * We need to do this because when resize makes the menu wider, we don't want to keep 
-   * the same `MoreItem` in place if more fits in the menu itself.
+   * Refresh the toolbar with all items and then fit it. 
+   * We need to do this because when resize makes the toolbar wider, we don't want to keep 
+   * the same `MoreItem` in place if more fits in the toolbar itself.
    */
   refresh() {
     let { dom, update } = renderGrouped(this.editorView, this.content);
     this.contentUpdate = update;
-    this.menu.innerHTML = '';
-    this.menu.appendChild(dom);
-    this.fitMenu()
+    this.toolbar.innerHTML = '';
+    this.toolbar.appendChild(dom);
+    this.fitToolbar()
   }
 
   /**
-   * Fit the items in the menu into the menu width,
+   * Fit the items in the toolbar into the toolbar width,
    * 
-   * If the menu as currently rendered does not fit in the width, then execute `refreshFit`,
+   * If the toolbar as currently rendered does not fit in the width, then execute `refreshFit`,
    * identifying the item to be replaced by a "more" button. That button will be a MoreItem
    * that toggles a sub-toolbar containing the items starting with the one at wrapAtIndex.
    */
-  fitMenu() {
-    let items = this.menu.children;
-    let menuRect = this.menu.getBoundingClientRect();
+  fitToolbar() {
+    let items = this.toolbar.children;
+    let menuRect = this.toolbar.getBoundingClientRect();
     let menuRight = menuRect.right;
     let separatorHTML = separator().outerHTML
     let wrapAtIndex = -1; // Track the last non-separator (i.e., content) item that was fully in-width

@@ -166,7 +166,7 @@ export function markupSetup(config, schema) {
   ]
 
   // Only show the toolbar if the config indicates it is visible
-  if (config.menu.visibility.toolbar) {
+  if (config.toolbar.visibility.toolbar) {
     let content = buildMenuItems(prefix, config, schema);
     plugins.push(toolbar(prefix, content));
   }
