@@ -161,8 +161,9 @@ export {
   addHeader,
   deleteTableArea,
   borderTable,
-  // Allow access to the EditorView aka MarkupEditor
+  // Allow access to the MarkupEditor class and the instance config
   MarkupEditor,
+  markupEditorConfig,
   // Helpers to create custom toolbar items
   MenuItem, 
   Dropdown, 
@@ -180,6 +181,8 @@ export {
   BehaviorConfig,
 }
 
+let markupEditorConfig;
+
 /**
  * The MarkupEditor holds the properly set-up EditorView and any additional configuration.
  */
@@ -192,6 +195,7 @@ class MarkupEditor {
     if (!this.config.toolbar) this.config.toolbar = ToolbarConfig.standard()
     if (!this.config.keymap) this.config.keymap = KeymapConfig.standard()
     if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard()
+    markupEditorConfig = this.config;
 
     this.html = this.config.html ?? emptyHTML()
     setMessageHandler(this.config.messageHandler ?? new MessageHandler(this));
