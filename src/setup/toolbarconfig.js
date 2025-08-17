@@ -31,13 +31,12 @@ export class ToolbarConfig {
       "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
       "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
       "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
-      "tableMenu": true,        // Whether the table menu (create, add, delete, border) is visible
       "search": true,           // Whether the search menu item (hide/show search bar) is visible
     },
     "insertBar": {
       "link": true,             // Whether the link menu item is visible
       "image": true,            // Whether the image menu item is visible
-      "table": true,            // Whether the table menu is visible
+      "tableMenu": true,        // Whether the table menu is visible
     },
     "formatBar": {
       "bold": true,             // Whether the bold menu item is visible
