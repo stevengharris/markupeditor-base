@@ -1,7 +1,7 @@
 import crel from "crelt"
 import {Plugin} from "prosemirror-state"
-import {renderGrouped, renderGroupedFit, separator} from  "./menu"
 import {prefix} from "./utilities";
+import {renderGrouped, renderGroupedFit, separator} from "./menuitems"
 
 export let toolbarView;
 

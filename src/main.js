@@ -79,10 +79,13 @@ import {
 import { 
   Dropdown, 
   DropdownSubmenu, 
-  renderGrouped, 
   renderDropdownItems,
 } from "./setup/menu.js"
-import { MenuItem, cmdItem } from "./setup/menuitems.js"
+import { 
+  MenuItem, 
+  cmdItem,
+  renderGrouped,
+ } from "./setup/menuitems.js"
 
 import {ToolbarConfig} from "./setup/toolbarconfig.js"
 import {KeymapConfig} from "./setup/keymapconfig.js"
@@ -98,7 +101,10 @@ import {
 import {MessageHandler} from "./messagehandler.js"
 import {toolbarView} from "./setup/toolbar.js"
 
-import { getMarkupEditorConfig, setMarkupEditorConfig } from "./setup/utilities.js"
+import { 
+  getMarkupEditorConfig, 
+  setMarkupEditorConfig,
+ } from "./setup/utilities.js"
 
 /**
  * The public MarkupEditor API callable as "MU.<function name>"
