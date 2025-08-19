@@ -3259,36 +3259,56 @@ export function insertTable(rows, cols) {
 export function insertTableCommand(rows, cols) {
     const commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
-        const selection = state.selection;
         const nodeTypes = state.schema.nodes;
-        let firstP;
         const table_rows = []
         for (let j = 0; j < rows; j++) {
             const table_cells = [];
             for (let i = 0; i < cols; i++) {
                 const paragraph = state.schema.node('paragraph');
-                if ((i == 0) && (j == 0)) firstP = paragraph;
                 table_cells.push(nodeTypes.table_cell.create(null, paragraph));
             }
             table_rows.push(nodeTypes.table_row.create(null, table_cells));
         }
-        const table = nodeTypes.table.createChecked(null, table_rows);
+        const table = nodeTypes.table.create(null, table_rows);
         if (!table) return false;     // Something went wrong, like we tried to insert it at a disallowed spot
-
         if (dispatch) {
             // Replace the existing selection and track the transaction
             let transaction = view.state.tr.replaceSelectionWith(table, false);
-            // Locate the first paragraph position in the transaction's doc
+            // Locate the table we just inserted in the transaction's doc.
+            // Note that because pPos can be 0 or 1, we really need to check 
+            // explicityly on undefined to terminate nodesBetween traversal.
             let pPos;
-            transaction.doc.nodesBetween(selection.from, selection.from + table.nodeSize, (node, pos) => {
-                if (node === firstP) {
+            let from = transaction.selection.from;
+            let to = transaction.selection.to;
+            transaction.doc.nodesBetween(from, to, (node, pos) => {
+                if (node === table) {
                     pPos = pos;
-                    return false;
                 };
-                return true;
+                return (pPos == undefined);    // Keep going if pPos hasn't been defined
             });
-            // Set the selection in the first cell, apply it to the state and  the view
-            const textSelection = TextSelection.near(transaction.doc.resolve(pPos))
+            // After we replace the selection with the table, you would think that 
+            // the transaction.selection.from and to would encompass the table, but 
+            // they do not necessarily. IOW if you do transaction.doc.nodesBetween 
+            // on from and to, you should find the table, right? Not always, so if 
+            // we didn't emerge with pPos defined, just look for the thing across 
+            // the entire doc as a backup.
+            if (pPos == undefined) {
+                transaction.doc.nodesBetween(0, transaction.doc.content.size, (node, pos) => {
+                    if (node === table) {
+                        pPos = pos;
+                    };
+                    return (pPos == undefined);    // Keep going if pPos hasn't been defined
+                });
+            }
+            // Set the selection in the first cell, apply it to the state and the view.
+            // We have to special-case for empty documents to get selection in the 1st cell.
+            let empty = (view.state.doc.textContent.length == 0)
+            let textSelection;
+            if (empty) {
+                textSelection = TextSelection.near(transaction.doc.resolve(pPos), -1)
+            } else {
+                textSelection = TextSelection.near(transaction.doc.resolve(pPos))
+            }
             transaction = transaction.setSelection(textSelection);
             state = state.apply(transaction);
             view.updateState(state);
