@@ -10,8 +10,25 @@ import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
-
-import {placeholderText, postMessage, selectedID, resetSelectedID, stateChanged, searchIsActive, setPlaceholder} from "../markup"
+import {setPrefix, getMarkupEditorConfig} from "./utilities.js"
+import {LinkItem, SearchItem} from "./menuitems.js"
+import {
+  placeholderText, 
+  postMessage, 
+  selectedID, 
+  searchIsActive, 
+  setPlaceholder,
+  searchForCommand, 
+  cancelSearch, 
+  matchCase, 
+  matchCount, 
+  matchIndex,
+  getLinkAttributes, 
+  selectFullLink, 
+  getSelectionRect, 
+  insertLinkCommand, 
+  deleteLinkCommand,
+} from "../markup"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 
@@ -150,13 +167,28 @@ export function appendToolbar(menuItems) {
   toolbarView.append(items)
 }
 
+export function toggleSearch() {
+  let searchCommands = {searchForCommand, cancelSearch, matchCase, matchCount, matchIndex}
+  let searchItem = new SearchItem(getMarkupEditorConfig(), searchCommands)
+  // TODO: How to not rely on toolbarView being present
+  let view = toolbarView.editorView
+  searchItem.toggleSearch(view.state, view.dispatch, view)
+}
+
+export function openLinkDialog() {
+  let linkCommands = {getLinkAttributes, selectFullLink, getSelectionRect, insertLinkCommand, deleteLinkCommand}
+  let linkItem = new LinkItem(getMarkupEditorConfig(), linkCommands)
+  let view = toolbarView.editorView
+  linkItem.openLinkDialog(view.state, view.dispatch, view)
+}
+
 /**
  * Return an array of Plugins used for the MarkupEditor
  * @param {Schema} schema The schema used for the MarkupEditor
  * @returns 
  */
 export function markupSetup(config, schema) {
-  let prefix = "Markup"
+  setPrefix('Markup')
   let plugins = [
     buildInputRules(schema),
     keymap(buildKeymap(config, schema)),
@@ -167,8 +199,8 @@ export function markupSetup(config, schema) {
 
   // Only show the toolbar if the config indicates it is visible
   if (config.toolbar.visibility.toolbar) {
-    let content = buildMenuItems(prefix, config, schema);
-    plugins.push(toolbar(prefix, content));
+    let content = buildMenuItems(config, schema);
+    plugins.push(toolbar(content));
   }
 
   plugins.push(history())

@@ -1,0 +1,656 @@
+import crel from "crelt";
+import { icons, getIcon } from "./icons";
+import { 
+    prefix, 
+    setClass, 
+    translate, 
+    getToolbar, 
+    getWrapper, 
+    getToolbarMore, 
+    getSearchbar, 
+    addPromptShowing, 
+    removePromptShowing,
+    searchbarShowing, 
+    searchbarHidden 
+} from "./utilities";
+
+/**
+An icon or label that, when clicked, executes a command.
+*/
+export class MenuItem {
+
+  /**
+   * Create a menu item.
+   * 
+   * @param {*} spec The spec used to create this item.
+  */
+  constructor(spec) {
+    this.prefix = prefix + "-menuitem"
+    this.spec = spec;
+  }
+
+  /**
+  Renders the icon according to its [display
+  spec](https://prosemirror.net/docs/ref/#menu.MenuItemSpec.display), and adds an event handler which
+  executes the command when the representation is clicked.
+  */
+  render(view) {
+    let spec = this.spec;
+    let prefix = this.prefix;
+    let dom = spec.render ? spec.render(view)
+      : spec.icon ? getIcon(view.root, spec.icon)
+        : spec.label ? crel("div", null, translate(view, spec.label))
+          : null;
+    if (!dom)
+      throw new RangeError("MenuItem without icon or label property");
+    if (spec.title) {
+      const title = (typeof spec.title === "function" ? spec.title(view.state) : spec.title);
+      dom.setAttribute("title", translate(view, title));
+    }
+    if (spec.class)
+      dom.classList.add(spec.class);
+    if (spec.css)
+      dom.style.cssText += spec.css;
+    dom.addEventListener("mousedown", e => {
+      e.preventDefault();
+      if (!dom.classList.contains(prefix + "-disabled"))
+        spec.run(view.state, view.dispatch, view, e);
+    });
+
+    function update(state) {
+      if (spec.select) {
+        let selected = spec.select(state);
+        dom.style.display = selected ? "" : "none";
+        if (!selected)
+          return false;
+      }
+      let enabled = true;
+      if (spec.enable) {
+        enabled = spec.enable(state) || false;
+        setClass(dom, prefix + "-disabled", !enabled);
+      }
+      if (spec.active) {
+        let active = enabled && spec.active(state) || false;
+        setClass(dom, prefix + "-active", active);
+      }
+      return true;
+    }
+    return { dom, update };
+  }
+}
+
+/**
+ * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
+ */
+export class SearchItem {
+
+  constructor(config, commands) {
+    let keymap = config.keymap
+    this.commands = commands
+    let options = {
+      enable: (state) => { return true },
+      active: (state) => { return this.showing() },
+      title: 'Toggle search' + keyString('search', keymap),
+      icon: icons.search,
+      id: prefix + '-searchitem'
+    };
+    this.command = this.toggleSearch.bind(this);
+    this.item = cmdItem(this.command, options);
+    this.text = '';
+    this.caseSensitive = false;
+  }
+
+  showing() {
+    return getSearchbar() != null;
+  }
+
+  toggleSearch(state, dispatch, view) {
+    if (this.showing()) {
+      this.hideSearchbar()
+    } else {
+      this.showSearchbar(state, dispatch, view);
+    }
+    this.update && this.update(state)
+  }
+
+  hideSearchbar() {
+    let searchbar = getSearchbar();
+    searchbar.parentElement.removeChild(searchbar);
+    this.matchCaseDom = null;
+    this.matchCaseItem = null;
+    this.stopSearching();
+  }
+
+  stopSearching(focus=true) {
+    this.commands.cancelSearch();
+    this.setStatus();
+    if (focus) view.focus();
+  }
+
+  showSearchbar(state, dispatch, view) {
+    let toolbar = getToolbar();
+    if (!toolbar) return;
+    let input = crel('input', { type: 'search', placeholder: 'Search document...' });
+    input.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+      if (e.key === 'Enter') {
+        let direction = (e.shiftKey) ? 'backward' : 'forward';
+        if (direction == 'forward') {
+          this.searchForwardCommand(view.state, view.dispatch, view)
+        } else {
+          this.searchBackwardCommand(view.state, view.dispatch, view);
+        }
+      }
+    });
+    input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
+      this.text = e.target.value;
+      this.stopSearching(false);              // Stop searching but leave focus in the input field
+    });
+    let idClass = prefix + "-searchbar";
+    let searchbar = crel("div", { class: idClass, id: idClass }, input);
+    this.addSearchButtons(view, searchbar);
+    let beforeTarget = getToolbarMore() ? getToolbarMore().nextSibling : toolbar.nextSibling;
+    toolbar.parentElement.insertBefore(searchbar, beforeTarget);
+  }
+
+  setStatus() {
+    let count = this.commands.matchCount();
+    let index = this.commands.matchIndex();
+    if (this.status) this.status.innerHTML = this.statusString(count, index);
+  }
+
+  statusString(count, index) {
+    if (count == null) {
+      return "";
+    } else if (count == 0) {
+      return "No matches";
+    };
+    return `${index}/${count}`;
+  }
+
+  addSearchButtons(view, searchbar) {
+    
+    // Overlay the status (index/count) on the input field
+    this.status = crel("span", {class: prefix + "-searchbar-status"});
+
+    // The searchBackward and searchForward buttons don't need updating
+    let searchBackward = this.searchBackwardCommand.bind(this);
+    let searchBackwardItem = cmdItem(searchBackward, {title: "Search backward", icon: icons.searchBackward});
+    let searchBackwardDom = searchBackwardItem.render(view).dom;
+    let searchBackwardSpan = crel("span", {class: prefix + "-menuitem"}, searchBackwardDom);
+    let searchForward = this.searchForwardCommand.bind(this);
+    let searchForwardItem = cmdItem(searchForward, {title: "Search forward", icon: icons.searchForward});
+    let searchForwardDom = searchForwardItem.render(view).dom;
+    let searchForwardSpan = crel("span", {class: prefix + "-menuitem"}, searchForwardDom);
+    let separator = crel("span", {class: prefix + "-menuseparator"})
+
+    // The toggleCase button needs to indicate the state of `caseSensitive`. Because the MenuItems we use 
+    // in the SearchBar are not in a separate Plugin, and they are not part of the toolbar content, 
+    // we need to handle updating "manually" by tracking and replacing the MenuItem and the dom it 
+    // produces using its `render` method.
+    let toggleMatchCase = this.toggleMatchCaseCommand.bind(this);
+    this.matchCaseItem = cmdItem(
+      toggleMatchCase, {
+        title: "Match case", 
+        icon: icons.matchCase,
+        enable: () => {return true},
+        active: () => {return this.caseSensitive}
+      }
+    );
+    let {dom, update} = this.matchCaseItem.render(view);
+    this.matchCaseDom = dom;
+    let matchCaseSpan = crel("span", {class: prefix + "-menuitem"}, this.matchCaseDom);
+
+    // Add the divs holding the MenuItems
+    searchbar.appendChild(this.status)
+    searchbar.appendChild(searchBackwardSpan);
+    searchbar.appendChild(searchForwardSpan);
+    searchbar.appendChild(separator);
+    searchbar.appendChild(matchCaseSpan);
+
+    // Then update the matchCaseItem to indicate the current setting, which is held in this 
+    // SearchItem.
+    update(view.state)
+  }
+
+  searchForwardCommand(state, dispatch, view) {
+    let command = this.commands.searchForCommand(this.text, "forward");
+    command(state, dispatch, view);
+    this.scrollToSelection(view);
+    this.setStatus();
+  }
+
+  searchBackwardCommand(state, dispatch, view) {
+    let command = this.commands.searchForCommand(this.text, "backward");
+    command(state, dispatch, view);
+    this.scrollToSelection(view);
+    this.setStatus();
+  }
+
+  toggleMatchCaseCommand(state, dispatch, view) {
+    this.caseSensitive = !this.caseSensitive;
+    this.commands.matchCase(this.caseSensitive);
+    if (view) {
+      this.stopSearching(false);
+      let {dom, update} = this.matchCaseItem.render(view);
+      this.matchCaseDom.parentElement.replaceChild(dom, this.matchCaseDom);
+      this.matchCaseDom = dom;
+      update(state);
+    }
+  }
+  
+  /**
+   * Use the dom to scroll to the node at the selection. The scrollIntoView when setting the 
+   * selection in prosemirror-search findCommand doesn't work, perhaps because the selection 
+   * is set on state.doc instead of state.tr.doc. 
+   * 
+   * TODO: This method has some problems in that it can
+   * scroll to a paragraph, and then the next element will be in a bold section within the 
+   * paragraph, causing it to jump. It would be much better if the prosemirror-search 
+   * scrollIntoView worked properly.
+   * 
+   * @param {EditorView} view 
+   */
+  scrollToSelection(view) {
+    const { node } = view.domAtPos(view.state.selection.anchor);
+    // In case node is a Node not an Element
+    let element = (node instanceof Element) ? node : node.parentElement;
+    element?.scrollIntoView(false);
+  }
+
+  render(view) {
+    let {dom, update} = this.item.render(view);
+    this.update = update;
+    return {dom, update};
+  }
+
+}
+
+/**
+ * Return whether the selection in state is within a mark of type `markType`.
+ * @param {EditorState} state 
+ * @param {MarkType} type 
+ * @returns {boolean} True if the selection is within a mark of type `markType`
+ */
+export function markActive(state, type) {
+  let { from, $from, to, empty } = state.selection
+  if (empty) return type.isInSet(state.storedMarks || $from.marks())
+  else return state.doc.rangeHasMark(from, to, type)
+}
+
+/**
+ * Return a string intended for the user to see showing the first key mapping for `itemName`.
+ * @param {string} itemName           The name of the item in the keymap
+ * @param {[string : string]} keymap  The mapping between item names and hotkeys
+ * @returns string
+ */
+export function keyString(itemName, keymap) {
+  let keyString = keymap[itemName]
+  if (!keyString) return ''
+  if (keyString instanceof Array) keyString = keyString[0]  // Use the first if there are multiple
+  // Clean up to something more understandable
+  keyString = keyString.replaceAll("Mod", "Cmd")
+  keyString = keyString.replaceAll("-", "+")
+  return ' (' + keyString + ')'
+}
+
+/**
+ * Return a MenuItem that runs the command when selected.
+ * 
+ * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
+ * what `cmd(state)` returns unless otherwise specified in `options`.
+ * @param {Command}     cmd 
+ * @param {*} options   The spec for the MenuItem
+ * @returns {MenuItem}
+ */
+export function cmdItem(cmd, options) {
+  let passedOptions = {
+    label: options.title,
+    run: cmd
+  }
+  for (let prop in options) passedOptions[prop] = options[prop]
+  if ((!options.enable || options.enable === true) && !options.select)
+    passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
+
+  return new MenuItem(passedOptions)
+}
+
+/**
+ * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
+ * Requires commands={getLinkAttributes, selectFullLink, getSelectionRect, insertLinkCommand, deleteLinkCommand}
+ */
+export class LinkItem {
+
+  constructor(config, commands) {
+    let keymap = config.keymap
+    this.commands = commands
+    let options = {
+      enable: () => { return true }, // Always enabled because it is presented modally
+      active: (state) => { return markActive(state, state.schema.marks.link) },
+      title: 'Insert/edit link' + keyString('link', keymap),
+      icon: icons.link
+    };
+
+    // If `behavior.insertLink` is true, the LinkItem just invokes the delegate's 
+    // `markupInsertLink` method, passing the `state`, `dispatch`, and `view` like any 
+    // other command. Otherwise, we use the default dialog.
+    if ((config.behavior.insertLink) && (config.delegate?.markupInsertLink)) {
+      this.command = config.delegate.markupInsertLink
+    } else {
+      this.command = this.openLinkDialog.bind(this);
+    }
+    this.item = cmdItem(this.command, options);
+    this.dialog = null;
+    this.selectionDiv = null;
+  }
+
+  /**
+   * Command to open the link dialog and show it modally.
+   *
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
+  openLinkDialog(state, dispatch, view) {
+    this.createLinkDialog(view)
+    this.dialog.show();
+  }
+
+  /**
+   * Create the dialog element for adding/modifying links. Append it to the wrapper after the toolbar.
+   * 
+   * @param {EditorView} view 
+   */
+  createLinkDialog(view) {
+    this.href = this.commands.getLinkAttributes().href;   // href is what is linked-to, undefined if there is no link at selection
+
+    // Select the full link if the selection is in one, and then set selectionDivRect that surrounds it
+    this.commands.selectFullLink(view);
+    this.selectionDivRect = this.getSelectionDivRect()
+
+    // Show the selection, because the view is not focused, so it doesn't otherwise show up
+    this.setSelectionDiv();
+
+    // Create the dialog in the proper position
+    this.dialog = crel('dialog', { class: prefix + '-prompt', contenteditable: 'false' });
+    setClass(this.dialog, prefix + '-prompt-link', true);
+    this.setDialogLocation()
+
+    let title = crel('p', (this.href) ? 'Edit link' : 'Insert link');
+    this.dialog.appendChild(title)
+
+    this.setInputArea(view)
+    this.setButtons(view)
+    this.okUpdate(view.state);
+    this.cancelUpdate(view.state);
+    
+    let wrapper = getWrapper();
+    addPromptShowing();
+    wrapper.appendChild(this.dialog);
+
+    // Add an overlay so we can get a modal effect without using showModal
+    // showModal puts the dialog in the top-layer, so it slides over the toolbar 
+    // when scrolling and ignores z-order. Good article: https://bitsofco.de/accessible-modal-dialog/.
+    // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
+    // because it sits at a higher z-level than the prompt and overlay.
+    this.overlay = crel('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
+    this.overlay.addEventListener('click', e => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.overlay);
+
+    this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
+    if (getSearchbar()) {
+      setClass(this.toolbarOverlay, searchbarShowing(), true);
+    } else {
+      setClass(this.toolbarOverlay, searchbarHidden(), true);
+    }
+    this.toolbarOverlay.addEventListener('click', e => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.toolbarOverlay)
+  }
+
+  /**
+   * Create and add the input element for the URL.
+   * 
+   * Capture Enter to perform the command of the active button, either OK or Cancel.
+   * 
+   * @param {*} view 
+   */
+  setInputArea(view) {
+    this.hrefArea = crel('input', { type: 'text', placeholder: 'Enter url...' })
+    this.hrefArea.value = this.href ?? '';
+    this.hrefArea.addEventListener('input', () => {
+      if (this.isValid()) {
+        setClass(this.okDom, 'Markup-menuitem-disabled', false);
+      } else {
+        setClass(this.okDom, 'Markup-menuitem-disabled', true);
+      };
+      this.okUpdate(view.state);
+      this.cancelUpdate(view.state);
+    });
+    this.hrefArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (this.isValid()) {
+          this.insertLink(view.state, view.dispatch, view);
+        } else {
+          this.closeDialog()
+        }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        this.closeDialog()
+      }
+    })
+    this.dialog.appendChild(this.hrefArea)
+  }
+
+  /**
+   * Create and append the buttons in the `dialog`.
+   * 
+   * Track the `dom` and `update` properties for the OK and Cancel buttons so we can show when
+   * they are active as a way to indicate the default action on Enter in the `hrefArea`.
+   * 
+   * @param {EditorView} view 
+   */
+  setButtons(view) {
+    let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
+    this.dialog.appendChild(buttonsDiv)
+
+    if (this.isValid()) {
+      let removeItem = cmdItem(this.deleteLink.bind(this), {
+        class: prefix + '-menuitem',
+        title: 'Remove',
+        enable: () => { return true }
+      })
+      let {dom} = removeItem.render(view)
+      buttonsDiv.appendChild(dom);
+    } else {
+      let spacer = crel('div', {class: prefix + '-menuitem'})
+      spacer.style.visibility = 'hidden';
+      buttonsDiv.appendChild(spacer)
+    };
+
+    let group = crel('div', {class: prefix + '-prompt-buttongroup'});
+    let okItem = cmdItem(this.insertLink.bind(this), {
+      class: prefix + '-menuitem',
+      title: 'OK',
+      active: () => {
+        return this.isValid()
+      },
+      enable: () => {
+        return this.isValid()
+      }
+    })
+    let {dom: okDom, update: okUpdate} = okItem.render(view)
+    this.okDom = okDom;
+    this.okUpdate = okUpdate;
+    group.appendChild(this.okDom)
+
+    let cancelItem = cmdItem(this.closeDialog.bind(this), {
+      class: prefix + '-menuitem',
+      title: 'Cancel',
+      active: () => {
+        return !this.isValid()
+      },
+      enable: () => {
+        return true
+      }
+    })
+    let {dom: cancelDom, update: cancelUpdate} = cancelItem.render(view)
+    this.cancelDom = cancelDom;
+    this.cancelUpdate = cancelUpdate;
+    group.appendChild(this.cancelDom)
+
+    buttonsDiv.appendChild(group);
+  }
+
+  /**
+   * Create and append a div that encloses the selection, with a class that displays it properly.
+   */
+  setSelectionDiv() {
+    this.selectionDiv = crel('div', {id: prefix + '-selection', class: prefix + '-selection'})
+    this.selectionDiv.style.top = this.selectionDivRect.top + 'px'
+    this.selectionDiv.style.left = this.selectionDivRect.left + 'px'
+    this.selectionDiv.style.width = this.selectionDivRect.width + 'px'
+    this.selectionDiv.style.height = this.selectionDivRect.height + 'px'
+    getWrapper().appendChild(this.selectionDiv)
+  }
+
+  /**
+   * Return an object with location and dimension properties for the selection rectangle.
+   * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
+   */
+  getSelectionDivRect() {
+    let wrapper = view.dom.parentElement;
+    let originY = wrapper.getBoundingClientRect().top;
+    let originX = wrapper.getBoundingClientRect().left;
+    let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+    let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
+    let selrect = this.commands.getSelectionRect();
+    let top = selrect.top + scrollY - originY;
+    let left = selrect.left + scrollX - originX;
+    let right = selrect.right;
+    let width = selrect.right - selrect.left;
+    let height = selrect.bottom - selrect.top;
+    let bottom = selrect.bottom;
+    return { top: top, left: left, right: right, width: width, height: height, bottom: bottom }
+  }
+
+  /**
+   * Set the `dialog` location on the screen so it is adjacent to the selection.
+   */
+
+  setDialogLocation() {
+    // selRect is the position within the document. So, doesn't change even if the document is scrolled.
+    let selrect = this.selectionDivRect;
+
+    // We need the dialogHeight and width because we can only position the dialog top and left. 
+    // You would think that an element could be positioned by specifying right and bottom, but 
+    // apparently not. Even when width is fixed, specifying right doesn't work. The values below
+    // are dependent on toolbar.css for .Markup-prompt-link.
+    let dialogHeight = 104;
+    let dialogWidth = 317;
+
+    // The dialog needs to be positioned within the document regardless of scroll, too, but the position is
+    // set based on the direction from selrect that has the most screen real-estate. We always prefer right 
+    // or left of the selection if we can fit it in the visible area on either side. We can bias it as 
+    // close as we can to the vertical center. If we can't fit it right or left, then we will put it above
+    // or below, whichever fits, biasing alignment as close as we can to the horizontal center.
+    // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
+    // it with the best chance of showing the entire dialog.
+    let wrapper = view.dom.parentElement;
+    let originX = wrapper.getBoundingClientRect().left;
+    let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
+    let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
+    let style = this.dialog.style;
+    let toolbarHeight = getToolbar().getBoundingClientRect().height;
+    let minTop = toolbarHeight + scrollY + 4;
+    let maxTop = scrollY + innerHeight - dialogHeight - 4;
+    let minLeft = scrollX + 4;
+    let maxLeft = innerWidth - dialogWidth - 4;
+    let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
+    let fitsLeft = selrect.left - scrollX > dialogWidth + 4;
+    let fitsTop = selrect.top - scrollY - toolbarHeight > dialogHeight + 4;
+    if (fitsRight) {           // Put dialog right of selection
+      style.left = selrect.right + 4 + scrollX - originX + 'px';
+      style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
+    } else if (fitsLeft) {     // Put dialog left of selection
+      style.left = selrect.left - dialogWidth - 4 + scrollX - originX + 'px';
+      style.top = Math.min(Math.max((selrect.top + (selrect.height / 2) - (dialogHeight / 2)), minTop), maxTop) + 'px';
+    } else if (fitsTop) {     // Put dialog above selection
+      style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
+      style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px';
+    } else {                                          // Put dialog below selection, even if it's off the screen somewhat
+      style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
+      style.top = Math.min((selrect.bottom + 4), maxTop) + 'px';
+    }
+  }
+
+  isValid() {
+    return URL.canParse(this.hrefValue())
+  }
+
+  /**
+   * Return the string from the `hrefArea`.
+   * @returns {string}
+   */
+  hrefValue() {
+    return this.hrefArea.value
+  }
+
+  /**
+   * Insert the link provided in the hrefArea if it's valid, deleting any existing link first. Close if it worked.
+   * 
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
+  insertLink(state, dispatch, view) {
+    if (!this.isValid()) return;
+    if (this.href) this.commands.deleteLinkCommand()(state, dispatch, view);
+    let command = this.commands.insertLinkCommand(this.hrefValue());
+    let result = command(view.state, view.dispatch);
+    if (result) this.closeDialog();
+  }
+
+  /**
+   * Delete the link at the selection. Close if it worked.
+   * 
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
+  deleteLink(state, dispatch, view) {
+    let command = this.commands.deleteLinkCommand();
+    let result = command(state, dispatch, view);
+    if (result) this.closeDialog();
+  }
+
+  /**
+   * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
+   */
+  closeDialog() {
+    removePromptShowing()
+    this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
+    this.overlay?.parentElement?.removeChild(this.overlay)
+    this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
+    this.selectionDiv = null;
+    this.dialog?.close()
+    this.dialog?.parentElement?.removeChild(this.dialog)
+    this.dialog = null;
+    this.okUpdate = null;
+    this.cancelUpdate = null;
+  }
+
+  /**
+   * Show the MenuItem that LinkItem holds in its `item` property.
+   * @param {EditorView} view 
+   * @returns {Object}    The {dom, update} object for `item`.
+   */
+  render(view) {
+    return this.item.render(view);
+  }
+
+}

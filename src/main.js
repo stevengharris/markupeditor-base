@@ -77,13 +77,12 @@ import {
 } from "./markup.js"
 
 import { 
-  MenuItem, 
   Dropdown, 
   DropdownSubmenu, 
-  cmdItem, 
   renderGrouped, 
   renderDropdownItems,
 } from "./setup/menu.js"
+import { MenuItem, cmdItem } from "./setup/menuitems.js"
 
 import {ToolbarConfig} from "./setup/toolbarconfig.js"
 import {KeymapConfig} from "./setup/keymapconfig.js"
@@ -91,11 +90,15 @@ import {BehaviorConfig} from "./setup/behaviorconfig.js"
 
 import { 
   prependToolbar, 
-  appendToolbar 
+  appendToolbar,
+  toggleSearch,
+  openLinkDialog
 } from "./setup/index.js"
 
 import {MessageHandler} from "./messagehandler.js"
 import {toolbarView} from "./setup/toolbar.js"
+
+import { getMarkupEditorConfig, setMarkupEditorConfig } from "./setup/utilities.js"
 
 /**
  * The public MarkupEditor API callable as "MU.<function name>"
@@ -148,6 +151,7 @@ export {
   testExtractContents,
   testPasteHTMLPreprocessing,
   testPasteTextPreprocessing,
+  openLinkDialog,
   insertLink,
   deleteLink,
   getDataImages,
@@ -163,7 +167,6 @@ export {
   borderTable,
   // Allow access to the MarkupEditor class and the instance config
   MarkupEditor,
-  markupEditorConfig,
   // Helpers to create custom toolbar items
   MenuItem, 
   Dropdown, 
@@ -172,6 +175,7 @@ export {
   renderGrouped, 
   renderDropdownItems,
   toolbarView,
+  toggleSearch,
   // Helpers to add items to the toolbar
   prependToolbar, 
   appendToolbar,
@@ -179,9 +183,9 @@ export {
   ToolbarConfig,
   KeymapConfig,
   BehaviorConfig,
+  getMarkupEditorConfig,
+  setMarkupEditorConfig
 }
-
-let markupEditorConfig;
 
 /**
  * The MarkupEditor holds the properly set-up EditorView and any additional configuration.
@@ -195,7 +199,7 @@ class MarkupEditor {
     if (!this.config.toolbar) this.config.toolbar = ToolbarConfig.standard()
     if (!this.config.keymap) this.config.keymap = KeymapConfig.standard()
     if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard()
-    markupEditorConfig = this.config;
+    setMarkupEditorConfig(this.config)
 
     this.html = this.config.html ?? emptyHTML()
     setMessageHandler(this.config.messageHandler ?? new MessageHandler(this));

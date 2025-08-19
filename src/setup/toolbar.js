@@ -1,12 +1,13 @@
 import crel from "crelt"
 import {Plugin} from "prosemirror-state"
 import {renderGrouped, renderGroupedFit, separator} from  "./menu"
+import {prefix} from "./utilities";
 
 export let toolbarView;
 
-export function toolbar(prefix, content) {
+export function toolbar(content) {
   let view = function view(editorView) {
-    toolbarView = new ToolbarView(editorView, prefix, content)
+    toolbarView = new ToolbarView(editorView, content)
     return toolbarView;
   }
   return new Plugin({view})
@@ -14,7 +15,7 @@ export function toolbar(prefix, content) {
 
 class ToolbarView {
 
-  constructor(editorView, prefix, content) {
+  constructor(editorView, content) {
     this.prefix = prefix + "-toolbar";
     this.editorView = editorView;
     this.content = content;

@@ -12,13 +12,22 @@ import {
     handleDelete,
     handleEnter,
     handleShiftEnter,
+    searchForCommand, 
+    cancelSearch, 
+    matchCase, 
+    matchCount, 
+    matchIndex,
+    getLinkAttributes,
+    selectFullLink, 
+    getSelectionRect, 
+    insertLinkCommand, 
+    deleteLinkCommand
 } from "../markup"
 import {
-    LinkItem,
     ImageItem,
-    TableInsertItem,
-    SearchItem,
+    TableInsertItem
 } from "./menu"
+import { SearchItem, LinkItem } from "./menuitems"
 
 /**
  * Return a map of Commands that will be invoked when key combos are pressed.
@@ -79,10 +88,12 @@ export function buildKeymap(config, schema) {
     bind(keymap.indent, indentCommand())
     bind(keymap.outdent, outdentCommand())
     // Insert
-    bind(keymap.link, new LinkItem(config).command)
+    let linkCommands = {getLinkAttributes, selectFullLink, getSelectionRect, insertLinkCommand, deleteLinkCommand}
+    bind(keymap.link, new LinkItem(config, linkCommands).command)
     bind(keymap.image, new ImageItem(config).command)
     bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
     // Search
-    bind(keymap.search, new SearchItem(config).command)
+    let searchCommands = {searchForCommand, cancelSearch, matchCase, matchCount, matchIndex}
+    bind(keymap.search, new SearchItem(config, searchCommands).command)
     return keys
 }
