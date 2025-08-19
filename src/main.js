@@ -77,14 +77,12 @@ import {
 } from "./markup.js"
 
 import { 
+  MenuItem,
   Dropdown, 
   DropdownSubmenu, 
-  renderDropdownItems,
-} from "./setup/menu.js"
-import { 
-  MenuItem, 
   cmdItem,
   renderGrouped,
+  renderDropdownItems
  } from "./setup/menuitems.js"
 
 import {ToolbarConfig} from "./setup/toolbarconfig.js"

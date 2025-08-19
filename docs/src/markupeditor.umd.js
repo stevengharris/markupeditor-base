@@ -16554,34 +16554,6 @@
   */
   const findPrev = findCommand(true, -1);
 
-  function crelt() {
-    var elt = arguments[0];
-    if (typeof elt == "string") elt = document.createElement(elt);
-    var i = 1, next = arguments[1];
-    if (next && typeof next == "object" && next.nodeType == null && !Array.isArray(next)) {
-      for (var name in next) if (Object.prototype.hasOwnProperty.call(next, name)) {
-        var value = next[name];
-        if (typeof value == "string") elt.setAttribute(name, value);
-        else if (value != null) elt[name] = value;
-      }
-      i++;
-    }
-    for (; i < arguments.length; i++) add(elt, arguments[i]);
-    return elt
-  }
-
-  function add(elt, child) {
-    if (typeof child == "string") {
-      elt.appendChild(document.createTextNode(child));
-    } else if (child == null) ; else if (child.nodeType != null) {
-      elt.appendChild(child);
-    } else if (Array.isArray(child)) {
-      for (var i = 0; i < child.length; i++) add(elt, child[i]);
-    } else {
-      throw new RangeError("Unsupported child node: " + child)
-    }
-  }
-
   /**
    * The NodeView to support divs, as installed in main.js.
    */
@@ -20379,6 +20351,34 @@
       return node;
   }
 
+  function crelt() {
+    var elt = arguments[0];
+    if (typeof elt == "string") elt = document.createElement(elt);
+    var i = 1, next = arguments[1];
+    if (next && typeof next == "object" && next.nodeType == null && !Array.isArray(next)) {
+      for (var name in next) if (Object.prototype.hasOwnProperty.call(next, name)) {
+        var value = next[name];
+        if (typeof value == "string") elt.setAttribute(name, value);
+        else if (value != null) elt[name] = value;
+      }
+      i++;
+    }
+    for (; i < arguments.length; i++) add(elt, arguments[i]);
+    return elt
+  }
+
+  function add(elt, child) {
+    if (typeof child == "string") {
+      elt.appendChild(document.createTextNode(child));
+    } else if (child == null) ; else if (child.nodeType != null) {
+      elt.appendChild(child);
+    } else if (Array.isArray(child)) {
+      for (var i = 0; i < child.length; i++) add(elt, child[i]);
+    } else {
+      throw new RangeError("Unsupported child node: " + child)
+    }
+  }
+
   /**
   An icon or label that, when clicked, executes a command.
   */
@@ -20444,291 +20444,193 @@
     }
   }
 
-  /** A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar */
-  class MoreItem {
-
-    constructor(items) {
-      let options = {
-        enable: (state) => { return true },
-        active: (state) => { return this.showing() },
-        title: 'Show more',
-        icon: icons.more
-      };
-      this.command = this.toggleMore.bind(this);
-      this.item = cmdItem(this.command, options);
-      this.items = items;
-    }
-
-    showing() {
-      return getToolbarMore() != null;
-    }
-
-    toggleMore(state, dispatch, view) {
-      if (this.showing()) {
-        this.hideMore();
-      } else {
-        this.showMore(state, dispatch, view);
-      }
-      this.update && this.update(state);
-    }
-
-    hideMore() {
-      let toolbarMore = getToolbarMore();
-      toolbarMore.parentElement.removeChild(toolbarMore);
-    }
-
-    showMore(state, dispatch, view) {
-      let toolbar = getToolbar();
-      if (!toolbar) return;
-      let idClass = prefix + "-toolbar-more";
-      let toolbarMore = crelt('div', { class: idClass, id: idClass } );
-      let {dom, update} = renderGrouped(view, [this.items]);
-      toolbarMore.appendChild(dom);
-      toolbar.parentElement.insertBefore(toolbarMore, toolbar.nextSibling);
-      // Then update the moreItem to show it's active
-      update(view.state);
-    }
-
-    render(view) {
-      let {dom, update} = this.item.render(view);
-      this.update = update;
-      return {dom, update};
-    }
-
-  }
-
   /**
-   * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
-   */
-  class SearchItem {
+  A drop-down menu, displayed as a label with a downwards-pointing
+  triangle to the right of it.
+  */
+  class Dropdown {
 
-    constructor(config, commands) {
-      let keymap = config.keymap;
-      this.commands = commands;
-      let options = {
-        enable: (state) => { return true },
-        active: (state) => { return this.showing() },
-        title: 'Toggle search' + keyString('search', keymap),
-        icon: icons.search,
-        id: prefix + '-searchitem'
-      };
-      this.command = this.toggleSearch.bind(this);
-      this.item = cmdItem(this.command, options);
-      this.text = '';
-      this.caseSensitive = false;
-    }
-
-    showing() {
-      return getSearchbar() != null;
-    }
-
-    toggleSearch(state, dispatch, view) {
-      if (this.showing()) {
-        this.hideSearchbar();
-      } else {
-        this.showSearchbar(state, dispatch, view);
-      }
-      this.update && this.update(state);
-    }
-
-    hideSearchbar() {
-      let searchbar = getSearchbar();
-      searchbar.parentElement.removeChild(searchbar);
-      this.matchCaseDom = null;
-      this.matchCaseItem = null;
-      this.stopSearching();
-    }
-
-    stopSearching(focus=true) {
-      this.commands.cancelSearch();
-      this.setStatus();
-      if (focus) view.focus();
-    }
-
-    showSearchbar(state, dispatch, view) {
-      let toolbar = getToolbar();
-      if (!toolbar) return;
-      let input = crelt('input', { type: 'search', placeholder: 'Search document...' });
-      input.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
-        if (e.key === 'Enter') {
-          let direction = (e.shiftKey) ? 'backward' : 'forward';
-          if (direction == 'forward') {
-            this.searchForwardCommand(view.state, view.dispatch, view);
-          } else {
-            this.searchBackwardCommand(view.state, view.dispatch, view);
-          }
-        }
-      });
-      input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
-        this.text = e.target.value;
-        this.stopSearching(false);              // Stop searching but leave focus in the input field
-      });
-      let idClass = prefix + "-searchbar";
-      let searchbar = crelt("div", { class: idClass, id: idClass }, input);
-      this.addSearchButtons(view, searchbar);
-      let beforeTarget = getToolbarMore() ? getToolbarMore().nextSibling : toolbar.nextSibling;
-      toolbar.parentElement.insertBefore(searchbar, beforeTarget);
-    }
-
-    setStatus() {
-      let count = this.commands.matchCount();
-      let index = this.commands.matchIndex();
-      if (this.status) this.status.innerHTML = this.statusString(count, index);
-    }
-
-    statusString(count, index) {
-      if (count == null) {
-        return "";
-      } else if (count == 0) {
-        return "No matches";
-      }    return `${index}/${count}`;
-    }
-
-    addSearchButtons(view, searchbar) {
-      
-      // Overlay the status (index/count) on the input field
-      this.status = crelt("span", {class: prefix + "-searchbar-status"});
-
-      // The searchBackward and searchForward buttons don't need updating
-      let searchBackward = this.searchBackwardCommand.bind(this);
-      let searchBackwardItem = cmdItem(searchBackward, {title: "Search backward", icon: icons.searchBackward});
-      let searchBackwardDom = searchBackwardItem.render(view).dom;
-      let searchBackwardSpan = crelt("span", {class: prefix + "-menuitem"}, searchBackwardDom);
-      let searchForward = this.searchForwardCommand.bind(this);
-      let searchForwardItem = cmdItem(searchForward, {title: "Search forward", icon: icons.searchForward});
-      let searchForwardDom = searchForwardItem.render(view).dom;
-      let searchForwardSpan = crelt("span", {class: prefix + "-menuitem"}, searchForwardDom);
-      let separator = crelt("span", {class: prefix + "-menuseparator"});
-
-      // The toggleCase button needs to indicate the state of `caseSensitive`. Because the MenuItems we use 
-      // in the SearchBar are not in a separate Plugin, and they are not part of the toolbar content, 
-      // we need to handle updating "manually" by tracking and replacing the MenuItem and the dom it 
-      // produces using its `render` method.
-      let toggleMatchCase = this.toggleMatchCaseCommand.bind(this);
-      this.matchCaseItem = cmdItem(
-        toggleMatchCase, {
-          title: "Match case", 
-          icon: icons.matchCase,
-          enable: () => {return true},
-          active: () => {return this.caseSensitive}
-        }
-      );
-      let {dom, update} = this.matchCaseItem.render(view);
-      this.matchCaseDom = dom;
-      let matchCaseSpan = crelt("span", {class: prefix + "-menuitem"}, this.matchCaseDom);
-
-      // Add the divs holding the MenuItems
-      searchbar.appendChild(this.status);
-      searchbar.appendChild(searchBackwardSpan);
-      searchbar.appendChild(searchForwardSpan);
-      searchbar.appendChild(separator);
-      searchbar.appendChild(matchCaseSpan);
-
-      // Then update the matchCaseItem to indicate the current setting, which is held in this 
-      // SearchItem.
-      update(view.state);
-    }
-
-    searchForwardCommand(state, dispatch, view) {
-      let command = this.commands.searchForCommand(this.text, "forward");
-      command(state, dispatch, view);
-      this.scrollToSelection(view);
-      this.setStatus();
-    }
-
-    searchBackwardCommand(state, dispatch, view) {
-      let command = this.commands.searchForCommand(this.text, "backward");
-      command(state, dispatch, view);
-      this.scrollToSelection(view);
-      this.setStatus();
-    }
-
-    toggleMatchCaseCommand(state, dispatch, view) {
-      this.caseSensitive = !this.caseSensitive;
-      this.commands.matchCase(this.caseSensitive);
-      if (view) {
-        this.stopSearching(false);
-        let {dom, update} = this.matchCaseItem.render(view);
-        this.matchCaseDom.parentElement.replaceChild(dom, this.matchCaseDom);
-        this.matchCaseDom = dom;
-        update(state);
-      }
-    }
-    
     /**
-     * Use the dom to scroll to the node at the selection. The scrollIntoView when setting the 
-     * selection in prosemirror-search findCommand doesn't work, perhaps because the selection 
-     * is set on state.doc instead of state.tr.doc. 
-     * 
-     * TODO: This method has some problems in that it can
-     * scroll to a paragraph, and then the next element will be in a bold section within the 
-     * paragraph, causing it to jump. It would be much better if the prosemirror-search 
-     * scrollIntoView worked properly.
-     * 
-     * @param {EditorView} view 
-     */
-    scrollToSelection(view) {
-      const { node } = view.domAtPos(view.state.selection.anchor);
-      // In case node is a Node not an Element
-      let element = (node instanceof Element) ? node : node.parentElement;
-      element?.scrollIntoView(false);
+    Create a dropdown wrapping the elements.
+    */
+    constructor(content, options = {}) {
+      this.prefix = prefix + "-menu";
+      this.options = options;
+      if (this.options.indicator == undefined) this.options.indicator = true;
+      this.content = Array.isArray(content) ? content : [content];
+    }
+    /**
+    Render the dropdown menu and sub-items.
+    */
+    render(view) {
+      let options = this.options;
+      let content = renderDropdownItems(this.content, view);
+      let win = view.dom.ownerDocument.defaultView || window;
+      let indicator = crelt("span", "\u25BE");
+      setClass(indicator, this.prefix + "-dropdown-indicator", true);
+      let label;
+      if (this.options.icon) {
+        label = getIcon(view.root, this.options.icon);
+        if (options.indicator) label.appendChild(indicator);
+        setClass(label, this.prefix + "-dropdown-icon", true);
+      } else {
+        label = crelt("span", {
+          class: this.prefix + "-dropdown",
+          style: this.options.css
+        });
+        label.appendChild(crelt("span", this.options.label));
+        label.appendChild(indicator);
+      }
+      if (this.options.title)
+        label.setAttribute("title", translate(view, this.options.title));
+      if (this.options.labelClass)
+        label.classList.add(this.options.labelClass);
+      let enabled = true;
+      if (this.options.enable) {
+        enabled = this.options.enable(state) || false;
+        setClass(dom, this.prefix + "-disabled", !enabled);
+      }
+      let iconWrapClass = this.options.indicator ? "-dropdown-icon-wrap" : "-dropdown-icon-wrap-noindicator";
+      let wrapClass = (this.options.icon) ? this.prefix + iconWrapClass : this.prefix + "-dropdown-wrap";
+      let wrap = crelt("span", { class: wrapClass }, label);
+      let open = null;
+      let listeningOnClose = null;
+      let close = () => {
+        if (open && open.close()) {
+          open = null;
+          win.removeEventListener("mousedown", listeningOnClose);
+        }
+      };
+      label.addEventListener("mousedown", e => {
+        e.preventDefault();
+        markMenuEvent(e);
+        if (open) {
+          close();
+        }
+        else {
+          open = this.expand(wrap, content.dom);
+          win.addEventListener("mousedown", listeningOnClose = () => {
+            if (!isMenuEvent(wrap))
+              close();
+          });
+        }
+      });
+
+      function update(state) {
+        if (options.enable) {
+          let enabled = options.enable(state) || false;
+          setClass(label, this.prefix + "-disabled", !enabled);
+        }
+        if (options.titleUpdate) {
+          let newTitle = options.titleUpdate(state);
+          label.replaceChild(document.createTextNode(newTitle), label.firstChild);
+        }
+        let inner = content.update(state);
+        wrap.style.display = inner ? "" : "none";
+        return inner;
+      }
+      return { dom: wrap, update };
+    }
+
+    expand(dom, items) {
+      let menuDOM = crelt("div", { class: this.prefix + "-dropdown-menu" + (this.options.class || "") }, items);
+      let done = false;
+      function close() {
+        if (done)
+          return false;
+        done = true;
+        dom.removeChild(menuDOM);
+        return true;
+      }
+      dom.appendChild(menuDOM);
+      return { close, node: menuDOM };
+    }
+  }
+
+  /**
+  Represents a submenu wrapping a group of elements that start
+  hidden and expand to the right when hovered over or tapped.
+  */
+  class DropdownSubmenu {
+
+    /**
+    Creates a submenu for the given group of menu elements. The
+    following options are recognized:
+    */
+    constructor(content, options = {}) {
+      this.prefix = prefix + "-menu";
+      this.options = options;
+      this.content = Array.isArray(content) ? content : [content];
+    }
+
+    /**
+    Renders the submenu.
+    */
+    render(view) {
+      let options = this.options;
+      let items = renderDropdownItems(this.content, view);
+      let win = view.dom.ownerDocument.defaultView || window;
+      let label = crelt("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
+      let wrap = crelt("div", { class: this.prefix + "-submenu-wrap" }, label, crelt("div", { class: this.prefix + "-submenu" }, items.dom));
+      let listeningOnClose = null;
+      label.addEventListener("mousedown", e => {
+        e.preventDefault();
+        markMenuEvent(e);
+        setClass(wrap, this.prefix + "-submenu-wrap-active", false);
+        if (!listeningOnClose)
+          win.addEventListener("mousedown", listeningOnClose = () => {
+            if (!isMenuEvent(wrap)) {
+              wrap.classList.remove(this.prefix + "-submenu-wrap-active");
+              win.removeEventListener("mousedown", listeningOnClose);
+              listeningOnClose = null;
+            }
+          });
+      });
+      function update(state) {
+        let enabled = true;
+        if (options.enable) {
+          enabled = options.enable(state) || false;
+          setClass(label, this.prefix + "-disabled", !enabled);
+        }
+        let inner = items.update(state);
+        wrap.style.display = inner ? "" : "none";
+        return inner;
+      }
+      return { dom: wrap, update };
+    }
+  }
+
+  class ParagraphStyleItem {
+
+    constructor(nodeType, style, options) {
+      this.style = style;
+      this.styleLabel = options["label"] ?? "Unknown"; // It should always be specified
+      this.item = this.paragraphStyleItem(nodeType, style, options);
+    }
+
+    paragraphStyleItem(nodeType, style, options) {
+      let command = setStyleCommand(style);
+      let passedOptions = {
+          run: command,
+          enable(state) { return command(state) },
+          active(state) {
+              let { $from, to, node } = state.selection;
+              if (node)
+                  return node.hasMarkup(nodeType, options.attrs);
+              return to <= $from.end() && $from.parent.hasMarkup(nodeType, options.attrs);
+          }
+      };
+      for (let prop in options)
+          passedOptions[prop] = options[prop];
+      return new MenuItem(passedOptions);
     }
 
     render(view) {
       let {dom, update} = this.item.render(view);
-      this.update = update;
-      return {dom, update};
+      let styledElement = crelt(this.style, this.styleLabel);
+      dom.replaceChild(styledElement, dom.firstChild);
+      return {dom, update}
     }
-
-  }
-
-  /**
-   * Return whether the selection in state is within a mark of type `markType`.
-   * @param {EditorState} state 
-   * @param {MarkType} type 
-   * @returns {boolean} True if the selection is within a mark of type `markType`
-   */
-  function markActive(state, type) {
-    let { from, $from, to, empty } = state.selection;
-    if (empty) return type.isInSet(state.storedMarks || $from.marks())
-    else return state.doc.rangeHasMark(from, to, type)
-  }
-
-  /**
-   * Return a string intended for the user to see showing the first key mapping for `itemName`.
-   * @param {string} itemName           The name of the item in the keymap
-   * @param {[string : string]} keymap  The mapping between item names and hotkeys
-   * @returns string
-   */
-  function keyString(itemName, keymap) {
-    let keyString = keymap[itemName];
-    if (!keyString) return ''
-    if (keyString instanceof Array) keyString = keyString[0];  // Use the first if there are multiple
-    // Clean up to something more understandable
-    keyString = keyString.replaceAll("Mod", "Cmd");
-    keyString = keyString.replaceAll("-", "+");
-    return ' (' + keyString + ')'
-  }
-
-  /**
-   * Return a MenuItem that runs the command when selected.
-   * 
-   * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
-   * what `cmd(state)` returns unless otherwise specified in `options`.
-   * @param {Command}     cmd 
-   * @param {*} options   The spec for the MenuItem
-   * @returns {MenuItem}
-   */
-  function cmdItem(cmd, options) {
-    let passedOptions = {
-      label: options.title,
-      run: cmd
-    };
-    for (let prop in options) passedOptions[prop] = options[prop];
-    if ((!options.enable || options.enable === true) && !options.select)
-      passedOptions[options.enable ? "enable" : "select"] = state => cmd(state);
-
-    return new MenuItem(passedOptions)
   }
 
   /**
@@ -21463,297 +21365,39 @@
 
   }
 
-  function renderGrouped(view, content) {
-      let result = document.createDocumentFragment();
-      let updates = [], separators = [];
-      for (let i = 0; i < content.length; i++) {
-          let items = content[i], localUpdates = [], localNodes = [];
-          for (let j = 0; j < items.length; j++) {
-              let { dom, update } = items[j].render(view);
-              let span = crelt("span", { class: prefix + "-menuitem" }, dom);
-              result.appendChild(span);
-              localNodes.push(span);
-              localUpdates.push(update);
-          }
-          if (localUpdates.length) {
-              updates.push(combineUpdates(localUpdates, localNodes));
-              if (i < content.length - 1)
-                  separators.push(result.appendChild(separator()));
-          }
-      }
-      function update(state) {
-          let something = false, needSep = false;
-          for (let i = 0; i < updates.length; i++) {
-              let hasContent = updates[i](state);
-              if (i)
-                  separators[i - 1].style.display = needSep && hasContent ? "" : "none";
-              needSep = hasContent;
-              if (hasContent)
-                  something = true;
-          }
-          return something;
-      }
-      return { dom: result, update };
-  }
-
   /**
-   * Like `renderGrouped`, but at `wrapIndex` in the `content`, place a `MoreItem` that 
-   * will display a subtoolbar of `content` items starting at `wrapIndex` when it is 
-   * pressed. The `MoreItem` renders using `renderGrouped`, not `renderGroupedFit`. Let's 
-   * face it, if you need to wrap a toolbar into more than two lines, you need to think
-   * through your life choices.
-   * 
-   * @param {EditorView} view 
-   * @param {[MenuItem | [MenuItem]]} content 
-   * @param {number}  wrapAtIndex             The index in  content` to wrap in another toolbar
-   * @returns 
+   * A MenuItem that inserts a table of size rows/cols and invokes `onMouseover` when 
+   * the mouse is over it to communicate the size of table it will create when selected.
    */
-  function renderGroupedFit(view, content, wrapAtIndex) {
-    let result = document.createDocumentFragment();
-    let updates = [], separators = [];
-    let itemIndex = 0;
-    let moreItems = [];
-    for (let i = 0; i < content.length; i++) {
-      let items = content[i], localUpdates = [], localNodes = [];
-      for (let j = 0; j < items.length; j++) {
-        if (itemIndex >= wrapAtIndex) {
-          // Track the items to be later rendered in the "more" dropdown
-          moreItems.push(items[j]);
-        } else {
-          let { dom, update } = items[j].render(view);
-          let span = crelt("span", { class: prefix + "-menuitem" }, dom);
-          result.appendChild(span);
-          localNodes.push(span);
-          localUpdates.push(update);
-        }
-        itemIndex++;
-      }
-      if (localUpdates.length) {
-        updates.push(combineUpdates(localUpdates, localNodes));
-        if (i < content.length - 1)
-          separators.push(result.appendChild(separator()));
-      }
-    }
-    if (moreItems.length > 0) {
-      let more = new MoreItem(moreItems);
-      let {dom, update} = more.render(view);
-      let span = crelt("span", { class: prefix + "-menuitem" }, dom);
-      result.appendChild(span);
-      updates.push(update);
-    }
-    function update(state) {
-      let something = false, needSep = false;
-      for (let i = 0; i < updates.length; i++) {
-        let hasContent = updates[i](state);
-        if (i)
-          separators[i - 1].style.display = needSep && hasContent ? "" : "none";
-        needSep = hasContent;
-        if (hasContent)
-          something = true;
-      }
-      return something;
-    }
-    return { dom: result, update };
-  }
+  class TableInsertItem {
 
-  function separator() {
-      return crelt("span", { class: prefix + "-menuseparator" });
-  }
+    constructor(rows, cols, onMouseover, options) {
+      this.prefix = prefix + "-menuitem";
+      this.rows = rows;
+      this.cols = cols;
+      this.onMouseover = onMouseover;
+      this.command = insertTableCommand(this.rows, this.cols);
+      this.item = this.tableInsertItem(this.command, options);
+    }
 
-  function combineUpdates(updates, nodes) {
-      return (state) => {
-          let something = false;
-          for (let i = 0; i < updates.length; i++) {
-              let up = updates[i](state);
-              nodes[i].style.display = up ? "" : "none";
-              if (up)
-                  something = true;
-          }
-          return something;
+    tableInsertItem(command, options) {
+      let passedOptions = {
+        run: command,
+        enable(state) { return command(state); },
       };
-  }
-
-  /**
-   * Adapted, expanded, and copied-from prosemirror-menu under MIT license.
-   * Original prosemirror-menu at https://github.com/prosemirror/prosemirror-menu.
-   * 
-   * Adaptations:
-   *  - Modify buildMenuItems to use a `config` object that specifies visibility and content
-   *  - Use separate buildKeymap in keymap.js with a `config` object that specifies key mappings
-   *  - Modify icons to use SVG from Google Material Fonts
-   *  - Allow Dropdown menus to be icons, not just labels
-   *  - Replace use of prompt with custom dialogs for links and images
-   * 
-   * Expansions:
-   *  - Added table support using MarkupEditor capabilities for table editing
-   *  - Use MarkupEditor capabilities for list/denting across range
-   *  - Use MarkupEditor capability for toggling and changing list types
-   *  - Added SearchItem, LinkItem, ImageItem
-   *  - Added TableCreateSubmenu and TableInsertItem in support of table creation
-   *  - Added ParagraphStyleItem to support showing font sizes for supported styles
-   * 
-   * Copied:
-   *  - MenuItem
-   *  - Dropdown
-   *  - DropdownSubmenu
-   *  - Various "helper methods" returning MenuItems
-   */
-
-
-  /**
-  A drop-down menu, displayed as a label with a downwards-pointing
-  triangle to the right of it.
-  */
-  class Dropdown {
-
-    /**
-    Create a dropdown wrapping the elements.
-    */
-    constructor(content, options = {}) {
-      this.prefix = prefix + "-menu";
-      this.options = options;
-      if (this.options.indicator == undefined) this.options.indicator = true;
-      this.content = Array.isArray(content) ? content : [content];
+      for (let prop in options)
+        passedOptions[prop] = options[prop];
+      return new MenuItem(passedOptions);
     }
-    /**
-    Render the dropdown menu and sub-items.
-    */
+
     render(view) {
-      let options = this.options;
-      let content = renderDropdownItems(this.content, view);
-      let win = view.dom.ownerDocument.defaultView || window;
-      let indicator = crelt("span", "\u25BE");
-      setClass(indicator, this.prefix + "-dropdown-indicator", true);
-      let label;
-      if (this.options.icon) {
-        label = getIcon(view.root, this.options.icon);
-        if (options.indicator) label.appendChild(indicator);
-        setClass(label, this.prefix + "-dropdown-icon", true);
-      } else {
-        label = crelt("span", {
-          class: this.prefix + "-dropdown",
-          style: this.options.css
-        });
-        label.appendChild(crelt("span", this.options.label));
-        label.appendChild(indicator);
-      }
-      if (this.options.title)
-        label.setAttribute("title", translate(view, this.options.title));
-      if (this.options.labelClass)
-        label.classList.add(this.options.labelClass);
-      let enabled = true;
-      if (this.options.enable) {
-        enabled = this.options.enable(state) || false;
-        setClass(dom, this.prefix + "-disabled", !enabled);
-      }
-      let iconWrapClass = this.options.indicator ? "-dropdown-icon-wrap" : "-dropdown-icon-wrap-noindicator";
-      let wrapClass = (this.options.icon) ? this.prefix + iconWrapClass : this.prefix + "-dropdown-wrap";
-      let wrap = crelt("span", { class: wrapClass }, label);
-      let open = null;
-      let listeningOnClose = null;
-      let close = () => {
-        if (open && open.close()) {
-          open = null;
-          win.removeEventListener("mousedown", listeningOnClose);
-        }
-      };
-      label.addEventListener("mousedown", e => {
-        e.preventDefault();
-        markMenuEvent(e);
-        if (open) {
-          close();
-        }
-        else {
-          open = this.expand(wrap, content.dom);
-          win.addEventListener("mousedown", listeningOnClose = () => {
-            if (!isMenuEvent(wrap))
-              close();
-          });
-        }
+      let {dom, update} = this.item.render(view);
+      dom.addEventListener('mouseover', e => {
+        this.onMouseover(this.rows, this.cols);
       });
-
-      function update(state) {
-        if (options.enable) {
-          let enabled = options.enable(state) || false;
-          setClass(label, this.prefix + "-disabled", !enabled);
-        }
-        if (options.titleUpdate) {
-          let newTitle = options.titleUpdate(state);
-          label.replaceChild(document.createTextNode(newTitle), label.firstChild);
-        }
-        let inner = content.update(state);
-        wrap.style.display = inner ? "" : "none";
-        return inner;
-      }
-      return { dom: wrap, update };
+      return {dom, update}
     }
 
-    expand(dom, items) {
-      let menuDOM = crelt("div", { class: this.prefix + "-dropdown-menu" + (this.options.class || "") }, items);
-      let done = false;
-      function close() {
-        if (done)
-          return false;
-        done = true;
-        dom.removeChild(menuDOM);
-        return true;
-      }
-      dom.appendChild(menuDOM);
-      return { close, node: menuDOM };
-    }
-  }
-
-  /**
-  Represents a submenu wrapping a group of elements that start
-  hidden and expand to the right when hovered over or tapped.
-  */
-  class DropdownSubmenu {
-
-    /**
-    Creates a submenu for the given group of menu elements. The
-    following options are recognized:
-    */
-    constructor(content, options = {}) {
-      this.prefix = prefix + "-menu";
-      this.options = options;
-      this.content = Array.isArray(content) ? content : [content];
-    }
-
-    /**
-    Renders the submenu.
-    */
-    render(view) {
-      let options = this.options;
-      let items = renderDropdownItems(this.content, view);
-      let win = view.dom.ownerDocument.defaultView || window;
-      let label = crelt("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
-      let wrap = crelt("div", { class: this.prefix + "-submenu-wrap" }, label, crelt("div", { class: this.prefix + "-submenu" }, items.dom));
-      let listeningOnClose = null;
-      label.addEventListener("mousedown", e => {
-        e.preventDefault();
-        markMenuEvent(e);
-        setClass(wrap, this.prefix + "-submenu-wrap-active", false);
-        if (!listeningOnClose)
-          win.addEventListener("mousedown", listeningOnClose = () => {
-            if (!isMenuEvent(wrap)) {
-              wrap.classList.remove(this.prefix + "-submenu-wrap-active");
-              win.removeEventListener("mousedown", listeningOnClose);
-              listeningOnClose = null;
-            }
-          });
-      });
-      function update(state) {
-        let enabled = true;
-        if (options.enable) {
-          enabled = options.enable(state) || false;
-          setClass(label, this.prefix + "-disabled", !enabled);
-        }
-        let inner = items.update(state);
-        wrap.style.display = inner ? "" : "none";
-        return inner;
-      }
-      return { dom: wrap, update };
-    }
   }
 
   /**
@@ -21850,72 +21494,450 @@
   }
 
   /**
-   * A MenuItem that inserts a table of size rows/cols and invokes `onMouseover` when 
-   * the mouse is over it to communicate the size of table it will create when selected.
+   * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
    */
-  class TableInsertItem {
+  class SearchItem {
 
-    constructor(rows, cols, onMouseover, options) {
-      this.prefix = prefix + "-menuitem";
-      this.rows = rows;
-      this.cols = cols;
-      this.onMouseover = onMouseover;
-      this.command = insertTableCommand(this.rows, this.cols);
-      this.item = this.tableInsertItem(this.command, options);
-    }
-
-    tableInsertItem(command, options) {
-      let passedOptions = {
-        run: command,
-        enable(state) { return command(state); },
+    constructor(config, commands) {
+      let keymap = config.keymap;
+      this.commands = commands;
+      let options = {
+        enable: (state) => { return true },
+        active: (state) => { return this.showing() },
+        title: 'Toggle search' + keyString('search', keymap),
+        icon: icons.search,
+        id: prefix + '-searchitem'
       };
-      for (let prop in options)
-        passedOptions[prop] = options[prop];
-      return new MenuItem(passedOptions);
+      this.command = this.toggleSearch.bind(this);
+      this.item = cmdItem(this.command, options);
+      this.text = '';
+      this.caseSensitive = false;
     }
 
-    render(view) {
-      let {dom, update} = this.item.render(view);
-      dom.addEventListener('mouseover', e => {
-        this.onMouseover(this.rows, this.cols);
-      });
-      return {dom, update}
+    showing() {
+      return getSearchbar() != null;
     }
 
-  }
-
-  class ParagraphStyleItem {
-
-    constructor(nodeType, style, options) {
-      this.style = style;
-      this.styleLabel = options["label"] ?? "Unknown"; // It should always be specified
-      this.item = this.paragraphStyleItem(nodeType, style, options);
+    toggleSearch(state, dispatch, view) {
+      if (this.showing()) {
+        this.hideSearchbar();
+      } else {
+        this.showSearchbar(state, dispatch, view);
+      }
+      this.update && this.update(state);
     }
 
-    paragraphStyleItem(nodeType, style, options) {
-      let command = setStyleCommand(style);
-      let passedOptions = {
-          run: command,
-          enable(state) { return command(state) },
-          active(state) {
-              let { $from, to, node } = state.selection;
-              if (node)
-                  return node.hasMarkup(nodeType, options.attrs);
-              return to <= $from.end() && $from.parent.hasMarkup(nodeType, options.attrs);
+    hideSearchbar() {
+      let searchbar = getSearchbar();
+      searchbar.parentElement.removeChild(searchbar);
+      this.matchCaseDom = null;
+      this.matchCaseItem = null;
+      this.stopSearching();
+    }
+
+    stopSearching(focus=true) {
+      this.commands.cancelSearch();
+      this.setStatus();
+      if (focus) view.focus();
+    }
+
+    showSearchbar(state, dispatch, view) {
+      let toolbar = getToolbar();
+      if (!toolbar) return;
+      let input = crelt('input', { type: 'search', placeholder: 'Search document...' });
+      input.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+        if (e.key === 'Enter') {
+          let direction = (e.shiftKey) ? 'backward' : 'forward';
+          if (direction == 'forward') {
+            this.searchForwardCommand(view.state, view.dispatch, view);
+          } else {
+            this.searchBackwardCommand(view.state, view.dispatch, view);
           }
-      };
-      for (let prop in options)
-          passedOptions[prop] = options[prop];
-      return new MenuItem(passedOptions);
+        }
+      });
+      input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
+        this.text = e.target.value;
+        this.stopSearching(false);              // Stop searching but leave focus in the input field
+      });
+      let idClass = prefix + "-searchbar";
+      let searchbar = crelt("div", { class: idClass, id: idClass }, input);
+      this.addSearchButtons(view, searchbar);
+      let beforeTarget = getToolbarMore() ? getToolbarMore().nextSibling : toolbar.nextSibling;
+      toolbar.parentElement.insertBefore(searchbar, beforeTarget);
+    }
+
+    setStatus() {
+      let count = this.commands.matchCount();
+      let index = this.commands.matchIndex();
+      if (this.status) this.status.innerHTML = this.statusString(count, index);
+    }
+
+    statusString(count, index) {
+      if (count == null) {
+        return "";
+      } else if (count == 0) {
+        return "No matches";
+      }    return `${index}/${count}`;
+    }
+
+    addSearchButtons(view, searchbar) {
+      
+      // Overlay the status (index/count) on the input field
+      this.status = crelt("span", {class: prefix + "-searchbar-status"});
+
+      // The searchBackward and searchForward buttons don't need updating
+      let searchBackward = this.searchBackwardCommand.bind(this);
+      let searchBackwardItem = cmdItem(searchBackward, {title: "Search backward", icon: icons.searchBackward});
+      let searchBackwardDom = searchBackwardItem.render(view).dom;
+      let searchBackwardSpan = crelt("span", {class: prefix + "-menuitem"}, searchBackwardDom);
+      let searchForward = this.searchForwardCommand.bind(this);
+      let searchForwardItem = cmdItem(searchForward, {title: "Search forward", icon: icons.searchForward});
+      let searchForwardDom = searchForwardItem.render(view).dom;
+      let searchForwardSpan = crelt("span", {class: prefix + "-menuitem"}, searchForwardDom);
+      let separator = crelt("span", {class: prefix + "-menuseparator"});
+
+      // The toggleCase button needs to indicate the state of `caseSensitive`. Because the MenuItems we use 
+      // in the SearchBar are not in a separate Plugin, and they are not part of the toolbar content, 
+      // we need to handle updating "manually" by tracking and replacing the MenuItem and the dom it 
+      // produces using its `render` method.
+      let toggleMatchCase = this.toggleMatchCaseCommand.bind(this);
+      this.matchCaseItem = cmdItem(
+        toggleMatchCase, {
+          title: "Match case", 
+          icon: icons.matchCase,
+          enable: () => {return true},
+          active: () => {return this.caseSensitive}
+        }
+      );
+      let {dom, update} = this.matchCaseItem.render(view);
+      this.matchCaseDom = dom;
+      let matchCaseSpan = crelt("span", {class: prefix + "-menuitem"}, this.matchCaseDom);
+
+      // Add the divs holding the MenuItems
+      searchbar.appendChild(this.status);
+      searchbar.appendChild(searchBackwardSpan);
+      searchbar.appendChild(searchForwardSpan);
+      searchbar.appendChild(separator);
+      searchbar.appendChild(matchCaseSpan);
+
+      // Then update the matchCaseItem to indicate the current setting, which is held in this 
+      // SearchItem.
+      update(view.state);
+    }
+
+    searchForwardCommand(state, dispatch, view) {
+      let command = this.commands.searchForCommand(this.text, "forward");
+      command(state, dispatch, view);
+      this.scrollToSelection(view);
+      this.setStatus();
+    }
+
+    searchBackwardCommand(state, dispatch, view) {
+      let command = this.commands.searchForCommand(this.text, "backward");
+      command(state, dispatch, view);
+      this.scrollToSelection(view);
+      this.setStatus();
+    }
+
+    toggleMatchCaseCommand(state, dispatch, view) {
+      this.caseSensitive = !this.caseSensitive;
+      this.commands.matchCase(this.caseSensitive);
+      if (view) {
+        this.stopSearching(false);
+        let {dom, update} = this.matchCaseItem.render(view);
+        this.matchCaseDom.parentElement.replaceChild(dom, this.matchCaseDom);
+        this.matchCaseDom = dom;
+        update(state);
+      }
+    }
+    
+    /**
+     * Use the dom to scroll to the node at the selection. The scrollIntoView when setting the 
+     * selection in prosemirror-search findCommand doesn't work, perhaps because the selection 
+     * is set on state.doc instead of state.tr.doc. 
+     * 
+     * TODO: This method has some problems in that it can
+     * scroll to a paragraph, and then the next element will be in a bold section within the 
+     * paragraph, causing it to jump. It would be much better if the prosemirror-search 
+     * scrollIntoView worked properly.
+     * 
+     * @param {EditorView} view 
+     */
+    scrollToSelection(view) {
+      const { node } = view.domAtPos(view.state.selection.anchor);
+      // In case node is a Node not an Element
+      let element = (node instanceof Element) ? node : node.parentElement;
+      element?.scrollIntoView(false);
     }
 
     render(view) {
       let {dom, update} = this.item.render(view);
-      let styledElement = crelt(this.style, this.styleLabel);
-      dom.replaceChild(styledElement, dom.firstChild);
-      return {dom, update}
+      this.update = update;
+      return {dom, update};
     }
+
   }
+
+  /** A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar */
+  class MoreItem {
+
+    constructor(items) {
+      let options = {
+        enable: (state) => { return true },
+        active: (state) => { return this.showing() },
+        title: 'Show more',
+        icon: icons.more
+      };
+      this.command = this.toggleMore.bind(this);
+      this.item = cmdItem(this.command, options);
+      this.items = items;
+    }
+
+    showing() {
+      return getToolbarMore() != null;
+    }
+
+    toggleMore(state, dispatch, view) {
+      if (this.showing()) {
+        this.hideMore();
+      } else {
+        this.showMore(state, dispatch, view);
+      }
+      this.update && this.update(state);
+    }
+
+    hideMore() {
+      let toolbarMore = getToolbarMore();
+      toolbarMore.parentElement.removeChild(toolbarMore);
+    }
+
+    showMore(state, dispatch, view) {
+      let toolbar = getToolbar();
+      if (!toolbar) return;
+      let idClass = prefix + "-toolbar-more";
+      let toolbarMore = crelt('div', { class: idClass, id: idClass } );
+      let {dom, update} = renderGrouped(view, [this.items]);
+      toolbarMore.appendChild(dom);
+      toolbar.parentElement.insertBefore(toolbarMore, toolbar.nextSibling);
+      // Then update the moreItem to show it's active
+      update(view.state);
+    }
+
+    render(view) {
+      let {dom, update} = this.item.render(view);
+      this.update = update;
+      return {dom, update};
+    }
+
+  }
+
+  /**
+   * Return a MenuItem that runs the command when selected.
+   * 
+   * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
+   * what `cmd(state)` returns unless otherwise specified in `options`.
+   * @param {Command}     cmd 
+   * @param {*} options   The spec for the MenuItem
+   * @returns {MenuItem}
+   */
+  function cmdItem(cmd, options) {
+    let passedOptions = {
+      label: options.title,
+      run: cmd
+    };
+    for (let prop in options) passedOptions[prop] = options[prop];
+    if ((!options.enable || options.enable === true) && !options.select)
+      passedOptions[options.enable ? "enable" : "select"] = state => cmd(state);
+
+    return new MenuItem(passedOptions)
+  }
+
+  /** Return a span for a separator between groups of MenuItems */
+  function separator() {
+      return crelt("span", { class: prefix + "-menuseparator" });
+  }
+
+  /**
+   * Return whether the selection in state is within a mark of type `markType`.
+   * @param {EditorState} state 
+   * @param {MarkType} type 
+   * @returns {boolean} True if the selection is within a mark of type `markType`
+   */
+  function markActive(state, type) {
+    let { from, $from, to, empty } = state.selection;
+    if (empty) return type.isInSet(state.storedMarks || $from.marks())
+    else return state.doc.rangeHasMark(from, to, type)
+  }
+
+  /**
+   * Return a string intended for the user to see showing the first key mapping for `itemName`.
+   * @param {string} itemName           The name of the item in the keymap
+   * @param {[string : string]} keymap  The mapping between item names and hotkeys
+   * @returns string
+   */
+  function keyString(itemName, keymap) {
+    let keyString = keymap[itemName];
+    if (!keyString) return ''
+    if (keyString instanceof Array) keyString = keyString[0];  // Use the first if there are multiple
+    // Clean up to something more understandable
+    keyString = keyString.replaceAll("Mod", "Cmd");
+    keyString = keyString.replaceAll("-", "+");
+    return ' (' + keyString + ')'
+  }
+
+  function renderGrouped(view, content) {
+      let result = document.createDocumentFragment();
+      let updates = [], separators = [];
+      for (let i = 0; i < content.length; i++) {
+          let items = content[i], localUpdates = [], localNodes = [];
+          for (let j = 0; j < items.length; j++) {
+              let { dom, update } = items[j].render(view);
+              let span = crelt("span", { class: prefix + "-menuitem" }, dom);
+              result.appendChild(span);
+              localNodes.push(span);
+              localUpdates.push(update);
+          }
+          if (localUpdates.length) {
+              updates.push(combineUpdates(localUpdates, localNodes));
+              if (i < content.length - 1)
+                  separators.push(result.appendChild(separator()));
+          }
+      }
+      function update(state) {
+          let something = false, needSep = false;
+          for (let i = 0; i < updates.length; i++) {
+              let hasContent = updates[i](state);
+              if (i)
+                  separators[i - 1].style.display = needSep && hasContent ? "" : "none";
+              needSep = hasContent;
+              if (hasContent)
+                  something = true;
+          }
+          return something;
+      }
+      return { dom: result, update };
+  }
+
+  /**
+   * Like `renderGrouped`, but at `wrapIndex` in the `content`, place a `MoreItem` that 
+   * will display a subtoolbar of `content` items starting at `wrapIndex` when it is 
+   * pressed. The `MoreItem` renders using `renderGrouped`, not `renderGroupedFit`. Let's 
+   * face it, if you need to wrap a toolbar into more than two lines, you need to think
+   * through your life choices.
+   * 
+   * @param {EditorView} view 
+   * @param {[MenuItem | [MenuItem]]} content 
+   * @param {number}  wrapAtIndex             The index in  content` to wrap in another toolbar
+   * @returns 
+   */
+  function renderGroupedFit(view, content, wrapAtIndex) {
+    let result = document.createDocumentFragment();
+    let updates = [], separators = [];
+    let itemIndex = 0;
+    let moreItems = [];
+    for (let i = 0; i < content.length; i++) {
+      let items = content[i], localUpdates = [], localNodes = [];
+      for (let j = 0; j < items.length; j++) {
+        if (itemIndex >= wrapAtIndex) {
+          // Track the items to be later rendered in the "more" dropdown
+          moreItems.push(items[j]);
+        } else {
+          let { dom, update } = items[j].render(view);
+          let span = crelt("span", { class: prefix + "-menuitem" }, dom);
+          result.appendChild(span);
+          localNodes.push(span);
+          localUpdates.push(update);
+        }
+        itemIndex++;
+      }
+      if (localUpdates.length) {
+        updates.push(combineUpdates(localUpdates, localNodes));
+        if (i < content.length - 1)
+          separators.push(result.appendChild(separator()));
+      }
+    }
+    if (moreItems.length > 0) {
+      let more = new MoreItem(moreItems);
+      let {dom, update} = more.render(view);
+      let span = crelt("span", { class: prefix + "-menuitem" }, dom);
+      result.appendChild(span);
+      updates.push(update);
+    }
+    function update(state) {
+      let something = false, needSep = false;
+      for (let i = 0; i < updates.length; i++) {
+        let hasContent = updates[i](state);
+        if (i)
+          separators[i - 1].style.display = needSep && hasContent ? "" : "none";
+        needSep = hasContent;
+        if (hasContent)
+          something = true;
+      }
+      return something;
+    }
+    return { dom: result, update };
+  }
+
+  function renderDropdownItems(items, view) {
+      let rendered = [], updates = [];
+      for (let i = 0; i < items.length; i++) {
+          let { dom, update } = items[i].render(view);
+          rendered.push(crelt("div", { class: prefix + "-menu-dropdown-item" }, dom));
+          updates.push(update);
+      }    return { dom: rendered, update: combineUpdates(updates, rendered) };
+  }
+
+  function combineUpdates(updates, nodes) {
+      return (state) => {
+          let something = false;
+          for (let i = 0; i < updates.length; i++) {
+              let up = updates[i](state);
+              nodes[i].style.display = up ? "" : "none";
+              if (up)
+                  something = true;
+          }
+          return something;
+      };
+  }
+
+  let lastMenuEvent = { time: 0, node: null };
+
+  function markMenuEvent(e) {
+      lastMenuEvent.time = Date.now();
+      lastMenuEvent.node = e.target;
+  }
+
+  function isMenuEvent(wrapper) {
+      return Date.now() - 100 < lastMenuEvent.time &&
+          lastMenuEvent.node && wrapper.contains(lastMenuEvent.node);
+  }
+
+  /**
+   * Adapted, expanded, and copied-from prosemirror-menu under MIT license.
+   * Original prosemirror-menu at https://github.com/prosemirror/prosemirror-menu.
+   * 
+   * Adaptations:
+   *  - Modify buildMenuItems to use a `config` object that specifies visibility and content
+   *  - Use separate buildKeymap in keymap.js with a `config` object that specifies key mappings
+   *  - Modify icons to use SVG from Google Material Fonts
+   *  - Allow Dropdown menus to be icons, not just labels
+   *  - Replace use of prompt with custom dialogs for links and images
+   * 
+   * Expansions:
+   *  - Added table support using MarkupEditor capabilities for table editing
+   *  - Use MarkupEditor capabilities for list/denting across range
+   *  - Use MarkupEditor capability for toggling and changing list types
+   *  - Added SearchItem, LinkItem, ImageItem
+   *  - Added TableCreateSubmenu and TableInsertItem in support of table creation
+   *  - Added ParagraphStyleItem to support showing font sizes for supported styles
+   * 
+   * Copied:
+   *  - MenuItem
+   *  - Dropdown
+   *  - DropdownSubmenu
+   *  - Various "helper methods" returning MenuItems
+   */
+
 
   /**
    * Build an array of MenuItems and nested MenuItems that comprise the content of the Toolbar 
@@ -22183,29 +22205,6 @@
     if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, attrs: { level: 6 }}));
     if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }));
     return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
-  }
-
-  /* Rendering support and utility functions for MenuItem, Dropdown */
-
-  function renderDropdownItems(items, view) {
-      let rendered = [], updates = [];
-      for (let i = 0; i < items.length; i++) {
-          let { dom, update } = items[i].render(view);
-          rendered.push(crelt("div", { class: prefix + "-menu-dropdown-item" }, dom));
-          updates.push(update);
-      }    return { dom: rendered, update: combineUpdates(updates, rendered) };
-  }
-
-  let lastMenuEvent = { time: 0, node: null };
-
-  function markMenuEvent(e) {
-      lastMenuEvent.time = Date.now();
-      lastMenuEvent.node = e.target;
-  }
-
-  function isMenuEvent(wrapper) {
-      return Date.now() - 100 < lastMenuEvent.time &&
-          lastMenuEvent.node && wrapper.contains(lastMenuEvent.node);
   }
 
   /**

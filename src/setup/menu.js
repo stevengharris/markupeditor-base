@@ -24,16 +24,13 @@
  *  - Various "helper methods" returning MenuItems
  */
 
-import crel from "crelt"
 import {
-  setStyleCommand,
   indentCommand,
   outdentCommand,
   undoCommand,
   redoCommand,
   toggleFormatCommand,
   wrapInListCommand, 
-  insertTableCommand,
   addRowCommand, 
   addColCommand, 
   addHeaderCommand, 
@@ -58,343 +55,20 @@ import {
   insertImageCommand, 
   modifyImageCommand
 } from "../markup"
+import { icons } from "./icons";
 import { 
-  icons, 
-  getIcon 
-} from "./icons";
-import { 
-  MenuItem, 
-  MoreItem,
-  SearchItem,
+  MenuItem,
+  Dropdown,
+  DropdownSubmenu,
+  ParagraphStyleItem,
   LinkItem,
   ImageItem,
-  cmdItem, 
+  TableCreateSubmenu,
+  SearchItem,
+  cmdItem,
   keyString,
   markActive,
-  combineUpdates
 } from "./menuitems";
-import { 
-  prefix,
-  setClass, 
-  translate,
-} from "./utilities"
-
-/**
-A drop-down menu, displayed as a label with a downwards-pointing
-triangle to the right of it.
-*/
-export class Dropdown {
-
-  /**
-  Create a dropdown wrapping the elements.
-  */
-  constructor(content, options = {}) {
-    this.prefix = prefix + "-menu";
-    this.options = options;
-    if (this.options.indicator == undefined) this.options.indicator = true;
-    this.content = Array.isArray(content) ? content : [content];
-  }
-  /**
-  Render the dropdown menu and sub-items.
-  */
-  render(view) {
-    let options = this.options;
-    let content = renderDropdownItems(this.content, view);
-    let win = view.dom.ownerDocument.defaultView || window;
-    let indicator = crel("span", "\u25BE");
-    setClass(indicator, this.prefix + "-dropdown-indicator", true);
-    let label;
-    if (this.options.icon) {
-      label = getIcon(view.root, this.options.icon)
-      if (options.indicator) label.appendChild(indicator)
-      setClass(label, this.prefix + "-dropdown-icon", true)
-    } else {
-      label = crel("span", {
-        class: this.prefix + "-dropdown",
-        style: this.options.css
-      });
-      label.appendChild(crel("span", this.options.label))
-      label.appendChild(indicator)
-    }
-    if (this.options.title)
-      label.setAttribute("title", translate(view, this.options.title));
-    if (this.options.labelClass)
-      label.classList.add(this.options.labelClass)
-    let enabled = true;
-    if (this.options.enable) {
-      enabled = this.options.enable(state) || false;
-      setClass(dom, this.prefix + "-disabled", !enabled);
-    }
-    let iconWrapClass = this.options.indicator ? "-dropdown-icon-wrap" : "-dropdown-icon-wrap-noindicator"
-    let wrapClass = (this.options.icon) ? this.prefix + iconWrapClass : this.prefix + "-dropdown-wrap"
-    let wrap = crel("span", { class: wrapClass }, label);
-    let open = null;
-    let listeningOnClose = null;
-    let close = () => {
-      if (open && open.close()) {
-        open = null;
-        win.removeEventListener("mousedown", listeningOnClose);
-      }
-    };
-    label.addEventListener("mousedown", e => {
-      e.preventDefault();
-      markMenuEvent(e);
-      if (open) {
-        close();
-      }
-      else {
-        open = this.expand(wrap, content.dom);
-        win.addEventListener("mousedown", listeningOnClose = () => {
-          if (!isMenuEvent(wrap))
-            close();
-        });
-      }
-    });
-
-    function update(state) {
-      if (options.enable) {
-        let enabled = options.enable(state) || false;
-        setClass(label, this.prefix + "-disabled", !enabled);
-      }
-      if (options.titleUpdate) {
-        let newTitle = options.titleUpdate(state);
-        label.replaceChild(document.createTextNode(newTitle), label.firstChild)
-      }
-      let inner = content.update(state);
-      wrap.style.display = inner ? "" : "none";
-      return inner;
-    }
-    return { dom: wrap, update };
-  }
-
-  expand(dom, items) {
-    let menuDOM = crel("div", { class: this.prefix + "-dropdown-menu" + (this.options.class || "") }, items);
-    let done = false;
-    function close() {
-      if (done)
-        return false;
-      done = true;
-      dom.removeChild(menuDOM);
-      return true;
-    }
-    dom.appendChild(menuDOM);
-    return { close, node: menuDOM };
-  }
-}
-
-/**
-Represents a submenu wrapping a group of elements that start
-hidden and expand to the right when hovered over or tapped.
-*/
-export class DropdownSubmenu {
-
-  /**
-  Creates a submenu for the given group of menu elements. The
-  following options are recognized:
-  */
-  constructor(content, options = {}) {
-    this.prefix = prefix + "-menu"
-    this.options = options;
-    this.content = Array.isArray(content) ? content : [content];
-  }
-
-  /**
-  Renders the submenu.
-  */
-  render(view) {
-    let options = this.options;
-    let items = renderDropdownItems(this.content, view);
-    let win = view.dom.ownerDocument.defaultView || window;
-    let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
-    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, crel("div", { class: this.prefix + "-submenu" }, items.dom));
-    let listeningOnClose = null;
-    label.addEventListener("mousedown", e => {
-      e.preventDefault();
-      markMenuEvent(e);
-      setClass(wrap, this.prefix + "-submenu-wrap-active", false);
-      if (!listeningOnClose)
-        win.addEventListener("mousedown", listeningOnClose = () => {
-          if (!isMenuEvent(wrap)) {
-            wrap.classList.remove(this.prefix + "-submenu-wrap-active");
-            win.removeEventListener("mousedown", listeningOnClose);
-            listeningOnClose = null;
-          }
-        });
-    });
-    function update(state) {
-      let enabled = true;
-      if (options.enable) {
-        enabled = options.enable(state) || false;
-        setClass(label, this.prefix + "-disabled", !enabled);
-      }
-      let inner = items.update(state);
-      wrap.style.display = inner ? "" : "none";
-      return inner;
-    }
-    return { dom: wrap, update };
-  }
-}
-
-/**
-  A submenu for creating a table, which contains many TableInsertItems each of which 
-  will insert a table of a specific size. The items are bounded divs in a css grid 
-  layout that highlight to show the size of the table being created, so we end up with 
-  a compact way to display 24 TableInsertItems.
-  */
-class TableCreateSubmenu {
-  constructor(options = {}) {
-    this.prefix = prefix + "-menu"
-    this.options = options;
-    this.content = []
-    this.maxRows = 6
-    this.maxCols = 4
-    this.rowSize = 0
-    this.colSize = 0
-    for (let row = 0; row < this.maxRows; row++) {
-      for (let col = 0; col < this.maxCols; col++) {
-        // If we want the MenuItem div to respond to keydown, it needs to contain something, 
-        // in this case a non-breaking space. Just ' ' doesn't work.
-        let options = {
-          label: '\u00A0', 
-          active: () => {
-            return (row < this.rowSize) && (col < this.colSize)
-          }
-        }
-        let insertItem = new TableInsertItem(row + 1, col + 1, this.onMouseover.bind(this), options)
-        this.content.push(insertItem)
-      }
-    }
-  }
-
-  /**
-   * Track rowSize and columnSize as we drag over an item in the `sizer`.
-   * @param {number} rows 
-   * @param {number} cols 
-   */
-  onMouseover(rows, cols) {
-    this.rowSize = rows
-    this.colSize = cols
-    this.itemsUpdate(view.state)
-  }
-
-  resetSize() {
-    this.rowSize = 0;
-    this.colSize = 0;
-  }
-
-  /**
-  Renders the submenu.
-  */
-  render(view) {
-    let resetSize = this.resetSize.bind(this);
-    let options = this.options;
-    let items = renderDropdownItems(this.content, view);
-    this.itemsUpdate = items.update;  // Track the update method so we can update as the mouse is over items
-    let win = view.dom.ownerDocument.defaultView || window;
-    let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
-    let sizer = crel("div", { class: this.prefix + "-tablesizer" }, items.dom);
-    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, sizer);
-    let listeningOnClose = null;
-    // Clear the sizer when the mouse moves outside of it
-    // It's not enough to just resetSize, because it doesn't clear properly until the 
-    // mouse is back over an item.
-    sizer.addEventListener("mouseleave", () => {this.onMouseover.bind(this)(0, 0)})
-    label.addEventListener("mousedown", e => {
-      e.preventDefault();
-      markMenuEvent(e);
-      setClass(wrap, this.prefix + "-submenu-wrap-active", false);
-      if (!listeningOnClose)
-        win.addEventListener("mousedown", listeningOnClose = () => {
-          if (!isMenuEvent(wrap)) {
-            wrap.classList.remove(this.prefix + "-submenu-wrap-active");
-            win.removeEventListener("mousedown", listeningOnClose);
-            listeningOnClose = null;
-          }
-        });
-    });
-    function update(state) {
-      resetSize();
-      let enabled = true;
-      if (options.enable) {
-        enabled = options.enable(state) || false;
-        setClass(label, this.prefix + "-disabled", !enabled);
-      }
-      let inner = items.update(state);
-      wrap.style.display = inner ? "" : "none";
-      return inner;
-    }
-    return { dom: wrap, update };
-  }
-
-}
-
-/**
- * A MenuItem that inserts a table of size rows/cols and invokes `onMouseover` when 
- * the mouse is over it to communicate the size of table it will create when selected.
- */
-export class TableInsertItem {
-
-  constructor(rows, cols, onMouseover, options) {
-    this.prefix = prefix + "-menuitem"
-    this.rows = rows
-    this.cols = cols
-    this.onMouseover = onMouseover
-    this.command = insertTableCommand(this.rows, this.cols)
-    this.item = this.tableInsertItem(this.command, options)
-  }
-
-  tableInsertItem(command, options) {
-    let passedOptions = {
-      run: command,
-      enable(state) { return command(state); },
-    };
-    for (let prop in options)
-      passedOptions[prop] = options[prop];
-    return new MenuItem(passedOptions);
-  }
-
-  render(view) {
-    let {dom, update} = this.item.render(view);
-    dom.addEventListener('mouseover', e => {
-      this.onMouseover(this.rows, this.cols)
-    })
-    return {dom, update}
-  }
-
-}
-
-class ParagraphStyleItem {
-
-  constructor(nodeType, style, options) {
-    this.style = style
-    this.styleLabel = options["label"] ?? "Unknown" // It should always be specified
-    this.item = this.paragraphStyleItem(nodeType, style, options)
-  }
-
-  paragraphStyleItem(nodeType, style, options) {
-    let command = setStyleCommand(style)
-    let passedOptions = {
-        run: command,
-        enable(state) { return command(state) },
-        active(state) {
-            let { $from, to, node } = state.selection;
-            if (node)
-                return node.hasMarkup(nodeType, options.attrs);
-            return to <= $from.end() && $from.parent.hasMarkup(nodeType, options.attrs);
-        }
-    };
-    for (let prop in options)
-        passedOptions[prop] = options[prop];
-    return new MenuItem(passedOptions);
-  }
-
-  render(view) {
-    let {dom, update} = this.item.render(view);
-    let styledElement = crel(this.style, this.styleLabel)
-    dom.replaceChild(styledElement, dom.firstChild);
-    return {dom, update}
-  }
-}
 
 /**
  * Build an array of MenuItems and nested MenuItems that comprise the content of the Toolbar 
@@ -677,28 +351,4 @@ function styleMenuItems(config, schema) {
   if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, attrs: { level: 6 }}))
   if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }))
   return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
-}
-
-/* Rendering support and utility functions for MenuItem, Dropdown */
-
-export function renderDropdownItems(items, view) {
-    let rendered = [], updates = [];
-    for (let i = 0; i < items.length; i++) {
-        let { dom, update } = items[i].render(view);
-        rendered.push(crel("div", { class: prefix + "-menu-dropdown-item" }, dom));
-        updates.push(update);
-    };
-    return { dom: rendered, update: combineUpdates(updates, rendered) };
-}
-
-let lastMenuEvent = { time: 0, node: null };
-
-function markMenuEvent(e) {
-    lastMenuEvent.time = Date.now();
-    lastMenuEvent.node = e.target;
-}
-
-function isMenuEvent(wrapper) {
-    return Date.now() - 100 < lastMenuEvent.time &&
-        lastMenuEvent.node && wrapper.contains(lastMenuEvent.node);
 }

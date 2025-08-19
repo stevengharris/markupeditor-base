@@ -26,10 +26,12 @@ import {
     insertImageCommand, 
     modifyImageCommand,
 } from "../markup"
-import {
-    TableInsertItem
-} from "./menu"
-import { SearchItem, LinkItem, ImageItem } from "./menuitems"
+import { 
+    SearchItem, 
+    LinkItem, 
+    ImageItem, 
+    TableInsertItem 
+} from "./menuitems"
 
 /**
  * Return a map of Commands that will be invoked when key combos are pressed.
