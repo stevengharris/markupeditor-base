@@ -90,10 +90,7 @@ export function buildMenuItems(config, schema) {
   if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
   if (styleBar) itemGroups.push(styleBarItems(config, schema));
   if (formatBar) itemGroups.push(formatItems(config, schema));
-  if (search) {
-    let searchCommands = {searchForCommand, cancelSearch, matchCase, matchCount, matchIndex}
-    itemGroups.push([new SearchItem(config, searchCommands)])
-  }
+  if (search) itemGroups.push([new SearchItem(config)]);
   return itemGroups;
 }
 
@@ -152,8 +149,7 @@ function insertBarItems(config, schema) {
   let items = [];
   let { link, image, tableMenu } = config.toolbar.insertBar;
   if (link) {
-    let linkCommands = {getLinkAttributes, selectFullLink, getSelectionRect, insertLinkCommand, deleteLinkCommand}
-    items.push(new LinkItem(config, linkCommands))
+    items.push(new LinkItem(config))
   }
   if (image) {
     let imageCommands = {getImageAttributes, insertImageCommand, modifyImageCommand, getSelectionRect}

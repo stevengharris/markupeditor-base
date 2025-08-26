@@ -15,7 +15,20 @@ import {
 } from "./utilities";
 import {
     setStyleCommand,
-    insertTableCommand
+    insertTableCommand,
+    getLinkAttributes, 
+    selectFullLink, 
+    getSelectionRect, 
+    insertLinkCommand, 
+    deleteLinkCommand,
+    getImageAttributes, 
+    insertImageCommand, 
+    modifyImageCommand,
+    searchForCommand, 
+    cancelSearch,
+    matchCase,
+    matchCount,
+    matchIndex
 } from "../markup"
 
 /**
@@ -274,13 +287,11 @@ export class ParagraphStyleItem {
 
 /**
  * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
- * Requires commands={getLinkAttributes, selectFullLink, getSelectionRect, insertLinkCommand, deleteLinkCommand}
  */
 export class LinkItem {
 
-  constructor(config, commands) {
+  constructor(config) {
     let keymap = config.keymap
-    this.commands = commands
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
@@ -319,10 +330,10 @@ export class LinkItem {
    * @param {EditorView} view 
    */
   createLinkDialog(view) {
-    this.href = this.commands.getLinkAttributes().href;   // href is what is linked-to, undefined if there is no link at selection
+    this.href = getLinkAttributes().href;   // href is what is linked-to, undefined if there is no link at selection
 
     // Select the full link if the selection is in one, and then set selectionDivRect that surrounds it
-    this.commands.selectFullLink(view);
+    selectFullLink(view);
     this.selectionDivRect = this.getSelectionDivRect()
 
     // Show the selection, because the view is not focused, so it doesn't otherwise show up
@@ -486,7 +497,7 @@ export class LinkItem {
     let originX = wrapper.getBoundingClientRect().left;
     let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
     let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
-    let selrect = this.commands.getSelectionRect();
+    let selrect = getSelectionRect();
     let top = selrect.top + scrollY - originY;
     let left = selrect.left + scrollX - originX;
     let right = selrect.right;
@@ -567,8 +578,8 @@ export class LinkItem {
    */
   insertLink(state, dispatch, view) {
     if (!this.isValid()) return;
-    if (this.href) this.commands.deleteLinkCommand()(state, dispatch, view);
-    let command = this.commands.insertLinkCommand(this.hrefValue());
+    if (this.href) deleteLinkCommand()(state, dispatch, view);
+    let command = insertLinkCommand(this.hrefValue());
     let result = command(view.state, view.dispatch);
     if (result) this.closeDialog();
   }
@@ -581,7 +592,7 @@ export class LinkItem {
    * @param {EditorView} view 
    */
   deleteLink(state, dispatch, view) {
-    let command = this.commands.deleteLinkCommand();
+    let command = deleteLinkCommand();
     let result = command(state, dispatch, view);
     if (result) this.closeDialog();
   }
@@ -619,12 +630,11 @@ export class LinkItem {
  */
 export class ImageItem {
 
-  constructor(config, commands) {
+  constructor(config) {
     this.config = config
-    this.commands = commands
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
-      active: (state) => { return this.commands.getImageAttributes(state).src  },
+      active: (state) => { return getImageAttributes(state).src  },
       title: 'Insert/edit image' + keyString('image', config.keymap),
       icon: icons.image
     };
@@ -663,7 +673,7 @@ export class ImageItem {
    * @param {EditorView} view 
    */
   createImageDialog(view) {
-    let {src, alt} = this.commands.getImageAttributes(view.state);
+    let {src, alt} = getImageAttributes(view.state);
     this.src = src   // src for the selected image, undefined if there is no image at selection
     this.alt = alt
 
@@ -882,7 +892,7 @@ export class ImageItem {
     let originX = wrapper.getBoundingClientRect().left;
     let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
     let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
-    let selrect = this.commands.getSelectionRect();
+    let selrect = getSelectionRect();
     let top = selrect.top + scrollY - originY;
     let left = selrect.left + scrollX - originX;
     let right = selrect.right;
@@ -974,7 +984,7 @@ export class ImageItem {
   insertImage(state, dispatch, view) {
     let newSrc = this.srcValue();
     let newAlt = this.altValue();
-    let command = (this.src) ? this.commands.modifyImageCommand(newSrc, newAlt) : this.commands.insertImageCommand(newSrc, newAlt);
+    let command = (this.src) ? modifyImageCommand(newSrc, newAlt) : insertImageCommand(newSrc, newAlt);
     let result = command(view.state, view.dispatch, view);
     if (result) this.closeDialog();
   }
@@ -1139,9 +1149,8 @@ export class TableCreateSubmenu {
  */
 export class SearchItem {
 
-  constructor(config, commands) {
+  constructor(config) {
     let keymap = config.keymap
-    this.commands = commands
     let options = {
       enable: (state) => { return true },
       active: (state) => { return this.showing() },
@@ -1177,7 +1186,7 @@ export class SearchItem {
   }
 
   stopSearching(focus=true) {
-    this.commands.cancelSearch();
+    cancelSearch();
     this.setStatus();
     if (focus) view.focus();
   }
@@ -1208,8 +1217,8 @@ export class SearchItem {
   }
 
   setStatus() {
-    let count = this.commands.matchCount();
-    let index = this.commands.matchIndex();
+    let count = matchCount();
+    let index = matchIndex();
     if (this.status) this.status.innerHTML = this.statusString(count, index);
   }
 
@@ -1268,14 +1277,14 @@ export class SearchItem {
   }
 
   searchForwardCommand(state, dispatch, view) {
-    let command = this.commands.searchForCommand(this.text, "forward");
+    let command = searchForCommand(this.text, "forward");
     command(state, dispatch, view);
     this.scrollToSelection(view);
     this.setStatus();
   }
 
   searchBackwardCommand(state, dispatch, view) {
-    let command = this.commands.searchForCommand(this.text, "backward");
+    let command = searchForCommand(this.text, "backward");
     command(state, dispatch, view);
     this.scrollToSelection(view);
     this.setStatus();
@@ -1283,7 +1292,7 @@ export class SearchItem {
 
   toggleMatchCaseCommand(state, dispatch, view) {
     this.caseSensitive = !this.caseSensitive;
-    this.commands.matchCase(this.caseSensitive);
+    matchCase(this.caseSensitive);
     if (view) {
       this.stopSearching(false);
       let {dom, update} = this.matchCaseItem.render(view);

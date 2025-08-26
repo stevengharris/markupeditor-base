@@ -168,16 +168,14 @@ export function appendToolbar(menuItems) {
 }
 
 export function toggleSearch() {
-  let searchCommands = {searchForCommand, cancelSearch, matchCase, matchCount, matchIndex}
-  let searchItem = new SearchItem(getMarkupEditorConfig(), searchCommands)
+  let searchItem = new SearchItem(getMarkupEditorConfig())
   // TODO: How to not rely on toolbarView being present
   let view = toolbarView.editorView
   searchItem.toggleSearch(view.state, view.dispatch, view)
 }
 
 export function openLinkDialog() {
-  let linkCommands = {getLinkAttributes, selectFullLink, getSelectionRect, insertLinkCommand, deleteLinkCommand}
-  let linkItem = new LinkItem(getMarkupEditorConfig(), linkCommands)
+  let linkItem = new LinkItem(getMarkupEditorConfig())
   let view = toolbarView.editorView
   linkItem.openLinkDialog(view.state, view.dispatch, view)
 }
