@@ -285,6 +285,13 @@ export class ParagraphStyleItem {
   }
 }
 
+/**
+ * DialogItem provides common functionality for MenuItems that present dialogs next to 
+ * a selection, such as LinkItem and ImageItem. The shared functionality mainly deals 
+ * with opening, closing, and positioning the dialog so it stays in view as much as possible.
+ * Each of the subclasses defines its `dialogWidth` and `dialogHeight` and deals with its 
+ * own content/layout.
+ */
 class DialogItem {
 
     constructor(config) {

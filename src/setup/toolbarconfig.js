@@ -19,7 +19,8 @@
  *    )
  *    
  * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
- * within a toolbar or menu using the settings specific to that toolbar or menu.
+ * within a toolbar or menu using the settings specific to that toolbar or menu. Customize 
+ * left-to-right ordering using the "ordering" settings.
  */
 export class ToolbarConfig {
 
@@ -31,7 +32,15 @@ export class ToolbarConfig {
       "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
       "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
       "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
-      "search": true,           // Whether the search menu item (hide/show search bar) is visible
+      "search": true,           // Whether the search item (hide/show search bar) is visible
+    },
+    "ordering": {               // Control the ordering of toolbars, etc, ascending left-to-right
+      "correctionBar": 10,      // Correction bar order if it is visible
+      "insertBar": 20,          // Insert bar (link, image, table) order if it is visible
+      "styleMenu": 30,          // Style menu (p, h1-h6, code) order if it is visible
+      "styleBar": 40,           // Style bar (bullet/numbered lists) order if it is visible
+      "formatBar": 50,          // Format bar (b, i, u, etc) order if it is visible
+      "search": 60,             // Search item (hide/show search bar) order if it is visible
     },
     "insertBar": {
       "link": true,             // Whether the link menu item is visible

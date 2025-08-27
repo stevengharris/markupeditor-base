@@ -84,14 +84,29 @@ import {
  */
 export function buildMenuItems(config, schema) {
   let itemGroups = [];
+  let itemOrder = [];
+  let ordering = config.toolbar.ordering;
   let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.toolbar.visibility;
-  if (correctionBar) itemGroups.push(correctionBarItems(config));
-  if (insertBar) itemGroups.push(insertBarItems(config, schema));
-  if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
-  if (styleBar) itemGroups.push(styleBarItems(config, schema));
-  if (formatBar) itemGroups.push(formatItems(config, schema));
-  if (search) itemGroups.push([new SearchItem(config)]);
-  return itemGroups;
+  if (correctionBar) {
+    itemGroups.push({item: correctionBarItems(config), order: ordering.correctionBar});
+  }
+  if (insertBar) {
+    itemGroups.push({item: insertBarItems(config, schema), order: ordering.insertBar});
+  }
+  if (styleMenu) {
+    itemGroups.push({item: styleMenuItems(config, schema), order: ordering.styleMenu});
+  }
+  if (styleBar) {
+    itemGroups.push({item: styleBarItems(config, schema), order: ordering.styleBar});
+  }
+  if (formatBar) {
+    itemGroups.push({item: formatItems(config, schema), order: ordering.formatBar});
+  }
+  if (search) {
+    itemGroups.push({item: [new SearchItem(config)], order: ordering.search});
+  }
+  itemGroups.sort((a, b) => a.order - b.order);
+  return itemGroups.map((ordered) => ordered.item)
 }
 
 /**
