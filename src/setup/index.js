@@ -11,23 +11,13 @@ import {buildKeymap} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 import {setPrefix, getMarkupEditorConfig} from "./utilities.js"
-import {LinkItem, SearchItem} from "./menuitems.js"
+import {LinkItem, ImageItem, SearchItem} from "./menuitems.js"
 import {
   placeholderText, 
   postMessage, 
   selectedID, 
   searchIsActive, 
   setPlaceholder,
-  searchForCommand, 
-  cancelSearch, 
-  matchCase, 
-  matchCount, 
-  matchIndex,
-  getLinkAttributes, 
-  selectFullLink, 
-  getSelectionRect, 
-  insertLinkCommand, 
-  deleteLinkCommand,
 } from "../markup"
 
 /**
@@ -177,7 +167,13 @@ export function toggleSearch() {
 export function openLinkDialog() {
   let linkItem = new LinkItem(getMarkupEditorConfig())
   let view = toolbarView.editorView
-  linkItem.openLinkDialog(view.state, view.dispatch, view)
+  linkItem.openDialog(view.state, view.dispatch, view)
+}
+
+export function openImageDialog() {
+  let imageItem = new ImageItem(getMarkupEditorConfig())
+  let view = toolbarView.editorView
+  imageItem.openDialog(view.state, view.dispatch, view)
 }
 
 /**

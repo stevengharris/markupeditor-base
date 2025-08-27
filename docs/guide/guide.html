@@ -127,7 +127,7 @@ app.listen('3000', () =&gt; {
 <pre><code>$ node markupeditor.js docs/demo/demo.html --port 8000
 Server listening at http://localhost:8000</code></pre>
 
-<p>The MarkupEditor documentation, including this Developer Guide, is hosted using GitHub Pages. You can use npm/node to view the docs locally using:</p>
+<p>The MarkupEditor documentation, including this Developer’s Guide, is hosted using GitHub Pages. You can use npm/node to view the docs locally using:</p>
 
 <pre><code>$ npm run docs
 
@@ -146,7 +146,7 @@ cp -f ./styles/toolbar.css ./docs/styles/toolbar.css
 
 Server listening at http://localhost:3000</code></pre>
 
-<p>Besides invoking node on the <code>index.js</code> in the docs directory, the script runs a “predocs” step that copies the required MarkupEditor files into locations in the docs directory. When the changes are pushed to GitHub, it kicks off a refresh of the <a href="https://stevengharris.github.io/markupeditor-base/">project web site</a>. This process makes for a nice closed loop - edit the project web site contents locally using the MarkupEditor, and then update the site when the changes are pushed to GitHub.</p>
+<p>Besides invoking node on the <code>index.js</code> in the docs directory, the script runs a “predocs” step that copies the required MarkupEditor files into locations in the docs directory. When the changes are pushed to GitHub, it kicks off a refresh of the <a href="https://stevengharris.github.io/markupeditor-base/">project web site</a>. This process makes for a nice closed loop — edit the project web site contents locally using the MarkupEditor, and then update the site when the changes are pushed to GitHub.</p>
 
 <p>This is the extent of “application environments” that are supported out-of-the-box when you install the MarkupEditor base project. It’s the minimum needed to develop and debug the MarkupEditor in its base form. The MarkupEditor can, however, be embedded in other environments. Before we cover that, let’s cover configuration, how you use the MarkupEditor API, and how to hook into the notifications it provides as you edit a document.</p>
 
@@ -170,7 +170,7 @@ Server listening at http://localhost:3000</code></pre>
     </li>
 </ul>
 
-<p>You can view the full set of options in each configuration class in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Each config provides a <code>standard()</code> static function that returns the default configuration used by the MarkupEditor when you don’t specify a configuration. Note that <code>ToolbarConfig</code> is independent of <code>KeymapConfig</code> because, for example, while you may <em>not</em> want to display undo and redo buttons in the toolbar, you <em>will</em> want to map them to hotkeys like <code>Cmd+S</code> and <code>Shift+Cmd+S</code> (the default in both cases).</p>
+<p>You can view the full set of options in each configuration class in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a> documentation. Each config provides a <code>standard()</code> static function that returns the default configuration used by the MarkupEditor when you don’t specify a configuration. Note that <code>ToolbarConfig</code> is independent of <code>KeymapConfig</code> because, for example, while you may <em>not</em> want to display undo and redo buttons in the toolbar, you <em>will</em> want to map them to hotkeys like <code>Cmd+S</code> and <code>Shift+Cmd+S</code> (the default in both cases).</p>
 
 <p>A simple way to customize configuration is to use one of the pre-defined static methods to get a config object back. You can then modify that config object as needed. Going all the way back to our “Hello, world!” example, we could add the undo/redo buttons in by making the correction sub-toolbar visible, turn off the ability for users to insert tables, and we could change the hotkey used for adding a link:</p>
 
@@ -183,7 +183,8 @@ Server listening at http://localhost:3000</code></pre>
         document.querySelector('#editor'), {
             html: '&lt;h1&gt;Hello, world!&lt;/h1&gt;',
             toolbar: toolbarConfig,
-            keymap: keymapConfig
+            keymap: keymapConfig,
+            placeholder: "&lt;p&gt;Edit document...&lt;/p&gt;"
         }
     )
 &lt;/script&gt;</code></pre>
@@ -198,7 +199,11 @@ Server listening at http://localhost:3000</code></pre>
 
 <h4>Visibility</h4>
 
-<p>You can control the visibility of each of the individual bars and menus by name; for example, <code>toolbarConfig.visibility.correctionBar = false</code> or <code>toolbarConfig.visibility.search = false.</code> Within the bars and menus, you can also control what is visible. For example, <code>toolbarConfig.insertBar.table = false</code> will remove the <em>tableMenu</em>. Within the <em>tableMenu</em>, you can control whether it includes a <em>Header</em> or <em>Border</em> item. The individual controls are itemized with comments in <code>src/setup/toolbarconfig.js</code>. It’s also possible to turn off the overall toolbar using <code>toolbarConfig.visibility.toolbar = false</code>. This is useful when you define your own toolbar, something that is done in the Swift MarkupEditor.</p>
+<p>You can control the visibility of each of the individual bars and menus by name; for example, <code>toolbarConfig.visibility.correctionBar = false</code> or <code>toolbarConfig.visibility.search = false.</code> Within the bars and menus, you can also control what is visible. For example, <code>toolbarConfig.insertBar.table = false</code> will remove the <em>tableMenu</em>. Within the <em>tableMenu</em>, you can control whether it includes a <em>Header</em> or <em>Border</em> item. The individual controls are itemized with comments in <code>src/setup/toolbarconfig.js</code>. It’s also possible to turn off the overall toolbar using <code>toolbarConfig.visibility.toolbar = false</code>. This is useful when you define your own toolbar, something that is done in the <a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a>.</p>
+
+<h4>Size</h4>
+
+<p>Toolbar items are </p>
 
 <h4>Style Visibility and Names</h4>
 
@@ -206,7 +211,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <h4>Ordering</h4>
 
-<p>TBD.</p>
+<p>You can re-order the toolbar items using <code>toolbarConfig.ordering</code>. The default values in ascending order left to right go from 10 for the <code>correctionBar</code>, 60 for <code>search</code>. So, for example, you could put the <code>formatBar</code> between the <code>correctionBar</code> and <code>insertBar</code> using <code>toolbarConfig.ordering.formatBar = 15</code>. The ordering of items within the individual bars and menus is not configurable.</p>
 
 <h4>Icons</h4>
 

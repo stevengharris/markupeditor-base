@@ -20633,6 +20633,13 @@
     }
   }
 
+  /**
+   * DialogItem provides common functionality for MenuItems that present dialogs next to 
+   * a selection, such as LinkItem and ImageItem. The shared functionality mainly deals 
+   * with opening, closing, and positioning the dialog so it stays in view as much as possible.
+   * Each of the subclasses defines its `dialogWidth` and `dialogHeight` and deals with its 
+   * own content/layout.
+   */
   class DialogItem {
 
       constructor(config) {
@@ -21847,14 +21854,28 @@
    */
   function buildMenuItems(config, schema) {
     let itemGroups = [];
+    let ordering = config.toolbar.ordering;
     let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.toolbar.visibility;
-    if (correctionBar) itemGroups.push(correctionBarItems(config));
-    if (insertBar) itemGroups.push(insertBarItems(config));
-    if (styleMenu) itemGroups.push(styleMenuItems(config, schema));
-    if (styleBar) itemGroups.push(styleBarItems(config, schema));
-    if (formatBar) itemGroups.push(formatItems(config, schema));
-    if (search) itemGroups.push([new SearchItem(config)]);
-    return itemGroups;
+    if (correctionBar) {
+      itemGroups.push({item: correctionBarItems(config), order: ordering.correctionBar});
+    }
+    if (insertBar) {
+      itemGroups.push({item: insertBarItems(config), order: ordering.insertBar});
+    }
+    if (styleMenu) {
+      itemGroups.push({item: styleMenuItems(config, schema), order: ordering.styleMenu});
+    }
+    if (styleBar) {
+      itemGroups.push({item: styleBarItems(config, schema), order: ordering.styleBar});
+    }
+    if (formatBar) {
+      itemGroups.push({item: formatItems(config, schema), order: ordering.formatBar});
+    }
+    if (search) {
+      itemGroups.push({item: [new SearchItem(config)], order: ordering.search});
+    }
+    itemGroups.sort((a, b) => a.order - b.order);
+    return itemGroups.map((ordered) => ordered.item)
   }
 
   /* Correction Bar (Undo, Redo) */
@@ -22707,7 +22728,13 @@
   function openLinkDialog() {
     let linkItem = new LinkItem(getMarkupEditorConfig());
     let view = exports.toolbarView.editorView;
-    linkItem.openLinkDialog(view.state, view.dispatch, view);
+    linkItem.openDialog(view.state, view.dispatch, view);
+  }
+
+  function openImageDialog() {
+    let imageItem = new ImageItem(getMarkupEditorConfig());
+    let view = exports.toolbarView.editorView;
+    imageItem.openDialog(view.state, view.dispatch, view);
   }
 
   /**
@@ -22772,7 +22799,8 @@
    *    )
    *    
    * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
-   * within a toolbar or menu using the settings specific to that toolbar or menu.
+   * within a toolbar or menu using the settings specific to that toolbar or menu. Customize 
+   * left-to-right ordering using the "ordering" settings.
    */
   class ToolbarConfig {
 
@@ -22784,7 +22812,15 @@
         "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
         "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
         "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
-        "search": true,           // Whether the search menu item (hide/show search bar) is visible
+        "search": true,           // Whether the search item (hide/show search bar) is visible
+      },
+      "ordering": {               // Control the ordering of toolbars, etc, ascending left-to-right
+        "correctionBar": 10,      // Correction bar order if it is visible
+        "insertBar": 20,          // Insert bar (link, image, table) order if it is visible
+        "styleMenu": 30,          // Style menu (p, h1-h6, code) order if it is visible
+        "styleBar": 40,           // Style bar (bullet/numbered lists) order if it is visible
+        "formatBar": 50,          // Format bar (b, i, u, etc) order if it is visible
+        "search": 60,             // Search item (hide/show search bar) order if it is visible
       },
       "insertBar": {
         "link": true,             // Whether the link menu item is visible
@@ -23216,6 +23252,7 @@
   exports.isChanged = isChanged;
   exports.loadUserFiles = loadUserFiles;
   exports.modifyImage = modifyImage;
+  exports.openImageDialog = openImageDialog;
   exports.openLinkDialog = openLinkDialog;
   exports.outdent = outdent;
   exports.padBottom = padBottom;

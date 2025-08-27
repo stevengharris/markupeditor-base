@@ -93,7 +93,8 @@ import {
   prependToolbar, 
   appendToolbar,
   toggleSearch,
-  openLinkDialog
+  openLinkDialog,
+  openImageDialog
 } from "./setup/index.js"
 
 import {MessageHandler} from "./messagehandler.js"
@@ -160,6 +161,7 @@ export {
   deleteLink,
   getDataImages,
   savedDataImage,
+  openImageDialog,
   insertImage,
   modifyImage,
   cutImage,
