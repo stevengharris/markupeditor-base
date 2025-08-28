@@ -28,7 +28,7 @@ export class KeymapConfig {
         // Insert
         "link": ["Mod-K", "Mod-k"],
         "image": ["Mod-G", "Mod-g"],
-        "table": ["Mod-T", "Mod-t"],
+        //"table": ["Mod-T", "Mod-t"],  // Does not work anyway
         // Stylebar
         "bullet": ["Ctrl-U", "Ctrl-u"],
         "number": ["Ctrl-O", "Ctrl-o"],
@@ -40,8 +40,8 @@ export class KeymapConfig {
         "underline": ["Mod-U", "Mod-u"],
         "strikethrough": ["Ctrl-S", "Ctrl-s"],
         "code": "Mod-`",
-        "subscript": "Ctrl-,",
-        "superscript": "Ctrl-.",
+        "subscript": "Ctrl-Mod--",
+        "superscript": "Ctrl-Mod-+",
         // Search
         "search": ["Ctrl-F", "Ctrl-f"],
     }
