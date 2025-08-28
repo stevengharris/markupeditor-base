@@ -1,4 +1,4 @@
-<h1>Developer's Guide</h1>
+<h1>MarkupEditor Developer's Guide</h1>
 
 <h2>Concepts</h2>
 
@@ -160,13 +160,13 @@ Server listening at http://localhost:3000</code></pre>
 
 <ul>
     <li>
-        <p><code>ToolbarConfig</code> specifies whether the toolbar itself is visible, which sub-toolbars/dropdowns are visible, and which items are included in each.</p>
+        <p><code>ToolbarConfig</code> specifies whether the toolbar itself is visible, which sub-toolbars/dropdowns are visible, and which items are included in each. Refer to <code>src/setup/toolbarconfig.js</code>.</p>
     </li>
     <li>
-        <p><code>KeymapConfig</code> specifies how editing actions map to key combos (aka hotkeys).</p>
+        <p><code>KeymapConfig</code> specifies how editing actions map to key combos (aka hotkeys). Refer to <code>src/setup/keymapconfig.js</code>.</p>
     </li>
     <li>
-        <p><code>BehaviorConfig</code> specifies various ways the MarkupEditor behaves that are not specific to the menu/toolbar or keymap configurations.</p>
+        <p><code>BehaviorConfig</code> specifies various ways the MarkupEditor behaves that are not specific to the menu/toolbar or keymap configurations. Refer to <code>src/setup/behaviorconfig.js</code>.</p>
     </li>
 </ul>
 
@@ -203,7 +203,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <h4>Size</h4>
 
-<p>Toolbar items are </p>
+<p>The toolbar attempts to conform to Apple’s Human Interface Guidelines in terms of size. It scales properly with zoom-in and zoom-out, but is not resizable by configuration. You could adjust or override the settings in s<code>tyles/toolbar.css</code> if needed. Note that the toolbar autosizes to fit within the containing element width using a <code>…</code> (aka “More” button) on the right when the total item width is too large to fit. Pressing the More button will expose the missing elements using a sub-toolbar. The toolbar responds to resizing events, so window resizing (or device rotation) will re-evaluate whether the More button is needed to accommodate the contents.</p>
 
 <h4>Style Visibility and Names</h4>
 
@@ -215,19 +215,179 @@ Server listening at http://localhost:3000</code></pre>
 
 <h4>Icons</h4>
 
-<p>TBD.</p>
+<p>The toolbar icons are not currently configurable. Toolbar icons are from <a href="https://fonts.google.com/icons">Google’s Material Design Icons</a> set and downloaded as SVG from that site. The SVG definitions are in <code>src/setup/icons.js</code>. You can extend the toolbar by prepending or appending a custom group of icons and attaching commands to them.</p>
 
 <h3>KeymapConfig</h3>
 
-<p>TBD.</p>
+<p>The KeymapConfig follows <a href="https://github.com/ProseMirror/prosemirror-keymap">ProseMirror conventions</a>. To quote the comments from <a href="https://github.com/ProseMirror/prosemirror-keymap/blob/081f24f65b6a394174a4bdf07b9a55a00361f1b7/src/keymap.ts">keymap.ts</a>…</p>
+
+<blockquote>
+    <pre><code>/// Key names may be strings like `"Shift-Ctrl-Enter"`—a key
+/// identifier prefixed with zero or more modifiers. Key identifiers
+/// are based on the strings that can appear in
+/// [`KeyEvent.key`](https:///developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key).
+/// Use lowercase letters to refer to letter keys (or uppercase letters
+/// if you want shift to be held). You may use `"Space"` as an alias
+/// for the `" "` name.
+///
+/// Modifiers can be given in any order. `Shift-` (or `s-`), `Alt-` (or
+/// `a-`), `Ctrl-` (or `c-` or `Control-`) and `Cmd-` (or `m-` or
+/// `Meta-`) are recognized. For characters that are created by holding
+/// shift, the `Shift-` prefix is implied, and should not be added
+/// explicitly.
+///
+/// You can use `Mod-` as a shorthand for `Cmd-` on Mac and `Ctrl-` on
+/// other platforms.
+///
+/// You can add multiple keymap plugins to an editor. The order in
+/// which they appear determines their precedence (the ones early in
+/// the array get to dispatch first).</code></pre>
+</blockquote>
+
+<p>It’s likely that the hotkeys you want to use are specific to your application environment. (In fact, some of the <code>standard()</code> defaults conflict with web browser navigation defaults.) In the end, there is no right way for a library to set up key bindings, so you should make sure they are set up as you want. As noted earlier, the ToolbarConfig and KeymapConfig are independent, but by default only the key mappings for visible toolbar elements are set up. Undo and redo are the exceptions to this rule and are always set up whether the <code>correctionBar</code> is visible or not. The <code>desktop()</code> KeymapConfig settings are useful for a desktop app, since they include all mappings that can then be used to set up a menu independently of the toolbar, something that is used in the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor desktop</a> version.</p>
 
 <h3>BehaviorConfig</h3>
 
-<p>TBD.</p>
+<p>A common and simple case for BehaviorConfig is to control whether the editor takes focus after it loads. Sometimes you want to be able to type immediately, and other times you want your user to click in the editor before typing. You can control this behavior by setting <code>focusAfterLoad</code> to <code>true</code> (the default) or <code>false</code>. The other options in BehaviorConfig are for more advanced usage and are discussed in more detail later:</p>
+
+<ul>
+    <li>
+        <p><strong>selectImage</strong>: Whether to show a "Select..." button in the Insert Image dialog. You need access to the file system and facilities of the application environment the MarkupEditor is embedded in.</p>
+    </li>
+    <li>
+        <p><strong>insertLink</strong>: Whether to defer to the MarkupDelegate rather than use the default LinkDialog. You can replace the default LinkDialog used to insert and edit links with your own by implementing <code>markupInsertLink</code> in your MarkupDelegate.</p>
+    </li>
+    <li>
+        <p><strong>insertImage</strong>: Whether to defer to the MarkupDelegate rather than use the default ImageDialog. You can replace the default ImageDialog used to insert and edit images with your own by implementing <code>markupInsertImage</code> in your MarkupDelegate.</p>
+    </li>
+</ul>
+
+<h2>Extending the Toolbar</h2>
+
+<p>You can prepend and append your own toolbar to the MarkupEditor toolbar you have configured. For more detail, take a look at the MarkupEditor Demo in the <code>docs/demo</code> directory. The intent of the demo to provide a document that contains all the elements supported in the MarkupEditor, and to describe how to use the editor. But, to make the demo more useful, even in a browser, it was helpful to provide some tools beyond the default toolbar. This is done by prepending a DemoToolbar:</p>
+
+<p><img src="cfa35165-ae8d-4b01-8058-85d29cc18aeb.png" width="790" height="107"></p>
+
+<p>Here is part of the demotoolbar.js code used to create the DemoToolbar…</p>
+
+<pre><code>/** A class holding the command items and functionality for a File toolbar that is prepended to the MarkupEditor toolbar */
+class DemoToolbar {
+  constructor() { 
+    this.menuItems = this.buildMenuItems()
+  }
+
+  /** SVG defining icons by key, obtained from https://fonts.google.com/icons under https://openfontlicense.org license. */
+  icons = {
+    new: {
+      // &lt;span class="material-symbols-outlined"&gt;note_add&lt;/span&gt;
+      svg: '&lt;svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"&gt;&lt;path d="M440-240h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/&gt;&lt;/svg&gt;'
+    },
+    open: {
+      // &lt;span class="material-symbols-outlined"&gt;file_open&lt;/span&gt;
+      svg: '&lt;svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"&gt;&lt;path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v240h-80v-200H520v-200H240v640h360v80H240Zm638 15L760-183v89h-80v-226h226v80h-90l118 118-56 57Zm-638-95v-640 640Z"/&gt;&lt;/svg&gt;'
+    },
+    html: {
+      // &lt;span class="material-symbols-outlined"&gt;html&lt;/span&gt;
+      svg: '&lt;svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"&gt;&lt;path d="M0-360v-240h60v80h80v-80h60v240h-60v-100H60v100H0Zm310 0v-180h-70v-60h200v60h-70v180h-60Zm170 0v-200q0-17 11.5-28.5T520-600h180q17 0 28.5 11.5T740-560v200h-60v-180h-40v140h-60v-140h-40v180h-60Zm320 0v-240h60v180h100v60H800Z"/&gt;&lt;/svg&gt;'
+    },
+    copy: {
+      // &lt;span class="material-symbols-outlined"&gt;file_copy&lt;/span&gt;
+      svg: '&lt;svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"&gt;&lt;path d="M744-192H312q-29 0-50.5-21.5T240-264v-576q0-29 21.5-50.5T312-912h312l192 192v456q0 29-21.5 50.5T744-192ZM576-672v-168H312v576h432v-408H576ZM168-48q-29 0-50.5-21.5T96-120v-552h72v552h456v72H168Zm144-792v195-195 576-576Z"/&gt;&lt;/svg&gt;'
+    }
+  }
+
+  /** Return an array of MenuItems */
+  buildMenuItems() {
+    let newItem = MU.cmdItem(
+      this.newDocument.bind(this),
+      {
+        enable: () =&gt; { return true },
+        title: 'New document',
+        icon: this.icons.new
+      }
+    )
+    let openItem = MU.cmdItem(
+      this.openDocument.bind(this),
+      {
+        enable: () =&gt; { return true },
+        title: 'Open document',
+        icon: this.icons.open
+      }
+    )
+    let htmlItem = MU.cmdItem(
+      this.toggleRaw.bind(this),
+      {
+        enable: () =&gt; { return true },
+        title: 'Show HTML',
+        icon: this.icons.html
+      }
+    )
+    let copyItem = MU.cmdItem(
+      this.copyRaw.bind(this),
+      {
+        enable: () =&gt; { return true },
+        title: 'Copy HTML',
+        icon: this.icons.copy
+      }
+    )
+    return [newItem, openItem, htmlItem, copyItem]
+  }
+
+  newDocument() {
+    MU.emptyDocument()
+    this.updateRaw()
+  }
+
+  // ... more code ...
+}</code></pre>
+
+<p>The code will be loaded as a script and has access to the global <code>MU</code> to execute MarkupEditor functionality. When we instantiate the DemoToolbar, we set up <code>menuItems</code>, an array of MenuItem instances, each of which is created using the <code>MU.cmdItem</code> function. The <code>MU.cmdItem</code> function takes a command/function as its first argument along with options that define when the MenuItem should be enabled, what to use as a title when hovering over it, and what to display as its icon. The icons are defined using SVG taken from Google’s <a href="https://fonts.google.com/icons">Material Design Icon set</a>. For the one function included in the snippet above, <code>newDocument</code>, we use the <code>MU.emptyDocument()</code> function and then update the demo’s “raw HTML” that allows the user to see the underlying HTML as it changes.</p>
+
+<p>In the <code>index.html</code> that loads the demo, we load the <code>demotoolbar.js</code> script, and then after creating the MarkupEditor instance, we create a DemoToolbar instance and prepend its menu items:</p>
+
+<pre><code>&lt;script src="src/demotoolbar.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+    const markupEditor = new MU.MarkupEditor(
+        document.querySelector('#editor'),
+        {
+            delegate: new DemoDelegate(),
+            placeholder: 'Edit document...',
+            filename: 'demo.html',
+        }
+    )
+    // Instantiate the DemoToolbar and place its `menuItems` at the front of the toolbar.
+    const demoToolbar = new DemoToolbar()
+    MU.prependToolbar(demoToolbar.menuItems)
+&lt;/script&gt;</code></pre>
+
+<p>In addition to <code>prependToolbar</code> and <code>appendToolbar</code>, the key elements and functions used to create the MarkupEditor toolbar are available to you to create your own, including:</p>
+
+<ul>
+    <li>
+        <p>MenuItem</p>
+    </li>
+    <li>
+        <p>Dropdown</p>
+    </li>
+    <li>
+        <p>DropdownSubmenu</p>
+    </li>
+    <li>
+        <p>cmdItem</p>
+    </li>
+    <li>
+        <p>renderGrouped,</p>
+    </li>
+    <li>
+        <p>renderDropdownItems</p>
+    </li>
+</ul>
+
+<p>The <code>toolbarView</code> itself is also available to you if needed. Refer to the code in the MarkupEditor Demo and in the MarkupEditor itself to learn more about how a toolbar and its MenuItems and Dropdowns are built.</p>
 
 <h2>Communicating with the MarkupEditor</h2>
 
-<p>It’s important to recognize <em>where</em> your code is executing when using the MarkupEditor. In the configuration example, we are executing a script that is running inside of the web view itself. The global <code>MU</code> was created when you loaded <code>markupeditor.umd.js</code> earlier, so it’s available for you to reference directly in any script you load <em>after</em> <code>markupeditor.umd.js</code>. When you are executing in the application environment process you used to create and hold the web view, like Node.js or an iOS app, you will have to access <code>MU</code> with a call to something like <code>executeJavaScript</code>. We will cover that a little later.</p>
+<p>It’s important to recognize <em>where</em> your code is executing when using the MarkupEditor. In the examples we’ve shown so far, we are executing a script that is running inside of the web view itself. The global <code>MU</code> was created when you loaded <code>markupeditor.umd.js</code> earlier, so it’s available for you to reference directly in any script you load <em>after</em> <code>markupeditor.umd.js</code>. When you are executing in the application environment process you used to create and hold the web view, like Node.js or an iOS app, you will have to access <code>MU</code> with a call to something like <code>executeJavaScript</code>. We will cover that a little later.</p>
 
 <h3>Getting and Setting MarkupEditor Contents</h3>
 

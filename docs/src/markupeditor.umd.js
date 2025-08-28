@@ -22909,7 +22909,7 @@
           // Insert
           "link": ["Mod-K", "Mod-k"],
           "image": ["Mod-G", "Mod-g"],
-          "table": ["Mod-T", "Mod-t"],
+          //"table": ["Mod-T", "Mod-t"],  // Does not work anyway
           // Stylebar
           "bullet": ["Ctrl-U", "Ctrl-u"],
           "number": ["Ctrl-O", "Ctrl-o"],
@@ -22921,8 +22921,8 @@
           "underline": ["Mod-U", "Mod-u"],
           "strikethrough": ["Ctrl-S", "Ctrl-s"],
           "code": "Mod-`",
-          "subscript": "Ctrl-,",
-          "superscript": "Ctrl-.",
+          "subscript": "Ctrl-Mod--",
+          "superscript": "Ctrl-Mod-+",
           // Search
           "search": ["Ctrl-F", "Ctrl-f"],
       }
@@ -22966,10 +22966,10 @@
   class BehaviorConfig {
 
       static all = {
-          "focusAfterLoad": true,
-          "selectImage": false,
-          "insertLink": false,
-          "insertImage": false,
+          "focusAfterLoad": true,     // Whether the editor should take focus after loading
+          "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
+          "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
+          "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
       }
 
       static standard() { 
