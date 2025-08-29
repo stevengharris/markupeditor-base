@@ -20947,7 +20947,7 @@
     }
 
     isValid() {
-      return URL.canParse(this.hrefValue())
+      return true //URL.canParse(this.hrefValue())
     }
 
     /**

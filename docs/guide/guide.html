@@ -639,4 +639,76 @@ webviewPanel.webview.onDidReceiveMessage(this.handleMessage.bind(this));</code><
 
 <p>You can review the source code and README for the <a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a> project for more details.</p>
 
+<h3>MarkupEditor Project Structure</h3>
+
+<p>The <a href="https://github.com/stevengharris/markupeditor-base">MarkupEditor</a> is built using <a href="https://prosemirror.net">ProseMirror</a>. ProseMirror is a toolkit for building an editor. It’s well-<a href="https://prosemirror.net/docs/">documented</a>, well-architected, and has a lively and supportive <a href="https://discuss.prosemirror.net">forum</a>. You should <a href="https://marijnhaverbeke.nl/fund/">support it</a> if you can, particularly if you use the MarkupEditor to make a profit. If you want to modify the MarkupEditor itself, you will need to understand quite a bit about ProseMirror, a topic that is beyond the scope of this document. This section will cover a bit about the build and the structure of the MarkupEditor, as a way to help if you need to or want to modify it. You should be familiar with the <a href="https://github.com/stevengharris/markupeditor-base/blob/main/README.md">README</a> in the <a href="https://github.com/stevengharris/markupeditor-base">repository</a>.</p>
+
+<p>As identified in the project’s <code>package.json</code> <code>files</code> section, there are two directories containing the critical files needed to use the MarkupEditor: <code>dist</code> and <code>styles</code>.</p>
+
+<h4>Styles</h4>
+
+<p>The <code>styles</code> directory contains css files needed by the editor. There are three files that need to be loaded in a specific order:</p>
+
+<ol>
+    <li>
+        <p><strong><code>mirror.css</code></strong>: Styling needed to support basic ProseMirror editing, including the gap cursor and selection behavior.</p>
+    </li>
+    <li>
+        <p><strong><code>markup.css</code></strong>: Styling needed to support basic MarkupEditor editing. For example, styling for the elements supported by the MarkupEditor and for resizing images.</p>
+    </li>
+    <li>
+        <p><strong><code>toolbar.css</code></strong>: Styling needed for the toolbar. For example, how MenuItems and Dropdowns are styled.</p>
+    </li>
+</ol>
+
+<p>To make loading the styles simpler, the directory contains a <code>markupeditor.css</code> that you can use, which includes the other css files in the proper order.</p>
+
+<h4>Rolled-Up MarkupEditor JavaScript</h4>
+
+<p>The <code>dist</code> directory contains the MarkupEditor JavaScript combined with its ProseMirror dependencies. The <code>dist</code> directory is produced using <a href="https://rollupjs.org">rollup</a>. It contains the same content bundled in various ways. The only format discussed and used here is the Universal Module Definition: <code>markupeditor.umd.js</code>. The corresponding CommonJS (<code>markupeditor.cjs.js</code>) and ECMAScript Module (<code>markupeditor.esm.js</code>) forms are also provided for convenience. The <code>npm build</code> command invokes <code>rollup -c</code> to produce the <code>dist</code> directory contents as specified in <code>rollup.config.mjs</code>.</p>
+
+<h4>Key Files</h4>
+
+<p>All the MarkupEditor-specific JavaScript source code is held within <code>src/js</code>. One of rollup's key features is <a href="https://rollupjs.org/faqs/#what-is-tree-shaking"><u>tree-shaking</u></a>, ensuring that only code used by the MarkupEditor is included. So, while it's possible that <code>src/js</code> contains code that is not reachable from the MarkupEditor, rollup ensures that only code reachable from <code>src/js/main.js</code> is included in the final <code>dist/markupmirror.umd.js</code>. The rollup-produced code in <code>dist/markupeditor.umd.js</code> is still readable and debuggable and includes comments.</p>
+
+<p>The following file names and directories are relative to <code>src/js</code>. We have covered the various config files and the MessageHandler elsewhere, so they will not be discussed more here.</p>
+
+<h5><code>main.js</code></h5>
+
+<p>Everything starts at <code>main.js</code>. It creates the ProseMirror EditorView with an initial EditorState based on the Schema defined in <code>schema/index.js</code>. The EditorState includes a set of MarkupEditor-specific Plugins defined in <code>setup/index.js</code>. The view includes MarkupEditor-specific NodeViews defined in <code>markup.js</code>. It also includes special handling of some events to notify the Swift side of state changes. It's important to note that <code>main.js</code> specifies - in its exports - what the MarkupEditor public API is.</p>
+
+<h5><code>markup.js</code></h5>
+
+<p>This is the heart of the MarkupEditor functionality. As we have seen in earlier examples, the exported functions are invoked from with the prefix <code>MU</code>. For example, the JavaScript function to toggle the current selection to bold:</p>
+
+<pre><code>export function toggleBold() {
+    _toggleFormat('B');
+};</code></pre>
+
+<p>is invoked from within a script as <code>MU.toggleBold()</code>. Similarly, when invoked from, say, Electron, you would use <code>evaluateJavaScript</code> to access the same function.</p>
+
+<p>Note that the exported functions in <code>markup.js</code> do not comprise the MarkupEditor API. The exports in <code>main.js</code> define the MarkupEditor API.</p>
+
+<p>Included in <code>markup.js</code> are two ProseMirror NodeViews: <code>ImageView</code> and <code>DivView</code>. NodeViews provide special handling when rendering a ProseMirror Node. For example, the <code>ImageView</code> lets us handle image resizing in the MarkupEditor using a combination of CSS styling of resize handles and the logic in the <code>ResizableImage</code> class defined in <code>markup.js</code>.</p>
+
+<h5><code>setup/index.js</code></h5>
+
+<p>The <code>setup/index.js</code> file defines and returns the set of ProseMirror Plugins used by the MarkupEditor. These plugins are loaded from <code>main.js</code>. The plugins are commented reasonably well, but details of the code and what a ProseMirror Plugin is, are beyond the scope of this document.</p>
+
+<h5><code>setup/keymap.js</code></h5>
+
+<p>Sets up the keymapping/hotkeys for the MarkupEditor as specified in <code>setup/keymapconfig.js</code>. Beyond the ProseMirror example key mappings, the MarkupEditor includes list handling and table selection/navigation. The MarkupEditor also chains commands to <code>Enter</code> and <code>Delete</code> that invoke <code>stateChanged</code> (and potentially search) as needed.</p>
+
+<h5><code>schema/index.js</code></h5>
+
+<p>From the ProseMirror <a href="https://prosemirror.net/docs/ref/"><u>Reference manual</u></a>:</p>
+
+<blockquote>
+    <p>Every ProseMirror document conforms to a schema, which describes the set of nodes and marks that it is made out of, along with the relations between those, such as which node may occur as a child node of which other nodes.</p>
+</blockquote>
+
+<p>Basically, if it's not defined in the schema, then it cannot exist in a MarkupEditor document. For example, if you attempt to load HTML containing SPAN elements, they will be ignored. (This is not strictly true, since the MarkupEditor preprocesses HTML to extract SPAN contents that will be recognized by the MarkupEditor as defined in the Schema.) The end result is that MarkupEditor only produces "clean" HTML documents, not ones littered with SPANS and styles. You can paste from an HTML page in your browser, which often contains gnarly HTML because of whatever the web site used to produce it, but it will be brought into the MarkupEditor containing only the elements defined in the schema.</p>
+
+<p>This file defines the Schema for the MarkupEditor. It's similar to the ProseMirror example, but includes such things as DIV and BUTTON to support usage of multiple <code>contenteditable</code> divs in the Swift MarkupEditor.</p>
+
 <p></p>
