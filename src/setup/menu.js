@@ -36,21 +36,12 @@ import {
   addHeaderCommand, 
   deleteTableAreaCommand,
   setBorderCommand,
-  searchForCommand,
   listTypeFor, 
   getListType, 
   isIndented,
   isTableSelected,
   tableHasHeader,
-  cancelSearch,
-  matchCase,
-  matchCount,
-  matchIndex,
-  getLinkAttributes,
-  selectFullLink,
   getSelectionRect,
-  insertLinkCommand,
-  deleteLinkCommand,
   getImageAttributes, 
   insertImageCommand, 
   modifyImageCommand
@@ -67,6 +58,7 @@ import {
   SearchItem,
   cmdItem,
   keyString,
+  baseKeyString,
   markActive,
 } from "./menuitems";
 
@@ -84,7 +76,6 @@ import {
  */
 export function buildMenuItems(config, schema) {
   let itemGroups = [];
-  let itemOrder = [];
   let ordering = config.toolbar.ordering;
   let { correctionBar, insertBar, formatBar, styleMenu, styleBar, search } = config.toolbar.visibility;
   if (correctionBar) {
@@ -319,7 +310,7 @@ function outdentItem(options) {
  * @returns [MenuItem]      The array of MenuItems that show as passed in `config`
  */
 function formatItems(config, schema) {
-  let keymap = config.keymap;
+  let keymap = config.keymap
   let items = []
   let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.toolbar.formatBar;
   if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }))
@@ -351,15 +342,16 @@ function formatItem(markType, markName, options) {
  * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
  */
 function styleMenuItems(config, schema) {
+  let keymap = config.keymap
   let items = []
   let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
-  if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p }))
-  if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, attrs: { level: 1 }}))
-  if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, attrs: { level: 2 }}))
-  if (h3) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H3', { label: h3, attrs: { level: 3 }}))
-  if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { label: h4, attrs: { level: 4 }}))
-  if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, attrs: { level: 5 }}))
-  if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, attrs: { level: 6 }}))
+  if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p, keymap: baseKeyString('p', keymap) }))
+  if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, keymap: baseKeyString('h1', keymap), attrs: { level: 1 }}))
+  if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, keymap: baseKeyString('h2', keymap), attrs: { level: 2 }}))
+  if (h3) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H3', { label: h3, keymap: baseKeyString('h3', keymap), attrs: { level: 3 }}))
+  if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { label: h4, keymap: baseKeyString('h4', keymap), attrs: { level: 4 }}))
+  if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, keymap: baseKeyString('h5', keymap), attrs: { level: 5 }}))
+  if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, keymap: baseKeyString('h6', keymap), attrs: { level: 6 }}))
   if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }))
   return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
 }

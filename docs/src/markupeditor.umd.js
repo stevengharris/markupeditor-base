@@ -20605,6 +20605,7 @@
     constructor(nodeType, style, options) {
       this.style = style;
       this.styleLabel = options["label"] ?? "Unknown"; // It should always be specified
+      this.styleKeymap = options["keymap"];
       this.item = this.paragraphStyleItem(nodeType, style, options);
     }
 
@@ -20627,7 +20628,8 @@
 
     render(view) {
       let {dom, update} = this.item.render(view);
-      let styledElement = crelt(this.style, this.styleLabel);
+      let keymapElement = crelt ('span', {class: prefix + '-stylelabel-keymap'}, this.styleKeymap);
+      let styledElement = crelt(this.style, {class: prefix + '-stylelabel'}, this.styleLabel + '  ', keymapElement);
       dom.replaceChild(styledElement, dom.firstChild);
       return {dom, update}
     }
@@ -20646,6 +20648,7 @@
           this.config = config;
           this.dialog = null;
           this.selectionDiv = null;
+          this.selectionDivRect = null;
       }
 
       /**
@@ -20947,7 +20950,7 @@
     }
 
     isValid() {
-      return true //URL.canParse(this.hrefValue())
+      return URL.canParse(this.hrefValue())
     }
 
     /**
@@ -21677,13 +21680,20 @@
    * @returns string
    */
   function keyString(itemName, keymap) {
+    return ' (' + baseKeyString(itemName, keymap) + ')'
+  }
+
+  function baseKeyString(itemName, keymap) {
     let keyString = keymap[itemName];
     if (!keyString) return ''
     if (keyString instanceof Array) keyString = keyString[0];  // Use the first if there are multiple
     // Clean up to something more understandable
-    keyString = keyString.replaceAll("Mod", "Cmd");
-    keyString = keyString.replaceAll("-", "+");
-    return ' (' + keyString + ')'
+    keyString = keyString.replaceAll('Mod', 'Cmd');
+    keyString = keyString.replaceAll('Cmd', '\u2318');   // ⌘
+    keyString = keyString.replaceAll('Ctrl', '\u2303');  // ⌃
+    keyString = keyString.replaceAll('Shift', '\u21E7'); // ⇧
+    keyString = keyString.replaceAll('-', '');
+    return keyString
   }
 
   function renderGrouped(view, content) {
@@ -22105,15 +22115,16 @@
    * @returns [Dropdown]  The array of MenuItems that show as passed in `config`
    */
   function styleMenuItems(config, schema) {
+    let keymap = config.keymap;
     let items = [];
     let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
-    if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p }));
-    if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, attrs: { level: 1 }}));
-    if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, attrs: { level: 2 }}));
-    if (h3) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H3', { label: h3, attrs: { level: 3 }}));
-    if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { label: h4, attrs: { level: 4 }}));
-    if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, attrs: { level: 5 }}));
-    if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, attrs: { level: 6 }}));
+    if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p, keymap: baseKeyString('p', keymap) }));
+    if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, keymap: baseKeyString('h1', keymap), attrs: { level: 1 }}));
+    if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, keymap: baseKeyString('h2', keymap), attrs: { level: 2 }}));
+    if (h3) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H3', { label: h3, keymap: baseKeyString('h3', keymap), attrs: { level: 3 }}));
+    if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { label: h4, keymap: baseKeyString('h4', keymap), attrs: { level: 4 }}));
+    if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, keymap: baseKeyString('h5', keymap), attrs: { level: 5 }}));
+    if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, keymap: baseKeyString('h6', keymap), attrs: { level: 6 }}));
     if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }));
     return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
   }
@@ -22404,6 +22415,14 @@
       bind(keymap.link, new LinkItem(config).command);
       bind(keymap.image, new ImageItem(config).command);
       bind(keymap.table, new TableInsertItem().command); // TODO: Doesn't work properly
+      // Styling
+      bind(keymap.p, setStyleCommand('P'));
+      bind(keymap.h1, setStyleCommand('H1'));
+      bind(keymap.h2, setStyleCommand('H2'));
+      bind(keymap.h3, setStyleCommand('H3'));
+      bind(keymap.h4, setStyleCommand('H4'));
+      bind(keymap.h5, setStyleCommand('H5'));
+      bind(keymap.h6, setStyleCommand('H6'));
       // Search
       bind(keymap.search, new SearchItem(config).command);
       return keys
@@ -22910,6 +22929,14 @@
           "link": ["Mod-K", "Mod-k"],
           "image": ["Mod-G", "Mod-g"],
           //"table": ["Mod-T", "Mod-t"],  // Does not work anyway
+          // Stylemenu
+          "p": "Ctrl-Shift-0",
+          "h1": "Ctrl-Shift-1",
+          "h2": "Ctrl-Shift-2",
+          "h3": "Ctrl-Shift-3",
+          "h4": "Ctrl-Shift-4",
+          "h5": "Ctrl-Shift-5",
+          "h6": "Ctrl-Shift-6",
           // Stylebar
           "bullet": ["Ctrl-U", "Ctrl-u"],
           "number": ["Ctrl-O", "Ctrl-o"],

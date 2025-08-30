@@ -12,19 +12,7 @@ import {
     handleDelete,
     handleEnter,
     handleShiftEnter,
-    searchForCommand, 
-    cancelSearch, 
-    matchCase, 
-    matchCount, 
-    matchIndex,
-    getLinkAttributes,
-    selectFullLink, 
-    getSelectionRect, 
-    insertLinkCommand, 
-    deleteLinkCommand,
-    getImageAttributes, 
-    insertImageCommand, 
-    modifyImageCommand,
+    setStyleCommand,
 } from "../markup"
 import { 
     SearchItem, 
@@ -95,6 +83,14 @@ export function buildKeymap(config, schema) {
     bind(keymap.link, new LinkItem(config).command)
     bind(keymap.image, new ImageItem(config).command)
     bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
+    // Styling
+    bind(keymap.p, setStyleCommand('P'))
+    bind(keymap.h1, setStyleCommand('H1'))
+    bind(keymap.h2, setStyleCommand('H2'))
+    bind(keymap.h3, setStyleCommand('H3'))
+    bind(keymap.h4, setStyleCommand('H4'))
+    bind(keymap.h5, setStyleCommand('H5'))
+    bind(keymap.h6, setStyleCommand('H6'))
     // Search
     bind(keymap.search, new SearchItem(config).command)
     return keys

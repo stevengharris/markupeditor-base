@@ -277,6 +277,19 @@
   min-height: 24px;
 }
 
+.Markup-stylelabel {
+  display: flex;
+  justify-content: space-between;
+  white-space: pre;
+  width: 100%;
+}
+
+.Markup-stylelabel-keymap {
+  display: flex;
+  justify-content: flex-end;
+  color: gray;
+}
+
 .Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {
   display: block;
 }

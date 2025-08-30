@@ -256,7 +256,8 @@ export class ParagraphStyleItem {
 
   constructor(nodeType, style, options) {
     this.style = style
-    this.styleLabel = options["label"] ?? "Unknown" // It should always be specified
+    this.label = options["label"] ?? "Unknown"  // It should always be specified
+    this.keymap = options["keymap"]             // It may or may not exist
     this.item = this.paragraphStyleItem(nodeType, style, options)
   }
 
@@ -279,7 +280,9 @@ export class ParagraphStyleItem {
 
   render(view) {
     let {dom, update} = this.item.render(view);
-    let styledElement = crel(this.style, this.styleLabel)
+    let keymapElement = crel ('span', {class: prefix + '-stylelabel-keymap'}, this.keymap)
+    // Add some space between the label and keymap, css uses whitespace: pre to preserve it
+    let styledElement = crel(this.style, {class: prefix + '-stylelabel'}, this.label + '  ', keymapElement)
     dom.replaceChild(styledElement, dom.firstChild);
     return {dom, update}
   }
@@ -298,6 +301,7 @@ class DialogItem {
         this.config = config;
         this.dialog = null;
         this.selectionDiv = null;
+        this.selectionDivRect = null;
     }
 
     /**
@@ -1332,13 +1336,20 @@ export function markActive(state, type) {
  * @returns string
  */
 export function keyString(itemName, keymap) {
+  return ' (' + baseKeyString(itemName, keymap) + ')'
+}
+
+export function baseKeyString(itemName, keymap) {
   let keyString = keymap[itemName]
   if (!keyString) return ''
   if (keyString instanceof Array) keyString = keyString[0]  // Use the first if there are multiple
   // Clean up to something more understandable
-  keyString = keyString.replaceAll("Mod", "Cmd")
-  keyString = keyString.replaceAll("-", "+")
-  return ' (' + keyString + ')'
+  keyString = keyString.replaceAll('Mod', 'Cmd')
+  keyString = keyString.replaceAll('Cmd', '\u2318')   // ⌘
+  keyString = keyString.replaceAll('Ctrl', '\u2303')  // ⌃
+  keyString = keyString.replaceAll('Shift', '\u21E7') // ⇧
+  keyString = keyString.replaceAll('-', '')
+  return keyString
 }
 
 export function renderGrouped(view, content) {

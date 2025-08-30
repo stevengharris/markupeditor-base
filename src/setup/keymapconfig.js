@@ -29,6 +29,14 @@ export class KeymapConfig {
         "link": ["Mod-K", "Mod-k"],
         "image": ["Mod-G", "Mod-g"],
         //"table": ["Mod-T", "Mod-t"],  // Does not work anyway
+        // Stylemenu
+        "p": "Ctrl-Shift-0",
+        "h1": "Ctrl-Shift-1",
+        "h2": "Ctrl-Shift-2",
+        "h3": "Ctrl-Shift-3",
+        "h4": "Ctrl-Shift-4",
+        "h5": "Ctrl-Shift-5",
+        "h6": "Ctrl-Shift-6",
         // Stylebar
         "bullet": ["Ctrl-U", "Ctrl-u"],
         "number": ["Ctrl-O", "Ctrl-o"],
