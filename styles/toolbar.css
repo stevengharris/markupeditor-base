@@ -278,15 +278,18 @@
 }
 
 .Markup-stylelabel {
-  display: flex;
+  display: inline-flex;
   justify-content: space-between;
+  align-items: center;
   white-space: pre;
   width: 100%;
 }
 
 .Markup-stylelabel-keymap {
-  display: flex;
+  display: inline-flex;
   justify-content: flex-end;
+  font-size: 1.0rem;
+  font-weight: normal;
   color: gray;
 }
 
