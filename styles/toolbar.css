@@ -278,7 +278,7 @@
 }
 
 .Markup-stylelabel {
-  display: inline-flex;
+  display: flex;
   justify-content: space-between;
   align-items: center;
   white-space: pre;
@@ -286,7 +286,7 @@
 }
 
 .Markup-stylelabel-keymap {
-  display: inline-flex;
+  display: flex;
   justify-content: flex-end;
   font-size: 1.0rem;
   font-weight: normal;
