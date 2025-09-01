@@ -153,7 +153,7 @@ let baseNodes = OrderedMap.from({
       writingsuggestions: {default: false},
     },
     parseDOM: [{
-      tag: "div",
+      style: "div[id, class, parentId, class]",
       getAttrs(dom) {
         const id = dom.getAttribute("id");
         const parentId = dom.getAttribute("parentId");
