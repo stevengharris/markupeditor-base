@@ -14373,13 +14373,13 @@
     //
     // 1. Changes to div here may need to be reflected in DivView found in markup.js.
     //
-    // 2. At some point, we may want to be able to set attributes like spellcheck
-    // at an individual div level, but for now these are not needed but are left 
-    // commented-out for future use.
+    // 2. We use a style rule to require divs to include id, class, parentId. The div elements 
+    // are used in the Swift MarkupEditor under these specific conditions, and requiring these 
+    // attributes prevents issues when pasting (e.g., from GitHub READMEs) include divs.
     //
     // 3. It might be possible to exclude divs that don't conform to MarkupEditor expectations 
     // by using a rule. For now, deriving a Node from html always removes divs and buttons, so 
-    // the only way for them to get into the MarkupEditor is via addDiv and addButton.
+    // the only way for them to get into the MarkupEditor is via paste, addDiv, and addButton.
     // See https://discuss.prosemirror.net/t/how-to-filter-pasted-content-by-node-type/4866 and
     // https://prosemirror.net/docs/ref/#inputrules
     div: {
@@ -14398,7 +14398,7 @@
         writingsuggestions: {default: false},
       },
       parseDOM: [{
-        tag: "div",
+        style: "div[id, class, parentId]",
         getAttrs(dom) {
           const id = dom.getAttribute("id");
           const parentId = dom.getAttribute("parentId");
@@ -20604,8 +20604,8 @@
 
     constructor(nodeType, style, options) {
       this.style = style;
-      this.styleLabel = options["label"] ?? "Unknown"; // It should always be specified
-      this.styleKeymap = options["keymap"];
+      this.label = options["label"] ?? "Unknown";  // It should always be specified
+      this.keymap = options["keymap"];             // It may or may not exist
       this.item = this.paragraphStyleItem(nodeType, style, options);
     }
 
@@ -20628,8 +20628,9 @@
 
     render(view) {
       let {dom, update} = this.item.render(view);
-      let keymapElement = crelt ('span', {class: prefix + '-stylelabel-keymap'}, this.styleKeymap);
-      let styledElement = crelt(this.style, {class: prefix + '-stylelabel'}, this.styleLabel + '  ', keymapElement);
+      let keymapElement = crelt ('span', {class: prefix + '-stylelabel-keymap'}, this.keymap);
+      // Add some space between the label and keymap, css uses whitespace: pre to preserve it
+      let styledElement = crelt(this.style, {class: prefix + '-stylelabel'}, this.label + '  ', keymapElement);
       dom.replaceChild(styledElement, dom.firstChild);
       return {dom, update}
     }
