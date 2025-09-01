@@ -79,6 +79,23 @@ export class DivView {
 
 }
 
+export class LinkView {
+    constructor(node, view, getPos) {
+        let href = node.attrs.href
+        let title = '\u2325+Click to follow\n' + href
+        const link = document.createElement('a')
+        link.setAttribute('href', href)
+        link.setAttribute('title', title)
+        link.addEventListener('click', (ev)=> {
+            if (ev.altKey) {
+                window.open(href)
+            }
+        })
+        this.dom = link
+        this.contentDOM = this.dom
+    }
+}
+
 /**
  * The NodeView to support resizable images and callbacks, as installed in main.js.
  * 

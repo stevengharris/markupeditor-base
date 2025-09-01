@@ -7,6 +7,7 @@ import {markupSetup} from "./setup/index.js"
 import {
   DivView,
   ImageView,
+  LinkView,
   setTopLevelAttributes,
   setMessageHandler,
   loadUserFiles,
@@ -217,6 +218,7 @@ class MarkupEditor {
         plugins: markupSetup(config, schema)
       }),
       nodeViews: {
+        link(node, view, getPos) { return new LinkView(node, view, getPos)},
         image(node, view, getPos) { return new ImageView(node, view, getPos) },
         div(node, view, getPos) { return new DivView(node, view, getPos) },
       },

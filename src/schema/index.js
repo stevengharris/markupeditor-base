@@ -271,7 +271,6 @@ export const marks = {
   // :: MarkSpec A link. Has `href` and `title` attributes. `title`
   // defaults to the empty string. Rendered and parsed as an `<a>`
   // element.
-  // TODO: Eliminate title?
   link: {
     attrs: {
       href: {},
