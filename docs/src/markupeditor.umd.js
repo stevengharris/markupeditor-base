@@ -14516,7 +14516,6 @@
     // :: MarkSpec A link. Has `href` and `title` attributes. `title`
     // defaults to the empty string. Rendered and parsed as an `<a>`
     // element.
-    // TODO: Eliminate title?
     link: {
       attrs: {
         href: {},
@@ -16614,6 +16613,23 @@
           return buttonRect;
       };
 
+  }
+
+  class LinkView {
+      constructor(node, view, getPos) {
+          let href = node.attrs.href;
+          let title = '\u2325+Click to follow\n' + href;
+          const link = document.createElement('a');
+          link.setAttribute('href', href);
+          link.setAttribute('title', title);
+          link.addEventListener('click', (ev)=> {
+              if (ev.altKey) {
+                  window.open(href);
+              }
+          });
+          this.dom = link;
+          this.contentDOM = this.dom;
+      }
   }
 
   /**
@@ -21690,9 +21706,10 @@
     if (keyString instanceof Array) keyString = keyString[0];  // Use the first if there are multiple
     // Clean up to something more understandable
     keyString = keyString.replaceAll('Mod', 'Cmd');
-    keyString = keyString.replaceAll('Cmd', '\u2318');   // ⌘
-    keyString = keyString.replaceAll('Ctrl', '\u2303');  // ⌃
-    keyString = keyString.replaceAll('Shift', '\u21E7'); // ⇧
+    keyString = keyString.replaceAll('Cmd', '\u2318');     // ⌘
+    keyString = keyString.replaceAll('Ctrl', '\u2303');    // ⌃
+    keyString = keyString.replaceAll('Shift', '\u21E7');   // ⇧
+    keyString = keyString.replaceAll('Alt', '\u2325');     // ⌥
     keyString = keyString.replaceAll('-', '');
     return keyString
   }
@@ -23192,6 +23209,7 @@
           plugins: markupSetup(config, schema)
         }),
         nodeViews: {
+          link(node, view, getPos) { return new LinkView(node, view, getPos)},
           image(node, view, getPos) { return new ImageView(node, view, getPos) },
           div(node, view, getPos) { return new DivView(node, view, getPos) },
         },
