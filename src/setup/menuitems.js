@@ -1345,9 +1345,10 @@ export function baseKeyString(itemName, keymap) {
   if (keyString instanceof Array) keyString = keyString[0]  // Use the first if there are multiple
   // Clean up to something more understandable
   keyString = keyString.replaceAll('Mod', 'Cmd')
-  keyString = keyString.replaceAll('Cmd', '\u2318')   // ⌘
-  keyString = keyString.replaceAll('Ctrl', '\u2303')  // ⌃
-  keyString = keyString.replaceAll('Shift', '\u21E7') // ⇧
+  keyString = keyString.replaceAll('Cmd', '\u2318')     // ⌘
+  keyString = keyString.replaceAll('Ctrl', '\u2303')    // ⌃
+  keyString = keyString.replaceAll('Shift', '\u21E7')   // ⇧
+  keyString = keyString.replaceAll('Alt', '\u2325')     // ⌥
   keyString = keyString.replaceAll('-', '')
   return keyString
 }
