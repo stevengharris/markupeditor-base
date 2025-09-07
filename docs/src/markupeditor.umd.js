@@ -14287,19 +14287,25 @@
 
     // :: NodeSpec A heading textblock, with a `level` attribute that
     // should hold the number 1 to 6. Parsed and serialized as `<h1>` to
-    // `<h6>` elements.
+    // `<h6>` elements. We include ID so that local links can reference them.
     heading: {
-      attrs: {level: {default: 1}},
+      attrs: {
+        id: {default: null},
+        level: {default: 1}
+      },
       content: "inline*",
       group: "block",
       defining: true,
-      parseDOM: [{tag: "h1", attrs: {level: 1}},
-                 {tag: "h2", attrs: {level: 2}},
-                 {tag: "h3", attrs: {level: 3}},
-                 {tag: "h4", attrs: {level: 4}},
-                 {tag: "h5", attrs: {level: 5}},
-                 {tag: "h6", attrs: {level: 6}}],
-      toDOM(node) { return ["h" + node.attrs.level, 0] }
+      parseDOM: [
+        {tag: "h1", getAttrs(dom) { return {level: 1, id: dom.getAttribute("id")}}},
+        {tag: "h2", getAttrs(dom) { return {level: 2, id: dom.getAttribute("id")}}},
+        {tag: "h3", getAttrs(dom) { return {level: 3, id: dom.getAttribute("id")}}},
+        {tag: "h4", getAttrs(dom) { return {level: 4, id: dom.getAttribute("id")}}},
+        {tag: "h5", getAttrs(dom) { return {level: 5, id: dom.getAttribute("id")}}},
+        {tag: "h6", getAttrs(dom) { return {level: 6, id: dom.getAttribute("id")}}}],
+      toDOM(node) { 
+        return ["h" + node.attrs.level, { id: node.attrs.id }, 0]
+      }
     },
 
     // :: NodeSpec A code listing. Disallows marks or non-text inline
@@ -16624,7 +16630,21 @@
           link.setAttribute('title', title);
           link.addEventListener('click', (ev)=> {
               if (ev.altKey) {
-                  window.open(href);
+                  if (href.startsWith('#')) {
+                      let id = href.substring(1);
+                      let {pos} = nodeWithId(id, view.state);
+                      if (pos) {
+                          let resolvedPos = view.state.tr.doc.resolve(pos);
+                          let selection = TextSelection.near(resolvedPos);
+                          let transaction = view.state.tr
+                              .setSelection(selection)
+                              .scrollIntoView();
+                          view.dispatch(transaction);
+                          selectionChanged();
+                      }
+                  } else {
+                      window.open(href);
+                  }
               }
           });
           this.dom = link;
@@ -19482,6 +19502,125 @@
       return commandAdapter;
   }
 
+  function insertInternalLinkCommand(hTag, index) {
+      const commandAdapter = (state, dispatch, view) => {
+          // Find the node matching hTag that is index into the nodes matching hTag
+          let {node, pos} = headerMatching(hTag, index, state);
+          if (!node) return false
+          // Get the unique id for this header, which is may or may not already have.
+          let id = idForHeader(node, state);
+          let attrs = node.attrs;
+          attrs.id = id;
+          // Insert the mark (id is always referenced with # at front) and set (or reset) the 
+          // id in the header itself. We don't care if it's the same, but we want these changes 
+          // to be made in a single transaction so we can undo them if needed.
+          const selection = state.selection;
+          const linkMark = state.schema.marks.link.create({ href: '#' + id });
+          if (selection.empty) {
+              // In case of an empty selection, insert the textContent of the header and then use 
+              // that to link-to the header
+              const textNode = state.schema.text(node.textContent, [linkMark]);
+              let transaction = state.tr.replaceSelectionWith(textNode, false);
+              dispatch(transaction);
+              stateChanged();
+              return true;
+          } else {
+              const toggle = toggleMark(linkMark.type, linkMark.attrs);
+              if (toggle) {
+                  toggle(state, dispatch);
+                  stateChanged();
+                  return true;
+              } else {
+                  return false;
+              }
+          }
+      };
+      return commandAdapter;
+  }
+
+  /**
+   * Unlike other commands, this one returns an object identifying the hTag, index, id, and whether the id needs 
+   * to be created or already exists in the identified header. Other commands return true or false. This command 
+   * also never does anything with the view or state.
+   * @param {string} hTag One of the strings `H1`-`H6`
+   * @param {*} index     Within existing elements with tag `hTag`, this is the index into them that is identified
+   * @returns 
+   */
+  function idForInternalLinkCommand(hTag, index) {
+      const commandAdapter = (state) => {
+          let {node} = headerMatching(hTag, index, state);
+          if (!node) return false;
+          return {hTag: hTag, index: index, id: idForHeader(node, state), exists: node.attrs.id != null}
+      };
+      return commandAdapter;
+  }
+
+  // Return a unique identifier for the header `node` by lowercasing its textContent
+  // and replacing blanks with `-`, then appending a number until its unique if required.
+  // If the header `node` has an id, then just return it.
+  function idForHeader(node, state) {
+      if (node.attrs.id) return node.attrs.id
+      let id = node.textContent.toLowerCase();
+      id = id.replaceAll(' ', '-');
+      let {node: idNode} = nodeWithId(id, state);
+      let index = 0;
+      while (idNode) {
+          index++;
+          id = id + index.toString();
+          let {node} = nodeWithId(id, state);
+          idNode = node;
+      }
+      return id
+  }
+
+  function nodeWithId(id, state) {
+      let idNode, idPos;
+      state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+          if (!idNode && (node.attrs.id == id)) {
+              idNode = node;
+              idPos = pos;
+              return false
+          }
+          return !idNode  // Keep traversing unless we found a matching id
+      });
+      return {node: idNode, pos: idPos}
+  }
+
+  function headerMatching(hTag, index, state) {
+      let header = {node: null, pos: null};
+      let hLevel = parseInt(hTag.substring(1));
+      let headersAtLevel = headers(state)[hLevel];
+      if (!headersAtLevel) {
+          return header
+      } else {
+          return headersAtLevel[index]
+      }
+  }
+
+  // Return all the headers that exist in `state.doc` as arrays keyed by level
+  function headers(state) {
+      let headers = {};
+      let hType = state.schema.nodes.heading;
+      let pType = state.schema.nodes.paragraph;
+      let cType = state.schema.nodes.code_block;
+      state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+          let nodeType = node.type;
+          if (nodeType == hType) {
+              let level = node.attrs.level;
+              if (!headers[level]) headers[level] = [];
+              headers[level].push({node: node, pos: pos});
+              return false
+          } else if ((nodeType == pType) || (nodeType == cType)) {
+              // We don't need to keep traversing a <H1-6>, <P>, or <PRE><CODE> because 
+              // they can't contain other headers
+              return false
+          }
+          // However, the remaining block nodes like table cells and lists can contain them
+          return true
+      });
+      return headers
+  }
+
   /**
    * Remove the link at the selection, maintaining the same selection.
    * 
@@ -19489,9 +19628,6 @@
    * areas outside of the link.
    */
   function deleteLink() {
-      view.state.schema.marks.link;
-      view.state.selection;
-
       // Make sure the selection is in a single text node with a linkType Mark and 
       // that the full link is selected in the view.
       selectFullLink(view);
@@ -20434,8 +20570,12 @@
         dom.style.cssText += spec.css;
       dom.addEventListener("mousedown", e => {
         e.preventDefault();
-        if (!dom.classList.contains(prefix + "-disabled"))
-          spec.run(view.state, view.dispatch, view, e);
+        if (!dom.classList.contains(prefix + "-disabled")) {
+          let result = spec.run(view.state, view.dispatch, view, e);
+          if (spec.callback) {
+            spec.callback(result);
+          }
+        }
       });
 
       function update(state) {
@@ -20919,6 +21059,7 @@
       let buttonsDiv = crelt('div', { class: prefix + '-prompt-buttons' });
       this.dialog.appendChild(buttonsDiv);
 
+      // Only insert the Remove button if we have a link selected
       if (this.isValid()) {
         let removeItem = cmdItem(this.deleteLink.bind(this), {
           class: prefix + '-menuitem',
@@ -20927,11 +21068,19 @@
         });
         let {dom} = removeItem.render(view);
         buttonsDiv.appendChild(dom);
+      }
+
+      // Insert the dropdown to identify local links to headers
+      let localRefDropdown = this.getLocalRefDropdown();
+      if (localRefDropdown) {
+        let {dom: localRefDom} = localRefDropdown.render(view);
+        let itemWrapper = crelt('span', {class: prefix + '-menuitem'}, localRefDom);
+        buttonsDiv.appendChild(itemWrapper);
       } else {
-        let spacer = crelt('div', {class: prefix + '-menuitem'});
-        spacer.style.visibility = 'hidden';
+        let spacer = crelt('div', document.createTextNode('\u200b'));
         buttonsDiv.appendChild(spacer);
       }
+
       let group = crelt('div', {class: prefix + '-prompt-buttongroup'});
       let okItem = cmdItem(this.insertLink.bind(this), {
         class: prefix + '-menuitem',
@@ -20966,8 +21115,68 @@
       buttonsDiv.appendChild(group);
     }
 
+    getLocalRefDropdown() {
+      let localRefItems = this.getLocalRefItems();
+      if (localRefItems.length == 0) { return null }
+      return new Dropdown(localRefItems, {
+        title: 'Insert internal link',
+        label: 'H1-6'
+        // Note: enable doesn't work for Dropdown
+      })
+    }
+
+    getLocalRefItems() {
+      let submenuItems = [];
+      let headersByLevel = headers(view.state);
+      for (let i = 1; i < 7; i++) {
+        let hTag = 'H' + i.toString();
+        let menuItems = [];
+        let hNodes = headersByLevel[i];
+        if (hNodes && hNodes.length > 0) {
+          for (let j = 0; j < hNodes.length; j++) {
+            // Add a MenuItem that invokes the insertInternalLinkCommand passing the hTag and the index into hElements
+            menuItems.push(this.refMenuItem(hTag, j, hNodes[j].node.textContent));
+          }
+          submenuItems.push(new DropdownSubmenu(
+            menuItems, {
+            title: 'Link to ' + hTag,
+            label: hTag,
+            enable: () => { return menuItems.length > 0 }
+          }
+          ));
+        }
+      }
+      return submenuItems
+    }
+
+    // Return a MenuItem with class `prefex + menuitem-clipped` because the text inside of a header is unlimited.
+    // The `insertInternalLinkCommand` will use `getElementsByTagName` to identify the element at `index`.
+    refMenuItem(hTag, index, label) {
+      return cmdItem(
+        idForInternalLinkCommand(hTag, index), 
+        { 
+          label: label, 
+          class: prefix + '-menuitem-clipped',
+          callback: (result) => { 
+            if (result) {
+              this.hTag = result.hTag;
+              this.index = result.index;
+              this.id = '#' + result.id;
+              this.exists = result.exists;
+              this.hrefArea.value = this.id;
+              this.okUpdate(view.state);
+              this.cancelUpdate(view.state);
+            }
+          }
+        }
+      )
+    }
+
+    // Return true if `hrefValue()` is a valid ID for a header or if the URL can be parsed.
+    // A valid ID begins with # and has no whitespace in it.
     isValid() {
-      return URL.canParse(this.hrefValue())
+      let href = this.hrefValue();
+      return (this.isInternalLink() && (href.indexOf(' ') == -1)) || URL.canParse(href)
     }
 
     /**
@@ -20988,9 +21197,26 @@
     insertLink(state, dispatch, view) {
       if (!this.isValid()) return;
       if (this.href) deleteLinkCommand()(state, dispatch, view);
-      let command = insertLinkCommand(this.hrefValue());
-      command(view.state, view.dispatch);
-      this.closeDialog();
+      let command;
+      if (this.isInternalLink()) {
+        // It could have been edited, not just inserted by selecting from H1-6
+        if (this.hrefValue() == this.id) {
+          // Id was set from H1=6 and nothing has changed. So, insert the link
+          // based on the hTag and its index into headers with that hTag.
+          command = insertInternalLinkCommand(this.hTag, this.index);
+        } else {
+          // Otherwise, just insert the link to an ID, which may not exist
+          command = insertLinkCommand(this.hrefValue());
+        }
+      } else {
+        command = insertLinkCommand(this.hrefValue());
+      }
+      let result = command(view.state, view.dispatch);
+      if (result) this.closeDialog();
+    }
+
+    isInternalLink() {
+      return this.hrefValue().startsWith('#')
     }
 
     /**

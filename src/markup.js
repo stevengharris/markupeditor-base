@@ -88,7 +88,21 @@ export class LinkView {
         link.setAttribute('title', title)
         link.addEventListener('click', (ev)=> {
             if (ev.altKey) {
-                window.open(href)
+                if (href.startsWith('#')) {
+                    let id = href.substring(1)
+                    let {pos} = nodeWithId(id, view.state)
+                    if (pos) {
+                        let resolvedPos = view.state.tr.doc.resolve(pos)
+                        let selection = TextSelection.near(resolvedPos)
+                        let transaction = view.state.tr
+                            .setSelection(selection)
+                            .scrollIntoView()
+                        view.dispatch(transaction)
+                        selectionChanged()
+                    }
+                } else {
+                    window.open(href)
+                }
             }
         })
         this.dom = link
@@ -3088,6 +3102,125 @@ export function insertLinkCommand(url) {
     return commandAdapter;
 }
 
+export function insertInternalLinkCommand(hTag, index) {
+    const commandAdapter = (state, dispatch, view) => {
+        // Find the node matching hTag that is index into the nodes matching hTag
+        let {node, pos} = headerMatching(hTag, index, state)
+        if (!node) return false
+        // Get the unique id for this header, which is may or may not already have.
+        let id = idForHeader(node, state)
+        let attrs = node.attrs
+        attrs.id = id
+        // Insert the mark (id is always referenced with # at front) and set (or reset) the 
+        // id in the header itself. We don't care if it's the same, but we want these changes 
+        // to be made in a single transaction so we can undo them if needed.
+        const selection = state.selection;
+        const linkMark = state.schema.marks.link.create({ href: '#' + id });
+        if (selection.empty) {
+            // In case of an empty selection, insert the textContent of the header and then use 
+            // that to link-to the header
+            const textNode = state.schema.text(node.textContent, [linkMark]);
+            let transaction = state.tr.replaceSelectionWith(textNode, false);
+            dispatch(transaction);
+            stateChanged();
+            return true;
+        } else {
+            const toggle = toggleMark(linkMark.type, linkMark.attrs);
+            if (toggle) {
+                toggle(state, dispatch)
+                stateChanged();
+                return true;
+            } else {
+                return false;
+            }
+        }
+    };
+    return commandAdapter;
+}
+
+/**
+ * Unlike other commands, this one returns an object identifying the hTag, index, id, and whether the id needs 
+ * to be created or already exists in the identified header. Other commands return true or false. This command 
+ * also never does anything with the view or state.
+ * @param {string} hTag One of the strings `H1`-`H6`
+ * @param {*} index     Within existing elements with tag `hTag`, this is the index into them that is identified
+ * @returns 
+ */
+export function idForInternalLinkCommand(hTag, index) {
+    const commandAdapter = (state) => {
+        let {node} = headerMatching(hTag, index, state)
+        if (!node) return false;
+        return {hTag: hTag, index: index, id: idForHeader(node, state), exists: node.attrs.id != null}
+    }
+    return commandAdapter;
+}
+
+// Return a unique identifier for the header `node` by lowercasing its textContent
+// and replacing blanks with `-`, then appending a number until its unique if required.
+// If the header `node` has an id, then just return it.
+function idForHeader(node, state) {
+    if (node.attrs.id) return node.attrs.id
+    let id = node.textContent.toLowerCase()
+    id = id.replaceAll(' ', '-')
+    let {node: idNode} = nodeWithId(id, state)
+    let index = 0;
+    while (idNode) {
+        index++
+        id = id + index.toString()
+        let {node} = nodeWithId(id, state)
+        idNode = node
+    }
+    return id
+}
+
+export function nodeWithId(id, state) {
+    let idNode, idPos
+    state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+        if (!idNode && (node.attrs.id == id)) {
+            idNode = node
+            idPos = pos
+            return false
+        }
+        return !idNode  // Keep traversing unless we found a matching id
+    })
+    return {node: idNode, pos: idPos}
+}
+
+function headerMatching(hTag, index, state) {
+    let header = {node: null, pos: null}
+    let hLevel = parseInt(hTag.substring(1))
+    let headersAtLevel = headers(state)[hLevel]
+    if (!headersAtLevel) {
+        return header
+    } else {
+        return headersAtLevel[index]
+    }
+}
+
+// Return all the headers that exist in `state.doc` as arrays keyed by level
+export function headers(state) {
+    let headers = {}
+    let hType = state.schema.nodes.heading
+    let pType = state.schema.nodes.paragraph
+    let cType = state.schema.nodes.code_block
+    state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+        let nodeType = node.type
+        if (nodeType == hType) {
+            let level = node.attrs.level
+            if (!headers[level]) headers[level] = []
+            headers[level].push({node: node, pos: pos})
+            return false
+        } else if ((nodeType == pType) || (nodeType == cType)) {
+            // We don't need to keep traversing a <H1-6>, <P>, or <PRE><CODE> because 
+            // they can't contain other headers
+            return false
+        }
+        // However, the remaining block nodes like table cells and lists can contain them
+        return true
+    })
+    return headers
+}
+
 /**
  * Remove the link at the selection, maintaining the same selection.
  * 
@@ -3095,9 +3228,6 @@ export function insertLinkCommand(url) {
  * areas outside of the link.
  */
 export function deleteLink() {
-    const linkType = view.state.schema.marks.link;
-    const selection = view.state.selection;
-
     // Make sure the selection is in a single text node with a linkType Mark and 
     // that the full link is selected in the view.
     selectFullLink(view)

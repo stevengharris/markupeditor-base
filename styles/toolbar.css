@@ -181,8 +181,8 @@
 .Markup-menu-dropdown-wrap {
   display: inline-block;
   padding: 0 4px;
-  width: 4.5em;
-  height: calc(1em + 4px);
+  min-width: 3.0em;
+  height: inherit;
   border-radius: 4px;
   background: inherit;
 }
@@ -191,7 +191,7 @@
   display: inline-block;
   padding-right: 4px;
   width: 1.8em;
-  height: calc(1em + 4px);
+  height: inherit;
   border-radius: 4px;
   background: inherit;
 }
@@ -200,7 +200,7 @@
   display: inline-flex;
   padding-right: 4px;
   width: 1em;
-  height: calc(1em + 4px);
+  height: inherit;
   border-radius: 4px;
   background: inherit;
 }
@@ -208,8 +208,8 @@
 .Markup-menu-dropdown {
   display: inline-flex;
   justify-content: space-between;
-  width: 4.5em;
-  height: calc(1em + 4px);
+  min-width: 3.0em;
+  height: inherit;
   background: inherit;
   position: absolute;
 }
@@ -247,12 +247,20 @@
 
 .Markup-menu-dropdown-menu {
   margin-top: calc(1em + 6px);
-  min-width: 5em;
+  min-width: 4em;
 }
 
 .Markup-menu-dropdown-item {
   cursor: pointer;
   padding: 2px 8px 2px 4px;
+}
+
+/* Used to overlfow and ellipsis-truncate text in Dropdown menu items */
+.Markup-menuitem-clipped {
+  white-space: nowrap;  /* Required for text-overflow */
+  overflow-x: hidden;   /* Required for text-overflow */
+  max-width: 30em;
+  text-overflow: ellipsis;
 }
 
 .Markup-menu-dropdown-item:hover, .Markup-menu-submenu-wrap:hover {

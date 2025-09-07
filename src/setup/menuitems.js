@@ -20,6 +20,8 @@ import {
     selectFullLink, 
     getSelectionRect, 
     insertLinkCommand, 
+    idForInternalLinkCommand,
+    insertInternalLinkCommand,
     deleteLinkCommand,
     getImageAttributes, 
     insertImageCommand, 
@@ -28,7 +30,8 @@ import {
     cancelSearch,
     matchCase,
     matchCount,
-    matchIndex
+    matchIndex,
+    headers
 } from "../markup"
 
 /**
@@ -70,8 +73,12 @@ export class MenuItem {
       dom.style.cssText += spec.css;
     dom.addEventListener("mousedown", e => {
       e.preventDefault();
-      if (!dom.classList.contains(prefix + "-disabled"))
-        spec.run(view.state, view.dispatch, view, e);
+      if (!dom.classList.contains(prefix + "-disabled")) {
+        let result = spec.run(view.state, view.dispatch, view, e);
+        if (spec.callback) {
+          spec.callback(result)
+        }
+      }
     });
 
     function update(state) {
@@ -556,6 +563,7 @@ export class LinkItem extends DialogItem {
     let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
     this.dialog.appendChild(buttonsDiv)
 
+    // Only insert the Remove button if we have a link selected
     if (this.isValid()) {
       let removeItem = cmdItem(this.deleteLink.bind(this), {
         class: prefix + '-menuitem',
@@ -564,11 +572,18 @@ export class LinkItem extends DialogItem {
       })
       let {dom} = removeItem.render(view)
       buttonsDiv.appendChild(dom);
+    }
+
+    // Insert the dropdown to identify local links to headers
+    let localRefDropdown = this.getLocalRefDropdown()
+    if (localRefDropdown) {
+      let {dom: localRefDom} = localRefDropdown.render(view)
+      let itemWrapper = crel('span', {class: prefix + '-menuitem'}, localRefDom)
+      buttonsDiv.appendChild(itemWrapper)
     } else {
-      let spacer = crel('div', {class: prefix + '-menuitem'})
-      spacer.style.visibility = 'hidden';
+      let spacer = crel('div', document.createTextNode('\u200b'))
       buttonsDiv.appendChild(spacer)
-    };
+    }
 
     let group = crel('div', {class: prefix + '-prompt-buttongroup'});
     let okItem = cmdItem(this.insertLink.bind(this), {
@@ -604,8 +619,68 @@ export class LinkItem extends DialogItem {
     buttonsDiv.appendChild(group);
   }
 
+  getLocalRefDropdown() {
+    let localRefItems = this.getLocalRefItems()
+    if (localRefItems.length == 0) { return null }
+    return new Dropdown(localRefItems, {
+      title: 'Insert internal link',
+      label: 'H1-6'
+      // Note: enable doesn't work for Dropdown
+    })
+  }
+
+  getLocalRefItems() {
+    let submenuItems = []
+    let headersByLevel = headers(view.state)
+    for (let i = 1; i < 7; i++) {
+      let hTag = 'H' + i.toString()
+      let menuItems = []
+      let hNodes = headersByLevel[i]
+      if (hNodes && hNodes.length > 0) {
+        for (let j = 0; j < hNodes.length; j++) {
+          // Add a MenuItem that invokes the insertInternalLinkCommand passing the hTag and the index into hElements
+          menuItems.push(this.refMenuItem(hTag, j, hNodes[j].node.textContent))
+        }
+        submenuItems.push(new DropdownSubmenu(
+          menuItems, {
+          title: 'Link to ' + hTag,
+          label: hTag,
+          enable: () => { return menuItems.length > 0 }
+        }
+        ))
+      }
+    }
+    return submenuItems
+  }
+
+  // Return a MenuItem with class `prefex + menuitem-clipped` because the text inside of a header is unlimited.
+  // The `insertInternalLinkCommand` will use `getElementsByTagName` to identify the element at `index`.
+  refMenuItem(hTag, index, label) {
+    return cmdItem(
+      idForInternalLinkCommand(hTag, index), 
+      { 
+        label: label, 
+        class: prefix + '-menuitem-clipped',
+        callback: (result) => { 
+          if (result) {
+            this.hTag = result.hTag
+            this.index = result.index
+            this.id = '#' + result.id
+            this.exists = result.exists
+            this.hrefArea.value = this.id
+            this.okUpdate(view.state)
+            this.cancelUpdate(view.state)
+          }
+        }
+      }
+    )
+  }
+
+  // Return true if `hrefValue()` is a valid ID for a header or if the URL can be parsed.
+  // A valid ID begins with # and has no whitespace in it.
   isValid() {
-    return URL.canParse(this.hrefValue())
+    let href = this.hrefValue()
+    return (this.isInternalLink() && (href.indexOf(' ') == -1)) || URL.canParse(href)
   }
 
   /**
@@ -626,9 +701,26 @@ export class LinkItem extends DialogItem {
   insertLink(state, dispatch, view) {
     if (!this.isValid()) return;
     if (this.href) deleteLinkCommand()(state, dispatch, view);
-    let command = insertLinkCommand(this.hrefValue());
+    let command
+    if (this.isInternalLink()) {
+      // It could have been edited, not just inserted by selecting from H1-6
+      if (this.hrefValue() == this.id) {
+        // Id was set from H1=6 and nothing has changed. So, insert the link
+        // based on the hTag and its index into headers with that hTag.
+        command = insertInternalLinkCommand(this.hTag, this.index)
+      } else {
+        // Otherwise, just insert the link to an ID, which may not exist
+        command = insertLinkCommand(this.hrefValue())
+      }
+    } else {
+      command = insertLinkCommand(this.hrefValue());
+    }
     let result = command(view.state, view.dispatch);
     if (result) this.closeDialog();
+  }
+
+  isInternalLink() {
+    return this.hrefValue().startsWith('#')
   }
 
   /**
