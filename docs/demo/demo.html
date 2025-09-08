@@ -2,7 +2,7 @@
 
 <h6>Version 1.0</h6>
 
-<p>The file you're looking at is just a simple HTML file that includes all the kinds of elements supported by the MarkupEditor by default. The file was created and edited using the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor desktop app</a>. The desktop app is just a simple Electron application with a few hundred lines of JavaScript built from the <a href="https://github.com/stevengharris/markupeditor-base">MarkupEditor base</a> toolkit. In addition to the desktop app, the MarkupEditor base is used to deliver WYSIWYG editing capabilities in <a href="https://github.com/stevengharris/MarkupEditor">Swift</a> and <a href="https://github.com/stevengharris/markupeditor-vs">VSCode</a>. It can be used in any environment that loads a web view, including a web browser. If you’re looking at this demo, you are probably using it in your browser directly from the <a href="https://stevengharris.github.io/markupeditor-base/">project web site</a> hosted on GitHub Pages.</p>
+<p>The file you're looking at is just a simple HTML file that includes all the kinds of elements supported by the MarkupEditor by default. The file was created and edited using the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor desktop app</a>. The desktop app is a simple Electron application with a few hundred lines of JavaScript, built from the <a href="https://github.com/stevengharris/markupeditor-base">MarkupEditor base</a> toolkit. In addition to the desktop app, the MarkupEditor base is used to deliver WYSIWYG editing capabilities in <a href="https://github.com/stevengharris/MarkupEditor">Swift</a> and <a href="https://github.com/stevengharris/markupeditor-vs">VSCode</a>. It can be used in any environment that loads a web view, including a web browser. If you’re looking at this demo, you are probably using it in your browser directly from the <a href="https://stevengharris.github.io/markupeditor-base/">project web site</a> hosted on GitHub Pages.</p>
 
 <h2>The Toolbar</h2>
 
@@ -31,9 +31,9 @@
     </li>
 </ul>
 
-<p>The demo won’t let you save what you’ve edited, because it’s just running in your browser. To interact with the local file system properly, you need to embed the MarkupEditor in some kind of app that uses a web view, which is what the desktop app does using Electron. The desktop app can just use the default MarkupEditor toolbar because it provides a <em>File</em> menu that gives you access to standard file operations, like <em>New</em>, <em>Open</em>, <em>Save</em>, and <em>Save As</em>.</p>
+<p>The demo won’t let you save what you’ve edited, because it’s just running in your browser. To interact with the local file system properly, you need to embed the MarkupEditor in some kind of app that uses a web view, which is what the desktop app does using Electron. The desktop app uses the default MarkupEditor toolbar because it also provides a <em>File</em> menu that gives you access to standard file operations, like <em>New</em>, <em>Open</em>, <em>Save</em>, and <em>Save As</em>.</p>
 
-<p>The key bindings are visible when you hover over a button. The toolbar is customizable and extensible, and the key bindings can be reassigned, without modifying the code of the MarkupEditor itself. Beyond the Markdown-scoped capabilities of the default toolbar, the MarkupEditor also supports underline, subscript, and superscript text formatting.</p>
+<p>The key bindings are visible when you hover over a button. The toolbar is customizable and extensible, and the key bindings can be reassigned, without modifying the code of the MarkupEditor itself. Beyond the Markdown-scoped capabilities of the default toolbar, the MarkupEditor also supports <u>underline</u>, <sub>subscript</sub>, and <sup>superscript</sup> text formatting.</p>
 
 <p>The toolbar is just a convenience - you don’t need to use it at all. You can control whether it’s visible and what it contains. To find out more information, take a look at the <a href="https://stevengharris.github.io/markupeditor-base/guide/index.html">Developer’s Guide</a>.</p>
 
@@ -47,9 +47,11 @@
 
 <p>This is a <em>Body</em> style paragraph. The title above this paragraph uses an <em>H4</em> style. You can change the paragraph style for a single paragraph or across a selection of paragraphs using the <em>Paragraph Style</em> menu.</p>
 
-<p>A style applies to a block of text. The MarkupEditor supports the standard HTML styles of <em>P</em>, <em>H1</em>, <em>H2</em>, <em>H3</em>, <em>H4</em>, <em>H5</em>, <em>H6</em>, and <code>CODE</code>. Styles cannot contain other styles. So, for example, you can't embed an <em>H3</em> style in an <em>H1</em> style header.</p>
+<p>A style applies to a block of text. The MarkupEditor supports the standard HTML styles of <em>P</em>, <em>H1</em>, <em>H2</em>, <em>H3</em>, <em>H4</em>, <em>H5</em>, <em>H6</em>, and <code>CODE</code>. Styles cannot contain other styles. So, for example, you can't embed an <em>H3</em> style header in an <em>H1</em> style header.</p>
 
 <p>The <em>Paragraph Style</em> menu refers to <em>P</em> style as "Body". The notion of a paragraph style is pretty well understood by every person who has ever used a word processor, spreadsheet, or even the most primitive text editing tool these days. Your users don't need to know anything about HTML or CSS just to use the MarkupEditor.</p>
+
+<p>When you are editing text within a code block (the Code paragraph style), and you want to exit from the Code style, hold the Command (⌘) key and press Enter. The “hard return” creates a new Body style element.</p>
 
 <h4>Lists</h4>
 
@@ -74,7 +76,7 @@
 
 <h4>Indenting</h4>
 
-<p>Like the other styles, indenting applies to a block of text, although you can indent both normal paragraphs and headers. Once you indent, the toolbar enables the outdent button. You can indent multiple times, and you can outdent until there is no more indenting to outdent. The hot-key combo Cmd+] indents and Cmd+[ outdents.</p>
+<p>Like the other styles, indenting applies to a block of text, although you can indent both normal paragraphs and headers. Once you indent, the toolbar enables the outdent button. You can indent multiple times, and you can outdent until there is no more indenting to outdent. The hot-key combo ⌘] indents and ⌘[ outdents.</p>
 
 <blockquote>
     <blockquote>
@@ -92,15 +94,33 @@ print("Hello, world!")</code></pre>
 
 <h2>Inserted Elements</h2>
 
-<p>You can insert and edit links, images, and tables in the document. Each of these elements requires some kind of user input to create them. The MarkupEditor presents either a popover at the selection location, or in the case of tables, a dropdown menu at the MarkupEditor toolbar.</p>
+<p>You can insert and edit links, images, and tables in the document. Each of these elements requires some kind of user input to create them. The MarkupEditor presents either a modal popover at the selection location, or in the case of tables, a dropdown menu at the MarkupEditor toolbar.</p>
 
-<h4>Links</h4>
+<h3>Links</h3>
 
-<p>To insert a <a href="https://github.com/stevengharris/MarkupEditor">link</a>, start by selecting some text to link-to or just select at a location to insert a URL within the text. When you select the <em>Insert/edit link</em> button, a popover is presented at the selection location. Enter a URL and <em>Save</em> (or just hit Enter). <em>Cancel</em> closes the popover, leaving the original text/element unchanged. To delete an existing link, use the <em>Remove</em> button.</p>
+<p>To insert a <a href="https://github.com/stevengharris/MarkupEditor">link</a>, start by selecting some text to link-to or just select at a location to insert a URL within the text. When you select the <em>Insert/edit link</em> button (or use the ⌘K hot key), a popover is presented at the selection location. Enter a URL and <em>OK</em> (or just hit Enter). <em>Cancel</em> closes the popover, leaving the original text/element unchanged. To delete an existing link, use the <em>Remove</em> button.</p>
 
-<h4>Images</h4>
+<h4>Internal Links</h4>
 
-<p>Images have to be inserted at a point in some text, or at the beginning or end of some text. You can paste-in an image using the usual Ctrl+V or the menu. You can also select an image from the file system or provide an URL. To do that, press the <em>Insert Image</em> button to bring up the image popover. Specify the URL or use the <em>Select</em> button for a standard file picker to select an image to insert. Specify additional descriptive text to go along with it (which is the right thing to do for people with visual impairment). As you tab between the URL and alt text fields, the MarkupEditor shows you the image in the document. Press OK when you are happy with the image, or Cancel to revert the document to its original state before you started inserting an image. Once you have the image in your document, you can resize it using the handles that show up when you select it, or using a pinch gesture on a touch device.</p>
+<p>You can easily insert links to headers within your document using the <code>H1-6</code> dropdown in the default link dialog. From the dropdown, you can select a header by name. </p>
+
+<blockquote>
+    <p><img src="2b874fee-0640-4d17-8497-eefe64b4b6d6.png" width="244" height="229"></p>
+</blockquote>
+
+<p>When you select a header, in identifier is created for that header (or the existing header identifier is used if it exists). The identifier is the same as the header contents, except a) it starts with a <code>#</code>; b) it is all lowercase, and c) words are separated with <code>-</code> rather than spaces. Selecting OK (or just pressing Enter) will insert the link and identifier. Note that if your selection is empty (i.e., no text is selected, just the cursor is showing), then the text of the header itself is inserted at the cursor location and linked-to the header you selected. This makes creating a table of contents pretty easy!</p>
+
+<h4>Editing vs. Following Links</h4>
+
+<p>When your mouse hovers over a link, it shows “⌥+Click to follow”, followed by the URL you will be taken to. When editing, you may want to edit the link, which you can by pressing the <em>Insert/Edit link</em> button in the toolbar (or use the ⌘K hot key). If you want to follow the link, hold the Option button (⌥) and click anywhere in the link.</p>
+
+<h3>Images</h3>
+
+<p>Images have to be inserted at a point in some text, or at the beginning or end of some text. You can paste-in an image using the usual ⌘V or the menu. You can also select an image from the file system or provide an URL. To do that, press the <em>Insert Image</em> button to bring up the image popover. Specify the URL (or, if provided within the environment you’re using for the MarkupEditor, use the <em>Select…</em> button for a standard file picker to select an image to insert). Specify additional descriptive text to go along with it (which is the right thing to do for people with visual impairment). As you tab between the URL and alt text fields, the MarkupEditor shows you the image in the document. Press OK when you are happy with the image, or Cancel to revert the document to its original state before you started inserting an image. </p>
+
+<h4>Editing Images</h4>
+
+<p>Once you have an image in your document, you can resize it using the handles that show up when you select it, or using a pinch gesture on a touch device.</p>
 
 <p>Here is an inline image sourced from the Internet: <img src="https://en.gravatar.com/userimage/34783542/290b5fe4078e031aef18e02c7bd9103f.png" alt="Linked image" width="80" height="80">. Select it and then press the image button to see its URL and alt text. Here is the same image, but sourced from the local file system relative to the document location:</p>
 
@@ -108,7 +128,7 @@ print("Hello, world!")</code></pre>
 
 <p>To delete an image, use the keyboard to delete it like text.</p>
 
-<h4>Tables</h4>
+<h3>Tables</h3>
 
 <p>Tables have to be inserted between paragraphs, not inline with text. If you insert an image while you have selected a point inside of a paragraph, the table will be inserted after that paragraph. When you have the cursor at a point in text, press the <em>Insert Table</em> button to expose the table dropdown menu. The <em>Create</em> item lets you create a table with the number of rows and columns you want. Once you have created the table, or when you select a table in the document you're editing, the <em>Create</em> button is disabled. In other words, you cannot insert a table into a table.</p>
 
