@@ -19539,9 +19539,8 @@
   }
 
   /**
-   * Unlike other commands, this one returns an object identifying the hTag, index, id, and whether the id needs 
-   * to be created or already exists in the identified header. Other commands return true or false. This command 
-   * also never does anything with the view or state.
+   * Unlike other commands, this one returns an object identifying the id for the header with hTag. 
+   * Other commands return true or false. This command also never does anything with the view or state.
    * @param {string} hTag One of the strings `H1`-`H6`
    * @param {*} index     Within existing elements with tag `hTag`, this is the index into them that is identified
    * @returns 
@@ -19555,12 +19554,21 @@
       return commandAdapter;
   }
 
-  // Return a unique identifier for the header `node` by lowercasing its textContent
-  // and replacing blanks with `-`, then appending a number until its unique if required.
-  // If the header `node` has an id, then just return it.
+  /**
+   * Return a unique identifier for the heading `node` by lowercasing its trimmed textContent
+   * and replacing blanks with `-`, then appending a number until its unique if required.
+   * If the heading `node` has an id, then just return it.
+   * 
+   * Since the `node.textContent` can be arbitrarily large, we limit the id to 40 characters 
+   * just to avoid unwieldy IDs.
+   * 
+   * @param {Node}        node    A ProseMirror Node that is of heading type
+   * @param {EditorState} state     
+   * @returns {string}            A unique ID that is used by `node` or that can be assigned to `node`
+   */
   function idForHeader(node, state) {
       if (node.attrs.id) return node.attrs.id
-      let id = node.textContent.toLowerCase();
+      let id = node.textContent.toLowerCase().substring(0, 40);
       id = id.replaceAll(' ', '-');
       let {node: idNode} = nodeWithId(id, state);
       let index = 0;
@@ -19573,6 +19581,12 @@
       return id
   }
 
+  /**
+   * Return the node and its position that has an attrs.id matching `id`
+   * @param {string} id The id attr of a Node we are trying to match
+   * @param {*} state 
+   * @returns {object}    The `node` and its `pos` in the `state.doc`
+   */
   function nodeWithId(id, state) {
       let idNode, idPos;
       state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
@@ -21119,7 +21133,7 @@
       let localRefItems = this.getLocalRefItems();
       if (localRefItems.length == 0) { return null }
       return new Dropdown(localRefItems, {
-        title: 'Insert internal link',
+        title: 'Insert link to header',
         label: 'H1-6'
         // Note: enable doesn't work for Dropdown
       })
@@ -21150,7 +21164,8 @@
     }
 
     // Return a MenuItem with class `prefex + menuitem-clipped` because the text inside of a header is unlimited.
-    // The `insertInternalLinkCommand` will use `getElementsByTagName` to identify the element at `index`.
+    // The `insertInternalLinkCommand` executes the callback providing a unique id for the header based on its 
+    // contents, along with the tag and index into headers with that tag in the document being edited.
     refMenuItem(hTag, index, label) {
       return cmdItem(
         idForInternalLinkCommand(hTag, index), 
@@ -21162,7 +21177,6 @@
               this.hTag = result.hTag;
               this.index = result.index;
               this.id = '#' + result.id;
-              this.exists = result.exists;
               this.hrefArea.value = this.id;
               this.okUpdate(view.state);
               this.cancelUpdate(view.state);

@@ -623,7 +623,7 @@ export class LinkItem extends DialogItem {
     let localRefItems = this.getLocalRefItems()
     if (localRefItems.length == 0) { return null }
     return new Dropdown(localRefItems, {
-      title: 'Insert internal link',
+      title: 'Insert link to header',
       label: 'H1-6'
       // Note: enable doesn't work for Dropdown
     })
@@ -654,7 +654,8 @@ export class LinkItem extends DialogItem {
   }
 
   // Return a MenuItem with class `prefex + menuitem-clipped` because the text inside of a header is unlimited.
-  // The `insertInternalLinkCommand` will use `getElementsByTagName` to identify the element at `index`.
+  // The `insertInternalLinkCommand` executes the callback providing a unique id for the header based on its 
+  // contents, along with the tag and index into headers with that tag in the document being edited.
   refMenuItem(hTag, index, label) {
     return cmdItem(
       idForInternalLinkCommand(hTag, index), 
@@ -666,7 +667,6 @@ export class LinkItem extends DialogItem {
             this.hTag = result.hTag
             this.index = result.index
             this.id = '#' + result.id
-            this.exists = result.exists
             this.hrefArea.value = this.id
             this.okUpdate(view.state)
             this.cancelUpdate(view.state)
