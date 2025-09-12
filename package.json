@@ -1,7 +1,7 @@
 {
   "name": "markupeditor-base",
-  "version": "0.8.1",
-  "description": "MarkupEditor",
+  "version": "0.8.4",
+  "description": "MarkupEditor - WYSIWYG editing in a web view",
   "keywords": [
     "wysiwyg",
     "html",
