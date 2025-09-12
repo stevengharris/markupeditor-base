@@ -1,20 +1,63 @@
 <h1>MarkupEditor Developer's Guide</h1>
 
-<h2>Concepts</h2>
+<h2>Contents</h2>
+
+<blockquote>
+    <p><a href="#concepts">Concepts</a></p>
+    <blockquote>
+        <blockquote>
+            <p><a href="#goals-and-non-goals">Goals and Non-Goals</a></p>
+        </blockquote>
+    </blockquote>
+    <p><a href="#essentials">Essentials</a></p>
+    <blockquote>
+        <blockquote>
+            <p><a href="#using-the-markupeditor-in-a-browser">Using the MarkupEditor in a Browser</a></p>
+            <p><a href="#using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</a></p>
+        </blockquote>
+    </blockquote>
+    <p><a href="#configuration">Configuration</a></p>
+    <blockquote>
+        <blockquote>
+            <p><a href="#configuration-classes">Configuration Classes</a></p>
+            <p><a href="#toolbarconfig">ToolbarConfig</a></p>
+            <p><a href="#keymapconfig">KeymapConfig</a></p>
+            <p><a href="#behaviorconfig">BehaviorConfig</a></p>
+        </blockquote>
+    </blockquote>
+    <p><a href="#extending-the-toolbar">Extending the Toolbar</a></p>
+    <p><a href="#communicating-with-the-markupeditor">Communicating with the MarkupEditor</a></p>
+    <blockquote>
+        <blockquote>
+            <p><a href="#getting-and-setting-markupeditor-content">Getting and Setting MarkupEditor Contents</a></p>
+            <p><a href="#markupdelegate">MarkupDelegate</a></p>
+            <p><a href="#round-trip-from-the-markupeditor">Round-Trip from the MarkupEditor</a></p>
+        </blockquote>
+    </blockquote>
+    <p><a href="#advanced-topics">Advanced Topics</a></p>
+    <blockquote>
+        <blockquote>
+            <p><a href="#messagehandler">MessageHandler</a></p>
+            <p><a href="#markupeditor-project-structure">MarkupEditor Project Structure</a></p>
+        </blockquote>
+    </blockquote>
+</blockquote>
+
+<h2 id="concepts">Concepts</h2>
 
 <p>The MarkupEditor in its “base” form is a what-you-see-is-what-you-get (<em>WYSIWYG</em>) editor meant to be embedded in an application of some kind. It comes with a configurable and extensible toolbar that provides UI access to its underlying editing functionality. The document you edit with the MarkupEditor is standard HTML with a limited set of supported tags. The document is styled using CSS, which you can override and supplement. As you edit the HTML document, the editor lets you know when changes occur, so you can take action based on your specific application context.</p>
 
 <p>The <em>application environment</em> you’re building-for needs to support a web view, so you can load the MarkupEditor script and use the CSS styling that comes with it. We’re using the nebulous term “application environment” in this document, because that could be <em>Node.js</em> or <em>Electron</em> or <em>MacOS AppKit</em> or <em>iOS SwiftUI</em> or… the list goes on. The language you’re writing your application in could be JavaScript or any other language, as long as the application environment supports a web view and the mechanics of communicating to/from the web view and the MarkupEditor within it.</p>
 
-<h3>Goals and Non-Goals</h3>
+<h3 id="goals-and-non-goals">Goals and Non-Goals</h3>
 
 <p>A key goal of the MarkupEditor is that application developers be able to embed WYSIWYG editing functionality in any environment. They should be able to customize the editor’s appearance and behavior without having to fork the <a href="https://github.com/stevengharris/markupeditor-base">code</a>, or even having to learn much beyond how to get and set the HTML being edited. The MarkupEditor’s scope resembles and is by-design limited to Markdown’s scope. It doesn’t provide any direct support for fonts and styles, positioning text on a page, and other elaborate formatting. Like Markdown, it only supports the limited set of features you need to organize what you’re writing to get your points across effectively. It does not support import/export from/to Markdown or any other document formats. Since a MarkupEditor document consists of standard “clean” HTML without embedded styles or classes, there is an entire world of tools you can use to parse a MarkupEditor document, save it, search it, and export it. If you do transform the MarkupEditor’s clean HTML to some other form, like Markdown, just be aware that what you see in the MarkupEditor may not be what your end-users get.</p>
 
-<h2>Essentials</h2>
+<h2 id="essentials">Essentials</h2>
 
 <p>Let’s take a look at what is required for WYSIWYG editing directly in your web browser or using Node.js. These “essentials” are common to other environments that the MarkupEditor can be used in.</p>
 
-<h3>Using the MarkupEditor in a Browser</h3>
+<h3 id="using-the-markupeditor-in-a-browser">Using the MarkupEditor in a Browser</h3>
 
 <p>By our nebulous definition, a web browser provides an application environment. Here’s an <a href="https://stevengharris.github.io/markupeditor-base/helloworld/index.html"><code>index.html</code></a> you can load in your browser to display an editable version of “Hello, world!”:</p>
 
@@ -61,7 +104,7 @@
     <p><strong>Note</strong>: If you encounter a MarkupEditor bug, providing a test or usage flow that reproduces the bug in a browser will ensure it can be debugged with no setup barriers, increasing the likelihood of it being worked on.</p>
 </blockquote>
 
-<h3>Using the MarkupEditor in Node.js</h3>
+<h3 id="using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</h3>
 
 <p>When you use the MarkupEditor in Node.js, you get access to the file system, among other things. In concrete terms, this means you can fetch file contents without the requirement that the access be gated by a trusted user action, as is required in the browser. The MarkupEditor lets you identify a <code>filename</code> containing the HTML contents it will show. Here’s how the contents of <code>guide.html</code> (which you’re reading now) are loaded into the MarkupEditor:</p>
 
@@ -150,11 +193,11 @@ Server listening at http://localhost:3000</code></pre>
 
 <p>This is the extent of “application environments” that are supported out-of-the-box when you install the MarkupEditor base project. It’s the minimum needed to develop and debug the MarkupEditor in its base form. The MarkupEditor can, however, be embedded in other environments. Before we cover that, let’s cover configuration, how you use the MarkupEditor API, and how to hook into the notifications it provides as you edit a document.</p>
 
-<h2>Configuration</h2>
+<h2 id="configuration">Configuration</h2>
 
 <p>So far, we have seen how to pass some initial HTML to the MarkupEditor, and how to identify a <code>filename</code> to open using Node.js. When you want to call into the MarkupEditor, you do that by invoking the public API exposed via the <code>MU</code> object. We saw <code>MU</code> used earlier when we created an instance of MarkupEditor using <code>new MU.MarkupEditor(&lt;target div&gt;, &lt;config&gt;)</code>. Let’s examine the configuration passed when the MarkupEditor instance is created.</p>
 
-<h3>Configuration Classes</h3>
+<h3 id="configuration-classes">Configuration Classes</h3>
 
 <p>There are three configuration classes:</p>
 
@@ -191,7 +234,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <p>Besides the <code>html</code>, <code>filename</code>, <code>toolbar</code>, <code>keymap</code>, and <code>behavior</code> properties, you can also pass <code>placeholder</code> html to show when the document is empty. Let’s take a closer look at each of the configuration classes.</p>
 
-<h3>ToolbarConfig</h3>
+<h3 id="toolbarconfig">ToolbarConfig</h3>
 
 <p>The ToolbarConfig is easier to explain with a picture, because it refers to various pieces of the toolbar by name, and the names make more sense when you can see the toolbar. Here is the full toolbar in all its glory. This toolbar was obtained by defining <code>toolbarConfig = MU.ToolbarConfig.full(true)</code> and then passing <code>toolbar: toolbarConfig</code> in the MarkupEditor configuration. (The <code>true</code> argument specifies that undo/redo should be visible in the <code>full</code> toolbar.) Note that the <code>ToolbarConfig.standard()</code> does not display undo/redo, underline, and subscript/superscript.</p>
 
@@ -217,7 +260,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <p>The toolbar icons are not currently configurable. Toolbar icons are from <a href="https://fonts.google.com/icons">Google’s Material Design Icons</a> set and downloaded as SVG from that site. The SVG definitions are in <code>src/setup/icons.js</code>. You can extend the toolbar by prepending or appending a custom group of icons and attaching commands to them.</p>
 
-<h3>KeymapConfig</h3>
+<h3 id="keymapconfig">KeymapConfig</h3>
 
 <p>The KeymapConfig follows <a href="https://github.com/ProseMirror/prosemirror-keymap">ProseMirror conventions</a>. To quote the comments from <a href="https://github.com/ProseMirror/prosemirror-keymap/blob/081f24f65b6a394174a4bdf07b9a55a00361f1b7/src/keymap.ts">keymap.ts</a>…</p>
 
@@ -246,7 +289,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <p>It’s likely that the hotkeys you want to use are specific to your application environment. (In fact, some of the <code>standard()</code> defaults conflict with web browser navigation defaults.) In the end, there is no right way for a library to set up key bindings, so you should make sure they are set up as you want. As noted earlier, the ToolbarConfig and KeymapConfig are independent, but by default only the key mappings for visible toolbar elements are set up. Undo and redo are the exceptions to this rule and are always set up whether the <code>correctionBar</code> is visible or not. The <code>desktop()</code> KeymapConfig settings are useful for a desktop app, since they include all mappings that can then be used to set up a menu independently of the toolbar, something that is used in the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor desktop</a> version.</p>
 
-<h3>BehaviorConfig</h3>
+<h3 id="behaviorconfig">BehaviorConfig</h3>
 
 <p>A common and simple case for BehaviorConfig is to control whether the editor takes focus after it loads. Sometimes you want to be able to type immediately, and other times you want your user to click in the editor before typing. You can control this behavior by setting <code>focusAfterLoad</code> to <code>true</code> (the default) or <code>false</code>. The other options in BehaviorConfig are for more advanced usage and are discussed in more detail later:</p>
 
@@ -262,7 +305,7 @@ Server listening at http://localhost:3000</code></pre>
     </li>
 </ul>
 
-<h2>Extending the Toolbar</h2>
+<h2 id="extending-the-toolbar">Extending the Toolbar</h2>
 
 <p>You can prepend and append your own toolbar to the MarkupEditor toolbar you have configured. For more detail, take a look at the MarkupEditor Demo in the <code>docs/demo</code> directory. The intent of the demo to provide a document that contains all the elements supported in the MarkupEditor, and to describe how to use the editor. But, to make the demo more useful, even in a browser, it was helpful to provide some tools beyond the default toolbar. This is done by prepending a DemoToolbar:</p>
 
@@ -385,11 +428,11 @@ class DemoToolbar {
 
 <p>The <code>toolbarView</code> itself is also available to you if needed. Refer to the code in the MarkupEditor Demo and in the MarkupEditor itself to learn more about how a toolbar and its MenuItems and Dropdowns are built.</p>
 
-<h2>Communicating with the MarkupEditor</h2>
+<h2 id="communicating-with-the-markupeditor">Communicating with the MarkupEditor</h2>
 
 <p>It’s important to recognize <em>where</em> your code is executing when using the MarkupEditor. In the examples we’ve shown so far, we are executing a script that is running inside of the web view itself. The global <code>MU</code> was created when you loaded <code>markupeditor.umd.js</code> earlier, so it’s available for you to reference directly in any script you load <em>after</em> <code>markupeditor.umd.js</code>. When you are executing in the application environment process you used to create and hold the web view, like Node.js or an iOS app, you will have to access <code>MU</code> with a call to something like <code>executeJavaScript</code>. We will cover that a little later.</p>
 
-<h3>Getting and Setting MarkupEditor Contents</h3>
+<h3 id="getting-and-setting-markupeditor-content">Getting and Setting MarkupEditor Contents</h3>
 
 <p>We’ve see how to set up the initial HTML when you create a MarkupEditor instance in a web view by passing <code>html</code> or <code>filename</code> as part of its configuration. If your environment provides access to the file system and perhaps platform-native dialogs for selecting a file, you will want to get the MarkupEditor contents to save to the file, or set the MarkupEditor contents from the file contents. To get the MarkupEditor contents:</p>
 
@@ -431,7 +474,7 @@ class DemoToolbar {
 
 <p>To learn more about how the MarkupEditor interprets incoming HTML and outputs HTML, look at <code>src/schema/index.js</code> in the <a href="https://github.com/stevengharris/markupeditor-base">project repository</a>, and read about <a href="https://prosemirror.net">ProseMirror</a>, which is doing all the heavy lifting behind the scenes.</p>
 
-<h3>MarkupDelegate</h3>
+<h3 id="markupdelegate">MarkupDelegate</h3>
 
 <p>The MarkupEditor makes callbacks to a delegate, aka the <em>MarkupDelegate</em>, as you edit the document and its state changes. You can view the full of set callbacks in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Let’s take a look at how to set up your MarkupDelegate and make use of the callbacks.</p>
 
@@ -471,7 +514,7 @@ class DemoToolbar {
 
 <p>Again, the code in the MarkupDelegate above will execute in the web view. It has access to all of the MarkupEditor functionality via the <code>MU</code> global. Often, access to <code>MU</code> and its functionality will be all you’ll need. For example, the <a href="https://stevengharris.github.io/markupeditor-base/demo/index.html">MarkupEditor demo</a> uses <code>markupInput</code> to update the view of the “raw HTML” as the user edits the document. You can also use the MarkupDelegate to communicate with your application environment, but the mechanism for doing that will be specific to the application environment.</p>
 
-<h3>Round-Trip from the MarkupEditor</h3>
+<h3 id="round-trip-from-the-markupeditor">Round-Trip from the MarkupEditor</h3>
 
 <p>At this point we have covered:</p>
 
@@ -585,9 +628,9 @@ contextBridge.exposeInMainWorld('markupAPI', {
 
 <p>You can find the Electron-specific code discussed here in the source of the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor Desktop app</a>. It supports local images and saves their contents to file at “save time” alongside the document being edited. The desktop app was used to edit this entire Developer’s Guide.</p>
 
-<h2>Advanced Topics</h2>
+<h2 id="advanced-topics">Advanced Topics</h2>
 
-<h4>MessageHandler</h4>
+<h3 id="messagehandler">MessageHandler</h3>
 
 <p>In some environments - specifically iOS apps and VSCode - you will want to get document state changes and other messages at a lower level than the MarkupDelegate. That level is the <em>MessageHandler</em>. The MarkupEditor’s default MessageHandler receives and processes <code>postMessage</code> as the document state changes, which it then passes-on to the MarkupDelegate (if the delegate exists and if the callback method exists in the delegate). Most developers will probably not even be aware that the MessageHandler exists. The MarkupDelegate callbacks will be sufficient for most developers.</p>
 
@@ -639,7 +682,7 @@ webviewPanel.webview.onDidReceiveMessage(this.handleMessage.bind(this));</code><
 
 <p>You can review the source code and README for the <a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a> project for more details.</p>
 
-<h3>MarkupEditor Project Structure</h3>
+<h3 id="markupeditor-project-structure">MarkupEditor Project Structure</h3>
 
 <p>The <a href="https://github.com/stevengharris/markupeditor-base">MarkupEditor</a> is built using <a href="https://prosemirror.net">ProseMirror</a>. ProseMirror is a toolkit for building an editor. It’s well-<a href="https://prosemirror.net/docs/">documented</a>, well-architected, and has a lively and supportive <a href="https://discuss.prosemirror.net">forum</a>. You should <a href="https://marijnhaverbeke.nl/fund/">support it</a> if you can, particularly if you use the MarkupEditor to make a profit. If you want to modify the MarkupEditor itself, you will need to understand quite a bit about ProseMirror, a topic that is beyond the scope of this document. This section will cover a bit about the build and the structure of the MarkupEditor, as a way to help if you need to or want to modify it. You should be familiar with the <a href="https://github.com/stevengharris/markupeditor-base/blob/main/README.md">README</a> in the <a href="https://github.com/stevengharris/markupeditor-base">repository</a>.</p>
 
