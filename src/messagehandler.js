@@ -1,3 +1,4 @@
+/* global MU */
 import { loadUserFiles, getHeight } from "./markup";
 
 /**
@@ -87,7 +88,7 @@ export class MessageHandler {
             case "log":
                 console.log(messageData.log)
                 return
-            case "error":
+            case "error": {
                 let code = messageData.code
                 let message = messageData.message
                 if (!code || !message) {
@@ -98,10 +99,11 @@ export class MessageHandler {
                 let alert = messageData.alert ?? true
                 delegate?.markupError && delegate?.markupError(code, message, info, alert)
                 return
+            }
             case "copyImage":
                 console.log("fix copyImage " + messageData.src)
                 return
-            case "addedImage":
+            case "addedImage": {
                 if (!delegate?.markupImageAdded) return;
                 let divId = messageData.divId
                 // Even if divid is identified, if it's empty or the editor element, then
@@ -115,6 +117,7 @@ export class MessageHandler {
                     console.log("Error: The div id for the image could not be decoded.")
                 }
                 return
+            }
             case "deletedImage":
                 console.log("fix deletedImage " + messageData.src)
                 return

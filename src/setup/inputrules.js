@@ -1,3 +1,4 @@
+/* eslint no-cond-assign: 0 */
 import {inputRules, wrappingInputRule, textblockTypeInputRule,
         smartQuotes, emDash, ellipsis} from "prosemirror-inputrules"
 
