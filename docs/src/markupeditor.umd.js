@@ -22805,6 +22805,8 @@
 
   }
 
+  /* eslint no-cond-assign: 0 */
+
   // : (NodeType) → InputRule
   // Given a blockquote node type, returns an input rule that turns `"> "`
   // at the start of a textblock into a blockquote.
@@ -23269,6 +23271,8 @@
 
   }
 
+  /* global MU */
+
   /**
    * The MessageHandler receives `postMessage` from the MarkupEditor as the document state changes.
    * 
@@ -23356,7 +23360,7 @@
               case "log":
                   console.log(messageData.log);
                   return
-              case "error":
+              case "error": {
                   let code = messageData.code;
                   let message = messageData.message;
                   if (!code || !message) {
@@ -23367,10 +23371,11 @@
                   let alert = messageData.alert ?? true;
                   delegate?.markupError && delegate?.markupError(code, message, info, alert);
                   return
+              }
               case "copyImage":
                   console.log("fix copyImage " + messageData.src);
                   return
-              case "addedImage":
+              case "addedImage": {
                   if (!delegate?.markupImageAdded) return;
                   let divId = messageData.divId;
                   // Even if divid is identified, if it's empty or the editor element, then
@@ -23384,6 +23389,7 @@
                       console.log("Error: The div id for the image could not be decoded.");
                   }
                   return
+              }
               case "deletedImage":
                   console.log("fix deletedImage " + messageData.src);
                   return
