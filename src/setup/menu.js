@@ -82,7 +82,7 @@ export function buildMenuItems(config, schema) {
     itemGroups.push({item: correctionBarItems(config), order: ordering.correctionBar});
   }
   if (insertBar) {
-    itemGroups.push({item: insertBarItems(config, schema), order: ordering.insertBar});
+    itemGroups.push({item: insertBarItems(config), order: ordering.insertBar});
   }
   if (styleMenu) {
     itemGroups.push({item: styleMenuItems(config, schema), order: ordering.styleMenu});
@@ -98,21 +98,6 @@ export function buildMenuItems(config, schema) {
   }
   itemGroups.sort((a, b) => a.order - b.order);
   return itemGroups.map((ordered) => ordered.item)
-}
-
-/**
- * Return whether a Node of `nodeType` can be inserted.
- * @param {EditorState} state
- * @param {NodeType} nodeType 
- * @returns {boolean} Whether a Node of `nodeType` can be inserted given the `state`.
- */
-function canInsert(state, nodeType) {
-  let $from = state.selection.$from
-  for (let d = $from.depth; d >= 0; d--) {
-    let index = $from.index(d)
-    if ($from.node(d).canReplaceWith(index, index, nodeType)) return true
-  }
-  return false
 }
 
 /* Correction Bar (Undo, Redo) */
@@ -148,10 +133,9 @@ function redoItem(options) {
 /**
  * Return the MenuItems for the style bar, as specified in `config`.
  * @param {Object} config The config object with booleans indicating whether list and denting items are included
- * @param {Schema} schema 
  * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
  */
-function insertBarItems(config, schema) {
+function insertBarItems(config) {
   let items = [];
   let { link, image, tableMenu } = config.toolbar.insertBar;
   if (link) {
@@ -165,7 +149,7 @@ function insertBarItems(config, schema) {
   return items;
 }
 
-function tableMenuItems(config, schema) {
+function tableMenuItems(config) {
   let items = []
   let { header, border } = config.toolbar.tableMenu;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))
@@ -216,7 +200,7 @@ function tableEditItem(command, options) {
   let passedOptions = {
     run: command,
     enable(state) { return command(state); },
-    active(state) { return false }  // FIX
+    active() { return false }  // FIX
   };
   for (let prop in options)
     passedOptions[prop] = options[prop];
@@ -227,7 +211,7 @@ function tableBorderItem(command, options) {
   let passedOptions = {
     run: command,
     enable(state) { return command(state); },
-    active(state) { return false }  // FIX
+    active() { return false }  // FIX
   };
   for (let prop in options)
     passedOptions[prop] = options[prop];

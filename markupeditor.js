@@ -1,12 +1,12 @@
 /**
  * A script to run with node.js to open the MarkupEditor on an HTML file (or empty)
  */
-const {argv} = require('node:process');
-const {parseArgs} = require('node:util');
-const express = require('express');
-const path = require('path');
+const {argv} = require('node:process')
+const {parseArgs} = require('node:util')
+const express = require('express')
+const path = require('path')
 
-const app = express();
+const app = express()
 
 const options = {
   'port': {
@@ -16,39 +16,38 @@ const options = {
 }
 
 try {
-  var {values, positionals} = parseArgs({ argv, options, allowPositionals: true })
+  var { values, positionals } = parseArgs({ argv, options, allowPositionals: true })
 } catch {
-  var positionals = []
+  positionals = []
 }
+
 if ((values.length > 1) || (positionals.length > 1)) {
   console.log('Usage: node markupeditor.js [--port number] [<filename.html>]')
-  return
-}
-
-let port = parseInt(values.port)
-let filename = (positionals.length > 0) ? positionals[0] : null
-let config = 'placeholder: "Edit document..."'
-if (filename) {
+} else {
+  let port = parseInt(values.port)
+  let filename = (positionals.length > 0) ? positionals[0] : null
+  let config = 'placeholder: "Edit document..."'
+  if (filename) {
     let fullFilename = path.join(process.cwd(), filename)
-    let relativeFilename = path.relative(__dirname, fullFilename);
+    let relativeFilename = path.relative(__dirname, fullFilename)
     let base = path.dirname(relativeFilename) + '/'
     config += `, filename: "${relativeFilename}", base: "${base}"`
-}
+  }
 
-// These files are always located relative to node's __dirname
-let markupeditorcss = 'styles/markupeditor.css'
-let markupeditorscript = 'dist/markupeditor.umd.js'
+  // These files are always located relative to node's __dirname
+  let markupeditorcss = 'styles/markupeditor.css'
+  let markupeditorscript = 'dist/markupeditor.umd.js'
 
-// Allow the relative references for css and scripts to work in index.html
-app.use(express.static(`${__dirname}`))
+  // Allow the relative references for css and scripts to work in index.html
+  app.use(express.static(`${__dirname}`))
 
-// For parsing application/json
-app.use(express.json())
+  // For parsing application/json
+  app.use(express.json())
 
-// Load when loading http://localhost:${port}
-app.get('/', (req, res) => {
-  res.send(
-    `
+  // Load when loading http://localhost:${port}
+  app.get('/', (req, res) => {
+    res.send(
+      `
       <!DOCTYPE html>
       <html lang="en">
         <head>
@@ -65,9 +64,10 @@ app.get('/', (req, res) => {
         </body>
       </html>
     `
-  )
-});
+    )
+  })
 
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
-});
+  app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`)
+  })
+}

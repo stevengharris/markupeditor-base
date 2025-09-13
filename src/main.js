@@ -232,7 +232,7 @@ class MarkupEditor {
         'click': () => { setTimeout(() => { clicked() }, 0) },
         'delete': () => { setTimeout(() => { callbackInput() }, 0) },
       },
-      handlePaste(view, event, slice) {
+      handlePaste() {
         setTimeout(() => { callbackInput() }, 0)
         return false
       },

@@ -7782,7 +7782,7 @@
           // (one where the focus is before the anchor), but not all
           // browsers support it yet.
           let domSelExtended = false;
-          if ((domSel.extend || anchor == head) && !brKludge) {
+          if ((domSel.extend || anchor == head) && !(brKludge && gecko)) {
               domSel.collapse(anchorDOM.node, anchorDOM.offset);
               try {
                   if (anchor != head)
@@ -9043,17 +9043,14 @@
       });
   }
   function selectCursorWrapper(view) {
-      let domSel = view.domSelection(), range = document.createRange();
+      let domSel = view.domSelection();
       if (!domSel)
           return;
       let node = view.cursorWrapper.dom, img = node.nodeName == "IMG";
       if (img)
-          range.setStart(node.parentNode, domIndex(node) + 1);
+          domSel.collapse(node.parentNode, domIndex(node) + 1);
       else
-          range.setStart(node, 0);
-      range.collapse(true);
-      domSel.removeAllRanges();
-      domSel.addRange(range);
+          domSel.collapse(node, 0);
       // Kludge to kill 'control selection' in IE11 when selecting an
       // invisible cursor wrapper, since that would result in those weird
       // resize handles and a selection that considers the absolutely
@@ -9531,11 +9528,14 @@
       let dom, slice;
       if (!html && !text)
           return null;
-      let asText = text && (plainText || inCode || !html);
+      let asText = !!text && (plainText || inCode || !html);
       if (asText) {
           view.someProp("transformPastedText", f => { text = f(text, inCode || plainText, view); });
-          if (inCode)
-              return text ? new Slice(Fragment.from(view.state.schema.text(text.replace(/\r\n?/g, "\n"))), 0, 0) : Slice.empty;
+          if (inCode) {
+              slice = new Slice(Fragment.from(view.state.schema.text(text.replace(/\r\n?/g, "\n"))), 0, 0);
+              view.someProp("transformPasted", f => { slice = f(slice, view, true); });
+              return slice;
+          }
           let parsed = view.someProp("clipboardTextParser", f => f(text, $context, plainText, view));
           if (parsed) {
               slice = parsed;
@@ -9593,7 +9593,7 @@
               slice = closeSlice(slice, openStart, openEnd);
           }
       }
-      view.someProp("transformPasted", f => { slice = f(slice, view); });
+      view.someProp("transformPasted", f => { slice = f(slice, view, asText); });
       return slice;
   }
   const inlineParents = /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/i;
@@ -10452,7 +10452,7 @@
       let $mouse = view.state.doc.resolve(eventPos.pos);
       let slice = dragging && dragging.slice;
       if (slice) {
-          view.someProp("transformPasted", f => { slice = f(slice, view); });
+          view.someProp("transformPasted", f => { slice = f(slice, view, false); });
       }
       else {
           slice = parseFromClipboard(view, getText(event.dataTransfer), brokenClipboardAPI ? null : event.dataTransfer.getData("text/html"), false, $mouse);
@@ -13474,6 +13474,8 @@
     }
   };
   new PluginKey("fix-tables");
+
+  // src/commands.ts
   function selectedRect(state) {
     const sel = state.selection;
     const $pos = selectionCell(state);
@@ -16559,6 +16561,8 @@
   */
   const findPrev = findCommand(true, -1);
 
+  /* global view */
+
   /**
    * The NodeView to support divs, as installed in main.js.
    */
@@ -16622,7 +16626,7 @@
   }
 
   class LinkView {
-      constructor(node, view, getPos) {
+      constructor(node, view) {
           let href = node.attrs.href;
           let title = '\u2325+Click to follow\n' + href;
           const link = document.createElement('a');
@@ -16797,7 +16801,7 @@
           });
 
           // Display a broken image background and notify of any errors.
-          img.addEventListener('error', e => {
+          img.addEventListener('error', () => {
               // https://fonts.google.com/icons?selected=Material+Symbols+Outlined:broken_image:FILL@0;wght@400;GRAD@0;opsz@20&icon.query=missing&icon.size=18&icon.color=%231f1f1f
               const imageSvg = '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1f1f1f"><path d="M216-144q-29 0-50.5-21.5T144-216v-528q0-29.7 21.5-50.85Q187-816 216-816h528q29.7 0 50.85 21.15Q816-773.7 816-744v528q0 29-21.15 50.5T744-144H216Zm48-303 144-144 144 144 144-144 48 48v-201H216v249l48 48Zm-48 231h528v-225l-48-48-144 144-144-144-144 144-48-48v177Zm0 0v-240 63-351 528Z"/></svg>';
               const image64 = btoa(imageSvg);
@@ -17599,7 +17603,7 @@
        * Please file issues for any errors captured by this function,
        * with the call stack and reproduction instructions if at all possible.
        */
-      window.addEventListener('error', function (ev) {
+      window.addEventListener('error', function () {
           const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... in Safari Web Inspector to debug.');
           muError.callback();
       });
@@ -17921,7 +17925,7 @@
           const attributes = node.attributes;
           for (let i = 0; i < attributes.length; i++) {
               const attribute = attributes[i];
-              text += ' ' + attribute.name + '=\"' + attribute.value + '\"';
+              text += ' ' + attribute.name + '="' + attribute.value + '"';
           }        text += '>';
           node.childNodes.forEach(childNode => {
               text = _prettyHTML(childNode, indent + '    ', text, _isInlined(childNode));
@@ -19480,7 +19484,7 @@
       return result
   }
   function insertLinkCommand(url) {
-      const commandAdapter = (state, dispatch, view) => {
+      const commandAdapter = (state, dispatch) => {
           const selection = state.selection;
           const linkMark = state.schema.marks.link.create({ href: url });
           if (selection.empty) {
@@ -19503,9 +19507,9 @@
   }
 
   function insertInternalLinkCommand(hTag, index) {
-      const commandAdapter = (state, dispatch, view) => {
+      const commandAdapter = (state, dispatch) => {
           // Find the node matching hTag that is index into the nodes matching hTag
-          let {node, pos} = headerMatching(hTag, index, state);
+          let {node} = headerMatching(hTag, index, state);
           if (!node) return false
           // Get the unique id for this header, which is may or may not already have.
           let id = idForHeader(node, state);
@@ -20545,6 +20549,8 @@
     }
   }
 
+  /* global view */
+
   /**
   An icon or label that, when clicked, executes a command.
   */
@@ -20655,11 +20661,6 @@
         label.setAttribute("title", translate(view, this.options.title));
       if (this.options.labelClass)
         label.classList.add(this.options.labelClass);
-      let enabled = true;
-      if (this.options.enable) {
-        enabled = this.options.enable(state) || false;
-        setClass(dom, this.prefix + "-disabled", !enabled);
-      }
       let iconWrapClass = this.options.indicator ? "-dropdown-icon-wrap" : "-dropdown-icon-wrap-noindicator";
       let wrapClass = (this.options.icon) ? this.prefix + iconWrapClass : this.prefix + "-dropdown-wrap";
       let wrap = crelt("span", { class: wrapClass }, label);
@@ -21009,7 +21010,7 @@
       // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
       // because it sits at a higher z-level than the prompt and overlay.
       this.overlay = crelt('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
-      this.overlay.addEventListener('click', e => {
+      this.overlay.addEventListener('click', () => {
         this.closeDialog();
       });
       wrapper.appendChild(this.overlay);
@@ -21020,7 +21021,7 @@
       } else {
         setClass(this.toolbarOverlay, searchbarHidden(), true);
       }
-      this.toolbarOverlay.addEventListener('click', e => {
+      this.toolbarOverlay.addEventListener('click', () => {
         this.closeDialog();
       });
       wrapper.appendChild(this.toolbarOverlay);
@@ -21322,7 +21323,7 @@
       // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
       // because it sits at a higher z-level than the prompt and overlay.
       this.overlay = crelt('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
-      this.overlay.addEventListener('click', e => {
+      this.overlay.addEventListener('click', () => {
         this.closeDialog();
       });
       wrapper.appendChild(this.overlay);
@@ -21332,7 +21333,7 @@
       } else {
         setClass(this.toolbarOverlay, searchbarHidden(), true);
       }
-      this.toolbarOverlay.addEventListener('click', e => {
+      this.toolbarOverlay.addEventListener('click', () => {
         this.closeDialog();
       });
       wrapper.appendChild(this.toolbarOverlay);
@@ -21415,7 +21416,7 @@
           active: () => { return false },
           enable: () => { return true }
         });
-        let {dom, update} = selectItem.render(view);
+        let {dom} = selectItem.render(view);
         buttonsDiv.appendChild(dom);
       } else {
         // If there is no Select button, we insert a tiny preview to help.
@@ -21472,7 +21473,7 @@
         this.okUpdate(view.state);
         this.cancelUpdate(view.state);
       });
-      preview.addEventListener('error', (e) => {
+      preview.addEventListener('error', () => {
         this.isValid = false;
         preview.style.visibility = 'hidden';
         setClass(this.okDom, 'Markup-menuitem-disabled', true);
@@ -21554,7 +21555,7 @@
 
     render(view) {
       let {dom, update} = this.item.render(view);
-      dom.addEventListener('mouseover', e => {
+      dom.addEventListener('mouseover', () => {
         this.onMouseover(this.rows, this.cols);
       });
       return {dom, update}
@@ -21663,8 +21664,8 @@
     constructor(config) {
       let keymap = config.keymap;
       let options = {
-        enable: (state) => { return true },
-        active: (state) => { return this.showing() },
+        enable: () => { return true },
+        active: () => { return this.showing() },
         title: 'Toggle search' + keyString('search', keymap),
         icon: icons.search,
         id: prefix + '-searchitem'
@@ -21844,8 +21845,8 @@
 
     constructor(items) {
       let options = {
-        enable: (state) => { return true },
-        active: (state) => { return this.showing() },
+        enable: () => { return true },
+        active: () => { return this.showing() },
         title: 'Show more',
         icon: icons.more
       };
@@ -22179,10 +22180,9 @@
   /**
    * Return the MenuItems for the style bar, as specified in `config`.
    * @param {Object} config The config object with booleans indicating whether list and denting items are included
-   * @param {Schema} schema 
    * @returns {[MenuItem]}  An array or MenuItems to be shown in the style bar
    */
-  function insertBarItems(config, schema) {
+  function insertBarItems(config) {
     let items = [];
     let { link, image, tableMenu } = config.toolbar.insertBar;
     if (link) {
@@ -22196,7 +22196,7 @@
     return items;
   }
 
-  function tableMenuItems(config, schema) {
+  function tableMenuItems(config) {
     let items = [];
     let { header, border } = config.toolbar.tableMenu;
     items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}));
@@ -22247,7 +22247,7 @@
     let passedOptions = {
       run: command,
       enable(state) { return command(state); },
-      active(state) { return false }  // FIX
+      active() { return false }  // FIX
     };
     for (let prop in options)
       passedOptions[prop] = options[prop];
@@ -22258,7 +22258,7 @@
     let passedOptions = {
       run: command,
       enable(state) { return command(state); },
-      active(state) { return false }  // FIX
+      active() { return false }  // FIX
     };
     for (let prop in options)
       passedOptions[prop] = options[prop];
@@ -23463,7 +23463,7 @@
           'click': () => { setTimeout(() => { clicked(); }, 0); },
           'delete': () => { setTimeout(() => { callbackInput(); }, 0); },
         },
-        handlePaste(view, event, slice) {
+        handlePaste() {
           setTimeout(() => { callbackInput(); }, 0);
           return false
         },

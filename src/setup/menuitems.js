@@ -1,3 +1,4 @@
+/* global view */
 import crel from "crelt";
 import { icons, getIcon } from "./icons";
 import { 
@@ -144,11 +145,6 @@ export class Dropdown {
       label.setAttribute("title", translate(view, this.options.title));
     if (this.options.labelClass)
       label.classList.add(this.options.labelClass)
-    let enabled = true;
-    if (this.options.enable) {
-      enabled = this.options.enable(state) || false;
-      setClass(dom, this.prefix + "-disabled", !enabled);
-    }
     let iconWrapClass = this.options.indicator ? "-dropdown-icon-wrap" : "-dropdown-icon-wrap-noindicator"
     let wrapClass = (this.options.icon) ? this.prefix + iconWrapClass : this.prefix + "-dropdown-wrap"
     let wrap = crel("span", { class: wrapClass }, label);
@@ -498,7 +494,7 @@ export class LinkItem extends DialogItem {
     // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
     // because it sits at a higher z-level than the prompt and overlay.
     this.overlay = crel('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
-    this.overlay.addEventListener('click', e => {
+    this.overlay.addEventListener('click', () => {
       this.closeDialog()
     });
     wrapper.appendChild(this.overlay);
@@ -509,7 +505,7 @@ export class LinkItem extends DialogItem {
     } else {
       setClass(this.toolbarOverlay, searchbarHidden(), true);
     }
-    this.toolbarOverlay.addEventListener('click', e => {
+    this.toolbarOverlay.addEventListener('click', () => {
       this.closeDialog()
     });
     wrapper.appendChild(this.toolbarOverlay)
@@ -812,7 +808,7 @@ export class ImageItem extends DialogItem {
     // We also have to add a separate toolbarOverlay over the toolbar to prevent interaction with it, 
     // because it sits at a higher z-level than the prompt and overlay.
     this.overlay = crel('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
-    this.overlay.addEventListener('click', e => {
+    this.overlay.addEventListener('click', () => {
       this.closeDialog()
     });
     wrapper.appendChild(this.overlay);
@@ -822,7 +818,7 @@ export class ImageItem extends DialogItem {
     } else {
       setClass(this.toolbarOverlay, searchbarHidden(), true);
     }
-    this.toolbarOverlay.addEventListener('click', e => {
+    this.toolbarOverlay.addEventListener('click', () => {
       this.closeDialog()
     });
     wrapper.appendChild(this.toolbarOverlay);
@@ -905,7 +901,7 @@ export class ImageItem extends DialogItem {
         active: () => { return false },
         enable: () => { return true }
       })
-      let {dom, update} = selectItem.render(view);
+      let {dom} = selectItem.render(view);
       buttonsDiv.appendChild(dom)
     } else {
       // If there is no Select button, we insert a tiny preview to help.
@@ -962,7 +958,7 @@ export class ImageItem extends DialogItem {
       this.okUpdate(view.state)
       this.cancelUpdate(view.state)
     })
-    preview.addEventListener('error', (e) => {
+    preview.addEventListener('error', () => {
       this.isValid = false
       preview.style.visibility = 'hidden'
       setClass(this.okDom, 'Markup-menuitem-disabled', true)
@@ -1044,7 +1040,7 @@ export class TableInsertItem {
 
   render(view) {
     let {dom, update} = this.item.render(view);
-    dom.addEventListener('mouseover', e => {
+    dom.addEventListener('mouseover', () => {
       this.onMouseover(this.rows, this.cols)
     })
     return {dom, update}
@@ -1153,8 +1149,8 @@ export class SearchItem {
   constructor(config) {
     let keymap = config.keymap
     let options = {
-      enable: (state) => { return true },
-      active: (state) => { return this.showing() },
+      enable: () => { return true },
+      active: () => { return this.showing() },
       title: 'Toggle search' + keyString('search', keymap),
       icon: icons.search,
       id: prefix + '-searchitem'
@@ -1335,8 +1331,8 @@ export class MoreItem {
 
   constructor(items) {
     let options = {
-      enable: (state) => { return true },
-      active: (state) => { return this.showing() },
+      enable: () => { return true },
+      active: () => { return this.showing() },
       title: 'Show more',
       icon: icons.more
     };

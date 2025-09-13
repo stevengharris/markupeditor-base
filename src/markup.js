@@ -1,3 +1,4 @@
+/* global view */
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
 import {DOMParser, DOMSerializer} from 'prosemirror-model'
 import {toggleMark, wrapIn, lift} from 'prosemirror-commands'
@@ -80,7 +81,7 @@ export class DivView {
 }
 
 export class LinkView {
-    constructor(node, view, getPos) {
+    constructor(node, view) {
         let href = node.attrs.href
         let title = '\u2325+Click to follow\n' + href
         const link = document.createElement('a')
@@ -255,7 +256,7 @@ class ResizableImage {
         })
 
         // Display a broken image background and notify of any errors.
-        img.addEventListener('error', e => {
+        img.addEventListener('error', () => {
             // https://fonts.google.com/icons?selected=Material+Symbols+Outlined:broken_image:FILL@0;wght@400;GRAD@0;opsz@20&icon.query=missing&icon.size=18&icon.color=%231f1f1f
             const imageSvg = '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1f1f1f"><path d="M216-144q-29 0-50.5-21.5T144-216v-528q0-29.7 21.5-50.85Q187-816 216-816h528q29.7 0 50.85 21.15Q816-773.7 816-744v528q0 29-21.15 50.5T744-144H216Zm48-303 144-144 144 144 144-144 48 48v-201H216v249l48 48Zm-48 231h528v-225l-48-48-144 144-144-144-144 144-48-48v177Zm0 0v-240 63-351 528Z"/></svg>';
             const image64 = btoa(imageSvg);
@@ -1089,7 +1090,7 @@ if (typeof window != 'undefined') {
      * Please file issues for any errors captured by this function,
      * with the call stack and reproduction instructions if at all possible.
      */
-    window.addEventListener('error', function (ev) {
+    window.addEventListener('error', function () {
         const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... in Safari Web Inspector to debug.');
         muError.callback()
     });
@@ -1430,7 +1431,7 @@ const _prettyHTML = function(node, indent, text, inlined) {
         const attributes = node.attributes;
         for (let i = 0; i < attributes.length; i++) {
             const attribute = attributes[i];
-            text += ' ' + attribute.name + '=\"' + attribute.value + '\"';
+            text += ' ' + attribute.name + '="' + attribute.value + '"';
         };
         text += '>';
         node.childNodes.forEach(childNode => {
@@ -3079,7 +3080,7 @@ export function insertLink(url) {
 };
 
 export function insertLinkCommand(url) {
-    const commandAdapter = (state, dispatch, view) => {
+    const commandAdapter = (state, dispatch) => {
         const selection = state.selection;
         const linkMark = state.schema.marks.link.create({ href: url });
         if (selection.empty) {
@@ -3103,9 +3104,9 @@ export function insertLinkCommand(url) {
 }
 
 export function insertInternalLinkCommand(hTag, index) {
-    const commandAdapter = (state, dispatch, view) => {
+    const commandAdapter = (state, dispatch) => {
         // Find the node matching hTag that is index into the nodes matching hTag
-        let {node, pos} = headerMatching(hTag, index, state)
+        let {node} = headerMatching(hTag, index, state)
         if (!node) return false
         // Get the unique id for this header, which is may or may not already have.
         let id = idForHeader(node, state)
@@ -3868,15 +3869,6 @@ function _fragmentFromNode(node) {
 };
 
 /**
- * Return a Node derived from the node type's toDOM method.
- * @param {Node} node
- * @returns HTMLElement
- */
-function _elementFromNode(node) {
-    return node.type.spec.toDOM(node)
-}
-
-/**
  * Return an HTML DocumentFragment derived from HTML text.
  * @param {string} html 
  * @returns DocumentFragment
@@ -3956,6 +3948,7 @@ function _isLinkNode(node) {
 /**
  * Callback to show a string in the console, like console.log(), but for environments like Xcode.
  */
+// eslint-disable-next-line no-unused-vars
 function _consoleLog(string) {
     let messageDict = {
         'messageType' : 'log',
