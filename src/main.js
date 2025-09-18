@@ -215,7 +215,7 @@ class MarkupEditor {
         // For the MarkupEditor, we can just use the editor element. 
         // There is no need to use a separate content element.
         doc: DOMParser.fromSchema(schema).parse(this.element),
-        plugins: markupSetup(config, schema)
+        plugins: markupSetup(this.config, schema)
       }),
       nodeViews: {
         link(node, view, getPos) { return new LinkView(node, view, getPos)},
