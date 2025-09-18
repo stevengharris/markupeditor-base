@@ -3754,25 +3754,24 @@ export function setBorderCommand(border) {
             return false;
         });
         if (!table) return false;
-        switch (border) {
-            case 'outer':
-                table.attrs.class = 'bordered-table-outer';
-                break;
-            case 'header':
-                table.attrs.class = 'bordered-table-header';
-                break;
-            case 'cell':
-                table.attrs.class = 'bordered-table-cell';
-                break;
-            case 'none':
-                table.attrs.class = 'bordered-table-none';
-                break;
-            default:
-                table.attrs.class = 'bordered-table-cell';
-                break;
-        };
-
         if (dispatch) {
+            switch (border) {
+                case 'outer':
+                    table.attrs.class = 'bordered-table-outer';
+                    break;
+                case 'header':
+                    table.attrs.class = 'bordered-table-header';
+                    break;
+                case 'cell':
+                    table.attrs.class = 'bordered-table-cell';
+                    break;
+                case 'none':
+                    table.attrs.class = 'bordered-table-none';
+                    break;
+                default:
+                    table.attrs.class = 'bordered-table-cell';
+                    break;
+            };
             // At this point, the state.selection is in the new header row we just added. By definition, 
             // the header is placed before the original selection, so we can add its size to the 
             // selection to restore the selection to where it was before.
