@@ -47,13 +47,15 @@
     "eslint": "^9.35.0",
     "express": "^5.1.0",
     "globals": "^16.4.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "rollup": "^4.31.0",
     "rollup-plugin-import-css": "4.0.1"
   },
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "test": "node test/test.js",
+    "test": "jest",
     "pretest": "npm run build",
     "docs": "node ./docs/index.js",
     "predocs": "sh predocs.sh"
