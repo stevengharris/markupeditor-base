@@ -14476,7 +14476,7 @@
   });
 
   // Mix the nodes from prosemirror-schema-list into the baseNodes to create a schema with list support.
-  baseNodes = addListNodes(baseNodes, '(paragraph | heading) block*', 'block');
+  baseNodes = addListNodes(baseNodes, '(paragraph | heading | ordered_list | bullet_list) block*', 'block');
 
   // Create table nodes that support bordering
   const tNodes = tableNodes({
@@ -14504,7 +14504,7 @@
       return {class: dom.getAttribute('class')}
     }
   }];
-  tNodes.table.toDOM = (node) => { let tClass = node.attrs; return ['table', tClass, 0] };
+  tNodes.table.toDOM = (node) => { return ['table', node.attrs, 0] };
 
   // Append the modified tableNodes and export the resulting nodes
   // :: Object
@@ -20132,25 +20132,24 @@
               }            return false;
           });
           if (!table) return false;
-          switch (border) {
-              case 'outer':
-                  table.attrs.class = 'bordered-table-outer';
-                  break;
-              case 'header':
-                  table.attrs.class = 'bordered-table-header';
-                  break;
-              case 'cell':
-                  table.attrs.class = 'bordered-table-cell';
-                  break;
-              case 'none':
-                  table.attrs.class = 'bordered-table-none';
-                  break;
-              default:
-                  table.attrs.class = 'bordered-table-cell';
-                  break;
-          }
           if (dispatch) {
-              // At this point, the state.selection is in the new header row we just added. By definition, 
+              switch (border) {
+                  case 'outer':
+                      table.attrs.class = 'bordered-table-outer';
+                      break;
+                  case 'header':
+                      table.attrs.class = 'bordered-table-header';
+                      break;
+                  case 'cell':
+                      table.attrs.class = 'bordered-table-cell';
+                      break;
+                  case 'none':
+                      table.attrs.class = 'bordered-table-none';
+                      break;
+                  default:
+                      table.attrs.class = 'bordered-table-cell';
+                      break;
+              }            // At this point, the state.selection is in the new header row we just added. By definition, 
               // the header is placed before the original selection, so we can add its size to the 
               // selection to restore the selection to where it was before.
                const transaction = view.state.tr
@@ -23452,7 +23451,7 @@
           // For the MarkupEditor, we can just use the editor element. 
           // There is no need to use a separate content element.
           doc: DOMParser.fromSchema(schema).parse(this.element),
-          plugins: markupSetup(config, schema)
+          plugins: markupSetup(this.config, schema)
         }),
         nodeViews: {
           link(node, view, getPos) { return new LinkView(node, view, getPos)},
