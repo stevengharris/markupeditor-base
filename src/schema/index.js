@@ -229,7 +229,7 @@ let baseNodes = OrderedMap.from({
 })
 
 // Mix the nodes from prosemirror-schema-list into the baseNodes to create a schema with list support.
-baseNodes = addListNodes(baseNodes, '(paragraph | heading) block*', 'block');
+baseNodes = addListNodes(baseNodes, '(paragraph | heading | ordered_list | bullet_list) block*', 'block');
 
 // Create table nodes that support bordering
 const tNodes = tableNodes({
@@ -257,7 +257,7 @@ tNodes.table.parseDOM = [{
     return {class: dom.getAttribute('class')}
   }
 }];
-tNodes.table.toDOM = (node) => { let tClass = node.attrs; return ['table', tClass, 0] };
+tNodes.table.toDOM = (node) => { return ['table', node.attrs, 0] };
 
 // Append the modified tableNodes and export the resulting nodes
 // :: Object
