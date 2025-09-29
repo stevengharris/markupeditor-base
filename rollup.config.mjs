@@ -43,6 +43,7 @@ export default [
 			'prosemirror-dropcursor',
 			'prosemirror-gapcursor',
 			'prosemirror-search',
+			'prosemirror-transform',
 		],
 		output: [
 			{ file: pkg.main, format: 'cjs' },

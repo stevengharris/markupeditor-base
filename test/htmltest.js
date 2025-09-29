@@ -3,12 +3,14 @@ const path = require('path')
 
 class HtmlTest {
 
-    constructor(description, startHtml, endHtml, undoHtml, pasteString) {
+    constructor(description, sel, startHtml, endHtml, undoHtml, pasteString, action) {
         this.description = description
+        this.sel = sel
         this.startHtml = startHtml
         this.endHtml = endHtml ?? startHtml
         this.undoHtml = undoHtml ?? startHtml
         this.pasteString = pasteString
+        this.action = action
     }
 
     static fromData(filename) {
@@ -18,8 +20,8 @@ class HtmlTest {
             let data = fs.readFileSync(fullFilename, 'utf8')
             let tests = JSON.parse(data)
             for (let test of tests) {
-                let { description, startHtml, endHtml, undoHtml, pasteString } = test
-                let htmlTest = new HtmlTest(description, startHtml, endHtml, undoHtml, pasteString)
+                let { description, sel, startHtml, endHtml, undoHtml, pasteString, action } = test
+                let htmlTest = new HtmlTest(description, sel, startHtml, endHtml, undoHtml, pasteString, action)
                 htmlTests.push(htmlTest)
             }
         } catch (error) {

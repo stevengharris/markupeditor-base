@@ -4582,7 +4582,7 @@
       }
       return null;
   }
-  function lift$1(tr, range, target) {
+  function lift(tr, range, target) {
       let { $from, $to, depth } = range;
       let gapStart = $from.before(depth + 1), gapEnd = $to.after(depth + 1);
       let start = gapStart, end = gapEnd;
@@ -5591,7 +5591,7 @@
       sure the lift is valid.
       */
       lift(range, target) {
-          lift$1(this, range, target);
+          lift(this, range, target);
           return this;
       }
       /**
@@ -14476,7 +14476,7 @@
   });
 
   // Mix the nodes from prosemirror-schema-list into the baseNodes to create a schema with list support.
-  baseNodes = addListNodes(baseNodes, '(paragraph | heading | ordered_list | bullet_list) block*', 'block');
+  baseNodes = addListNodes(baseNodes, '(paragraph | heading)+ block*', 'block');
 
   // Create table nodes that support bordering
   const tNodes = tableNodes({
@@ -15407,19 +15407,6 @@
       return null;
   }
   /**
-  Lift the selected block, or the closest ancestor block of the
-  selection that can be lifted, out of its parent node.
-  */
-  const lift = (state, dispatch) => {
-      let { $from, $to } = state.selection;
-      let range = $from.blockRange($to), target = range && liftTarget(range);
-      if (target == null)
-          return false;
-      if (dispatch)
-          dispatch(state.tr.lift(range, target).scrollIntoView());
-      return true;
-  };
-  /**
   If the selection is in a node whose type has a truthy
   [`code`](https://prosemirror.net/docs/ref/#model.NodeSpec.code) property in its spec, replace the
   selection with a newline character.
@@ -15663,22 +15650,6 @@
   Moves the cursor to the end of current text block.
   */
   const selectTextblockEnd = selectTextblockSide(1);
-  // Parameterized commands
-  /**
-  Wrap the selection in a node of the given type with the given
-  attributes.
-  */
-  function wrapIn(nodeType, attrs = null) {
-      return function (state, dispatch) {
-          let { $from, $to } = state.selection;
-          let range = $from.blockRange($to), wrapping = range && findWrapping(range, nodeType, attrs);
-          if (!wrapping)
-              return false;
-          if (dispatch)
-              dispatch(state.tr.wrap(range, wrapping).scrollIntoView());
-          return true;
-      };
-  }
   function markApplies(doc, ranges, type, enterAtoms) {
       for (let i = 0; i < ranges.length; i++) {
           let { $from, $to } = ranges[i];
@@ -18568,11 +18539,6 @@
    * no longer contains a list. Similarly, if the list returned here is null, then  
    * the selection can be set to a list.
    * 
-   * Note that `nodesBetween` on a collapsed selection within a list will iterate 
-   * over the nodes above it in the list thru the selected text node. Thus, a 
-   * selection in an OL nested inside of a UL will return null, since both will be 
-   * found by `nodesBetween`.
-   * 
    * @return { 'UL' | 'OL' | null }
    */
   function getListType(state) {
@@ -18796,26 +18762,95 @@
   function indentCommand() {
       let commandAdapter = (viewState, dispatch, view) => {
           let state = view?.state ?? viewState;
-          const selection = state.selection;
-          const nodeTypes = state.schema.nodes;
-          let newState;
-          state.doc.nodesBetween(selection.from, selection.to, node => {
+          let blockquote = state.schema.nodes.blockquote;
+          let li = state.schema.nodes.list_item;
+          let ul = state.schema.nodes.bullet_list;
+          let ol = state.schema.nodes.ordered_list;
+          const { $from, $to } = state.selection;
+          let tr = state.tr;
+          let willWrap = false;
+          let nodePos = [];
+          state.doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
               if (node.isBlock) {
-                  const command = wrapIn(nodeTypes.blockquote);
-                  command(state, (transaction) => {
-                      newState = state.apply(transaction);
-                  });
-                  return true;
-              }            return false;
+                  const $start = tr.doc.resolve(pos);
+                  const $end = tr.doc.resolve(pos + node.nodeSize);
+                  const range = $start.blockRange($end);
+                  if ((range) && (node.type != li)) { // We will never wrap an li
+                      // Later we will check if the range is valid for wrapping
+                      nodePos.push({node: node, pos: pos});
+                  }
+                  return true
+              } else {
+                  return false
+              }
           });
-          if (view && newState) {
-              view.updateState(newState);
-              stateChanged();
-          } else {
-              return newState;
+
+          let newState;
+          let skipParents = [];
+          if (nodePos.length > 0) {
+              for (let { node, pos } of nodePos.sort((a, b) => b.pos - a.pos)) {
+                  if (skipParents.filter((np) => {return (node === np.node)}).length > 0) continue
+                  let $start = tr.doc.resolve(pos);
+                  let $end = tr.doc.resolve(pos + node.nodeSize);
+                  let range = $start.blockRange($end); // We know range will be defined
+                  // We need to determine what we will wrap in
+                  let nodeIsList = (node.type == ul) || (node.type == ol);
+                  if (!nodeIsList && ($start.parent.type == li)) {
+                      // We are going to try to wrap the list in a sublist, but if we 
+                      // cannot, then we will try to wrap the list in a blockquote
+                      let list = $start.node($start.depth - 1);
+                      let willWrapInList = wrapRangeInList(null, range, list.type, list.attrs);
+                      willWrap = willWrap || willWrapInList;
+                      if (willWrapInList) {
+                          // If we are wrapping this <li><p></p></li>, then skip all of its parents
+                          skipParents.push(...parents($start, null, 1));
+                      }
+                      if (dispatch && willWrapInList) {
+                          wrapRangeInList(tr, range, list.type, list.attrs);
+                          newState = state.apply(tr);
+                      }
+                  } else {
+                      // We are going to try tp wrap in a blockquote
+                      let wrappers = findWrapping(range, blockquote, node.attrs);
+                      if (wrappers) {
+                          willWrap = true;
+                          let parentsInSelection = [];
+                          let allParents = parents($start, null, 1);
+                          // If we are wrapping a list, then track parents to skip
+                          if (nodeIsList) {
+                              // Find the parents to skip as we try to indent ones above us
+                              parentsInSelection = allParents.filter((np) => {
+                                  let npNode = np.node;
+                                  let npIsList = (npNode.type == ul) || (npNode.type == ol); 
+                                  if (!npIsList) return false                 // We are only skipping lists
+                                  if (npNode.type != node.type) return false  // We are only skipping parent lists of same type
+                                  // And only lists outside of the original selection
+                                  return (np.start < $from.pos) && (np.end > $to.pos)
+                              });
+                              skipParents.push(...parentsInSelection);
+                          } else {
+                              parentsInSelection = allParents.filter((np) => {
+                                  let npNode = np.node;
+                                  let npIsBlockquote = (npNode.type == blockquote);
+                                  if (!npIsBlockquote) return false                 // We are only skipping blockquotes
+                                  // And only blockquotes outside of the original selection
+                                  return (np.start < $from.pos) && (np.end > $to.pos)
+                              });
+                          }
+                          skipParents.push(...parentsInSelection);
+                          if (dispatch) {
+                              newState = state.apply(tr.wrap(range, wrappers));
+                          }
+                      }
+                  }
+              }
           }
+
+          if (dispatch && willWrap && newState) view.updateState(newState);
+          return willWrap
+
       };
-      return commandAdapter;
+      return commandAdapter
   }
 
   /**
@@ -18824,6 +18859,11 @@
    * If in a list, outdent the item to a less nested level in the list if appropriate.
    * If in a blockquote, remove a blockquote to outdent further.
    * Else, do nothing.
+   * 
+   * Note that outdenting of a top-level list with a sublist doesn't work. TBH, I'm not sure why, 
+   * but liftTarget returns null at the top-level in that case. As a result, the outdenting has 
+   * to be done at least twice, the first of which splits the sublist from the top level. When this 
+   * happens, we should probably just do the equivalent of toggleListType.
    *
    */
   function outdent() {
@@ -18833,32 +18873,76 @@
   function outdentCommand() {
       let commandAdapter = (viewState, dispatch, view) => {
           let state = view?.state ?? viewState;
-          const selection = state.selection;
-          const blockquote = state.schema.nodes.blockquote;
-          const ul = state.schema.nodes.bullet_list;
-          const ol = state.schema.nodes.ordered_list;
-          let newState;
-          state.doc.nodesBetween(selection.from, selection.to, node => {
-              if ((node.type == blockquote) || (node.type == ul) || (node.type == ol)) {
-                  lift(state, (transaction) => {
-                      // Note that some selections will not outdent, even though they
-                      // contain outdentable items. For example, multiple blockquotes 
-                      // within a selection cannot be outdented. However, multiple 
-                      // blocks (e.g., p) can be outdented within a blockquote, because
-                      // the selection is identifying the paragraphs to be outdented.
-                      newState = state.apply(transaction);
-                  });
-              }            return true;
+          const { $from, $to } = state.selection;
+          let tr = state.tr;
+          let willLift = false;
+          let nodePos = [];
+          state.doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
+              if (node.isBlock) {
+                  const $start = tr.doc.resolve(pos);
+                  const $end = tr.doc.resolve(pos + node.nodeSize);
+                  const range = $start.blockRange($end);
+                  if (range) {
+                      const target = liftTarget(range);
+                      if ((target !== null) && (target >= 0)) {
+                          nodePos.push({node: node, pos: pos});
+                      }
+                  }
+                  return true
+              } else {
+                  return false
+              }
           });
-          if (view && newState) {
-              view.updateState(newState);
-              stateChanged();
-              return true;
-          } else {
-              return newState;
+
+          if (nodePos.length > 0) {
+              let skipParents = [];
+              for (let {node, pos} of nodePos.sort((a, b) => b.pos - a.pos)) {
+                  // The problem we have here is that when we lift node within
+                  // a blockquote and it has no siblings, the lift operation removes 
+                  // the parent (see https://discuss.prosemirror.net/t/lifting-and-parent-nodes/1332).
+                  // In particular, we don't want to resolve the pos of node after 
+                  // its only child has been lifted, because it doesn't exist any more.
+                  // In fact, we need to skip lifting of all the ancestors when this happens.
+                  if (skipParents.filter((np) => {return (node === np.node)}).length > 0) continue
+                  let $start = tr.doc.resolve(pos);
+                  if ($start.parent.children.length == 1) {
+                      // Then this node, when lifted will remove 
+                      // the parent. Therefore, track the parent 
+                      // and don't lift it if we encounter it later
+                      // in the iteration over nodePos.
+                      skipParents.push(...parents($start, null, 1));
+                  }
+                  let $end = tr.doc.resolve(pos + node.nodeSize);
+                  let range = $start.blockRange($end);
+                  if (range) { 
+                      let target = liftTarget(range);
+                      if ((target !== null) && (target >= 0)) {
+                          willLift = true;
+                          if (dispatch) tr.lift(range, target);
+                      }
+                  }
+              }
           }
+
+          if (dispatch && willLift) dispatch(tr);
+          return willLift
+
       };
       return commandAdapter
+  }
+
+  function parents($pos, start, end) {
+      //$pos.node($pos.depth) is the same as $pos.parent.
+      let startDepth = $pos.depth;    // start at immediate parent by default
+      let endDepth = end;                 // end at the top-level by default (i.e., include 'doc')
+      let parents = [];
+      for (let depth = startDepth; depth >= endDepth; depth--) {
+          let node = $pos.node(depth);
+          let start = $pos.start(depth);
+          let end = $pos.end(depth);
+          parents.push({node: node, start: start, end: end});
+      }
+      return parents
   }
 
   /********************************************************************************
