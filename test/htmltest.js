@@ -3,7 +3,8 @@ const path = require('path')
 
 class HtmlTest {
 
-    constructor(description, sel, startHtml, endHtml, undoHtml, pasteString, action) {
+    constructor(skip, description, sel, startHtml, endHtml, undoHtml, pasteString, action) {
+        this.skip = skip
         this.description = description
         this.sel = sel
         this.startHtml = startHtml
@@ -20,8 +21,10 @@ class HtmlTest {
             let data = fs.readFileSync(fullFilename, 'utf8')
             let tests = JSON.parse(data)
             for (let test of tests) {
-                let { description, sel, startHtml, endHtml, undoHtml, pasteString, action } = test
-                let htmlTest = new HtmlTest(description, sel, startHtml, endHtml, undoHtml, pasteString, action)
+                let { skip, description, sel, startHtml, endHtml, undoHtml, pasteString, action } = test
+                // Use ANSI escape codes to show "SKIPPED..." in red, reset after
+                if (skip) description = '\x1b[0m\x1b[31mSKIPPED... \x1b[0m' + description
+                let htmlTest = new HtmlTest(skip, description, sel, startHtml, endHtml, undoHtml, pasteString, action)
                 htmlTests.push(htmlTest)
             }
         } catch (error) {

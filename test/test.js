@@ -12,14 +12,17 @@ let suites = [
     {description: 'Increasing and decreasing block levels.', filename: 'denting.json'},
     {description: 'Indent/outdent with selections spanning multiple elements.', filename: 'denting-multi.json'},
     {description: 'List operations, changing types, outdenting.', filename: 'list.json'},
-    {description: 'List operations with selections spanning multiple elements.', filename: 'list-multi.json'}
+    {description: 'List operations with selections spanning multiple elements.', filename: 'list-multi.json'},
+    {description: 'Enter at collapsed selection in a list.', filename: 'listenter-collapsed.json'},
+    {description: 'Enter at range selection in a list.', filename: 'listenter-range.json'},
+    {description: 'Insert a table at various locations.', filename: 'table-insert.json'}
 ]
 
 /**
  * Set up the document and MarkupEditor instance once. Precede with a 
  * workaround for using JSDom and accessing the client rect.
  */
-beforeAll(() => {
+beforeAll(async () => {
 
     // When testing using JSDOM, we see 
     //      TypeError: target.getClientRects is not a function
@@ -36,14 +39,18 @@ beforeAll(() => {
 
     document.body.innerHTML = `<!DOCTYPE html><html><body><div id="editor"></div></body></html>`
     new MU.MarkupEditor(document.querySelector('#editor'))
-});
+})
 
 for (let suite of suites) {
     describe(suite.description, () => {
+        // Note that `fromData` inserts a "SKIPPED... " notation at the front of the 
+        // description for each test that has `skip` set in its JSON.
         let htmlTests = HtmlTest.fromData('test/'+ suite.filename)
-        test.each(htmlTests)(
-        '$description', (htmlTest) => {
-            let {sel, startHtml, endHtml, undoHtml, action} = htmlTest
+        test.each(htmlTests)('$description', (htmlTest) => {
+            let { skip, sel, startHtml, endHtml, undoHtml, action } = htmlTest
+            // For some reason, there is no Jest facility to skip tests within .each, 
+            // so we modify the titles for tests marked `skip` and show success.
+            if (skip) return
             sel = sel ?? '|'    // Set in the json for non-default or to see it next to the HTML
             MU.setTestHTML(startHtml, sel)
             let html = MU.getTestHTML(sel)
@@ -60,7 +67,7 @@ for (let suite of suites) {
                 f(MU)
             }
             let result = MU.getTestHTML(sel)
-            expect (result).toBe(endHtml)
+            expect(result).toBe(endHtml)
             if (htmlTest.action) {
                 MU.doUndo()
                 let undoResult = MU.getTestHTML(sel)
