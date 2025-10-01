@@ -15,7 +15,9 @@ let suites = [
     {description: 'List operations with selections spanning multiple elements.', filename: 'list-multi.json'},
     {description: 'Enter at collapsed selection in a list.', filename: 'listenter-collapsed.json'},
     {description: 'Enter at range selection in a list.', filename: 'listenter-range.json'},
-    {description: 'Insert a table at various locations.', filename: 'table-insert.json'}
+    {description: 'Insert a table at various locations.', filename: 'table-insert.json'},
+    {description: 'Various actions within a table.', filename: 'table-actions.json'},
+    {description: 'Test preprocessing of HTML that is performed before pasting.', filename: 'pasteHtml-preprocessing.json'}
 ]
 
 /**
@@ -47,14 +49,17 @@ for (let suite of suites) {
         // description for each test that has `skip` set in its JSON.
         let htmlTests = HtmlTest.fromData('test/'+ suite.filename)
         test.each(htmlTests)('$description', (htmlTest) => {
-            let { skip, sel, startHtml, endHtml, undoHtml, action } = htmlTest
+            let { skip, actionOnly, sel, startHtml, endHtml, undoHtml, pasteString, action, arg } = htmlTest
             // For some reason, there is no Jest facility to skip tests within .each, 
             // so we modify the titles for tests marked `skip` and show success.
             if (skip) return
             sel = sel ?? '|'    // Set in the json for non-default or to see it next to the HTML
-            MU.setTestHTML(startHtml, sel)
-            let html = MU.getTestHTML(sel)
-            expect(html).toBe(startHtml)
+            // For some tests (e.g., testing paste preprocessing), we want to skip setting the HTML
+            if (!actionOnly) {
+                MU.setTestHTML(startHtml, sel)
+                let html = MU.getTestHTML(sel)
+                expect(html).toBe(startHtml)
+            }
             // Note that some test suites (namely "baseline") have no action.
             // In this case, we just bypass executing an action and check 
             // that endHtml is as expected, and then return.
@@ -62,13 +67,28 @@ for (let suite of suites) {
             // executed. In this case, we pass MU to the function defined 
             // in the HtmlTest.action, and if it produces the expected endHtml, 
             // then we undo and redo, checking those work properly as well.
-            if (htmlTest.action) {
-                let f = new Function("MU", action)
-                f(MU)
+            if (action) {
+                if (arg) {
+                    let f = new Function("MU", arg, action)
+                    let argValue
+                    switch (arg) {
+                        case "startHtml":
+                            argValue = startHtml
+                            break
+                        case "pasteString":
+                            argValue = pasteString
+                            break
+                    }
+                    let result = f(MU, argValue)
+                    expect(result).toBe(endHtml)
+                } else {
+                    let f = new Function("MU", action)
+                    f(MU)
+                    let result = MU.getTestHTML(sel)
+                    expect(result).toBe(endHtml)
+                }
             }
-            let result = MU.getTestHTML(sel)
-            expect(result).toBe(endHtml)
-            if (htmlTest.action) {
+            if (action && !actionOnly) {
                 MU.doUndo()
                 let undoResult = MU.getTestHTML(sel)
                 expect(undoResult).toBe(undoHtml)
