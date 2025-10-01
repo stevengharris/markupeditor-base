@@ -13,11 +13,14 @@ let suites = [
     {description: 'Indent/outdent with selections spanning multiple elements.', filename: 'denting-multi.json'},
     {description: 'List operations, changing types, outdenting.', filename: 'list.json'},
     {description: 'List operations with selections spanning multiple elements.', filename: 'list-multi.json'},
-    {description: 'Enter at collapsed selection in a list.', filename: 'listenter-collapsed.json'},
-    {description: 'Enter at range selection in a list.', filename: 'listenter-range.json'},
+    {description: 'Enter at collapsed selection in a list.', filename: 'listEnter-collapsed.json'},
+    {description: 'Enter at range selection in a list.', filename: 'listEnter-range.json'},
     {description: 'Insert a table at various locations.', filename: 'table-insert.json'},
     {description: 'Various actions within a table.', filename: 'table-actions.json'},
-    {description: 'Test preprocessing of HTML that is performed before pasting.', filename: 'pasteHtml-preprocessing.json'}
+    {description: 'Test preprocessing that is performed before pasting as HTML.', filename: 'pasteHtml-preprocessing.json'},
+    {description: 'Test pasting HTML at various locations.', filename: 'pasteHtml.json'},
+    {description: 'Test preprocessing that is performed before pasting as text.', filename: 'pasteText-preprocessing.json'},
+    {description: 'Test pasting text at various locations.', filename: 'pasteText.json'},
 ]
 
 /**
