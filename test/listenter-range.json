@@ -19,21 +19,21 @@
     },
     {
         "description": "Begin selection in one list item, end in another",
-        "skip": "Doesn't work like it should in test, but does fine in editor",
+        "skipTest": "Doesn't work like it should in test, but does fine in editor",
         "startHtml": "<ul><li><h5>Bulleted <em>item</em> 1.</h5><ol><li><p>P |Numbered item 1.</p></li><li><p>P Numbered item 2.</p></li><li><p>P |Numbered item 3.</p></li><li><p>P Numbered item 4.</p></li><li><p>Numbered item 5.</p></li><li><p>Numbered item 6.</p></li><li><p>Numbered item 7.</p></li><li><p>Numbered item 8.</p></li></ol></li><li><h5>Bulleted item 2.</h5></li></ul>",
         "endHtml": "<ul><li><h5>Bulleted <em>item</em> 1.</h5><ol><li><p>P </p><p>|Numbered item 3.</p></li><li><p>P Numbered item 4.</p></li><li><p>Numbered item 5.</p></li><li><p>Numbered item 6.</p></li><li><p>Numbered item 7.</p></li><li><p>Numbered item 8.</p></li></ol></li><li><h5>Bulleted item 2.</h5></li></ul>",
         "action": "MU.testListEnter()"
     },
     {
         "description": "Begin selection at start of one list item, end in another",
-        "skip": "Doesn't work like it should in test, but does fine in editor",
+        "skipTest": "Doesn't work like it should in test, but does fine in editor",
         "startHtml": "<ul><li><h5>Bulleted <em>item</em> 1.</h5><ol><li><p>P Numbered item 1.</p></li><li><p>|P Numbered item 2.</p></li><li><p>P Numbered item 3.</p></li><li><p>|P Numbered item 4.</p></li><li><p>Numbered item 5.</p></li><li><p>Numbered item 6.</p></li><li><p>Numbered item 7.</p></li><li><p>Numbered item 8.</p></li></ol></li><li><h5>Bulleted item 2.</h5></li></ul>",
         "endHtml": "<ul><li><h5>Bulleted <em>item</em> 1.</h5><ol><li><p>P Numbered item 1.</p></li><li><p>|P Numbered item 4.</p></li><li><p>Numbered item 5.</p></li><li><p>Numbered item 6.</p></li><li><p>Numbered item 7.</p></li><li><p>Numbered item 8.</p></li></ol></li><li><h5>Bulleted item 2.</h5></li></ul>",
         "action": "MU.testListEnter()"
     },
     {
         "description": "Begin selection in a bulleted list item, end in an ordered one",
-        "skip": "Doesn't work like it should in test, but does fine in editor",
+        "skipTest": "Doesn't work like it should in test, but does fine in editor",
         "startHtml": "<ul><li><h5>Bul|leted <em>item</em> 1.</h5><ol><li><p>P Numbered item 1.</p></li><li><p>P Numbered item 2.</p></li><li><p>P Numbered item 3.</p></li><li><p>P Numbered item 4.</p></li><li><p>Numbered item 5.</p></li><li><p>Numbered item 6.</p></li><li><p>Num|bered item 7.</p></li><li><p>Numbered item 8.</p></li></ol></li><li><h5>Bulleted item 2.</h5></li></ul>",
         "endHtml": "<ul><li><h5>Bul</h5><h5>bered item 7.</h5><ol><li><p>Numbered item 8.</p></li></ol></li><li><h5>Bulleted item 2.</h5></li></ul>",
         "action": "MU.testListEnter()"

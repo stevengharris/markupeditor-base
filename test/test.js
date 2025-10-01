@@ -17,10 +17,13 @@ let suites = [
     {description: 'Enter at range selection in a list.', filename: 'listEnter-range.json'},
     {description: 'Insert a table at various locations.', filename: 'table-insert.json'},
     {description: 'Various actions within a table.', filename: 'table-actions.json'},
-    {description: 'Test preprocessing that is performed before pasting as HTML.', filename: 'pasteHtml-preprocessing.json'},
-    {description: 'Test pasting HTML at various locations.', filename: 'pasteHtml.json'},
-    {description: 'Test preprocessing that is performed before pasting as text.', filename: 'pasteText-preprocessing.json'},
-    {description: 'Test pasting text at various locations.', filename: 'pasteText.json'},
+    {description: 'Preprocessing that is performed before pasting as HTML.', filename: 'pasteHtml-preprocessing.json'},
+    {description: 'Paste HTML at various locations.', filename: 'pasteHtml.json'},
+    {description: 'Preprocessing that is performed before pasting as text.', filename: 'pasteText-preprocessing.json'},
+    {description: 'Paste text at various locations.', filename: 'pasteText.json'},
+    {description: 'Insert image URL at various locations.', filename: 'insertImageUrl.json'},
+    {description: 'Insert link at various locations.', filename: 'insertLink.json'},
+    {description: 'Search forward and backward in various scenarios.', filename: 'search.json'},
 ]
 
 /**
@@ -52,13 +55,13 @@ for (let suite of suites) {
         // description for each test that has `skip` set in its JSON.
         let htmlTests = HtmlTest.fromData('test/'+ suite.filename)
         test.each(htmlTests)('$description', (htmlTest) => {
-            let { skip, actionOnly, sel, startHtml, endHtml, undoHtml, pasteString, action, arg } = htmlTest
+            let { skipTest, skipSet, skipUndoRedo, sel, startHtml, endHtml, undoHtml, pasteString, action, arg } = htmlTest
             // For some reason, there is no Jest facility to skip tests within .each, 
             // so we modify the titles for tests marked `skip` and show success.
-            if (skip) return
+            if (skipTest) return
             sel = sel ?? '|'    // Set in the json for non-default or to see it next to the HTML
             // For some tests (e.g., testing paste preprocessing), we want to skip setting the HTML
-            if (!actionOnly) {
+            if (!skipSet) {
                 MU.setTestHTML(startHtml, sel)
                 let html = MU.getTestHTML(sel)
                 expect(html).toBe(startHtml)
@@ -82,8 +85,15 @@ for (let suite of suites) {
                             argValue = pasteString
                             break
                     }
+                    // In some cases, the function returns the HTML, but in others, 
+                    // we have to getTestHTML to determine the result.
                     let result = f(MU, argValue)
-                    expect(result).toBe(endHtml)
+                    if (result) {
+                        expect(result).toBe(endHtml)
+                    } else {
+                        let html = MU.getTestHTML(sel)
+                        expect(html).toBe(endHtml)
+                    }
                 } else {
                     let f = new Function("MU", action)
                     f(MU)
@@ -91,7 +101,7 @@ for (let suite of suites) {
                     expect(result).toBe(endHtml)
                 }
             }
-            if (action && !actionOnly) {
+            if (action && !skipUndoRedo) {
                 MU.doUndo()
                 let undoResult = MU.getTestHTML(sel)
                 expect(undoResult).toBe(undoHtml)

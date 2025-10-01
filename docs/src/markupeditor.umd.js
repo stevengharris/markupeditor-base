@@ -17245,6 +17245,13 @@
                   this.cancel();
                   return result;
               }
+              // On the Swift side, we replace smart quotes and apostrophes with &quot; and &apos;
+              // before getting here, but when doing searches in markupeditor-base, they will come 
+              // in here unchanged. So replace them with the proper " or ' now.
+              text = text.replaceAll('’', "'");
+              text = text.replaceAll('‘', "'");
+              text = text.replaceAll('“', '"');
+              text = text.replaceAll('”', '"');
               text = text.replaceAll('&quot;', '"');       // Fix the hack for quotes in the call
               text = text.replaceAll('&apos;', "'");       // Fix the hack for apostrophes in the call
 
