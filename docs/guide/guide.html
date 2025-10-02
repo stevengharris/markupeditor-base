@@ -630,7 +630,7 @@ contextBridge.exposeInMainWorld('markupAPI', {
 
 <h3 id="test-organization">Test Organization</h3>
 
-<p>The tests are in the <code>test</code> directory and are driven from a single <code>test.js</code> file. The tests are organized into a number of test suites, each one of which is defined using a JSON file. The JSON file definition makes it possible to share the test data in other environments, such as the Swift MarkupEditor, which uses a non-JavaScript test framework. Each JSON file contains an array that translates to instances of HtmlTest as defined in <code>htmltest.js</code>.</p>
+<p>The tests are in the <code>test</code> directory and are driven from a single <code>test.js</code> file. The tests are organized into a number of test groups (altho only one suite in JEST vernacular), each one of which is defined using a JSON file. The JSON file definition makes it possible to share the test data in other environments, such as the Swift MarkupEditor, which uses a non-JavaScript test framework. Each JSON file contains an array that translates to instances of HtmlTest as defined in <code>htmltest.js</code>.</p>
 
 <h3 id="htmltest">HtmlTest</h3>
 
