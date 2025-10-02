@@ -5,41 +5,37 @@
 <blockquote>
     <p><a href="#concepts">Concepts</a></p>
     <blockquote>
-        <blockquote>
-            <p><a href="#goals-and-non-goals">Goals and Non-Goals</a></p>
-        </blockquote>
+        <p><a href="#goals-and-non-goals">Goals and Non-Goals</a></p>
     </blockquote>
     <p><a href="#essentials">Essentials</a></p>
     <blockquote>
-        <blockquote>
-            <p><a href="#using-the-markupeditor-in-a-browser">Using the MarkupEditor in a Browser</a></p>
-            <p><a href="#using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</a></p>
-        </blockquote>
+        <p><a href="#using-the-markupeditor-in-a-browser">Using the MarkupEditor in a Browser</a></p>
+        <p><a href="#using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</a></p>
     </blockquote>
     <p><a href="#configuration">Configuration</a></p>
     <blockquote>
-        <blockquote>
-            <p><a href="#configuration-classes">Configuration Classes</a></p>
-            <p><a href="#toolbarconfig">ToolbarConfig</a></p>
-            <p><a href="#keymapconfig">KeymapConfig</a></p>
-            <p><a href="#behaviorconfig">BehaviorConfig</a></p>
-        </blockquote>
+        <p><a href="#configuration-classes">Configuration Classes</a></p>
+        <p><a href="#toolbarconfig">ToolbarConfig</a></p>
+        <p><a href="#keymapconfig">KeymapConfig</a></p>
+        <p><a href="#behaviorconfig">BehaviorConfig</a></p>
     </blockquote>
     <p><a href="#extending-the-toolbar">Extending the Toolbar</a></p>
     <p><a href="#communicating-with-the-markupeditor">Communicating with the MarkupEditor</a></p>
     <blockquote>
-        <blockquote>
-            <p><a href="#getting-and-setting-markupeditor-content">Getting and Setting MarkupEditor Contents</a></p>
-            <p><a href="#markupdelegate">MarkupDelegate</a></p>
-            <p><a href="#round-trip-from-the-markupeditor">Round-Trip from the MarkupEditor</a></p>
-        </blockquote>
+        <p><a href="#getting-and-setting-markupeditor-content">Getting and Setting MarkupEditor Contents</a></p>
+        <p><a href="#markupdelegate">MarkupDelegate</a></p>
+        <p><a href="#round-trip-from-the-markupeditor">Round-Trip from the MarkupEditor</a></p>
+    </blockquote>
+    <p><a href="#testing">Testing</a></p>
+    <blockquote>
+        <p><a href="#test-organization">Test Organization</a></p>
+        <p><a href="#htmltest">HtmlTest</a></p>
+        <p><a href="#running-tests">Running Tests</a></p>
     </blockquote>
     <p><a href="#advanced-topics">Advanced Topics</a></p>
     <blockquote>
-        <blockquote>
-            <p><a href="#messagehandler">MessageHandler</a></p>
-            <p><a href="#markupeditor-project-structure">MarkupEditor Project Structure</a></p>
-        </blockquote>
+        <p><a href="#messagehandler">MessageHandler</a></p>
+        <p><a href="#markupeditor-project-structure">MarkupEditor Project Structure</a></p>
     </blockquote>
 </blockquote>
 
@@ -627,6 +623,88 @@ contextBridge.exposeInMainWorld('markupAPI', {
 <h4>More Electron Resources</h4>
 
 <p>You can find the Electron-specific code discussed here in the source of the <a href="https://github.com/stevengharris/markupeditor-desktop">MarkupEditor Desktop app</a>. It supports local images and saves their contents to file at “save time” alongside the document being edited. The desktop app was used to edit this entire Developer’s Guide.</p>
+
+<h2 id="testing">Testing</h2>
+
+<p>The MarkupEditor includes over 200 <a href="https://jestjs.io">JEST</a>-based tests that exercise MarkupEditor functionality across a variety of conditions. Although the MarkupEditor uses ProseMirror, which has a large set of tests itself, the usage in the MarkupEditor can often be different. For example, indenting and outdenting in the MarkupEditor can be applied both to blocks like paragraphs, but also to lists. In lists, indent/outdent is interpreted as “wrap in a sublist” or “lift out of the list” whenever possible. Actions for selections across ranges of elements in the MarkupEditor document are also applied as much as possible. The goal when applying an action is to follow the <a href="https://en.wikipedia.org/wiki/Principle_of_least_astonishment">principle of least astonishment</a> - the editor should behave like you expect. You can always <code>undo</code> if it doesn’t. However, if an editing action produces an unexpected or incorrect behavior, please file an issue with details, or submit a pull request with updates to the tests.</p>
+
+<h3 id="test-organization">Test Organization</h3>
+
+<p>The tests are in the <code>test</code> directory and are driven from a single <code>test.js</code> file. The tests are organized into a number of test suites, each one of which is defined using a JSON file. The JSON file definition makes it possible to share the test data in other environments, such as the Swift MarkupEditor, which uses a non-JavaScript test framework. Each JSON file contains an array that translates to instances of HtmlTest as defined in <code>htmltest.js</code>.</p>
+
+<h3 id="htmltest">HtmlTest</h3>
+
+<p>The primary function of an HtmlTest is to define the <code>description</code>, <code>startHtml</code>, <code>endHtml</code>, and the <code>action</code> that will be applied to it. For testing purposes, the <code>startHtml</code> and <code>endHtml</code> mark the selection using a single <code>sel</code> character (by default, a vertical bar: |). We can set the selection in the document based on <code>startHtml</code>, and we can ensure that the selection matches <code>endHtml</code> after applying the <code>action</code>. By default, <code>undo</code> and <code>redo</code> are also run after applying the <code>action</code>, with the test making sure results match <code>startHtml</code> and <code>endHtml</code> respectively. (There are some exceptional tests where <code>undoHtml</code> is defined separately from <code>startHtml</code>.) You can skip a test using <code>skipTest</code>, which will result in the test showing as “passed”, but the description will be prepended with “SKIPPED…” to make it visible. There are also flags to skip setting the initial HTML (<code>skipSet</code>) and undo/redo (<code>skipUndoRedo</code>) if needed.</p>
+
+<p>The <code>action</code> and a single optional <code>arg</code> are translated into a JavaScript function using the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/Function">Function constructor</a>. The <code>MU</code> global can be referenced in your action string.</p>
+
+<h3 id="running-tests">Running Tests</h3>
+
+<p>The npm <code>test</code> script builds the MarkupEditor first, and then executes all the test suites.</p>
+
+<pre><code>$ npm run test
+
+&gt; markupeditor-base@0.8.4 pretest
+&gt; npm run build
+
+
+&gt; markupeditor-base@0.8.4 build
+&gt; rollup -c
+
+
+src/main.js → dist/markupeditor.umd.js...
+created dist/markupeditor.umd.js in 338ms
+
+src/main.js → dist/markupeditor.cjs.js, dist/markupeditor.esm.js...
+created dist/markupeditor.cjs.js, dist/markupeditor.esm.js in 75ms
+
+&gt; markupeditor-base@0.8.4 test
+&gt; jest
+
+Debugger listening on ws://127.0.0.1:50799/3467f93f-4c75-4c4e-925d-e59cd9d7d47a
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+ PASS  test/test.js
+  Ensure baseline behavior works as expected.
+    ✓ Simple test (26 ms)
+    ✓ Extract when selection begins in one styled list item, ends in another (21 ms)
+    ✓ Extract when selection is in a table (10 ms)
+  [... snipped out many other tests ...]
+  Insert link at various locations.
+    ✓ Link in P - Paste link at a fully-selected word (6 ms)
+    ✓ Link in P - Paste link at end of a word (5 ms)
+    ✓ Link in P - Paste link at beginning of a word (4 ms)
+    ✓ Link in P - Paste link at beginning of paragraph (5 ms)
+    ✓ Link in P - Paste link at end of paragraph (4 ms)
+  Search forward and backward in various scenarios.
+    ✓ Exact word match forward (4 ms)
+    ✓ Exact word match backward (3 ms)
+    ✓ Partial word match forward (3 ms)
+    ✓ Partial word match backward (4 ms)
+    ✓ Mixed case word match forward (4 ms)
+    ✓ Mixed case word match backward (4 ms)
+    ✓ Mixed case search forward for lowercase word (3 ms)
+    ✓ Mixed case search backward for lowercase word (4 ms)
+    ✓ Search forward with apostrophe (3 ms)
+    ✓ Search backward with apostrophe (3 ms)
+    ✓ Search forward with apostrophe and quotes (4 ms)
+    ✓ Search backward with apostrophe and quotes (3 ms)
+    ✓ Search forward with smart quotes (4 ms)
+    ✓ Search backward with smart quotes (3 ms)
+    ✓ Search forward with smart apostrophe (4 ms)
+    ✓ Search backward with smart apostrophe (3 ms)
+    ✓ Search forward with mixed smart apostrophe and quotes (4 ms)
+    ✓ Search backward with mixed smart apostrophe and quotes (3 ms)
+    ✓ Search forward relative to selection (3 ms)
+    ✓ Search backward relative to selection (4 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       225 passed, 225 total
+Snapshots:   0 total
+Time:        1.51 s, estimated 2 s
+Ran all test suites.
+Waiting for the debugger to disconnect...
+$ </code></pre>
 
 <h2 id="advanced-topics">Advanced Topics</h2>
 

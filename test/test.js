@@ -49,6 +49,8 @@ beforeAll(async () => {
     new MU.MarkupEditor(document.querySelector('#editor'))
 })
 
+// Loop over all the tests in all the suites.
+// Each suite is defined in the JSON identified using `filename`.
 for (let suite of suites) {
     describe(suite.description, () => {
         // Note that `fromData` inserts a "SKIPPED... " notation at the front of the 
@@ -59,8 +61,8 @@ for (let suite of suites) {
             // For some reason, there is no Jest facility to skip tests within .each, 
             // so we modify the titles for tests marked `skip` and show success.
             if (skipTest) return
-            sel = sel ?? '|'    // Set in the json for non-default or to see it next to the HTML
-            // For some tests (e.g., testing paste preprocessing), we want to skip setting the HTML
+            sel = sel ?? '|'    // Set in the json for non-default or to see it next to the HTML if you prefer
+            // For some tests (e.g., testing paste preprocessing), we want to skip setting/verifying the HTML
             if (!skipSet) {
                 MU.setTestHTML(startHtml, sel)
                 let html = MU.getTestHTML(sel)
@@ -73,6 +75,7 @@ for (let suite of suites) {
             // executed. In this case, we pass MU to the function defined 
             // in the HtmlTest.action, and if it produces the expected endHtml, 
             // then we undo and redo, checking those work properly as well.
+            // We can skip doing undo/redo if we want (e.g., for search)
             if (action) {
                 if (arg) {
                     let f = new Function("MU", arg, action)
@@ -86,7 +89,7 @@ for (let suite of suites) {
                             break
                     }
                     // In some cases, the function returns the HTML, but in others, 
-                    // we have to getTestHTML to determine the result.
+                    // we have to `getTestHTML` to determine the result.
                     let result = f(MU, argValue)
                     if (result) {
                         expect(result).toBe(endHtml)
@@ -101,6 +104,8 @@ for (let suite of suites) {
                     expect(result).toBe(endHtml)
                 }
             }
+            // If we dwfined an action and we're not explicitly skipping it, then
+            // execute undo/redo and make sure they're working properly.
             if (action && !skipUndoRedo) {
                 MU.doUndo()
                 let undoResult = MU.getTestHTML(sel)
