@@ -56,7 +56,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "test": "jest",
+    "test": "jest --verbose ./test/*.test.js",
     "pretest": "npm run build",
     "docs": "node ./docs/index.js",
     "predocs": "sh predocs.sh"
