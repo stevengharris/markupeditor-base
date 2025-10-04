@@ -630,7 +630,7 @@ contextBridge.exposeInMainWorld('markupAPI', {
 
 <h3 id="test-organization">Test Organization</h3>
 
-<p>The tests are in the <code>test</code> directory and are driven from a single <code>test.js</code> file. The tests are organized into a number of test groups (altho only one suite in JEST vernacular), each one of which is defined using a JSON file. The JSON file definition makes it possible to share the test data in other environments, such as the Swift MarkupEditor, which uses a non-JavaScript test framework. Each JSON file contains an array that translates to instances of HtmlTest as defined in <code>htmltest.js</code>.</p>
+<p>The tests are in the <code>test</code> directory. Test suites are in separate <code>*.test.js</code> files, with the test definition in a corresponding JSON file. The JSON file definition makes it possible to share the test data in other environments, such as the Swift MarkupEditor, which uses a non-JavaScript test framework. Each JSON file contains an array that translates to instances of HtmlTest as defined in <code>htmltest.js</code>. Test suites share a <code>setupDocument</code> function used in <code>beforeAll</code> and a <code>runHtmlTest</code> function used in <code>test.each</code> inside of a <code>describe</code>.</p>
 
 <h3 id="htmltest">HtmlTest</h3>
 
@@ -656,53 +656,63 @@ src/main.js → dist/markupeditor.umd.js...
 created dist/markupeditor.umd.js in 338ms
 
 src/main.js → dist/markupeditor.cjs.js, dist/markupeditor.esm.js...
-created dist/markupeditor.cjs.js, dist/markupeditor.esm.js in 75ms
+created dist/markupeditor.cjs.js, dist/markupeditor.esm.js in 76ms
 
 &gt; markupeditor-base@0.8.4 test
-&gt; jest
+&gt; jest --verbose ./test/*.test.js
 
-Debugger listening on ws://127.0.0.1:50799/3467f93f-4c75-4c4e-925d-e59cd9d7d47a
+Debugger listening on ws://127.0.0.1:52620/e2b39028-5cac-4a82-b7d9-2e1bd3c68b13
 For help, see: https://nodejs.org/en/docs/inspector
 Debugger attached.
- PASS  test/test.js
-  Ensure baseline behavior works as expected.
-    ✓ Simple test (26 ms)
-    ✓ Extract when selection begins in one styled list item, ends in another (21 ms)
-    ✓ Extract when selection is in a table (10 ms)
-  [... snipped out many other tests ...]
+ PASS  test/insert-link.test.js
   Insert link at various locations.
-    ✓ Link in P - Paste link at a fully-selected word (6 ms)
-    ✓ Link in P - Paste link at end of a word (5 ms)
-    ✓ Link in P - Paste link at beginning of a word (4 ms)
-    ✓ Link in P - Paste link at beginning of paragraph (5 ms)
-    ✓ Link in P - Paste link at end of paragraph (4 ms)
-  Search forward and backward in various scenarios.
-    ✓ Exact word match forward (4 ms)
-    ✓ Exact word match backward (3 ms)
-    ✓ Partial word match forward (3 ms)
-    ✓ Partial word match backward (4 ms)
-    ✓ Mixed case word match forward (4 ms)
-    ✓ Mixed case word match backward (4 ms)
-    ✓ Mixed case search forward for lowercase word (3 ms)
-    ✓ Mixed case search backward for lowercase word (4 ms)
-    ✓ Search forward with apostrophe (3 ms)
-    ✓ Search backward with apostrophe (3 ms)
-    ✓ Search forward with apostrophe and quotes (4 ms)
-    ✓ Search backward with apostrophe and quotes (3 ms)
-    ✓ Search forward with smart quotes (4 ms)
-    ✓ Search backward with smart quotes (3 ms)
-    ✓ Search forward with smart apostrophe (4 ms)
-    ✓ Search backward with smart apostrophe (3 ms)
-    ✓ Search forward with mixed smart apostrophe and quotes (4 ms)
-    ✓ Search backward with mixed smart apostrophe and quotes (3 ms)
-    ✓ Search forward relative to selection (3 ms)
-    ✓ Search backward relative to selection (4 ms)
+    ✓ Link in P - Paste link at a fully-selected word (61 ms)
+    ✓ Link in P - Paste link at end of a word (37 ms)
+    ✓ Link in P - Paste link at beginning of a word (14 ms)
+    ✓ Link in P - Paste link at beginning of paragraph (30 ms)
+    ✓ Link in P - Paste link at end of paragraph (15 ms)
 
-Test Suites: 1 passed, 1 total
+ [... snipped many test ...]
+
+ PASS  test/list-enter-collapsed.test.js
+  Enter at collapsed selection in a list.
+    ✓ Enter at end of h5 (40 ms)
+    ✓ Enter at beginning of h5 (37 ms)
+    ✓ Enter in "Bul|leted item 1." (30 ms)
+    ✓ Enter in "Bulleted item 1|." (27 ms)
+    ✓ Enter in italicized "item" in "Bulleted it|em 1." (16 ms)
+    ✓ SKIPPED... Enter in empty p list item at end of list.
+    ✓ SKIPPED... Enter in empty h5 list item at end of list.
+
+ PASS  test/denting.test.js
+  Increasing and decreasing block levels.
+    ✓ Indent, selection in text element (37 ms)
+    ✓ Indent, selection in a formatted element (36 ms)
+    ✓ Outdent from 1 to 0, selection in nested format (21 ms)
+    ✓ Outdent from 2 to 1, selection in nested format (25 ms)
+    ✓ Indent in an embedded paragraph in a blockquote, selection in a non-text element (13 ms)
+
+ PASS  test/baseline.test.js
+  Ensure baseline behavior works as expected.
+    ✓ Simple test (19 ms)
+    ✓ Extract when selection begins in one styled list item, ends in another (17 ms)
+    ✓ Extract when selection is in a table (6 ms)
+
+ PASS  test/format-on.test.js
+  Simple toggle-on of formatting.
+    ✓ Bold selection (50 ms)
+    ✓ Italic selection (16 ms)
+    ✓ Underline selection (23 ms)
+    ✓ Strikethrough selection (16 ms)
+    ✓ Superscript selection (30 ms)
+    ✓ Subscript selection (9 ms)
+    ✓ Code selection (9 ms)
+
+Test Suites: 22 passed, 22 total
 Tests:       225 passed, 225 total
 Snapshots:   0 total
-Time:        1.51 s, estimated 2 s
-Ran all test suites.
+Time:        1.422 s
+Ran all test suites matching /.\/test\/baseline.test.js|.\/test\/denting-multi.test.js|.\/test\/denting.test.js|.\/test\/format-multi.test.js|.\/test\/format-off.test.js|.\/test\/format-on.test.js|.\/test\/format-selection.test.js|.\/test\/insert-image-url.test.js|.\/test\/insert-link.test.js|.\/test\/insert-table.test.js|.\/test\/list-enter-collapsed.test.js|.\/test\/list-enter-range.test.js|.\/test\/list-multi.test.js|.\/test\/list.test.js|.\/test\/paste-html-preprocessing.test.js|.\/test\/paste-html.test.js|.\/test\/paste-text-preprocessing.test.js|.\/test\/paste-text.test.js|.\/test\/search.test.js|.\/test\/style-multi.test.js|.\/test\/style.test.js|.\/test\/table-actions.test.js/i.
 Waiting for the debugger to disconnect...
 $ </code></pre>
 
