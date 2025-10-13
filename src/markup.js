@@ -1197,9 +1197,11 @@ export function matchIndex() {
 
 /**
  * Paste html at the selection, replacing the selection as-needed.
+ * 
+ * `event` is a mocked ClipboardEvent for testing purposes, else nil.
  */
-export function pasteHTML(html) {
-    view.pasteHTML(html);
+export function pasteHTML(html, event) {
+    view.pasteHTML(html, event);
     stateChanged();
 };
 
@@ -1210,12 +1212,14 @@ export function pasteHTML(html) {
  * The trick here is that we want to use the same code to paste text as we do for
  * HTML, but we want to paste something that is the MarkupEditor-equivalent of
  * unformatted text.
+ * 
+ * `event` is a mocked ClipboardEvent for testing purposes, else nil.
  */
-export function pasteText(html) {
+export function pasteText(html, event) {
     const node = _nodeFromHTML(html);
     const htmlFragment = _fragmentFromNode(node);
     const minimalHTML = _minimalHTML(htmlFragment); // Reduce to MarkupEditor-equivalent of "plain" text
-    pasteHTML(minimalHTML);
+    pasteHTML(minimalHTML, event);
 };
 
 /**
