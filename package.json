@@ -1,6 +1,6 @@
 {
   "name": "markupeditor-base",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "description": "MarkupEditor - WYSIWYG editing in a web view",
   "keywords": [
     "wysiwyg",
@@ -13,7 +13,8 @@
   "browser": "dist/markupeditor.umd.js",
   "files": [
     "dist",
-    "styles"
+    "styles",
+    "test/*.json"
   ],
   "sideEffects": [
     "./styles/*.css"
