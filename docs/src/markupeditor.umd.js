@@ -8194,17 +8194,18 @@
       }
       // Mark this node as being the selected node.
       selectNode() {
-          if (this.nodeDOM.nodeType == 1)
+          if (this.nodeDOM.nodeType == 1) {
               this.nodeDOM.classList.add("ProseMirror-selectednode");
-          if (this.contentDOM || !this.node.type.spec.draggable)
-              this.dom.draggable = true;
+              if (this.contentDOM || !this.node.type.spec.draggable)
+                  this.nodeDOM.draggable = true;
+          }
       }
       // Remove selected node marking from this node.
       deselectNode() {
           if (this.nodeDOM.nodeType == 1) {
               this.nodeDOM.classList.remove("ProseMirror-selectednode");
               if (this.contentDOM || !this.node.type.spec.draggable)
-                  this.dom.removeAttribute("draggable");
+                  this.nodeDOM.removeAttribute("draggable");
           }
       }
       get domAtom() { return this.node.isAtom; }
@@ -10055,7 +10056,7 @@
           }
           const target = flushed ? null : event.target;
           const targetDesc = target ? view.docView.nearestDesc(target, true) : null;
-          this.target = targetDesc && targetDesc.dom.nodeType == 1 ? targetDesc.dom : null;
+          this.target = targetDesc && targetDesc.nodeDOM.nodeType == 1 ? targetDesc.nodeDOM : null;
           let { selection } = view.state;
           if (event.button == 0 &&
               targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
@@ -11737,16 +11738,13 @@
       let $to = parse.doc.resolveNoCache(change.endB - parse.from);
       let $fromA = doc.resolve(change.start);
       let inlineChange = $from.sameParent($to) && $from.parent.inlineContent && $fromA.end() >= change.endA;
-      let nextSel;
       // If this looks like the effect of pressing Enter (or was recorded
       // as being an iOS enter press), just dispatch an Enter key instead.
       if (((ios && view.input.lastIOSEnter > Date.now() - 225 &&
           (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
           (!inlineChange && $from.pos < parse.doc.content.size &&
               (!$from.sameParent($to) || !$from.parent.inlineContent) &&
-              !/\S/.test(parse.doc.textBetween($from.pos, $to.pos, "", "")) &&
-              (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
-              nextSel.head > $from.pos)) &&
+              $from.pos < $to.pos && !/\S/.test(parse.doc.textBetween($from.pos, $to.pos, "", "")))) &&
           view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
           view.input.lastIOSEnter = 0;
           return;
@@ -17678,9 +17676,11 @@
 
   /**
    * Paste html at the selection, replacing the selection as-needed.
+   * 
+   * `event` is a mocked ClipboardEvent for testing purposes, else nil.
    */
-  function pasteHTML(html) {
-      view.pasteHTML(html);
+  function pasteHTML(html, event) {
+      view.pasteHTML(html, event);
       stateChanged();
   }
   /**
@@ -17690,12 +17690,14 @@
    * The trick here is that we want to use the same code to paste text as we do for
    * HTML, but we want to paste something that is the MarkupEditor-equivalent of
    * unformatted text.
+   * 
+   * `event` is a mocked ClipboardEvent for testing purposes, else nil.
    */
-  function pasteText(html) {
+  function pasteText(html, event) {
       const node = _nodeFromHTML(html);
       const htmlFragment = _fragmentFromNode(node);
       const minimalHTML = _minimalHTML(htmlFragment); // Reduce to MarkupEditor-equivalent of "plain" text
-      pasteHTML(minimalHTML);
+      pasteHTML(minimalHTML, event);
   }
   /**
    * Return a minimal "unformatted equivalent" version of the HTML that is in fragment.
@@ -19375,6 +19377,20 @@
   function clicked() {
       deactivateSearch();
       _callback('clicked');
+  }
+
+  /**
+   * Report focus.
+   */
+  function focused() {
+      _callback('focus');
+  }
+
+  /**
+   * Report blur.
+   */
+  function blurred() {
+      _callback('blur');
   }
 
   /**
@@ -23555,6 +23571,8 @@
         // for things things other than the `input` event.
         handleDOMEvents: {
           'input': () => { callbackInput(); },
+          'focus': () => { setTimeout(() => focused());},
+          'blur': () => { setTimeout(() => blurred());},
           'cut': () => { setTimeout(() => { callbackInput(); }, 0); },
           'click': () => { setTimeout(() => { clicked(); }, 0); },
           'delete': () => { setTimeout(() => { callbackInput(); }, 0); },

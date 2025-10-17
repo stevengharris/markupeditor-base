@@ -2996,6 +2996,20 @@ export function clicked() {
 }
 
 /**
+ * Report focus.
+ */
+export function focused() {
+    _callback('focus')
+}
+
+/**
+ * Report blur.
+ */
+export function blurred() {
+    _callback('blur')
+}
+
+/**
  * Report a change in the ProseMirror document state. The 
  * change might be from typing or formatting or styling, etc.
  * and triggers both a `selectionChanged` and `input` callback.

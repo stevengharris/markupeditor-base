@@ -75,6 +75,8 @@ import {
   deleteTableArea,
   borderTable,
   handleEnter,
+  focused,
+  blurred,
 } from "./markup.js"
 
 import { 
@@ -228,6 +230,8 @@ class MarkupEditor {
       // for things things other than the `input` event.
       handleDOMEvents: {
         'input': () => { callbackInput() },
+        'focus': () => { setTimeout(() => focused())},
+        'blur': () => { setTimeout(() => blurred())},
         'cut': () => { setTimeout(() => { callbackInput() }, 0) },
         'click': () => { setTimeout(() => { clicked() }, 0) },
         'delete': () => { setTimeout(() => { callbackInput() }, 0) },
