@@ -141,11 +141,6 @@
   border: 0;
   fill: inherit;
 }
-@media (prefers-color-scheme: dark) {
-  .Markup-icon svg {
-    fill: inherit;
-  }
-}
 
 .Markup-menuseparator {
   display: inline-block;
