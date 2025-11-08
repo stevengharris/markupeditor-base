@@ -13,34 +13,34 @@ class DOMAccess {
      * @param {EditorView} view 
      * @returns {HTMLDivElement}  The toolbar div in the view
      */
-    getToolbar() {
-        return document.getElementById(this.prefix + "-toolbar");
+    getToolbar(view) {
+        return view.dom.getRootNode().getElementById(this.prefix + "-toolbar");
     }
 
-    getSearchItem() {
-        return document.getElementById(this.prefix + '-searchitem')
+    getSearchItem(view) {
+        return view.dom.getRootNode().getElementById(this.prefix + '-searchitem')
     }
 
-    getSearchbar() {
-        return document.getElementById(this.prefix + "-searchbar");
+    getSearchbar(view) {
+        return view.dom.getRootNode().getElementById(this.prefix + "-searchbar");
     }
 
-    getToolbarMore() {
-        return document.getElementById(this.prefix + "-toolbar-more")
+    getToolbarMore(view) {
+        return view.dom.getRootNode().getElementById(this.prefix + "-toolbar-more")
     }
 
-    getWrapper() {
-        return this.getToolbar().parentElement;
+    getWrapper(view) {
+        return this.getToolbar(view).parentElement;
     }
 
     /** Adding promptShowing class on wrapper lets us suppress scroll while the prompt is showing */
-    addPromptShowing() {
-        setClass(getWrapper(), promptShowing(), true)
+    addPromptShowing(view) {
+        setClass(getWrapper(view), promptShowing(), true)
     }
 
     /** Removing promptShowing class on wrapper lets wrapper scroll again */
-    removePromptShowing() {
-        setClass(getWrapper(), promptShowing(), false)
+    removePromptShowing(view) {
+        setClass(getWrapper(view), promptShowing(), false)
     }
 
     promptShowing() {
@@ -77,6 +77,13 @@ export function getMarkupEditorConfig() {
 
 export function setMarkupEditorConfig(config) {
     window.sessionStorage.setItem("markupEditorConfig", JSON.stringify(config));
+}
+
+/* Return a string ID we can use for an HTML element or EditorView */
+export function generateShortId() {
+    const timestamp = Date.now().toString(36); // Convert timestamp to base36
+    const randomPart = Math.random().toString(36).substring(2, 7); // Add a short random string
+    return timestamp + randomPart;
 }
 
 /**

@@ -328,7 +328,7 @@ class DialogItem {
         this.selectionDiv.style.left = this.selectionDivRect.left + 'px'
         this.selectionDiv.style.width = this.selectionDivRect.width + 'px'
         this.selectionDiv.style.height = this.selectionDivRect.height + 'px'
-        getWrapper().appendChild(this.selectionDiv)
+        getWrapper(view).appendChild(this.selectionDiv)
     }
 
     /**
@@ -373,7 +373,7 @@ class DialogItem {
         let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
         let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
         let style = this.dialog.style;
-        let toolbarHeight = getToolbar().getBoundingClientRect().height;
+        let toolbarHeight = getToolbar(view).getBoundingClientRect().height;
         let minTop = toolbarHeight + scrollY + 4;
         let maxTop = scrollY + innerHeight - dialogHeight - 4;
         let minLeft = scrollX + 4;
@@ -400,7 +400,7 @@ class DialogItem {
      * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
      */
     closeDialog() {
-        removePromptShowing()
+        removePromptShowing(view)
         this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
         this.overlay?.parentElement?.removeChild(this.overlay)
         this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
@@ -484,8 +484,8 @@ export class LinkItem extends DialogItem {
     this.okUpdate(view.state);
     this.cancelUpdate(view.state);
     
-    let wrapper = getWrapper();
-    addPromptShowing();
+    let wrapper = getWrapper(view);
+    addPromptShowing(view);
     wrapper.appendChild(this.dialog);
 
     // Add an overlay so we can get a modal effect without using showModal
@@ -500,7 +500,7 @@ export class LinkItem extends DialogItem {
     wrapper.appendChild(this.overlay);
 
     this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
-    if (getSearchbar()) {
+    if (getSearchbar(view)) {
       setClass(this.toolbarOverlay, searchbarShowing(), true);
     } else {
       setClass(this.toolbarOverlay, searchbarHidden(), true);
@@ -798,8 +798,8 @@ export class ImageItem extends DialogItem {
     this.setButtons(view)
     this.updatePreview()
 
-    let wrapper = getWrapper();
-    addPromptShowing()
+    let wrapper = getWrapper(view);
+    addPromptShowing(view)
     wrapper.appendChild(this.dialog);
 
     // Add an overlay so we can get a modal effect without using showModal
@@ -813,7 +813,7 @@ export class ImageItem extends DialogItem {
     });
     wrapper.appendChild(this.overlay);
     this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
-    if (getSearchbar()) {
+    if (getSearchbar(view)) {
       setClass(this.toolbarOverlay, searchbarShowing(), true);
     } else {
       setClass(this.toolbarOverlay, searchbarHidden(), true);
@@ -1162,7 +1162,7 @@ export class SearchItem {
   }
 
   showing() {
-    return getSearchbar() != null;
+    return (typeof view != 'undefined') ? getSearchbar(view) != null : false
   }
 
   toggleSearch(state, dispatch, view) {
@@ -1175,7 +1175,7 @@ export class SearchItem {
   }
 
   hideSearchbar() {
-    let searchbar = getSearchbar();
+    let searchbar = getSearchbar(view);
     searchbar.parentElement.removeChild(searchbar);
     this.matchCaseDom = null;
     this.matchCaseItem = null;
@@ -1189,7 +1189,7 @@ export class SearchItem {
   }
 
   showSearchbar(state, dispatch, view) {
-    let toolbar = getToolbar();
+    let toolbar = getToolbar(view);
     if (!toolbar) return;
     let input = crel('input', { type: 'search', placeholder: 'Search document...' });
     input.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
@@ -1209,7 +1209,7 @@ export class SearchItem {
     let idClass = prefix + "-searchbar";
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
     this.addSearchButtons(view, searchbar);
-    let beforeTarget = getToolbarMore() ? getToolbarMore().nextSibling : toolbar.nextSibling;
+    let beforeTarget = getToolbarMore(view) ? getToolbarMore(view).nextSibling : toolbar.nextSibling;
     toolbar.parentElement.insertBefore(searchbar, beforeTarget);
   }
 
@@ -1342,7 +1342,7 @@ export class MoreItem {
   }
 
   showing() {
-    return getToolbarMore() != null;
+    return getToolbarMore(view) != null;
   }
 
   toggleMore(state, dispatch, view) {
@@ -1355,12 +1355,12 @@ export class MoreItem {
   }
 
   hideMore() {
-    let toolbarMore = getToolbarMore();
+    let toolbarMore = getToolbarMore(view);
     toolbarMore.parentElement.removeChild(toolbarMore);
   }
 
   showMore(state, dispatch, view) {
-    let toolbar = getToolbar();
+    let toolbar = getToolbar(view);
     if (!toolbar) return;
     let idClass = prefix + "-toolbar-more";
     let toolbarMore = crel('div', { class: idClass, id: idClass } )

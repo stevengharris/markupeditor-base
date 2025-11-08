@@ -1,4 +1,4 @@
-/* global view */
+/* global schema, viewRegistry */
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
 import {DOMParser, DOMSerializer} from 'prosemirror-model'
 import {toggleMark} from 'prosemirror-commands'
@@ -55,7 +55,7 @@ export class DivView {
                             'messageType' : 'buttonClicked',
                             'id' : button.id,
                             'rect' : this._getButtonRect(button)
-                        })
+                        }, _document())
                     )
                 })
             })
@@ -207,6 +207,7 @@ class ResizableImage {
      * @param {string} src   The src attribute for the imageElement.
      */
     imageLoaded(src) {
+        const view = _view()
         const transaction = view.state.tr
             .setMeta("imageLoaded", {'src': src})
         view.dispatch(transaction);
@@ -220,6 +221,7 @@ class ResizableImage {
      * and `imageLoaded` gets called again.
      */
     imageResized() {
+        const view = _view()
         const {width, height} = this.currentDimensions
         const transaction = view.state.tr
             .setNodeAttribute(this._pos, 'width', width)
@@ -341,10 +343,10 @@ class ResizableImage {
      * Listeners are added when the resizableImage is selected.
      */
     addPinchGestureEvents() {
-        document.addEventListener('touchstart', this.handleTouchStart = this.handleTouchStart.bind(this));
-        document.addEventListener('touchmove', this.handleTouchMove = this.handleTouchMove.bind(this));
-        document.addEventListener('touchend', this.handleTouchEnd = this.handleTouchEnd.bind(this));
-        document.addEventListener('touchcancel', this.handleTouchEnd = this.handleTouchEnd.bind(this));
+        _document().addEventListener('touchstart', this.handleTouchStart = this.handleTouchStart.bind(this));
+        _document().addEventListener('touchmove', this.handleTouchMove = this.handleTouchMove.bind(this));
+        _document().addEventListener('touchend', this.handleTouchEnd = this.handleTouchEnd.bind(this));
+        _document().addEventListener('touchcancel', this.handleTouchEnd = this.handleTouchEnd.bind(this));
     };
     
     /**
@@ -353,10 +355,10 @@ class ResizableImage {
      * Listeners are removed when the resizableImage is deselected.
      */
     removePinchGestureEvents() {
-        document.removeEventListener('touchstart', this.handleTouchStart);
-        document.removeEventListener('touchmove', this.handleTouchMove);
-        document.removeEventListener('touchend', this.handleTouchEnd);
-        document.removeEventListener('touchcancel', this.handleTouchEnd);
+        _document().removeEventListener('touchstart', this.handleTouchStart);
+        _document().removeEventListener('touchmove', this.handleTouchMove);
+        _document().removeEventListener('touchend', this.handleTouchEnd);
+        _document().removeEventListener('touchcancel', this.handleTouchEnd);
     };
 
     /**
@@ -376,8 +378,8 @@ class ResizableImage {
         // view.state.tr.style.webkitUserSelect = 'none';  // Prevent selection of text as mouse moves
 
         // Use document to receive events even when cursor goes outside of the imageContainer
-        document.addEventListener('mousemove', this.resizing = this.resizing.bind(this));
-        document.addEventListener('mouseup', this.endResize = this.endResize.bind(this));
+        _document().addEventListener('mousemove', this.resizing = this.resizing.bind(this));
+        _document().addEventListener('mouseup', this.endResize = this.endResize.bind(this));
         this._startDimensions = this.dimensionsFrom(this.imageElement);
     };
     
@@ -395,8 +397,8 @@ class ResizableImage {
         // view.dom. Leaving a record here for now.
         //view.dom.style.webkitUserSelect = 'text';  // Restore selection of text now that we are done
 
-        document.removeEventListener('mousemove', this.resizing);
-        document.removeEventListener('mouseup', this.endResize);
+        _document().removeEventListener('mousemove', this.resizing);
+        _document().removeEventListener('mouseup', this.endResize);
         this._startDimensions = this.currentDimensions;
         this.imageResized();
     };
@@ -629,7 +631,7 @@ class ResizableImage {
             'alt' : image.alt,
             'dimensions' : this._startDimensions
         };
-        _callback(JSON.stringify(messageDict));
+        _callback(JSON.stringify(messageDict), _document());
     };
     
 };
@@ -695,7 +697,7 @@ class MUError {
     };
     
     callback() {
-        _callback(JSON.stringify(this.messageDict()));
+        _callback(JSON.stringify(this.messageDict()), _document());
     };
 };
 
@@ -729,6 +731,7 @@ class Searcher {
      * that includes them and pass them from Swift to JavaScript consistently.
      */
     searchFor(text, direction='forward', searchOnEnter=false) {
+        const view = _view()
         let command = searchForCommand(text, direction, searchOnEnter);
         return command(view.state, view.dispatch, view);
     };
@@ -843,14 +846,14 @@ class Searcher {
     _activate(view) {
         this._isActive = true;
         view.dom.classList.add("searching");
-        _callback('activateSearch');
+        _callback('activateSearch', _document());
     }
     
     /**
      * Deactivate search mode where Enter is being intercepted
      */
     deactivate(view) {
-        if (this.isActive) _callback('deactivateSearch');
+        if (this.isActive) _callback('deactivateSearch', view.dom.getRootNode());
         view.dom.classList.remove("searching");
         this._isActive = false;
         this._searchQuery = new SearchQuery({search: "", caseSensitive: this._caseSensitive});
@@ -864,6 +867,7 @@ class Searcher {
      * Stop searchForward()/searchBackward() from being executed on Enter. Force reindexing for next search.
      */
     cancel() {
+        const view = _view()
         this.deactivate(view)
         this._resetQuery();
     };
@@ -872,6 +876,7 @@ class Searcher {
      * Search forward (might be from Enter when isActive).
      */
     searchForward() {
+        const view = _view()
         return this._searchInDirection('forward', view.state, view.dispatch);
     };
     
@@ -879,6 +884,7 @@ class Searcher {
      * Search backward (might be from Shift+Enter when isActive).
      */
     searchBackward() {
+        const view = _view()
         return this._searchInDirection('backward', view.state, view.dispatch);
     }
     
@@ -886,9 +892,10 @@ class Searcher {
      * Search in the specified direction.
      */
     _searchInDirection(direction, state, dispatch) {
+        const view = _view()
         if (this._searchString && (this._searchString.length > 0)) {
             if (direction == "forward") { findNext(state, dispatch)} else { findPrev(state, dispatch)};
-            _callback('searched')
+            _callback('searched', _document())
             // Return the selection from and to from the view, because that is what changed
             return {from: view.state.tr.selection.from, to: view.state.tr.selection.to};
         };
@@ -930,11 +937,12 @@ export function isChanged() {
  *                  else true if execution should stop here (like when search is active)
  */
 export function handleEnter() {
+    const view = _view()
     if (searcher.isActive) {
         searcher.searchForward();
         return true;
     }
-    stateChanged()
+    stateChanged(view)
     return false;
 }
 
@@ -948,11 +956,12 @@ export function handleEnter() {
  *                  else true if execution should stop here (like when search is active)
  */
 export function handleShiftEnter() {
+    const view = _view()
     if (searcher.isActive) {
         searcher.searchBackward();
         return true;
     }
-    stateChanged()
+    stateChanged(view)
     return false;
 }
 
@@ -965,9 +974,10 @@ export function handleShiftEnter() {
  *                      else true if execution should stop here.
  */
 export function handleDelete() {
+    const view = _view()
     const imageAttributes = _getImageAttributes();
     if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID ?? '') });
-    stateChanged();
+    stateChanged(view);
     return false;
 }
 
@@ -981,7 +991,7 @@ export function handleDelete() {
  */
 export function setTopLevelAttributes(jsonString) {
     const attributes = JSON.parse(jsonString);
-    const editor = document.getElementById('editor');
+    const editor = _document().getElementById('editor');
     if (editor && attributes) {   
         for (const [key, value] of Object.entries(attributes)) {
             if (key !== 'contenteditable') editor.setAttribute(key, value);
@@ -1009,85 +1019,127 @@ export function setMessageHandler(handler) {
  * nor cssFile are specified, then the 'loadedUserFiles' callback happens anyway,
  * since this ends up driving the loading process further.
  */
-export function loadUserFiles(scriptFile, cssFile) {
+export function loadUserFiles(scriptFile, cssFile, target=null) {
     if (scriptFile) {
         if (cssFile) {
-            _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile) });
+            _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile, target) });
         } else {
-            _loadUserScriptFile(scriptFile, function() { _loadedUserFiles() });
+            _loadUserScriptFile(scriptFile, function() { _loadedUserFiles(target) }, target);
         }
     } else if (cssFile) {
-        _loadUserCSSFile(cssFile);
+        _loadUserCSSFile(cssFile, target);
     } else {
-        _loadedUserFiles();
+        _loadedUserFiles(target);
     }
 };
 
 /**
- * Callback to the message handler.
+ * Callback to the global `messageHandler` using `postMessage` or to the 
+ * `element` that is listening for a `muCallback`
+ * 
+ * The global messageHandler is only defined when *not* using MarkupEditorElements, 
+ * the Markup Editor web component. When using web components, callbacks are 
+ * invoked by dispatching an `muCallback` CustomEvent to the `element` provided.
+ * The `element` is commonly the `editor` div. When not using MarkupEditorElements, 
+ * the global `messageHandler` will be defined, and callbacks are handled by  
+ * invoking `postMessage` on the `messageHandler`.
+ * 
  * In Swift, the message is handled by the WKScriptMessageHandler, 
  * but in other cases, it might have been reassigned.
  * In Swift, the WKScriptMessageHandler is the MarkupCoordinator,
  * and the userContentController(_ userContentController:didReceive:)
  * function receives message as a WKScriptMessage.
  *
- * @param {String} message     The message, which might be a JSONified string
+ * @param {String}      message     The message, which might be a JSONified string
+ * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
  */
-function _callback(message) {
-    messageHandler?.postMessage(message);
+function _callback(message, element) {
+    if (messageHandler) {
+        messageHandler.postMessage(message)
+    } else {
+        _dispatchMuCallback(message, element)
+    }
 };
+
+function _dispatchMuCallback(message, element) {
+    const muCallback = new CustomEvent("muCallback")
+    muCallback.message = message
+    element.dispatchEvent(muCallback)
+}
+
+/**
+ * Return the first shadow DOM found in the global `viewRegistry`, or `window.document` if not found.
+ */
+function _document() {
+    return _view()?.dom.getRootNode() ?? document
+}
+
+/**
+ * Return the first non-null EditorView found in the global viewRegistry. 
+ * 
+ * Return null if the viewRegistry is not defined or contains no views. The 
+ * viewRegistry is defined if there are any MarkupEditorElements, the web 
+ * component for the MarkupEditor.
+ */
+function _view() {
+    if (typeof viewRegistry == 'undefined') return null
+    const key = Object.keys(viewRegistry).find((key) => viewRegistry[key] !== null)
+    return (key) ? viewRegistry[key] : null
+}
 
 /**
  * Callback to signal that input came-in, passing along the DIV ID
  * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
  * callback means the change happened in the 'editor' div.
  */
-export function callbackInput() {
+export function callbackInput(element) {
     changed = true;
-    _callback('input' + (selectedID ?? ''))
+    _callback('input' + (selectedID ?? ''), element)
 };
+
+function _callbackReady() {
+    messageHandler?.postMessage('ready')
+}
 
 /**
  * Callback to signal that user-provided CSS and/or script files have
  * been loaded.
  */
-function _loadedUserFiles() {
-    _callback('loadedUserFiles');
+function _loadedUserFiles(target) {
+    _callback('loadedUserFiles', target ?? _document());
 };
 
 /**
  * Called to load user script before loading html.
  */
-function _loadUserScriptFile(file, callback) {
-    let body = document.getElementsByTagName('body')[0];
+function _loadUserScriptFile(file, callback, target) {
+    let scriptTarget = target ?? document.getElementsByTagName('body')[0];
     let script = document.createElement('script');
     script.type = 'text/javascript';
     script.addEventListener('load', callback);
     script.setAttribute('src', file);
-    body.appendChild(script);
+    scriptTarget.appendChild(script);
 };
 
 /**
  * Called to load user CSS before loading html if userCSSFile has been defined for this MarkupWKWebView
  */
-function _loadUserCSSFile(file) {
-    let head = document.getElementsByTagName('head')[0];
+function _loadUserCSSFile(file, target) {
+    let cssTarget = target ?? document.getElementsByTagName('head')[0];
     let link = document.createElement('link');
     link.rel = 'stylesheet';
     link.type = 'text/css';
-    link.addEventListener('load', function() { _loadedUserFiles() });
+    link.addEventListener('load', function() { _loadedUserFiles(target) });
     link.href = file;
-    head.appendChild(link);
+    cssTarget.appendChild(link);
 };
 
 if (typeof window != 'undefined') {
     /**
      * The 'ready' callback indicated that the editor and this js is properly loaded.
-     *
-     * Note for history, replaced window.onload with this eventListener.
      */
-    window.addEventListener('load', function () {
-        _callback('ready');
+    window.addEventListener('load', function (e) {
+        _callbackReady(e);
     });
 
     /**
@@ -1107,7 +1159,7 @@ if (typeof window != 'undefined') {
      * If the window is resized, call back so that the holder can adjust its height tracking if needed.
      */
     window.addEventListener('resize', function () {
-        _callback('updateHeight');
+        _callback('updateHeight', _document());
     });
 }
 
@@ -1130,6 +1182,7 @@ if (typeof window != 'undefined') {
  * @returns {Object}                        The {to: number, from: number} location of the match.
  */
 export function searchFor(text, direction, activate) {
+    const view = _view()
     const searchOnEnter = activate === 'true';
     let command = searchForCommand(text, direction, searchOnEnter);
     return command(view.state, view.dispatch, view);
@@ -1160,7 +1213,7 @@ export function matchCase(caseSensitive) {
 /**
  * Deactivate search mode, stop intercepting Enter to search.
  */
-export function deactivateSearch() {
+export function deactivateSearch(view) {
     searcher.deactivate(view);
 };
 
@@ -1201,8 +1254,9 @@ export function matchIndex() {
  * `event` is a mocked ClipboardEvent for testing purposes, else nil.
  */
 export function pasteHTML(html, event) {
+    const view = _view()
     view.pasteHTML(html, event);
-    stateChanged();
+    stateChanged(view);
 };
 
 /**
@@ -1331,7 +1385,7 @@ export function resetSelectedID(id) {
  * @returns {[string]}
  */
 export function getDataImages() {
-    let images = document.getElementsByTagName('img');
+    let images = _document().getElementsByTagName('img');
     let dataImages = []
     for (let i = 0; i < images.length; i++) {
         let src = images[i].getAttribute('src');
@@ -1348,7 +1402,8 @@ export function getDataImages() {
  * @param {string} newSrc The src that should replace the old src
  */
 export function savedDataImage(oldSrc, newSrc) {
-    let images = document.getElementsByTagName('img');
+    const view = _view()
+    let images = _document().getElementsByTagName('img');
     for (let i = 0; i < images.length; i++) {
         let img = images[i]
         let src = img.getAttribute('src');
@@ -1377,6 +1432,7 @@ export function savedDataImage(oldSrc, newSrc) {
  * @return {string} The HTML for the div with id `divID` or of the full doc.
  */
 export function getHTML(pretty='true', clean='true', divID) {
+    const view = _view()
     const prettyHTML = pretty === 'true';
     const cleanHTML = clean === 'true';
     const divNode = (divID) ? _getNode(divID)?.node : view.state.doc;
@@ -1384,7 +1440,7 @@ export function getHTML(pretty='true', clean='true', divID) {
         MUError.NoDiv.callback();
         return "";
     }
-    const editor = DOMSerializer.fromSchema(view.state.schema).serializeFragment(divNode.content);
+    const editor = DOMSerializer.fromSchema(schema).serializeFragment(divNode.content);
     let text;
     if (cleanHTML) {
         _cleanUpDivsWithin(editor);
@@ -1504,17 +1560,16 @@ function setBase(string) {
  * @param {string}  contents            The HTML for the editor
  * @param {boolean} selectAfterLoad     Whether we should focus after load
  */
-export function setHTML(contents, focusAfterLoad=true, base) {
+export function setHTML(contents, focusAfterLoad=true, base, editorView) {
     // If defined, set base; else remove base if it exists. This way, when setHTML is used to,
     // say, create a new empty document, base will be reset.
-    setBase(base);
-    const state = view.state;
+    setBase(base)
+    const htmlView = (editorView) ? editorView : _view()
+    const state = htmlView.state;
     const doc = state.doc;
     const tr = state.tr;
     const node = _nodeFromHTML(contents);
     const selection = new AllSelection(doc);
-    // To avoid flashing it, only set the placeholder early if contents is empty
-    if (_placeholderText && (contents == emptyHTML())) placeholderText = _placeholderText;
     let transaction = tr
         .setSelection(selection)
         .replaceSelectionWith(node, false)
@@ -1523,37 +1578,10 @@ export function setHTML(contents, focusAfterLoad=true, base) {
     transaction
         .setSelection(TextSelection.near($pos))
         .scrollIntoView();
-    view.dispatch(transaction);
-    // But always set placeholder in the end so it will appear when the doc is empty
-    placeholderText = _placeholderText;
-    if (focusAfterLoad) view.focus();
+    htmlView.dispatch(transaction);
+    if (focusAfterLoad) htmlView.focus();
     // Reset change tracking
     changed = false;
-};
-
-/**
- * Internal value of placeholder text
- */
-let _placeholderText;           // Hold onto the placeholder text so we can defer setting it until setHTML.
-
-/**
- * Externally visible value of placeholder text
- */
-export let placeholderText;     // What we tell ProseMirror to display as a decoration, set after setHTML.
-
-/**
- * Set the text to use as a placeholder when the document is empty.
- * 
- * This method does not affect an existing view being displayed. It only takes effect after the 
- * HTML contents is set via setHTML. We want to set the value held in _placeholderText early and 
- * hold onto it, but because we always start with a valid empty document before loading HTML contents, 
- * we need to defer setting the exported value until later, which displays using a ProseMirror 
- * plugin and decoration.
- * 
- * @param {string} text     The text to display as a placeholder when the document is empty.
- */
-export function setPlaceholder(text) {
-    _placeholderText = text;
 };
 
 /**
@@ -1574,13 +1602,13 @@ export function setPlaceholder(text) {
  * auto-sizing of a WKWebView based on its contents.
  */
 export function getHeight() {
-   const editor = document.getElementById('editor');
+   const editor = _document().getElementById('editor');
    const paddingBlockStart = editor.style.getPropertyValue('padding-block-start');
    const paddingBlockEnd = editor.style.getPropertyValue('padding-block-end');
    editor.style['padding-block-start'] = '0px';
    editor.style['padding-block-end'] = '0px';
    // TODO: Check this works on iOS or is even still needed
-   const height = view.dom.getBoundingClientRect().height;
+   const height = _view().dom.getBoundingClientRect().height;
    editor.style['padding-block-start'] = paddingBlockStart;
    editor.style['padding-block-end'] = paddingBlockEnd;
    return height;
@@ -1595,7 +1623,7 @@ export function getHeight() {
  * of the screen.
  */
 export function padBottom(fullHeight) {
-    const editor = document.getElementById('editor');
+    const editor = _document().getElementById('editor');
     const padHeight = fullHeight - getHeight();
     if (padHeight > 0) {
         editor.style.setProperty('--padBottom', padHeight+'px');
@@ -1608,13 +1636,14 @@ export function padBottom(fullHeight) {
  * Focus immediately, leaving range alone
  */
 export function focus() {
-    view.focus()
+    _view().focus()
 };
 
 /**
  * Reset the selection to the beginning of the document
  */
 export function resetSelection() {
+    const view = _view()
     const {node, pos} = _firstEditableTextNode();
     const doc = view.state.doc;
     const selection = (node) ? new TextSelection(doc.resolve(pos)) : new AllSelection(doc);
@@ -1627,7 +1656,8 @@ export function resetSelection() {
  * a text node inside of a contentEditable div.
  */
 function _firstEditableTextNode() {
-    const divNodeType = view.state.schema.nodes.div;
+    const view = _view()
+    const divNodeType = schema.nodes.div;
     const fromPos = TextSelection.atStart(view.state.doc).from
     const toPos = TextSelection.atEnd(view.state.doc).to
     let nodePos = {};
@@ -1655,7 +1685,8 @@ function _firstEditableTextNode() {
  * already exist so that we can find it.
  */
 export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, htmlContents) {
-    const divNodeType = view.state.schema.nodes.div;
+    const view = _view()
+    const divNodeType = schema.nodes.div;
     const editableAttributes = (attributesJSON && JSON.parse(attributesJSON)) ?? {};
     const editable = editableAttributes.contenteditable === true;
     const buttonGroupDiv = _buttonGroupDiv(buttonGroupJSON);
@@ -1740,7 +1771,8 @@ function _buttonGroupDiv(buttonGroupJSON) {
  * @param {string} id   The id of the div to remove
  */
 export function removeDiv(id) {
-    const divNodeType = view.state.schema.nodes.div;
+    const view = _view()
+    const divNodeType = schema.nodes.div;
     const {node, pos} = _getNode(id)
     if (divNodeType === node?.type) {
         const $pos = view.state.doc.resolve(pos);
@@ -1774,7 +1806,8 @@ export function removeDiv(id) {
  * @param {string} label        The label for the button.
  */
 export function addButton(id, parentId, cssClass, label) {
-    const buttonNodeType = view.state.schema.nodes.button;
+    const view = _view()
+    const buttonNodeType = schema.nodes.button;
     const button = document.createElement('button');
     button.setAttribute('id', id);
     button.setAttribute('parentId', parentId);
@@ -1806,8 +1839,9 @@ export function addButton(id, parentId, cssClass, label) {
  * @param {string} id   The ID of the button to be removed.
  */
 export function removeButton(id) {
+    const view = _view()
     const {node, pos} = _getNode(id)
-    if (view.state.schema.nodes.button === node?.type) {
+    if (schema.nodes.button === node?.type) {
         const nodeSelection = new NodeSelection(view.state.doc.resolve(pos));
         const transaction = view.state.tr
             .setSelection(nodeSelection)
@@ -1821,6 +1855,7 @@ export function removeButton(id) {
  * @param {string} id   The ID of the DIV to focus on.
  */
 export function focusOn(id) {
+    const view = _view()
     const {node, pos} = _getNode(id);
     if (node && (node.attrs.id !== selectedID)) {
         const selection = new TextSelection(view.state.doc.resolve(pos));
@@ -1833,6 +1868,7 @@ export function focusOn(id) {
  * Remove all divs in the document.
  */
 export function removeAllDivs() {
+    const view = _view()
     const allSelection = new AllSelection(view.state.doc);
     const transaction = view.state.tr.delete(allSelection.from, allSelection.to);
     view.dispatch(transaction);
@@ -1849,6 +1885,7 @@ export function removeAllDivs() {
  * @returns {Object}            The node and position that matched the search.
  */
 function _getNode(id, doc, from, to) {
+    const view = _view()
     const source = doc ?? view.state.doc;
     const fromPos = from ?? TextSelection.atStart(source).from;
     const toPos = to ?? TextSelection.atEnd(source).to;
@@ -1931,6 +1968,7 @@ export function toggleSuperscript() {
  * @param {string} type     The *uppercase* type to be toggled at the selection.
  */
 function _toggleFormat(type) {
+    const view = _view()
     let command = toggleFormatCommand(type)
     return command(view.state, view.dispatch, view)
 };
@@ -1964,7 +2002,7 @@ export function toggleFormatCommand(type) {
         };
         if (toggle && view) {
             toggle(state, view.dispatch);
-            stateChanged()
+            stateChanged(view)
         } else {
             return toggle
         }
@@ -1986,6 +2024,7 @@ export function toggleFormatCommand(type) {
  * @param {String}  style    One of the styles P or H1-H6 to set the selection to.
  */
 export function setStyle(style) {
+    const view = _view()
     let command = setStyleCommand(style)
     let result = command(view.state, view.dispatch, view)
     return result
@@ -2031,7 +2070,7 @@ export function setStyleCommand(style) {
         } else if (view) {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
-            stateChanged();
+            stateChanged(view);
         } else {    // When checking if active based on state, return true only if different
             return paragraphStyle(state) != style;
         }
@@ -2107,9 +2146,10 @@ function _nodeFor(paragraphStyle, schema) {
  * @param {String}  listType     The kind of list we want the list item to be in if we are turning it on or changing it.
  */
 export function toggleListItem(listType) {
-    const targetListType = nodeTypeFor(listType, view.state.schema);
+    const view = _view()
+    const targetListType = nodeTypeFor(listType, schema);
     if (targetListType !== null) {
-        const command = wrapInListCommand(view.state.schema, targetListType);
+        const command = wrapInListCommand(schema, targetListType);
         command(view.state, (transaction) => {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
@@ -2148,6 +2188,7 @@ export function getListType(state) {
 }
 
 function _getListType() {
+    const view = _view()
     return getListType(view.state);
 };
 
@@ -2208,12 +2249,12 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
     const targetListItemType = schema.nodes.list_item;
     const listItemTypes = [targetListItemType];
 
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         const inTargetNodeType = getListType(state) === listTypeFor(targetNodeType, state.schema)
         const command = inTargetNodeType ? liftListItem(state.schema.nodes.list_item) : wrapInList(targetNodeType, attrs);
         if (command(state)) {
             let result = command(state, dispatch);
-            if (dispatch) stateChanged()
+            if (dispatch) stateChanged(view)
             return result;
         }
 
@@ -2245,7 +2286,7 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
             );
 
             dispatch(tr);
-            stateChanged();
+            stateChanged(view);
         }
         return true;
     };
@@ -2353,6 +2394,7 @@ function updateNode(node, targetListType, targetListItemType, listTypes, listIte
  *
  */
 export function indent() {
+    const view = _view()
     let command = indentCommand();
     return command(view.state, view.dispatch, view)
 };
@@ -2465,6 +2507,7 @@ export function indentCommand() {
  *
  */
 export function outdent() {
+    const view = _view()
     let command = outdentCommand()
     return command(view.state, view.dispatch, view)
 };
@@ -2718,7 +2761,6 @@ const _getSelectionState = function() {
     state['quote'] = isIndented();
     // Format
     const markTypes = _getMarkTypes();
-    const schema = view.state.schema;
     state['bold'] = markTypes.has(schema.marks.strong);
     state['italic'] = markTypes.has(schema.marks.em);
     state['underline'] = markTypes.has(schema.marks.u);
@@ -2741,8 +2783,9 @@ const _getSelectionState = function() {
  * @returns {Object} The id and editable state that is selected.
  */
 function _getContentEditable() {
+    const view = _view()
     const anchor = view.state.selection.$anchor;
-    const divNode = outermostOfTypeAt(view.state.schema.nodes.div, anchor);
+    const divNode = outermostOfTypeAt(schema.nodes.div, anchor);
     if (divNode) {
         return {id: divNode.attrs.id, editable: divNode.attrs.editable ?? false};
     } else {
@@ -2755,6 +2798,7 @@ function _getContentEditable() {
  * @returns {String | null} The text that is selected.
  */
 function _getSelectionText() {
+    const view = _view()
     const doc = view.state.doc;
     const selection = view.state.selection;
     if (selection.empty) return '';
@@ -2775,6 +2819,7 @@ function _getSelectionText() {
  * @returns {Object} The selection rectangle's top, bottom, left, right.
  */
 export function getSelectionRect() {
+    const view = _view()
     const selection = view.state.selection;
     const fromCoords = view.coordsAtPos(selection.from);
     if (selection.empty) return fromCoords;
@@ -2792,6 +2837,7 @@ export function getSelectionRect() {
  * @returns {Set<MarkType>}   The set of MarkTypes at the selection.
  */
 function _getMarkTypes() {
+    const view = _view()
     const state = view.state;
     const {from, $from, to, empty} = state.selection;
     if (empty) {
@@ -2812,6 +2858,7 @@ function _getMarkTypes() {
  * @returns {Object}   An Object whose properties are <a> attributes (like href, link) at the selection.
  */
 export function getLinkAttributes() {
+    const view = _view()
     const selection = view.state.selection;
     const selectedNodes = [];
     view.state.doc.nodesBetween(selection.from, selection.to, node => {
@@ -2819,7 +2866,7 @@ export function getLinkAttributes() {
     });
     const selectedNode = (selectedNodes.length === 1) && selectedNodes[0];
     if (selectedNode) {
-        const linkMarks = selectedNode.marks.filter(mark => mark.type === view.state.schema.marks.link)
+        const linkMarks = selectedNode.marks.filter(mark => mark.type === schema.marks.link)
         if (linkMarks.length === 1) {
             return {href: linkMarks[0].attrs.href, link: selectedNode.text};
         };
@@ -2828,6 +2875,7 @@ export function getLinkAttributes() {
 };
 
 function _getImageAttributes() {
+    const view = _view()
     return getImageAttributes(view.state)
 }
 
@@ -2859,6 +2907,7 @@ export function getImageAttributes(state) {
  * @returns {Object}   An object with properties populated.
  */
 function _getTableAttributes(state) {
+    const view = _view()
     const viewState = state ?? view.state;
     const selection = viewState.selection;
     const nodeTypes = viewState.schema.nodes;
@@ -2922,6 +2971,7 @@ function _getTableAttributes(state) {
  * @return {String}   {Tag name | 'Multiple'} that represents the selected paragraph style.
  */
 function _getParagraphStyle() {
+    const view = _view()
     return paragraphStyle(view.state)
 };
 
@@ -2959,6 +3009,7 @@ function _paragraphStyleFor(node) {
 };
 
 export function isIndented(activeState) {
+    const view = _view()
     let state = activeState ? activeState : view.state;
     return _getIndented(state); 
 }
@@ -2983,30 +3034,30 @@ function _getIndented(state) {
 /**
  * Report a selection change.
  */
-export function selectionChanged() {
-    _callback('selectionChanged')
+export function selectionChanged(element) {
+    _callback('selectionChanged', element)
 }
 
 /**
  * Report a click.
  */
-export function clicked() {
-    deactivateSearch()
-    _callback('clicked')
+export function clicked(view, element) {
+    deactivateSearch(view)
+    _callback('clicked', element)
 }
 
 /**
  * Report focus.
  */
-export function focused() {
-    _callback('focus')
+export function focused(element) {
+    _callback('focus', element)
 }
 
 /**
  * Report blur.
  */
-export function blurred() {
-    _callback('blur')
+export function blurred(element) {
+    _callback('blur', element)
 }
 
 /**
@@ -3016,10 +3067,10 @@ export function blurred() {
  * 
  * @returns Bool    Return false so we can use in chainCommands directly
  */
-export function stateChanged() {
-    deactivateSearch()
-    selectionChanged()
-    callbackInput()
+export function stateChanged(view) {
+    deactivateSearch(view)
+    selectionChanged(view.dom.getRootNode())
+    callbackInput(view.dom.getRootNode())
     return false;
 }
 
@@ -3030,7 +3081,7 @@ export function stateChanged() {
  * @param {string | Object} message  A JSON-serializable JavaScript object.
  */
 export function postMessage(message) {
-    _callback(JSON.stringify(message))
+    _callback(JSON.stringify(message), _document())
 }
 
 /********************************************************************************
@@ -3051,8 +3102,9 @@ export function postMessage(message) {
  * @param {*} sel       An embedded character in contents marking selection point(s)
  */
 export function setTestHTML(contents, sel) {
+    const view = _view()
     // Start by resetting the view state.
-    let state = EditorState.create({schema: view.state.schema, doc: view.state.doc, plugins: view.state.plugins});
+    let state = EditorState.create({schema: schema, doc: view.state.doc, plugins: view.state.plugins});
     view.updateState(state);
 
     // Then set the HTML, which won't contain any sel markers.
@@ -3097,6 +3149,7 @@ export function setTestHTML(contents, sel) {
  */
 export function getTestHTML(sel) {
     if (!sel) return getHTML(false);   // Return the compressed/unformatted HTML if no sel
+    const view = _view()
     let state = view.state;
     const selection = state.selection;
     const selFrom = selection.from;
@@ -3112,6 +3165,7 @@ export function getTestHTML(sel) {
 };
 
 export function doUndo() {
+    const view = _view()
     let command = undoCommand();
     let result = command(view.state, view.dispatch, view);
     return result
@@ -3121,10 +3175,10 @@ export function doUndo() {
  * Return a command to undo and do the proper callbacks.
  */
 export function undoCommand() {
-    let commandAdapter = (state, dispatch) => {
+    let commandAdapter = (state, dispatch, view) => {
         let result = undo(state, dispatch);
         if (result && dispatch) {
-            stateChanged()
+            stateChanged(view)
         }
         return result
     }
@@ -3132,6 +3186,7 @@ export function undoCommand() {
 };
 
 export function doRedo() {
+    const view = _view()
     let command = redoCommand();
     let result = command(view.state, view.dispatch, view);
     return result
@@ -3141,10 +3196,10 @@ export function doRedo() {
  * Return a command to redo and do the proper callbacks.
  */
 export function redoCommand() {
-    let commandAdapter = (state, dispatch) => {
-        let result = redo(state, dispatch);
+    let commandAdapter = (state, dispatch, view) => {
+        let result = redo(state, dispatch, view);
         if (result && dispatch) {
-            stateChanged()
+            stateChanged(view)
         }
         return result
     }
@@ -3161,7 +3216,8 @@ export function testBlockquoteEnter() {
  * For testing purposes, invoke _doListEnter programmatically.
  */
 export function testListEnter() {
-    const splitCommand = splitListItem(view.state.schema.nodes.list_item);
+    const view = _view()
+    const splitCommand = splitListItem(schema.nodes.list_item);
     splitCommand(view.state, view.dispatch);
 };
 
@@ -3211,13 +3267,14 @@ export function testPasteTextPreprocessing(html) {
  * @param {String}  url             The url/href to use for the link
  */
 export function insertLink(url) {
+    const view = _view()
     let command = insertLinkCommand(url);
     let result = command(view.state, view.dispatch, view);
     return result
 };
 
 export function insertLinkCommand(url) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         const selection = state.selection;
         const linkMark = state.schema.marks.link.create({ href: url });
         if (selection.empty) {
@@ -3226,12 +3283,12 @@ export function insertLinkCommand(url) {
             const linkSelection = TextSelection.create(transaction.doc, selection.from, selection.from + textNode.nodeSize);
             transaction.setSelection(linkSelection);
             dispatch(transaction);
-            stateChanged();
+            stateChanged(view);
         } else {
             const toggle = toggleMark(linkMark.type, linkMark.attrs);
             if (toggle) {
                 toggle(state, dispatch);
-                stateChanged();
+                stateChanged(view);
             }
         };
 
@@ -3241,7 +3298,7 @@ export function insertLinkCommand(url) {
 }
 
 export function insertInternalLinkCommand(hTag, index) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         // Find the node matching hTag that is index into the nodes matching hTag
         let {node} = headerMatching(hTag, index, state)
         if (!node) return false
@@ -3260,13 +3317,13 @@ export function insertInternalLinkCommand(hTag, index) {
             const textNode = state.schema.text(node.textContent, [linkMark]);
             let transaction = state.tr.replaceSelectionWith(textNode, false);
             dispatch(transaction);
-            stateChanged();
+            stateChanged(view);
             return true;
         } else {
             const toggle = toggleMark(linkMark.type, linkMark.attrs);
             if (toggle) {
                 toggle(state, dispatch)
-                stateChanged();
+                stateChanged(view);
                 return true;
             } else {
                 return false;
@@ -3380,6 +3437,7 @@ export function headers(state) {
  * areas outside of the link.
  */
 export function deleteLink() {
+    const view = _view()
     // Make sure the selection is in a single text node with a linkType Mark and 
     // that the full link is selected in the view.
     selectFullLink(view)
@@ -3401,7 +3459,7 @@ export function deleteLinkCommand() {
                 const textSelection = TextSelection.create(newState.doc, selection.from, selection.to);
                 tr.setSelection(textSelection);
                 view.dispatch(tr);
-                stateChanged();
+                stateChanged(view);
             });
         } else {
             return false;
@@ -3450,6 +3508,7 @@ export function selectFullLink(view) {
  * @param {String}              alt         The alt text describing the image.
  */
 export function insertImage(src, alt) {
+    const view = _view()
     let command = insertImageCommand(src, alt);
     return command(view.state, view.dispatch, view)
 };
@@ -3459,7 +3518,7 @@ export function insertImageCommand(src, alt) {
         const imageNode = view.state.schema.nodes.image.create({src: src, alt: alt})
         const transaction = view.state.tr.replaceSelectionWith(imageNode, true);
         view.dispatch(transaction);
-        stateChanged();
+        stateChanged(view);
         return true;
     }
 
@@ -3473,6 +3532,7 @@ export function insertImageCommand(src, alt) {
  * @param {String}              alt         The alt text describing the image.
  */
 export function modifyImage(src, alt) {
+    const view = _view()
     let command = modifyImageCommand(src, alt);
     return command(view.state, view.dispatch, view)
 };
@@ -3512,13 +3572,14 @@ export function modifyImageCommand(src, alt) {
  * by the side holding the copy buffer, not via JavaScript.
  */
 export function cutImage() {
+    const view = _view()
     const selection = view.state.selection
     const imageNode = selection.node;
-    if (imageNode?.type === view.state.schema.nodes.image) {
+    if (imageNode?.type === schema.nodes.image) {
         copyImage(imageNode);
         const transaction = view.state.tr.deleteSelection();
         view.dispatch(transaction);
-        stateChanged();
+        stateChanged(view);
     };
 };
 
@@ -3534,7 +3595,7 @@ function copyImage(node) {
         'alt' : node.attrs.alt,
         'dimensions' : {width: node.attrs.width, height: node.attrs.height}
     };
-    _callback(JSON.stringify(messageDict));
+    _callback(JSON.stringify(messageDict), _document());
 };
 
 /********************************************************************************
@@ -3549,6 +3610,7 @@ function copyImage(node) {
  * @param   {Int}                 cols        The number of columns in the table to be created.
  */
 export function insertTable(rows, cols) {
+    const view = _view()
     if ((rows < 1) || (cols < 1)) return;
     let command = insertTableCommand(rows, cols);
     let result = command(view.state, view.dispatch, view);
@@ -3612,7 +3674,7 @@ export function insertTableCommand(rows, cols) {
             state = state.apply(transaction);
             view.updateState(state);
             view.focus();
-            stateChanged();
+            stateChanged(view);
         }
         
         return true;
@@ -3628,20 +3690,21 @@ export function insertTableCommand(rows, cols) {
  * @param {String}  direction   Either 'BEFORE' or 'AFTER' to identify where the new row goes relative to the selection.
  */
 export function addRow(direction) {
+    const view = _view()
     if (!_tableSelected()) return;
     let command = addRowCommand(direction);
-    let result = command(view.state, view.dispatch)
+    let result = command(view.state, view.dispatch, view)
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
 export function addRowCommand(direction) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         if (direction === 'BEFORE') {
-            return addRowBefore(state, dispatch);
+            return addRowBefore(state, dispatch, view);
         } else {
-            return addRowAfter(state, dispatch);
+            return addRowAfter(state, dispatch, view);
         };
     };
 
@@ -3657,11 +3720,12 @@ export function addRowCommand(direction) {
  * @param {String}  direction   Either 'BEFORE' or 'AFTER' to identify where the new column goes relative to the selection.
  */
 export function addCol(direction) {
+    const view = _view()
     if (!_tableSelected()) return;
     let command = addColCommand(direction);
     let result = command(view.state, view.dispatch, view);
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
@@ -3700,12 +3764,13 @@ export function addColCommand(direction) {
  * @param {boolean} colspan     Whether the header should span all columns of the table or not.
  */
 export function addHeader(colspan=true) {
+    const view = _view()
     let tableAttributes = _getTableAttributes();
     if (!tableAttributes.table || tableAttributes.header) return;   // We're not in a table or we are but it has a header already
     let command = addHeaderCommand(colspan);
     let result = command(view.state, view.dispatch, view);
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
@@ -3756,22 +3821,23 @@ export function addHeaderCommand(colspan = true) {
  */
 export function deleteTableArea(area) {
     if (!_tableSelected()) return;
+    const view = _view()
     let command = deleteTableAreaCommand(area);
-    let result = command(view.state, view.dispatch);
+    let result = command(view.state, view.dispatch, view);
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
 export function deleteTableAreaCommand(area) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         switch (area) {
             case 'ROW':
-                return deleteRow(state, dispatch);
+                return deleteRow(state, dispatch, view);
             case 'COL':
-                return deleteColumn(state, dispatch);
+                return deleteColumn(state, dispatch, view);
             case 'TABLE':
-                return deleteTable(state, dispatch);
+                return deleteTable(state, dispatch, view);
         };
         return false;
     };
@@ -3787,9 +3853,10 @@ export function deleteTableAreaCommand(area) {
  */
 export function borderTable(border) {
     if (_tableSelected()) {
+        const view = _view()
         let command = setBorderCommand(border);
         let result = command(view.state, view.dispatch, view);
-        stateChanged();
+        stateChanged(view);
         view.focus();
         return result;
     }
@@ -3992,7 +4059,7 @@ function _nodeFromHTML(html) {
  * @returns Node
  */
 function _nodeFromElement(htmlElement) {
-    return DOMParser.fromSchema(view.state.schema).parse(htmlElement, { preserveWhiteSpace: true });
+    return DOMParser.fromSchema(schema).parse(htmlElement, { preserveWhiteSpace: true });
 }
 
 /**
@@ -4001,7 +4068,7 @@ function _nodeFromElement(htmlElement) {
  * @returns DocumentFragment
  */
 function _fragmentFromNode(node) {
-    return DOMSerializer.fromSchema(view.state.schema).serializeFragment(node.content);
+    return DOMSerializer.fromSchema(schema).serializeFragment(node.content);
 };
 
 /**
@@ -4032,7 +4099,7 @@ function _sliceFromHTML(html) {
  * @returns Slice
  */
 function _sliceFromElement(htmlElement) {
-    return DOMParser.fromSchema(view.state.schema).parseSlice(htmlElement, { preserveWhiteSpace: true });
+    return DOMParser.fromSchema(schema).parseSlice(htmlElement, { preserveWhiteSpace: true });
 }
 
 /**
@@ -4090,5 +4157,5 @@ function _consoleLog(string) {
         'messageType' : 'log',
         'log' : string
     }
-    _callback(JSON.stringify(messageDict));
+    _callback(JSON.stringify(messageDict), _document());
 };

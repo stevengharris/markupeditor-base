@@ -17,13 +17,11 @@ import {
   pasteText,
   pasteHTML,
   emptyDocument,
-  emptyHTML,
   getHTML,
   getTestHTML,
   isChanged,
   setHTML,
   setTestHTML,
-  setPlaceholder,
   getHeight,
   padBottom,
   focus,
@@ -106,6 +104,7 @@ import {toolbarView} from "./setup/toolbar.js"
 import { 
   getMarkupEditorConfig, 
   setMarkupEditorConfig,
+  generateShortId,
  } from "./setup/utilities.js"
 
 /**
@@ -126,7 +125,6 @@ export {
   setHTML,
   isChanged,
   setTestHTML,
-  setPlaceholder,
   getHeight,
   padBottom,
   focus,
@@ -198,9 +196,15 @@ export {
 
 /**
  * The MarkupEditor holds the properly set-up EditorView and any additional configuration.
+ * 
+ * @param {HTMLElement} target  The div that will contain the editor.
+ * @param {Object}      config  The configuration object. See the Developer's Guide.
  */
 class MarkupEditor {
   constructor(target, config) {
+
+    // We will be creating an EditorView in the `target` element, which should be a DIV
+    // with `id` set to "editor".
     this.element = target ?? document.querySelector("#editor")
 
     // Make sure config always contains menu, keymap, and behavior
@@ -210,9 +214,27 @@ class MarkupEditor {
     if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard()
     setMarkupEditorConfig(this.config)
 
-    this.html = this.config.html ?? emptyHTML()
-    setMessageHandler(this.config.messageHandler ?? new MessageHandler(this));
-    window.view = new EditorView(this.element, {
+    // There is only one `schema` for the window, not a separate one for each MarkupEditor instance.
+    window.schema = schema
+
+    // Retain an ID for this MarkupEditor and identify the view using it, too. The view will be 
+    // reachable from the window.viewRegistry by this ID.
+    this.id = config.id ?? generateShortId()
+
+    // Set up the global `messageHandler` if the element is *not* in the shadow DOM (i.e., 
+    // we are not using the MarkupEditorElement web component). In that case, there is only 
+    // one view and it uses a single instance of MessageHandler, either passed-in as part 
+    // of the `config`, or created here using the default MessageHandler. We communicate 
+    // with the MessageHandler using `postMessage`.
+    // When we are using one or more MarkupEditorElements, we communicate with the individual 
+    // MarkupEditor instances using a `muCallback` CustomEvent that each editor element listens 
+    // for and can take appropriate action for only that element in the shadow DOM, rather than 
+    // for one in window.document.
+    const globalHandler = (this.element.getRootNode() instanceof ShadowRoot) ? null : new MessageHandler(this)
+    this.messageHandler = this.config.messageHandler ?? globalHandler
+    setMessageHandler(this.messageHandler)
+
+    this.view = new EditorView(this.element, {
       state: EditorState.create({
         // For the MarkupEditor, we can just use the editor element. 
         // There is no need to use a separate content element.
@@ -229,12 +251,12 @@ class MarkupEditor {
       // Note the `setTimeout` hack is used to have the function called after the change
       // for things things other than the `input` event.
       handleDOMEvents: {
-        'input': () => { callbackInput() },
-        'focus': () => { setTimeout(() => focused())},
-        'blur': () => { setTimeout(() => blurred())},
-        'cut': () => { setTimeout(() => { callbackInput() }, 0) },
-        'click': () => { setTimeout(() => { clicked() }, 0) },
-        'delete': () => { setTimeout(() => { callbackInput() }, 0) },
+        'input': (view, e) => { callbackInput(e.target) },
+        'focus': (view, e) => { setTimeout(() => focused(e.target))},
+        'blur': (view, e) => { setTimeout(() => blurred(e.target))},
+        'cut': (view, e) => { setTimeout(() => { callbackInput(e.target) }, 0) },
+        'click': (view, e) => { setTimeout(() => { clicked(view, e.target) }, 0) },
+        'delete': (view, e) => { setTimeout(() => { callbackInput(e.target) }, 0) },
       },
       handlePaste() {
         setTimeout(() => { callbackInput() }, 0)
@@ -265,10 +287,37 @@ class MarkupEditor {
           }
         };
         resetSelectedID(fromDiv?.attrs.id ?? toDiv?.attrs.id ?? null)  // Set the selectedID to the div's id or null.
-        selectionChanged();
+        selectionChanged(view.dom.getRootNode());
         // clicked(); // TODO: Removed, but is it needed in Swift MarkupEditor?
         return null;                        // Default behavior should occur
       }
     })
+
+    // Make the config visible to the view. This way when we have more than one view, we can use 
+    // the config specific to it (e.g., a placeholder when contents is empty)
+    this.view.config = this.config
+
+    // Track the view by `id` in the global `window.viewRegistry`.
+    this.registerView(this.view, this.id)
+  }
+
+  /**
+   * Hold onto the EditorView instance in the `window.viewRegistry` using `id`.
+   * @param {EditorView} view 
+   * @param {String} id 
+   */
+  registerView(view, id) {
+    if (typeof window.viewRegistry == 'undefined') {
+      window.viewRegistry = {}
+    }
+    window.viewRegistry[id] = view
+  }
+
+  /**
+   * Destroy the EditorView we are holding onto and remove it from the `window.viewRegistry`.
+   */
+  destroy() {
+    delete window.viewRegistry[this.id]
+    this.view.destroy()
   }
 }

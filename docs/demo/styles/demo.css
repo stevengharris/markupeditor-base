@@ -1,3 +1,8 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font: -apple-system-body;
+}
+
 .editor-wrapper {
     display: flex;
     overflow-x: clip;       /* Clip the raw HTML to avoid sideways scroll when hidden */

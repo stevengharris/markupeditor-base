@@ -13,11 +13,9 @@ import {buildInputRules} from "./inputrules"
 import {setPrefix, getMarkupEditorConfig} from "./utilities.js"
 import {LinkItem, ImageItem, SearchItem} from "./menuitems.js"
 import {
-  placeholderText, 
   postMessage, 
   selectedID, 
   searchIsActive, 
-  setPlaceholder,
 } from "../markup"
 
 /**
@@ -116,30 +114,6 @@ const imagePlugin = new Plugin({
 })
 
 /**
- * A simple plugin to show placeholder text when the document is empty.
- * 
- * The placeholder text is imported from markup.js and is set there via setPlaceholder.
- * 
- * Adapted from https://discuss.prosemirror.net/t/how-to-input-like-placeholder-behavior/705/3
- * 
- * @returns {Plugin}
- */
-const placeholderPlugin = new Plugin({
-  props: {
-    decorations(state) {
-      if (!placeholderText) return;   // No need to mess around if we have no placeholder
-      const doc = state.doc
-      if (doc.childCount == 1 && doc.firstChild.isTextblock && doc.firstChild.content.size == 0) {
-        const allSelection = new AllSelection(doc);
-        // The attributes are applied to the empty paragraph and styled based on editor.css
-        const decoration = Decoration.node(allSelection.from, allSelection.to, {class: 'placeholder', placeholder: placeholderText});
-        return DecorationSet.create(doc, [decoration])
-      }
-    }
-  }
-})
-
-/**
  * Insert an array of MenuItems or a single MenuItem at the front of the toolbar
  * @param {[MenuItem] | MenuItem} menuItems 
  */
@@ -202,8 +176,22 @@ export function markupSetup(config, schema) {
   // Add the plugin that handles table borders
   plugins.push(tablePlugin);
 
-  // Add the plugin that handles placeholder display for an empty document
-  if (config?.placeholder) setPlaceholder(config.placeholder)
+  // Add the plugin that handles placeholder display for an empty document, as passed in config
+  // Adapted from https://discuss.prosemirror.net/t/how-to-input-like-placeholder-behavior/705/3
+  const placeholderPlugin = new Plugin({
+    props: {
+      decorations(state) {
+        const doc = state.doc
+        if (doc.childCount == 1 && doc.firstChild.isTextblock && doc.firstChild.content.size == 0) {
+          const allSelection = new AllSelection(doc);
+          // The attributes are applied to the empty paragraph and styled based on editor.css
+          const decoration = Decoration.node(allSelection.from, allSelection.to, { class: 'placeholder', placeholder: this.spec.props.placeholder });
+          return DecorationSet.create(doc, [decoration])
+        }
+      },
+      placeholder: config.placeholder
+    }
+  })
   plugins.push(placeholderPlugin)
 
   // Add the plugin to handle notifying the Swift side of images loading

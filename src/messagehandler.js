@@ -20,8 +20,8 @@ import { loadUserFiles, getHeight } from "./markup";
  * of auto-save method within your app, for example.
  */
 export class MessageHandler {
-    constructor(markupEditor) {
-        this.markupEditor = markupEditor;
+    constructor(editor) {
+        this.editor = editor
     }
 
     /**
@@ -29,35 +29,49 @@ export class MessageHandler {
      * @param {string | JSON} message   The message passed from the MarkupEditor as the state changes. 
      */
     postMessage(message) {
-        let config = this.markupEditor.config
+        let config = this.editor.config
         let delegate = config.delegate
-
         if (message.startsWith('input')) {
             // Some input or change happened in the document, so let the delegate know immediately 
             // if it exists, and return. Input happens with every keystroke and editing operation, 
             // so generally delegate should be doing very little, except perhaps noting that the 
             // document has changed. However, what your delegate does is very application-specific.
-            delegate?.markupInput && delegate?.markupInput(message, this.markupEditor)
+            delegate?.markupInput && delegate?.markupInput(message)
             return
         }
         switch (message) {
-            // The editor posts `ready` when all scripts are loaded, so we can set the HTML. If HTML
-            // is an empty document, then the config.placeholder will be shown.
-            case 'ready':
-                this.loadContents(config)
-                delegate?.markupReady && delegate?.markupReady(this.markupEditor)
+            // The editor posts `ready` when the markupeditor script is loaded, so we can set the HTML. 
+            // If HTML is an empty document, then the config.placeholder will be shown. However, before 
+            // loading the html and/or placeholder, we load any script or css file that the user 
+            // identified into the `target` if it was specified. In the absence of `target`, the user
+            // script is appended to the body and the user css to the head. We need the target to be 
+            // specified when using the MarkupEditor as a web component, in which case the `target`
+            // is the web component itself. The result of `loadUserFiles` is that the `loadedUserFiles`
+            // message is received here, and then content loading can proceed. 
+            case 'ready': 
+                loadUserFiles(config.userScriptFile, config.userCssFile, config.target)
+                return
+            case 'loadedUserFiles':
+                this.loadContents()
+                delegate?.markupReady && delegate?.markupReady()
+                return
+            case 'focus':
+                delegate?.markupDidFocus && delegate?.markupDidFocus()
+                return
+            case 'blur':
+                delegate?.markupDidFocus && delegate?.markupDidBlur()
                 return
             case "updateHeight":
-                delegate?.markupUpdateHeight && delegate?.markupUpdateHeight(getHeight(), this.markupEditor)
+                delegate?.markupUpdateHeight && delegate?.markupUpdateHeight(getHeight())
                 return
             case "selectionChanged":
-                delegate?.markupSelectionChanged && delegate?.markupSelectionChanged(this.markupEditor)
+                delegate?.markupSelectionChanged && delegate?.markupSelectionChanged()
                 return
             case "clicked":
-                delegate?.markupClicked && delegate?.markupClicked(this.markupEditor)
+                delegate?.markupClicked && delegate?.markupClicked()
                 return
             case "searched":
-                delegate?.markupSearched && delegate?.markupSearched(this.markupEditor)
+                delegate?.markupSearched && delegate?.markupSearched()
                 return
             default:
                 // By default, try to process the message as a JSON object, and if it's not parseable, 
@@ -82,7 +96,8 @@ export class MessageHandler {
      * @param {Object} messageData The object obtained by parsing the JSON of a message.
      */
     receivedMessageData(messageData) {
-        let delegate = this.markupEditor.config.delegate
+        let config = this.editor.config
+        let delegate = config.delegate
         let messageType = messageData.messageType
         switch (messageType) {
             case "log":
@@ -110,9 +125,9 @@ export class MessageHandler {
                 // use the old call without divid to maintain compatibility with earlier versions
                 // that did not support multi-contenteditable divs.
                 if ((divId.length == 0) || (divId == "editor")) {
-                    delegate.markupImageAdded(this.markupEditor, messageData.src)
+                    delegate.markupImageAdded(messageData.src)
                 } else if (!divId.length == 0) {
-                    delegate?.markupImageAdded(this.markupEditor, messageData.src, divId)
+                    delegate.markupImageAdded(messageData.src, divId)
                 } else {
                     console.log("Error: The div id for the image could not be decoded.")
                 }
@@ -129,18 +144,12 @@ export class MessageHandler {
         }
     }
 
-    /** This really doesn't do anything for now, but it a placeholder */
-    loadUserFiles(config) {
-        let scriptFiles = config.userScriptFiles
-        let cssFiles = config.userCssFiles
-        loadUserFiles(scriptFiles, cssFiles)
-    }
-
     /** Load the contents from `filename`, or if not specified, from `html` */
-    loadContents(config) {
-        let filename = config.filename;
-        let base = config.base;
-        let focusAfterLoad = config.behavior.focusAfterLoad;
+    loadContents() {
+        let config = this.editor.config
+        let filename = config.filename
+        let base = config.base
+        let focusAfterLoad = config.behavior.focusAfterLoad
         if (filename) {
             fetch(filename)
                 .then((response) => response.text())
@@ -151,10 +160,10 @@ export class MessageHandler {
                 .catch(() => {
                     // But just in case, report a failure if needed.
                     MU.setHTML(`<p>Failed to load ${filename}.</p>`, focusAfterLoad)
-                });
+                })
         } else {
             let html = config.html ?? '<p></p>'
-            MU.setHTML(html, focusAfterLoad)
+            MU.setHTML(html, focusAfterLoad, null, this.editor.view)
         }
     }
 }
