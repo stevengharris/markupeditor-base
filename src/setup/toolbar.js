@@ -35,7 +35,6 @@ class ToolbarView {
     let {dom, update} = renderGrouped(editorView, this.content);
     this.contentUpdate = update;
     this.toolbar.appendChild(dom)
-    this.update();
   }
 
   update() {
