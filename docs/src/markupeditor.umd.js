@@ -16530,7 +16530,114 @@
   */
   const findPrev = findCommand(true, -1);
 
-  /* global schema, viewRegistry */
+  /* global schema */
+
+  class MURegistry {
+      editors = new Map()
+      delegates = new Map()
+      configs = new Map()
+      activeMuId
+
+      getActiveMuId() {
+          return this.activeMuId
+      }
+
+      setActiveMuId(muId) {
+          this.activeMuId = muId;
+      }
+
+      // When we register an editor, it becomes the active editor, so 
+      // activeMuId is always set initially.
+      registerEditor(editor) {
+          this.activeMuId = editor.muId;
+          this.editors.set(editor.muId, editor);
+      }
+
+      unregisterEditor(editor) {
+          delete this.editors.delete(editor.muId);
+      }
+
+      registerDelegate(delegate) {
+          this.delegates.set(delegate.constructor.name, delegate);
+      }
+
+      unregisterDelegate(delegate) {
+          this.delegates.delete(delegate.constructor.name);
+      }
+
+      registerConfig(config) {
+          this.configs.set(config.constructor.name, config);
+      }
+
+      unregisterConfig(config) {
+          this.configs.delete(config.constructor.name);
+      }
+
+      getDelegate(name) {
+          return this.delegates.get(name)
+      }
+
+      getConfig(name) {
+          return this.configs.get(name)
+      }
+
+      viewWithId(muId) {
+          return this.editors.get(muId)?.view
+      }
+
+      activeEditor() {
+          return this.editors.get(this.activeMuId)
+      }
+
+      activeView() {
+          return this.activeEditor()?.view
+      }
+
+      activeDocument() {
+          return this.activeEditor()?.root
+      }
+
+      activeMessageHandler() {
+          return this.activeEditor()?.messageHandler
+      }
+
+      firstEditor() {
+          return this.editors.values().next().value
+      }
+
+      firstView() {
+          return this.firstEditor()?.view
+      }
+
+      firstDocument() {
+          return this.firstEditor()?.root
+      }
+
+      firstMessageHandler() {
+          return (this.firstEditor()?.messageHandler) ?? window.webkit?.messageHandlers?.markup
+      }
+  }
+
+  const muRegistry = new MURegistry();
+  muRegistry.getActiveMuId.bind(muRegistry);
+  const setActiveMuId = muRegistry.setActiveMuId.bind(muRegistry);
+  const registerEditor = muRegistry.registerEditor.bind(muRegistry);
+  const unregisterEditor = muRegistry.unregisterEditor.bind(muRegistry);
+  const activeEditor = muRegistry.activeEditor.bind(muRegistry);
+  const registerDelegate = muRegistry.registerDelegate.bind(muRegistry);
+  muRegistry.unregisterDelegate.bind(muRegistry);
+  const getDelegate = muRegistry.getDelegate.bind(muRegistry);
+  const registerConfig = muRegistry.registerConfig.bind(muRegistry);
+  muRegistry.unregisterConfig.bind(muRegistry);
+  const getConfig = muRegistry.getConfig.bind(muRegistry);
+  muRegistry.viewWithId.bind(muRegistry);
+  const activeView = muRegistry.activeView.bind(muRegistry);
+  const activeDocument = muRegistry.activeDocument.bind(muRegistry);
+  const activeMessageHandler = muRegistry.activeMessageHandler.bind(muRegistry);
+  muRegistry.firstEditor.bind(muRegistry);
+  muRegistry.firstView.bind(muRegistry);
+  muRegistry.firstDocument.bind(muRegistry);
+  muRegistry.firstMessageHandler.bind(muRegistry);
 
   /**
    * The NodeView to support divs, as installed in main.js.
@@ -17494,9 +17601,9 @@
    * However, to allow embedding of MarkupEditor in other environments, such 
    * as VSCode, allow it to be set externally.
    */
-  let messageHandler = (typeof window == 'undefined') ? null : window.webkit?.messageHandlers?.markup;
   function setMessageHandler(handler) {
-      messageHandler = handler;
+      let editor = activeEditor();
+      if (editor) editor.messageHandler = handler;
   }
   /**
    * Called to load user script and CSS before loading html.
@@ -17509,7 +17616,7 @@
   function loadUserFiles(scriptFile, cssFile, target=null) {
       if (scriptFile) {
           if (cssFile) {
-              _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile, target); });
+              _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile, target); }, target);
           } else {
               _loadUserScriptFile(scriptFile, function() { _loadedUserFiles(target); }, target);
           }
@@ -17540,10 +17647,10 @@
    * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
    */
   function _callback(message, element) {
-      if (messageHandler) {
-          messageHandler.postMessage(message);
-      } else {
+      if (element && element.getRootNode() instanceof ShadowRoot) {
           _dispatchMuCallback(message, element);
+      } else {
+          _messageHandler().postMessage(message);
       }
   }
   function _dispatchMuCallback(message, element) {
@@ -17552,24 +17659,34 @@
       element.dispatchEvent(muCallback);
   }
 
+  function _messageHandler() {
+      return activeMessageHandler()
+  }
+
   /**
    * Return the first shadow DOM found in the global `viewRegistry`, or `window.document` if not found.
    */
   function _document() {
-      return _view()?.dom.getRootNode() ?? document
+      return activeDocument()
   }
 
   /**
-   * Return the first non-null EditorView found in the global viewRegistry. 
+   * Return the first non-null EditorView found in the global `window.viewRegistry`. 
    * 
-   * Return null if the viewRegistry is not defined or contains no views. The 
-   * viewRegistry is defined if there are any MarkupEditorElements, the web 
-   * component for the MarkupEditor.
+   * TODO: Fix callers to eliminate this method completely.
+   * 
+   * There was a lot of code that referenced the global `window.view` because it was 
+   * assumed there would only be a single `view` within the `window.document`. With 
+   * the introduction of markupeditor-base (as opposed to just using it in Swift or 
+   * even VSCode) and web components, there could easily be more than one editor.
+   * This _view() method is used to replace the old use of `window.view`, but anywhere
+   * that uses it presupposes that there is only one view within the document.
+   * 
+   * Return null if the `viewRegistry` contains no views. The 
+   * `viewRegistry` is defined when a MarkupEditor instance is created.
    */
   function _view() {
-      if (typeof viewRegistry == 'undefined') return null
-      const key = Object.keys(viewRegistry).find((key) => viewRegistry[key] !== null);
-      return (key) ? viewRegistry[key] : null
+      return activeView()
   }
 
   /**
@@ -17582,7 +17699,7 @@
       _callback('input' + (selectedID ?? ''), element);
   }
   function _callbackReady() {
-      messageHandler?.postMessage('ready');
+      _messageHandler()?.postMessage('ready');
   }
 
   /**
@@ -19435,6 +19552,8 @@
    * Report focus.
    */
   function focused(element) {
+      console.log('activeMuId: ' + element.getRootNode().muId);
+      setActiveMuId(element.getRootNode().muId);
       _callback('focus', element);
   }
 
@@ -19442,6 +19561,8 @@
    * Report blur.
    */
   function blurred(element) {
+      console.log('activeMuId: null');
+      setActiveMuId(null);
       _callback('blur', element);
   }
 
@@ -19454,9 +19575,13 @@
    */
   function stateChanged(view) {
       deactivateSearch(view);
-      selectionChanged(view.dom.getRootNode());
-      callbackInput(view.dom.getRootNode());
+      selectionChanged(_editor(view));
+      callbackInput(_editor(view));
       return false;
+  }
+
+  function _editor(view) {
+      return view.dom.getRootNode().firstChild
   }
 
   /**
@@ -20484,6 +20609,9 @@
       return node && (node.nodeName === 'A');
   }
 
+  /**
+   * DOMAccess provides access to the MarkupToolbar and other well-known elements.
+   */
   class DOMAccess {
 
       constructor(prefix) {
@@ -20543,7 +20671,7 @@
 
   }
 
-  let domAccess = new DOMAccess();
+  const domAccess = new DOMAccess();
   const prefix = domAccess.prefix;
   const setPrefix = domAccess.setPrefix.bind(domAccess);
   const getToolbar = domAccess.getToolbar.bind(domAccess);
@@ -20557,19 +20685,13 @@
   const searchbarShowing = domAccess.searchbarShowing.bind(domAccess);
   const searchbarHidden = domAccess.searchbarHidden.bind(domAccess);
 
+  /* Use window.sessionStorage to get/set MarkupEditor.config */
   function getMarkupEditorConfig() {
     return JSON.parse(window.sessionStorage.getItem("markupEditorConfig"))
   }
 
   function setMarkupEditorConfig(config) {
       window.sessionStorage.setItem("markupEditorConfig", JSON.stringify(config));
-  }
-
-  /* Return a string ID we can use for an HTML element or EditorView */
-  function generateShortId() {
-      const timestamp = Date.now().toString(36); // Convert timestamp to base36
-      const randomPart = Math.random().toString(36).substring(2, 7); // Add a short random string
-      return timestamp + randomPart;
   }
 
   /**
@@ -22899,7 +23021,6 @@
       let {dom, update} = renderGrouped(editorView, this.content);
       this.contentUpdate = update;
       this.toolbar.appendChild(dom);
-      this.update();
     }
 
     update() {
@@ -23479,7 +23600,7 @@
               // if it exists, and return. Input happens with every keystroke and editing operation, 
               // so generally delegate should be doing very little, except perhaps noting that the 
               // document has changed. However, what your delegate does is very application-specific.
-              delegate?.markupInput && delegate?.markupInput(message);
+              delegate?.markupInput && delegate?.markupInput(this.editor);
               return
           }
           switch (message) {
@@ -23624,33 +23745,60 @@
       // with `id` set to "editor".
       this.element = target ?? document.querySelector("#editor");
 
-      // Make sure config always contains menu, keymap, and behavior
+      // Make sure config always contains `toolbar`, `keymap`, and `behavior`.
+      // The three configurations can be specified by string name that is 
+      // dereferenced to an instance using `getConfig`, or as an instance
+      // modeled on ToolbarConfig, KeymapConfig, or BehaviorConfig.
       this.config = config ?? {};
-      if (!this.config.toolbar) this.config.toolbar = ToolbarConfig.standard();
-      if (!this.config.keymap) this.config.keymap = KeymapConfig.standard();
-      if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard();
+      let toolbarConfig = this.config.toolbar;
+
+      // Toolbar configuration
+      if (toolbarConfig) {
+        if (typeof toolbarConfig === 'string') {
+          this.config.toolbar = getConfig(toolbarConfig);
+        } else {
+          this.config.toolbar = toolbarConfig;
+        }
+      } else {
+        this.config.toolbar = ToolbarConfig.standard();
+      }
+
+      // Keymap configuration
+      let keymapConfig = this.config.keymap;
+      if (keymapConfig) {
+        if (typeof keymapConfig === 'string') {
+          this.config.keymap = getConfig(keymapConfig);
+        } else {
+          this.config.keymap = keymapConfig;
+        }
+      } else {
+        this.config.keymap = KeymapConfig.standard();
+      }
+
+      // Behavior configuration
+      let behaviorConfig = this.config.behavior;
+      if (behaviorConfig) {
+        if (typeof behaviorConfig === 'string') {
+          this.config.behavior = getConfig(behaviorConfig);
+        } else {
+          this.config.behavior = behaviorConfig;
+        }
+      } else {
+        this.config.behavior = BehaviorConfig.standard();
+      }
+
       setMarkupEditorConfig(this.config);
 
       // There is only one `schema` for the window, not a separate one for each MarkupEditor instance.
       window.schema = schema$1;
 
-      // Retain an ID for this MarkupEditor and identify the view using it, too. The view will be 
-      // reachable from the window.viewRegistry by this ID.
-      this.id = config.id ?? generateShortId();
+      // If `delegate` is supplied as a string, then dereference it to get the class from muRegistry.
+      let delegate = this.config.delegate;
+      if (delegate && (typeof delegate === 'string')) {
+        this.config.delegate = getDelegate(delegate);
+      }
 
-      // Set up the global `messageHandler` if the element is *not* in the shadow DOM (i.e., 
-      // we are not using the MarkupEditorElement web component). In that case, there is only 
-      // one view and it uses a single instance of MessageHandler, either passed-in as part 
-      // of the `config`, or created here using the default MessageHandler. We communicate 
-      // with the MessageHandler using `postMessage`.
-      // When we are using one or more MarkupEditorElements, we communicate with the individual 
-      // MarkupEditor instances using a `muCallback` CustomEvent that each editor element listens 
-      // for and can take appropriate action for only that element in the shadow DOM, rather than 
-      // for one in window.document.
-      const globalHandler = (this.element.getRootNode() instanceof ShadowRoot) ? null : new MessageHandler(this);
-      this.messageHandler = this.config.messageHandler ?? globalHandler;
-      setMessageHandler(this.messageHandler);
-
+      // Create the EditorView for this MarkupEditor
       this.view = new EditorView(this.element, {
         state: EditorState.create({
           // For the MarkupEditor, we can just use the editor element. 
@@ -23668,15 +23816,15 @@
         // Note the `setTimeout` hack is used to have the function called after the change
         // for things things other than the `input` event.
         handleDOMEvents: {
-          'input': (view, e) => { callbackInput(e.target); },
-          'focus': (view, e) => { setTimeout(() => focused(e.target));},
-          'blur': (view, e) => { setTimeout(() => blurred(e.target));},
-          'cut': (view, e) => { setTimeout(() => { callbackInput(e.target); }, 0); },
-          'click': (view, e) => { setTimeout(() => { clicked(view, e.target); }, 0); },
-          'delete': (view, e) => { setTimeout(() => { callbackInput(e.target); }, 0); },
+          'input': () => { callbackInput(target); },
+          'focus': () => { setTimeout(() => focused(this.element));},
+          'blur': () => { setTimeout(() => blurred(this.element));},
+          'cut': () => { setTimeout(() => { callbackInput(this.element); }, 0); },
+          'click': (view) => { setTimeout(() => { clicked(view, this.element); }, 0); },
+          'delete': () => { setTimeout(() => { callbackInput(this.element); }, 0); },
         },
         handlePaste() {
-          setTimeout(() => { callbackInput(); }, 0);
+          setTimeout(() => { callbackInput(this.element); }, 0);
           return false
         },
         handleKeyDown(view, event) {
@@ -23689,51 +23837,56 @@
           return false
         },
         // Use createSelectionBetween to handle selection and click both.
-        // Here we guard against selecting across divs.
-        createSelectionBetween(view, $anchor, $head) {
-          const divType = view.state.schema.nodes.div;
-          const range = $anchor.blockRange($head);
-          // Find the divs that the anchor and head reside in.
-          // Both, one, or none can be null.
-          const fromDiv = outermostOfTypeAt(divType, range.$from);
-          const toDiv = outermostOfTypeAt(divType, range.$to);
-          // If selection is all within one div, then default occurs; else return existing selection
-          if ((fromDiv || toDiv) && !$anchor.sameParent($head)) {
-            if (fromDiv != toDiv) {
-              return view.state.selection;    // Return the existing selection
-            }
-          }        resetSelectedID(fromDiv?.attrs.id ?? toDiv?.attrs.id ?? null);  // Set the selectedID to the div's id or null.
-          selectionChanged(view.dom.getRootNode());
-          // clicked(); // TODO: Removed, but is it needed in Swift MarkupEditor?
-          return null;                        // Default behavior should occur
-        }
+        // We need access to `this.editor` for `selectionChanged`.
+        // We use it guard against selecting across divs.
+        createSelectionBetween: this.createSelectionBetween.bind(this)
       });
 
-      // Make the config visible to the view. This way when we have more than one view, we can use 
-      // the config specific to it (e.g., a placeholder when contents is empty)
-      this.view.config = this.config;
+      // The `messageHandler` is specific to this `editor` and is accessible from the 
+      // muRegistry or from `firstMessageHandler` when there is only one.
+      this.messageHandler = this.config.messageHandler ?? new MessageHandler(this);
 
-      // Track the view by `id` in the global `window.viewRegistry`.
-      this.registerView(this.view, this.id);
+      // Assign a generated `muId` to the document or shadow root. We can get 
+      // `muId` from the `view.root.muId` if we have `view`, or directly from the `editor`.
+      // Note `muId` is distinct from the `id` of the editor div or the web component id 
+      // if that is set.
+      this.muId = this.generateMuId();
+      this.view.root.muId = this.muId;
+
+      // Finally, track the editor in the muRegistry.
+      registerEditor(this);
     }
 
-    /**
-     * Hold onto the EditorView instance in the `window.viewRegistry` using `id`.
-     * @param {EditorView} view 
-     * @param {String} id 
-     */
-    registerView(view, id) {
-      if (typeof window.viewRegistry == 'undefined') {
-        window.viewRegistry = {};
-      }
-      window.viewRegistry[id] = view;
+    createSelectionBetween(view, $anchor, $head) {
+      const divType = view.state.schema.nodes.div;
+      const range = $anchor.blockRange($head);
+      // Find the divs that the anchor and head reside in.
+      // Both, one, or none can be null.
+      const fromDiv = outermostOfTypeAt(divType, range.$from);
+      const toDiv = outermostOfTypeAt(divType, range.$to);
+      // If selection is all within one div, then default occurs; else return existing selection
+      if ((fromDiv || toDiv) && !$anchor.sameParent($head)) {
+        if (fromDiv != toDiv) {
+          return view.state.selection;    // Return the existing selection
+        }
+      }    resetSelectedID(fromDiv?.attrs.id ?? toDiv?.attrs.id ?? null);  // Set the selectedID to the div's id or null.
+      selectionChanged(this.element);
+      // clicked(); // TODO: Removed, but is it needed in Swift MarkupEditor?
+      return null;                        // Default behavior should occur
     }
 
+    /* Return a string ID we can use for this MarkupEditor */
+    generateMuId() {
+      const timestamp = Date.now().toString(36); // Convert timestamp to base36
+      const randomPart = Math.random().toString(36).substring(2, 7); // Add a short random string
+      return timestamp + randomPart;
+  }
+
     /**
-     * Destroy the EditorView we are holding onto and remove it from the `window.viewRegistry`.
+     * Destroy the EditorView we are holding onto and remove it from the `muRegistry`.
      */
     destroy() {
-      delete window.viewRegistry[this.id];
+      unregisterEditor(this);
       this.view.destroy();
     }
   }
@@ -23784,6 +23937,8 @@
   exports.pasteHTML = pasteHTML;
   exports.pasteText = pasteText;
   exports.prependToolbar = prependToolbar;
+  exports.registerConfig = registerConfig;
+  exports.registerDelegate = registerDelegate;
   exports.removeAllDivs = removeAllDivs;
   exports.removeButton = removeButton;
   exports.removeDiv = removeDiv;
