@@ -36,7 +36,7 @@ export class MessageHandler {
             // if it exists, and return. Input happens with every keystroke and editing operation, 
             // so generally delegate should be doing very little, except perhaps noting that the 
             // document has changed. However, what your delegate does is very application-specific.
-            delegate?.markupInput && delegate?.markupInput(message)
+            delegate?.markupInput && delegate?.markupInput(this.editor)
             return
         }
         switch (message) {
