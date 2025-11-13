@@ -1,3 +1,6 @@
+/**
+ * DOMAccess provides access to the MarkupToolbar and other well-known elements.
+ */
 class DOMAccess {
 
     constructor(prefix) {
@@ -57,7 +60,7 @@ class DOMAccess {
 
 }
 
-let domAccess = new DOMAccess()
+const domAccess = new DOMAccess()
 export const prefix = domAccess.prefix
 export const setPrefix = domAccess.setPrefix.bind(domAccess)
 export const getToolbar = domAccess.getToolbar.bind(domAccess)
@@ -71,19 +74,13 @@ export const promptShowing = domAccess.promptShowing.bind(domAccess)
 export const searchbarShowing = domAccess.searchbarShowing.bind(domAccess)
 export const searchbarHidden = domAccess.searchbarHidden.bind(domAccess)
 
+/* Use window.sessionStorage to get/set MarkupEditor.config */
 export function getMarkupEditorConfig() {
   return JSON.parse(window.sessionStorage.getItem("markupEditorConfig"))
 }
 
 export function setMarkupEditorConfig(config) {
     window.sessionStorage.setItem("markupEditorConfig", JSON.stringify(config));
-}
-
-/* Return a string ID we can use for an HTML element or EditorView */
-export function generateShortId() {
-    const timestamp = Date.now().toString(36); // Convert timestamp to base36
-    const randomPart = Math.random().toString(36).substring(2, 7); // Add a short random string
-    return timestamp + randomPart;
 }
 
 /**
