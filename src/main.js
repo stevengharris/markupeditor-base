@@ -75,6 +75,12 @@ import {
   handleEnter,
   focused,
   blurred,
+  registerEditor,
+  unregisterEditor,
+  registerDelegate,
+  getDelegate,
+  registerConfig,
+  getConfig,
 } from "./markup.js"
 
 import { 
@@ -104,8 +110,7 @@ import {toolbarView} from "./setup/toolbar.js"
 import { 
   getMarkupEditorConfig, 
   setMarkupEditorConfig,
-  generateShortId,
- } from "./setup/utilities.js"
+} from "./setup/utilities.js"
 
 /**
  * The public MarkupEditor API callable as "MU.<function name>"
@@ -191,7 +196,10 @@ export {
   KeymapConfig,
   BehaviorConfig,
   getMarkupEditorConfig,
-  setMarkupEditorConfig
+  setMarkupEditorConfig,
+  // muRegistry access
+  registerDelegate,
+  registerConfig
 }
 
 /**
@@ -207,33 +215,60 @@ class MarkupEditor {
     // with `id` set to "editor".
     this.element = target ?? document.querySelector("#editor")
 
-    // Make sure config always contains menu, keymap, and behavior
+    // Make sure config always contains `toolbar`, `keymap`, and `behavior`.
+    // The three configurations can be specified by string name that is 
+    // dereferenced to an instance using `getConfig`, or as an instance
+    // modeled on ToolbarConfig, KeymapConfig, or BehaviorConfig.
     this.config = config ?? {}
-    if (!this.config.toolbar) this.config.toolbar = ToolbarConfig.standard()
-    if (!this.config.keymap) this.config.keymap = KeymapConfig.standard()
-    if (!this.config.behavior) this.config.behavior = BehaviorConfig.standard()
+    let toolbarConfig = this.config.toolbar
+
+    // Toolbar configuration
+    if (toolbarConfig) {
+      if (typeof toolbarConfig === 'string') {
+        this.config.toolbar = getConfig(toolbarConfig)
+      } else {
+        this.config.toolbar = toolbarConfig
+      }
+    } else {
+      this.config.toolbar = ToolbarConfig.standard()
+    }
+
+    // Keymap configuration
+    let keymapConfig = this.config.keymap
+    if (keymapConfig) {
+      if (typeof keymapConfig === 'string') {
+        this.config.keymap = getConfig(keymapConfig)
+      } else {
+        this.config.keymap = keymapConfig
+      }
+    } else {
+      this.config.keymap = KeymapConfig.standard()
+    }
+
+    // Behavior configuration
+    let behaviorConfig = this.config.behavior
+    if (behaviorConfig) {
+      if (typeof behaviorConfig === 'string') {
+        this.config.behavior = getConfig(behaviorConfig)
+      } else {
+        this.config.behavior = behaviorConfig
+      }
+    } else {
+      this.config.behavior = BehaviorConfig.standard()
+    }
+
     setMarkupEditorConfig(this.config)
 
     // There is only one `schema` for the window, not a separate one for each MarkupEditor instance.
     window.schema = schema
 
-    // Retain an ID for this MarkupEditor and identify the view using it, too. The view will be 
-    // reachable from the window.viewRegistry by this ID.
-    this.id = config.id ?? generateShortId()
+    // If `delegate` is supplied as a string, then dereference it to get the class from muRegistry.
+    let delegate = this.config.delegate
+    if (delegate && (typeof delegate === 'string')) {
+      this.config.delegate = getDelegate(delegate)
+    }
 
-    // Set up the global `messageHandler` if the element is *not* in the shadow DOM (i.e., 
-    // we are not using the MarkupEditorElement web component). In that case, there is only 
-    // one view and it uses a single instance of MessageHandler, either passed-in as part 
-    // of the `config`, or created here using the default MessageHandler. We communicate 
-    // with the MessageHandler using `postMessage`.
-    // When we are using one or more MarkupEditorElements, we communicate with the individual 
-    // MarkupEditor instances using a `muCallback` CustomEvent that each editor element listens 
-    // for and can take appropriate action for only that element in the shadow DOM, rather than 
-    // for one in window.document.
-    const globalHandler = (this.element.getRootNode() instanceof ShadowRoot) ? null : new MessageHandler(this)
-    this.messageHandler = this.config.messageHandler ?? globalHandler
-    setMessageHandler(this.messageHandler)
-
+    // Create the EditorView for this MarkupEditor
     this.view = new EditorView(this.element, {
       state: EditorState.create({
         // For the MarkupEditor, we can just use the editor element. 
@@ -251,15 +286,15 @@ class MarkupEditor {
       // Note the `setTimeout` hack is used to have the function called after the change
       // for things things other than the `input` event.
       handleDOMEvents: {
-        'input': (view, e) => { callbackInput(e.target) },
-        'focus': (view, e) => { setTimeout(() => focused(e.target))},
-        'blur': (view, e) => { setTimeout(() => blurred(e.target))},
-        'cut': (view, e) => { setTimeout(() => { callbackInput(e.target) }, 0) },
-        'click': (view, e) => { setTimeout(() => { clicked(view, e.target) }, 0) },
-        'delete': (view, e) => { setTimeout(() => { callbackInput(e.target) }, 0) },
+        'input': () => { callbackInput(target) },
+        'focus': () => { setTimeout(() => focused(this.element))},
+        'blur': () => { setTimeout(() => blurred(this.element))},
+        'cut': () => { setTimeout(() => { callbackInput(this.element) }, 0) },
+        'click': (view) => { setTimeout(() => { clicked(view, this.element) }, 0) },
+        'delete': () => { setTimeout(() => { callbackInput(this.element) }, 0) },
       },
       handlePaste() {
-        setTimeout(() => { callbackInput() }, 0)
+        setTimeout(() => { callbackInput(this.element) }, 0)
         return false
       },
       handleKeyDown(view, event) {
@@ -272,52 +307,57 @@ class MarkupEditor {
         return false
       },
       // Use createSelectionBetween to handle selection and click both.
-      // Here we guard against selecting across divs.
-      createSelectionBetween(view, $anchor, $head) {
-        const divType = view.state.schema.nodes.div;
-        const range = $anchor.blockRange($head);
-        // Find the divs that the anchor and head reside in.
-        // Both, one, or none can be null.
-        const fromDiv = outermostOfTypeAt(divType, range.$from);
-        const toDiv = outermostOfTypeAt(divType, range.$to);
-        // If selection is all within one div, then default occurs; else return existing selection
-        if ((fromDiv || toDiv) && !$anchor.sameParent($head)) {
-          if (fromDiv != toDiv) {
-            return view.state.selection;    // Return the existing selection
-          }
-        };
-        resetSelectedID(fromDiv?.attrs.id ?? toDiv?.attrs.id ?? null)  // Set the selectedID to the div's id or null.
-        selectionChanged(view.dom.getRootNode());
-        // clicked(); // TODO: Removed, but is it needed in Swift MarkupEditor?
-        return null;                        // Default behavior should occur
-      }
+      // We need access to `this.editor` for `selectionChanged`.
+      // We use it guard against selecting across divs.
+      createSelectionBetween: this.createSelectionBetween.bind(this)
     })
 
-    // Make the config visible to the view. This way when we have more than one view, we can use 
-    // the config specific to it (e.g., a placeholder when contents is empty)
-    this.view.config = this.config
+    // The `messageHandler` is specific to this `editor` and is accessible from the 
+    // muRegistry or from `firstMessageHandler` when there is only one.
+    this.messageHandler = this.config.messageHandler ?? new MessageHandler(this)
 
-    // Track the view by `id` in the global `window.viewRegistry`.
-    this.registerView(this.view, this.id)
+    // Assign a generated `muId` to the document or shadow root. We can get 
+    // `muId` from the `view.root.muId` if we have `view`, or directly from the `editor`.
+    // Note `muId` is distinct from the `id` of the editor div or the web component id 
+    // if that is set.
+    this.muId = this.generateMuId()
+    this.view.root.muId = this.muId
+
+    // Finally, track the editor in the muRegistry.
+    registerEditor(this)
   }
 
-  /**
-   * Hold onto the EditorView instance in the `window.viewRegistry` using `id`.
-   * @param {EditorView} view 
-   * @param {String} id 
-   */
-  registerView(view, id) {
-    if (typeof window.viewRegistry == 'undefined') {
-      window.viewRegistry = {}
-    }
-    window.viewRegistry[id] = view
+  createSelectionBetween(view, $anchor, $head) {
+    const divType = view.state.schema.nodes.div;
+    const range = $anchor.blockRange($head);
+    // Find the divs that the anchor and head reside in.
+    // Both, one, or none can be null.
+    const fromDiv = outermostOfTypeAt(divType, range.$from);
+    const toDiv = outermostOfTypeAt(divType, range.$to);
+    // If selection is all within one div, then default occurs; else return existing selection
+    if ((fromDiv || toDiv) && !$anchor.sameParent($head)) {
+      if (fromDiv != toDiv) {
+        return view.state.selection;    // Return the existing selection
+      }
+    };
+    resetSelectedID(fromDiv?.attrs.id ?? toDiv?.attrs.id ?? null)  // Set the selectedID to the div's id or null.
+    selectionChanged(this.element);
+    // clicked(); // TODO: Removed, but is it needed in Swift MarkupEditor?
+    return null;                        // Default behavior should occur
   }
 
+  /* Return a string ID we can use for this MarkupEditor */
+  generateMuId() {
+    const timestamp = Date.now().toString(36); // Convert timestamp to base36
+    const randomPart = Math.random().toString(36).substring(2, 7); // Add a short random string
+    return timestamp + randomPart;
+}
+
   /**
-   * Destroy the EditorView we are holding onto and remove it from the `window.viewRegistry`.
+   * Destroy the EditorView we are holding onto and remove it from the `muRegistry`.
    */
   destroy() {
-    delete window.viewRegistry[this.id]
+    unregisterEditor(this)
     this.view.destroy()
   }
 }
