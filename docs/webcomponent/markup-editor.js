@@ -1,18 +1,34 @@
+// Track a global indicating that the MarkupEditor base script was loaded
+window.markupEditorScriptLoaded = window.markupEditorScriptLoaded || false; // Initialize if not already present
+
 /**
  * MarkupEditorElement is the Web Component for the MarkupEditor.
  * 
- * The lifecycle and resulting document structure is probably most interesting 
- * aspect of the MarkupEditor, especially when the HTML page can contain multiple 
- * MarkupEditorElements. The MarkupEditor "base" script should be loaded 
- * once in the `body` of the document that is using one or more MarkupEditorElements.
- * However, part of the beauty of Web Components is that they can hide the 
- * implementation details, and how/when to load the MarkupEditor base script
- * is definitely something the Web Component should shield users from.  f'input
+ * The lifecycle and resulting document structure are probably most interesting 
+ * aspects of the MarkupEditorElement, especially when the HTML page can contain  
+ * multiple of them. The MarkupEditor "base" script should be loaded only
+ * once in the first (or only) MarkupEditorElement. It defines the global `MU`
+ * along with the global `muRegistry` with exported methods to access it.
+ * 
+ * We use the `connectedCallback`, which is called for each MarkupEditorElement, 
+ * to trigger appending MarkupEditor base script only once. It's loaded into 
+ * the first MarkupEditorElement, and produces the global MU the provides access
+ * to all editor functionality regardless of where subsequent scripts are run.
+ * When the base script finishes loading, we dispatch the `ready` `muCallback` 
+ * event for each MarkupEditorElement instance in `document`. From that point, 
+ * the MarkupEditor styling is appended for editor set up for each individual 
+ * MarkupEditorElement instance. Any user-supplied script and styling are also 
+ * appended. Once those are appended (and even if they are not specified), the 
+ * `loadedUserFiles` `muCallback` is dispatched for the MarkupEditorElement 
+ * instance, and we can finally `createEditor` for the element and set its HTML 
+ * contents.
  */
-window.markupEditorScriptLoaded = window.markupEditorScriptLoaded || false; // Initialize if not already present
-
 class MarkupEditorElement extends HTMLElement {
 
+  /** 
+   * Construct the MarkupEditorElement and set up the events to listen-to that 
+   * drive loading of scripts, styles, configuration, and contents.
+   */
   constructor() {
     // Establish prototype chain
     super()
@@ -27,26 +43,37 @@ class MarkupEditorElement extends HTMLElement {
     this.editorContainer.classList.add('markup-editor')
     this.editorContainer.setAttribute('id', 'editor')
 
-    // The `ready` event happens at a document level, and results in a
-    // `muCallback` being dispatched to each MarkupEditorElement in the 
-    // document. This MarkupEditorElement instance then calls `appendEditorStyle`
-    // to load markupeditor.css, which has to be loaded for each instance 
-    // of MarkupEditorElement, since the actual `editor` element (held as 
-    // `this.editorContainer`) is in the shadow DOM.
+    // The `muCallback` `ready` event is dispatched to *each* MarkupEditorElement 
+    // in the document. Each MarkupEditorElement instance then calls 
+    // `appendEditorStyle` to load `markupeditor.css`, which has to be loaded 
+    // for each instance of MarkupEditorElement, since the actual `editor` 
+    // element (i.e., `this.editorContainer`) is in the shadow DOM.
+
+    // Have this MarkupEditorElement instance listen for the `ready` callback
+    // that is dispatched from `loadedEditorScript`.
     this.addEventListener('muCallback', (e) => {
       console.log(`muCallback(${e.message}) on MarkupEditorElement`)
-      if (e.message == 'ready') {
-        this.appendEditorStyle()
-      } else {
-        console.log(' Did nothing.')
+      switch (e.message) {
+        case 'ready':
+          this.appendEditorStyle()
+          break
+        default:
+          console.log(' Did nothing.')
       }
     })
+
+    // Have the `editorContainer` listen for callbacks from within the 
+    // MarkupEditor base script, dispatched from `_callback`. Messages
+    // other than `loadedUserFiles` are handled by the `messageHandler` 
+    // for the `view`. This way a user can override `messageHandler` 
     this.editorContainer.addEventListener('muCallback', (e) => {
-      console.log(`muCallback(${e.message}) on editor`)
-      if (e.message == 'loadedUserFiles') {
-        this.createEditor()
-      } else {
-        console.log(' Did nothing.')
+      console.log(`muCallback(${e.message}) on editorContainer`)
+      switch (e.message) {
+        case 'loadedUserFiles':
+          this.createEditor()
+          break
+        default:
+          this.editor.messageHandler.postMessage(e.message)
       }
     })
 
@@ -75,7 +102,7 @@ class MarkupEditorElement extends HTMLElement {
    * 
    * In the spirit of undoing what `connectedCallback` did, we have to destroy
    * the ProseMirror EditorView held by the MarkupEditor instance in `this.editor`
-   * as well as remove it from the window.viewRegistry. The editor does this in 
+   * as well as remove it from the `window.viewRegistry`. The editor does this in 
    * its `destroy` method.
    */
   disconnectedCallback() {
@@ -84,24 +111,39 @@ class MarkupEditorElement extends HTMLElement {
 	}
 
   /**
-   * Append the MarkupEditor script to the body.
+   * Dispatch a `muCallback` event on `element`.
+   * @param {String} message        The message (could be stringified JSON) to be dispatch to `element`
+   * @param {HTMLElement} element   The HTMLElement that should be listening for `muCallback`.
+   */
+  dispatchMuCallback(message, element) {
+    const muCallback = new CustomEvent("muCallback")
+    muCallback.message = message
+    element.dispatchEvent(muCallback)
+  }
+
+  /**
+   * Append the MarkupEditor script to the body only once.
    * 
    * The MarkupEditor script will dispatch a muCallback('ready') to this instance 
-   * that results in `appendEditorStyle` being called next. An `onload` listener 
-   * for baseScript doesn't fire, so we have to use the one attached to `window` 
-   * that exists in the MarkupEditor script itself.
+   * that results in `appendEditorStyle` being called next.
    */
   appendEditorScript() {
     if (window.markupEditorScriptLoaded) return  // Only load it once
     window.markupEditorScriptLoaded = true
     console.log('appendEditorScript')
-    const scriptPath = this.getAttribute('scriptpath')
+    const muScript = this.getAttribute('muScript') ?? './markupeditor.umd.js'
     const baseScript = document.createElement('script')
-    baseScript.setAttribute('src', `${scriptPath}/markupeditor.umd.js`)
+    baseScript.setAttribute('src', muScript)
     baseScript.addEventListener('load', this.loadedEditorScript.bind(this))
-    document.body.appendChild(baseScript)
+    this.editorContainer.appendChild(baseScript)
   }
 
+  /**
+   * The MarkupEditor base styling, markupeditor.css loaded.
+   * 
+   * Dispatch the `ready` `muCallback` to each MarkupEditorElement.
+   * Called once after the MarkupEditor base script has loaded.
+   */
   loadedEditorScript() {
     const webComponents = document.querySelectorAll('markup-editor')
     webComponents.forEach((element) => {
@@ -109,44 +151,49 @@ class MarkupEditorElement extends HTMLElement {
     })
   }
 
-  dispatchMuCallback(message, element) {
-    const muCallback = new CustomEvent("muCallback")
-    muCallback.message = message
-    element.dispatchEvent(muCallback)
-  }
-
+  /**
+   * Append the MarkupEditor styling to the `editorContainer`, because they should be styled independently 
+   * of the document they are embedded in.
+   * 
+   * Upon loading, invoke `loadUserFiles` with any user-specified script and styling that will follow 
+   * the MarkupEditor styling. The `loadUserFiles` results in a `loadedUserFiles` `muCallback` that 
+   * (finally) creates the MarkupEditor and sets its HTML.
+   */
   appendEditorStyle() {
     console.log('appendEditorStyle')
-    const stylePath = this.getAttribute('stylepath')
+    const muStyle = this.getAttribute('mustyle') ?? './markupeditor.css'
     const link = document.createElement('link')
-    link.setAttribute('href', `${stylePath}/markupeditor.css`)
+    link.setAttribute('href', muStyle)
     link.setAttribute('rel', 'stylesheet')
-    const userCssFile = this.getAttribute('cssfile')
-    link.onload = () => { MU.loadUserFiles(null, userCssFile, this.editorContainer) }
+    const userStyle = this.getAttribute('userstyle')
+    const userScript = this.getAttribute('userscript')
+    link.onload = () => { MU.loadUserFiles(userScript, userStyle, this.editorContainer) }
     this.editorContainer.appendChild(link)
   }
 
-  async createEditor() {
+  /**
+   * Create the MarkupEditor instance for this MarkupEditorElement.
+   * 
+   * Use the attributes from the <markup-editor> element to set up the 
+   * configuration. Set the initial HTML based on the `innerHTML` for the 
+   * <markup-editor> element, which will be overridden by `filename` contents 
+   * if it it specified and if the editor is running in an environment that 
+   * has access to the file system (e.g., node.js, but not a browser).
+   */
+  createEditor() {
     console.log('createEditor')
-    const id = this.getAttribute('id')
-    const html = this.getAttribute('html')
-    const filename = this.getAttribute('filename')
-    const placeholder = this.getAttribute('placeholder')
-    const config = { id: id, html: html, filename: filename, placeholder: placeholder }
+    const config = { 
+      filename: this.getAttribute('filename'), 
+      placeholder: this.getAttribute('placeholder'), 
+      delegate: this.getAttribute('delegate'),
+      toolbar: this.getAttribute('toolbar'),
+      behavior: this.getAttribute('behavior'),
+      keymap: this.getAttribute('keymap')
+     }
     this.editor = new MU.MarkupEditor(this.editorContainer, config)
-    MU.setHTML(html, null, null, this.editor.view)
+    MU.setHTML(this.innerHTML, null, null, this.editor.view)
   }
 
-  sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-}
-
-class MessageHandler {
-  postMessage(message) {
-    console.log('Got message: ' + message)
-  }
 }
 
 // Let the browser know about the custom element
