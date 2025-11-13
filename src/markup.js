@@ -1,4 +1,4 @@
-/* global schema, viewRegistry */
+/* global schema */
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
 import {DOMParser, DOMSerializer} from 'prosemirror-model'
 import {toggleMark} from 'prosemirror-commands'
@@ -18,6 +18,113 @@ import {
     toggleHeaderRow,
 } from 'prosemirror-tables'
 import {SearchQuery, setSearchState, findNext, findPrev, getMatchHighlights} from 'prosemirror-search'
+
+class MURegistry {
+    editors = new Map()
+    delegates = new Map()
+    configs = new Map()
+    activeMuId
+
+    getActiveMuId() {
+        return this.activeMuId
+    }
+
+    setActiveMuId(muId) {
+        this.activeMuId = muId
+    }
+
+    // When we register an editor, it becomes the active editor, so 
+    // activeMuId is always set initially.
+    registerEditor(editor) {
+        this.activeMuId = editor.muId
+        this.editors.set(editor.muId, editor)
+    }
+
+    unregisterEditor(editor) {
+        delete this.editors.delete(editor.muId)
+    }
+
+    registerDelegate(delegate) {
+        this.delegates.set(delegate.constructor.name, delegate)
+    }
+
+    unregisterDelegate(delegate) {
+        this.delegates.delete(delegate.constructor.name)
+    }
+
+    registerConfig(config) {
+        this.configs.set(config.constructor.name, config)
+    }
+
+    unregisterConfig(config) {
+        this.configs.delete(config.constructor.name)
+    }
+
+    getDelegate(name) {
+        return this.delegates.get(name)
+    }
+
+    getConfig(name) {
+        return this.configs.get(name)
+    }
+
+    viewWithId(muId) {
+        return this.editors.get(muId)?.view
+    }
+
+    activeEditor() {
+        return this.editors.get(this.activeMuId)
+    }
+
+    activeView() {
+        return this.activeEditor()?.view
+    }
+
+    activeDocument() {
+        return this.activeEditor()?.root
+    }
+
+    activeMessageHandler() {
+        return this.activeEditor()?.messageHandler
+    }
+
+    firstEditor() {
+        return this.editors.values().next().value
+    }
+
+    firstView() {
+        return this.firstEditor()?.view
+    }
+
+    firstDocument() {
+        return this.firstEditor()?.root
+    }
+
+    firstMessageHandler() {
+        return (this.firstEditor()?.messageHandler) ?? window.webkit?.messageHandlers?.markup
+    }
+}
+
+const muRegistry = new MURegistry()
+export const getActiveMuId = muRegistry.getActiveMuId.bind(muRegistry)
+export const setActiveMuId = muRegistry.setActiveMuId.bind(muRegistry)
+export const registerEditor = muRegistry.registerEditor.bind(muRegistry)
+export const unregisterEditor = muRegistry.unregisterEditor.bind(muRegistry)
+export const activeEditor = muRegistry.activeEditor.bind(muRegistry)
+export const registerDelegate = muRegistry.registerDelegate.bind(muRegistry)
+export const unregisterDelegate = muRegistry.unregisterDelegate.bind(muRegistry)
+export const getDelegate = muRegistry.getDelegate.bind(muRegistry)
+export const registerConfig = muRegistry.registerConfig.bind(muRegistry)
+export const unregisterConfig = muRegistry.unregisterConfig.bind(muRegistry)
+export const getConfig = muRegistry.getConfig.bind(muRegistry)
+export const viewWithId = muRegistry.viewWithId.bind(muRegistry)
+export const activeView = muRegistry.activeView.bind(muRegistry)
+export const activeDocument = muRegistry.activeDocument.bind(muRegistry)
+export const activeMessageHandler = muRegistry.activeMessageHandler.bind(muRegistry)
+export const firstEditor = muRegistry.firstEditor.bind(muRegistry)
+export const firstView = muRegistry.firstView.bind(muRegistry)
+export const firstDocument = muRegistry.firstDocument.bind(muRegistry)
+export const firstMessageHandler = muRegistry.firstMessageHandler.bind(muRegistry)
 
 /**
  * The NodeView to support divs, as installed in main.js.
@@ -1006,9 +1113,9 @@ export function setTopLevelAttributes(jsonString) {
  * However, to allow embedding of MarkupEditor in other environments, such 
  * as VSCode, allow it to be set externally.
  */
-let messageHandler = (typeof window == 'undefined') ? null : window.webkit?.messageHandlers?.markup;
 export function setMessageHandler(handler) {
-    messageHandler = handler;
+    let editor = activeEditor()
+    if (editor) editor.messageHandler = handler
 };
 
 /**
@@ -1022,7 +1129,7 @@ export function setMessageHandler(handler) {
 export function loadUserFiles(scriptFile, cssFile, target=null) {
     if (scriptFile) {
         if (cssFile) {
-            _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile, target) });
+            _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile, target) }, target);
         } else {
             _loadUserScriptFile(scriptFile, function() { _loadedUserFiles(target) }, target);
         }
@@ -1054,10 +1161,10 @@ export function loadUserFiles(scriptFile, cssFile, target=null) {
  * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
  */
 function _callback(message, element) {
-    if (messageHandler) {
-        messageHandler.postMessage(message)
-    } else {
+    if (element && element.getRootNode() instanceof ShadowRoot) {
         _dispatchMuCallback(message, element)
+    } else {
+        _messageHandler().postMessage(message)
     }
 };
 
@@ -1067,24 +1174,34 @@ function _dispatchMuCallback(message, element) {
     element.dispatchEvent(muCallback)
 }
 
+function _messageHandler() {
+    return activeMessageHandler()
+}
+
 /**
  * Return the first shadow DOM found in the global `viewRegistry`, or `window.document` if not found.
  */
 function _document() {
-    return _view()?.dom.getRootNode() ?? document
+    return activeDocument()
 }
 
 /**
- * Return the first non-null EditorView found in the global viewRegistry. 
+ * Return the first non-null EditorView found in the global `window.viewRegistry`. 
  * 
- * Return null if the viewRegistry is not defined or contains no views. The 
- * viewRegistry is defined if there are any MarkupEditorElements, the web 
- * component for the MarkupEditor.
+ * TODO: Fix callers to eliminate this method completely.
+ * 
+ * There was a lot of code that referenced the global `window.view` because it was 
+ * assumed there would only be a single `view` within the `window.document`. With 
+ * the introduction of markupeditor-base (as opposed to just using it in Swift or 
+ * even VSCode) and web components, there could easily be more than one editor.
+ * This _view() method is used to replace the old use of `window.view`, but anywhere
+ * that uses it presupposes that there is only one view within the document.
+ * 
+ * Return null if the `viewRegistry` contains no views. The 
+ * `viewRegistry` is defined when a MarkupEditor instance is created.
  */
 function _view() {
-    if (typeof viewRegistry == 'undefined') return null
-    const key = Object.keys(viewRegistry).find((key) => viewRegistry[key] !== null)
-    return (key) ? viewRegistry[key] : null
+    return activeView()
 }
 
 /**
@@ -1098,7 +1215,7 @@ export function callbackInput(element) {
 };
 
 function _callbackReady() {
-    messageHandler?.postMessage('ready')
+    _messageHandler()?.postMessage('ready')
 }
 
 /**
@@ -3050,6 +3167,8 @@ export function clicked(view, element) {
  * Report focus.
  */
 export function focused(element) {
+    console.log('activeMuId: ' + element.getRootNode().muId)
+    setActiveMuId(element.getRootNode().muId)
     _callback('focus', element)
 }
 
@@ -3057,6 +3176,8 @@ export function focused(element) {
  * Report blur.
  */
 export function blurred(element) {
+    console.log('activeMuId: null')
+    setActiveMuId(null)
     _callback('blur', element)
 }
 
@@ -3069,9 +3190,13 @@ export function blurred(element) {
  */
 export function stateChanged(view) {
     deactivateSearch(view)
-    selectionChanged(view.dom.getRootNode())
-    callbackInput(view.dom.getRootNode())
+    selectionChanged(_editor(view))
+    callbackInput(_editor(view))
     return false;
+}
+
+function _editor(view) {
+    return view.dom.getRootNode().firstChild
 }
 
 /**
