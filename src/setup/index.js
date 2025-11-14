@@ -10,13 +10,14 @@ import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
-import {setPrefix, getMarkupEditorConfig} from "./utilities.js"
+import {setPrefix} from "../domaccess.js"
 import {LinkItem, ImageItem, SearchItem} from "./menuitems.js"
 import {
   postMessage, 
   selectedID, 
   searchIsActive, 
 } from "../markup"
+import { activeConfig } from "../registry.js"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 
@@ -132,20 +133,20 @@ export function appendToolbar(menuItems) {
 }
 
 export function toggleSearch() {
-  let searchItem = new SearchItem(getMarkupEditorConfig())
+  let searchItem = new SearchItem(activeConfig())
   // TODO: How to not rely on toolbarView being present
   let view = toolbarView.editorView
   searchItem.toggleSearch(view.state, view.dispatch, view)
 }
 
 export function openLinkDialog() {
-  let linkItem = new LinkItem(getMarkupEditorConfig())
+  let linkItem = new LinkItem(activeConfig())
   let view = toolbarView.editorView
   linkItem.openDialog(view.state, view.dispatch, view)
 }
 
 export function openImageDialog() {
-  let imageItem = new ImageItem(getMarkupEditorConfig())
+  let imageItem = new ImageItem(activeConfig())
   let view = toolbarView.editorView
   imageItem.openDialog(view.state, view.dispatch, view)
 }

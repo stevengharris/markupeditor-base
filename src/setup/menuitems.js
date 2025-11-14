@@ -1,10 +1,7 @@
-/* global view */
 import crel from "crelt";
 import { icons, getIcon } from "./icons";
 import { 
     prefix, 
-    setClass, 
-    translate, 
     getToolbar, 
     getWrapper, 
     getToolbarMore, 
@@ -13,7 +10,11 @@ import {
     removePromptShowing,
     searchbarShowing, 
     searchbarHidden 
-} from "./utilities";
+} from "../domaccess";
+import {
+    setClass, 
+    translate, 
+} from "../utilities"
 import {
     setStyleCommand,
     insertTableCommand,
@@ -32,8 +33,9 @@ import {
     matchCase,
     matchCount,
     matchIndex,
-    headers
+    headers,
 } from "../markup"
+import { activeView, setActiveView } from "../registry"
 
 /**
 An icon or label that, when clicked, executes a command.
@@ -315,6 +317,7 @@ class DialogItem {
      * @param {EditorView} view 
      */
     openDialog(state, dispatch, view) {
+      setActiveView(view)
         this.createDialog(view)
         this.dialog.show();
     }
@@ -328,7 +331,7 @@ class DialogItem {
         this.selectionDiv.style.left = this.selectionDivRect.left + 'px'
         this.selectionDiv.style.width = this.selectionDivRect.width + 'px'
         this.selectionDiv.style.height = this.selectionDivRect.height + 'px'
-        getWrapper(view).appendChild(this.selectionDiv)
+        getWrapper(activeView()).appendChild(this.selectionDiv)
     }
 
     /**
@@ -336,7 +339,7 @@ class DialogItem {
      * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
      */
     getSelectionDivRect() {
-        let wrapper = view.dom.parentElement;
+        let wrapper = activeView().dom.parentElement;
         let originY = wrapper.getBoundingClientRect().top;
         let originX = wrapper.getBoundingClientRect().left;
         let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
@@ -355,6 +358,7 @@ class DialogItem {
      * Set the `dialog` location on the screen so it is adjacent to the selection.
      */
     setDialogLocation() {
+        let view = activeView()
         let dialogHeight = this.dialogHeight;
         let dialogWidth = this.dialogWidth
 
@@ -400,7 +404,7 @@ class DialogItem {
      * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
      */
     closeDialog() {
-        removePromptShowing(view)
+        removePromptShowing(activeView())
         this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
         this.overlay?.parentElement?.removeChild(this.overlay)
         this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
@@ -627,7 +631,7 @@ export class LinkItem extends DialogItem {
 
   getLocalRefItems() {
     let submenuItems = []
-    let headersByLevel = headers(view.state)
+    let headersByLevel = headers(activeView().state)
     for (let i = 1; i < 7; i++) {
       let hTag = 'H' + i.toString()
       let menuItems = []
@@ -653,6 +657,7 @@ export class LinkItem extends DialogItem {
   // The `insertInternalLinkCommand` executes the callback providing a unique id for the header based on its 
   // contents, along with the tag and index into headers with that tag in the document being edited.
   refMenuItem(hTag, index, label) {
+    let view = activeView()
     return cmdItem(
       idForInternalLinkCommand(hTag, index), 
       { 
@@ -948,6 +953,7 @@ export class ImageItem extends DialogItem {
   }
 
   getPreview() {
+    let view = activeView()
     let preview = crel('img')
     preview.style.visibility = 'hidden';
     preview.addEventListener('load', () => {
@@ -1087,7 +1093,7 @@ export class TableCreateSubmenu {
   onMouseover(rows, cols) {
     this.rowSize = rows
     this.colSize = cols
-    this.itemsUpdate(view.state)
+    this.itemsUpdate(activeView().state)
   }
 
   resetSize() {
@@ -1162,10 +1168,22 @@ export class SearchItem {
   }
 
   showing() {
+    let view = activeView()
     return (typeof view != 'undefined') ? getSearchbar(view) != null : false
   }
 
+  /**
+   * Toggle the search bar on/off.
+   * 
+   * Note that this happens when pressing the search button in `view`, so we set the 
+   * active `muId` rather than depend on it having been set from a focus event.
+   * 
+   * @param {EditorState} state 
+   * @param {fn(tr: Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
   toggleSearch(state, dispatch, view) {
+    setActiveView(view)
     if (this.showing()) {
       this.hideSearchbar()
     } else {
@@ -1175,17 +1193,20 @@ export class SearchItem {
   }
 
   hideSearchbar() {
-    let searchbar = getSearchbar(view);
-    searchbar.parentElement.removeChild(searchbar);
-    this.matchCaseDom = null;
-    this.matchCaseItem = null;
-    this.stopSearching();
+    let view = activeView()
+    if (view) {
+      let searchbar = getSearchbar(view);
+      searchbar.parentElement.removeChild(searchbar);
+      this.matchCaseDom = null;
+      this.matchCaseItem = null;
+      this.stopSearching();
+    }
   }
 
   stopSearching(focus=true) {
     cancelSearch();
     this.setStatus();
-    if (focus) view.focus();
+    if (focus) activeView()?.focus();
   }
 
   showSearchbar(state, dispatch, view) {
@@ -1342,7 +1363,7 @@ export class MoreItem {
   }
 
   showing() {
-    return getToolbarMore(view) != null;
+    return getToolbarMore(activeView()) != null;
   }
 
   toggleMore(state, dispatch, view) {
@@ -1355,7 +1376,7 @@ export class MoreItem {
   }
 
   hideMore() {
-    let toolbarMore = getToolbarMore(view);
+    let toolbarMore = getToolbarMore(activeView());
     toolbarMore.parentElement.removeChild(toolbarMore);
   }
 

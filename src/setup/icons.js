@@ -1,4 +1,4 @@
-import { prefix } from "./utilities";
+import { prefix } from "../domaccess.js"
 
 /**
  *  A set of MarkupEditor icons. Used to identify the icon for a 

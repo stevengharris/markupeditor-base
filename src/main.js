@@ -5,9 +5,6 @@ import {schema} from "./schema/index.js"
 import {markupSetup} from "./setup/index.js"
 
 import {
-  DivView,
-  ImageView,
-  LinkView,
   setTopLevelAttributes,
   setMessageHandler,
   loadUserFiles,
@@ -75,13 +72,22 @@ import {
   handleEnter,
   focused,
   blurred,
+} from "./markup.js"
+
+import {LinkView} from "./nodeviews/linkview.js"
+import {ImageView} from "./nodeviews/imageview.js"
+import {DivView} from "./nodeviews/divview.js"
+
+import {Searcher} from "./searcher.js"
+
+import {
   registerEditor,
   unregisterEditor,
   registerDelegate,
   getDelegate,
   registerConfig,
   getConfig,
-} from "./markup.js"
+} from "./registry.js"
 
 import { 
   MenuItem,
@@ -106,11 +112,6 @@ import {
 
 import {MessageHandler} from "./messagehandler.js"
 import {toolbarView} from "./setup/toolbar.js"
-
-import { 
-  getMarkupEditorConfig, 
-  setMarkupEditorConfig,
-} from "./setup/utilities.js"
 
 /**
  * The public MarkupEditor API callable as "MU.<function name>"
@@ -195,8 +196,6 @@ export {
   ToolbarConfig,
   KeymapConfig,
   BehaviorConfig,
-  getMarkupEditorConfig,
-  setMarkupEditorConfig,
   // muRegistry access
   registerDelegate,
   registerConfig
@@ -225,11 +224,14 @@ class MarkupEditor {
     // Toolbar configuration
     if (toolbarConfig) {
       if (typeof toolbarConfig === 'string') {
+        console.log("toolbarConfig1: " + toolbarConfig)
         this.config.toolbar = getConfig(toolbarConfig)
       } else {
+        console.log("toolbarConfig2: " + toolbarConfig)
         this.config.toolbar = toolbarConfig
       }
     } else {
+      console.log("toolbarConfig3: " + toolbarConfig)
       this.config.toolbar = ToolbarConfig.standard()
     }
 
@@ -256,11 +258,6 @@ class MarkupEditor {
     } else {
       this.config.behavior = BehaviorConfig.standard()
     }
-
-    setMarkupEditorConfig(this.config)
-
-    // There is only one `schema` for the window, not a separate one for each MarkupEditor instance.
-    window.schema = schema
 
     // If `delegate` is supplied as a string, then dereference it to get the class from muRegistry.
     let delegate = this.config.delegate
@@ -322,6 +319,9 @@ class MarkupEditor {
     // if that is set.
     this.muId = this.generateMuId()
     this.view.root.muId = this.muId
+
+    // Track the Searcher instance for this editor, using the same muId
+    this.searcher = new Searcher()
 
     // Finally, track the editor in the muRegistry.
     registerEditor(this)

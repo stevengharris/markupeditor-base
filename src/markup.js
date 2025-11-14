@@ -1,4 +1,5 @@
-/* global schema */
+import {activeEditor, activeView, activeMessageHandler, activeDocument, setActiveDocument, activeSearcher} from './registry'
+import {schema} from "./schema/index.js"
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
 import {DOMParser, DOMSerializer} from 'prosemirror-model'
 import {toggleMark} from 'prosemirror-commands'
@@ -17,731 +18,6 @@ import {
     mergeCells,
     toggleHeaderRow,
 } from 'prosemirror-tables'
-import {SearchQuery, setSearchState, findNext, findPrev, getMatchHighlights} from 'prosemirror-search'
-
-class MURegistry {
-    editors = new Map()
-    delegates = new Map()
-    configs = new Map()
-    activeMuId
-
-    getActiveMuId() {
-        return this.activeMuId
-    }
-
-    setActiveMuId(muId) {
-        this.activeMuId = muId
-    }
-
-    // When we register an editor, it becomes the active editor, so 
-    // activeMuId is always set initially.
-    registerEditor(editor) {
-        this.activeMuId = editor.muId
-        this.editors.set(editor.muId, editor)
-    }
-
-    unregisterEditor(editor) {
-        delete this.editors.delete(editor.muId)
-    }
-
-    registerDelegate(delegate) {
-        this.delegates.set(delegate.constructor.name, delegate)
-    }
-
-    unregisterDelegate(delegate) {
-        this.delegates.delete(delegate.constructor.name)
-    }
-
-    registerConfig(config) {
-        this.configs.set(config.constructor.name, config)
-    }
-
-    unregisterConfig(config) {
-        this.configs.delete(config.constructor.name)
-    }
-
-    getDelegate(name) {
-        return this.delegates.get(name)
-    }
-
-    getConfig(name) {
-        return this.configs.get(name)
-    }
-
-    viewWithId(muId) {
-        return this.editors.get(muId)?.view
-    }
-
-    activeEditor() {
-        return this.editors.get(this.activeMuId)
-    }
-
-    activeView() {
-        return this.activeEditor()?.view
-    }
-
-    activeDocument() {
-        return this.activeEditor()?.root
-    }
-
-    activeMessageHandler() {
-        return this.activeEditor()?.messageHandler
-    }
-
-    firstEditor() {
-        return this.editors.values().next().value
-    }
-
-    firstView() {
-        return this.firstEditor()?.view
-    }
-
-    firstDocument() {
-        return this.firstEditor()?.root
-    }
-
-    firstMessageHandler() {
-        return (this.firstEditor()?.messageHandler) ?? window.webkit?.messageHandlers?.markup
-    }
-}
-
-const muRegistry = new MURegistry()
-export const getActiveMuId = muRegistry.getActiveMuId.bind(muRegistry)
-export const setActiveMuId = muRegistry.setActiveMuId.bind(muRegistry)
-export const registerEditor = muRegistry.registerEditor.bind(muRegistry)
-export const unregisterEditor = muRegistry.unregisterEditor.bind(muRegistry)
-export const activeEditor = muRegistry.activeEditor.bind(muRegistry)
-export const registerDelegate = muRegistry.registerDelegate.bind(muRegistry)
-export const unregisterDelegate = muRegistry.unregisterDelegate.bind(muRegistry)
-export const getDelegate = muRegistry.getDelegate.bind(muRegistry)
-export const registerConfig = muRegistry.registerConfig.bind(muRegistry)
-export const unregisterConfig = muRegistry.unregisterConfig.bind(muRegistry)
-export const getConfig = muRegistry.getConfig.bind(muRegistry)
-export const viewWithId = muRegistry.viewWithId.bind(muRegistry)
-export const activeView = muRegistry.activeView.bind(muRegistry)
-export const activeDocument = muRegistry.activeDocument.bind(muRegistry)
-export const activeMessageHandler = muRegistry.activeMessageHandler.bind(muRegistry)
-export const firstEditor = muRegistry.firstEditor.bind(muRegistry)
-export const firstView = muRegistry.firstView.bind(muRegistry)
-export const firstDocument = muRegistry.firstDocument.bind(muRegistry)
-export const firstMessageHandler = muRegistry.firstMessageHandler.bind(muRegistry)
-
-/**
- * The NodeView to support divs, as installed in main.js.
- */
-export class DivView {
-    constructor(node) {
-        const div = document.createElement('div');
-        div.setAttribute('id', node.attrs.id);
-        div.setAttribute('class', node.attrs.cssClass);
-        // Note that the click is reported using createSelectionBetween on the EditorView.
-        // Here we have access to the node id and can specialize for divs.
-        // Because the contentDOM is not set for non-editable divs, the selection never gets 
-        // set in them, but will be set to the first selectable node after.
-        div.addEventListener('click', () => {
-            selectedID = node.attrs.id;
-        })
-        const htmlFragment = _fragmentFromNode(node);
-        if (node.attrs.editable) {
-            div.innerHTML = _htmlFromFragment(htmlFragment)
-            this.dom = div
-            this.contentDOM = this.dom
-        } else {
-            // For non-editable divs, we have to handle all the interaction, which only occurs for buttons.
-            // Note ProseMirror does not render children inside of non-editable divs. We deal with this by 
-            // supplying the entire content of the div in htmlContents, and when we need to change the div
-            // (for example, adding and removing a button group), we must then update the htmlContents 
-            // accordingly. This happens in addDiv and removeDiv.
-            div.innerHTML = _htmlFromFragment(htmlFragment);
-            const buttons = Array.from(div.getElementsByTagName('button'));
-            buttons.forEach( button => {
-                button.addEventListener('click', () => {
-                    // Report the button that was clicked and its location
-                    _callback(
-                        JSON.stringify({
-                            'messageType' : 'buttonClicked',
-                            'id' : button.id,
-                            'rect' : this._getButtonRect(button)
-                        }, _document())
-                    )
-                })
-            })
-            this.dom = div;
-        }
-    }
-
-    /**
-     * Return the rectangle of the button in a form that can be digested consistently.
-     * @param {HTMLButton} button 
-     * @returns {Object} The button's (origin) x, y, width, and height.
-     */
-    _getButtonRect(button) {
-        const boundingRect = button.getBoundingClientRect();
-        const buttonRect = {
-            'x' : boundingRect.left,
-            'y' : boundingRect.top,
-            'width' : boundingRect.width,
-            'height' : boundingRect.height
-        };
-        return buttonRect;
-    };
-
-}
-
-export class LinkView {
-    constructor(node, view) {
-        let href = node.attrs.href
-        let title = '\u2325+Click to follow\n' + href
-        const link = document.createElement('a')
-        link.setAttribute('href', href)
-        link.setAttribute('title', title)
-        link.addEventListener('click', (ev)=> {
-            if (ev.altKey) {
-                if (href.startsWith('#')) {
-                    let id = href.substring(1)
-                    let {pos} = nodeWithId(id, view.state)
-                    if (pos) {
-                        let resolvedPos = view.state.tr.doc.resolve(pos)
-                        let selection = TextSelection.near(resolvedPos)
-                        let transaction = view.state.tr
-                            .setSelection(selection)
-                            .scrollIntoView()
-                        view.dispatch(transaction)
-                        selectionChanged()
-                    }
-                } else {
-                    window.open(href)
-                }
-            }
-        })
-        this.dom = link
-        this.contentDOM = this.dom
-    }
-}
-
-/**
- * The NodeView to support resizable images and callbacks, as installed in main.js.
- * 
- * The ResizableImage instance holds onto the actual HTMLImageElement and deals with the styling,
- * event listeners, and resizing work.
- * 
- * Many thanks to contributors to this thread: https://discuss.prosemirror.net/t/image-resize/1489
- * and the accompanying Glitch project https://glitch.com/edit/#!/toothsome-shoemaker
- */
-export class ImageView {
-    constructor(node, view, getPos) {
-        this.resizableImage = new ResizableImage(node, getPos())
-        this.dom = this.resizableImage.imageContainer
-    }
-    
-    selectNode() {
-        this.resizableImage.imageElement.classList.add("ProseMirror-selectednode")
-        this.resizableImage.select()
-        selectionChanged()
-    }
-  
-    deselectNode() {
-        this.resizableImage.imageElement.classList.remove("ProseMirror-selectednode")
-        this.resizableImage.deselect()
-        selectionChanged()
-    }
-
-}
-
-/**
- * A ResizableImage tracks a specific image element, and the imageContainer it is
- * contained in. The style of the container and its handles is handled in markup.css.
- *
- * As a resizing handle is dragged, the image size is adjusted. The underlying image
- * is never actually resized or changed.
- *
- * The approach of setting spans in the HTML and styling them in CSS to show the selected
- * ResizableImage, and dealing with mouseup/down/move was inspired by
- * https://tympanus.net/codrops/2014/10/30/resizing-cropping-images-canvas/
- */
-class ResizableImage {
-    
-    constructor(node, pos) {
-        this._pos = pos;                    // How to find node in view.state.doc
-        this._minImageSize = 18             // Large enough for visibility and for the handles to display properly
-        this._imageElement = this.imageElementFrom(node);
-        this._imageContainer = this.containerFor(this.imageElement);
-        this._startDimensions = this.dimensionsFrom(this.imageElement);
-        this._startEvent = null;            // The ev that was passed to startResize
-        this._startDx = -1;                 // Delta x between the two touches for pinching; -1 = not pinching
-        this._startDy = -1;                 // Delta y between the two touches for pinching; -1 = not pinching
-        this._touchCache = [];              // Touches that are active, max 2, min 0
-        this._touchStartCache = [];         // Touches at the start of a pinch gesture, max 2, min 0
-    }
-    
-    get imageElement() {
-        return this._imageElement;
-    };
-
-    get imageContainer() {
-        return this._imageContainer;
-    };
-    
-    /**
-     * The startDimensions are the width/height before resizing
-     */
-    get startDimensions() {
-        return this._startDimensions;
-    };
-    
-    /**
-     * Reset the start dimensions for the next resizing
-     */
-    set startDimensions(startDimensions) {
-        this._startDimensions = startDimensions;
-    };
-    
-    /*
-     * Return the width and height of the image element
-     */
-    get currentDimensions() {
-        const width = parseInt(this._imageElement.getAttribute('width'));
-        const height = parseInt(this._imageElement.getAttribute('height'));
-        return {width: width, height: height};
-    };
-
-    /**
-     * Dispatch a transaction to the view, using its metadata to pass the src
-     * of the image that just loaded. This method executes when the load 
-     * or error event is triggered for the image element. The image plugin 
-     * can hold state to avoid taking actions multiple times when the same 
-     * image loads.
-     * @param {string} src   The src attribute for the imageElement.
-     */
-    imageLoaded(src) {
-        const view = _view()
-        const transaction = view.state.tr
-            .setMeta("imageLoaded", {'src': src})
-        view.dispatch(transaction);
-    };
-
-    /**
-     * Update the image size for the node in a transaction so that the resizing 
-     * can be undone.
-     * 
-     * Note that after the transaction is dispatched, the ImageView is recreated, 
-     * and `imageLoaded` gets called again.
-     */
-    imageResized() {
-        const view = _view()
-        const {width, height} = this.currentDimensions
-        const transaction = view.state.tr
-            .setNodeAttribute(this._pos, 'width', width)
-            .setNodeAttribute(this._pos, 'height', height)
-        // Reselect the node again, so it ends like it started - selected
-        transaction.setSelection(new NodeSelection(transaction.doc.resolve(this._pos)))
-        view.dispatch(transaction);
-    };
-
-    /**
-     * Return the HTML Image Element displayed in the ImageView
-     * @param {Node} node 
-     * @returns HTMLImageElement
-     */
-    imageElementFrom(node) {
-        const img = document.createElement('img');
-        const src = node.attrs.src
-
-        // If the img node does not have both width and height attr, get them from naturalWidth 
-        // after loading. Use => style function to reference this.
-        img.addEventListener('load', e => {
-            if (node.attrs.width && node.attrs.height) {
-                img.setAttribute('width', node.attrs.width)
-                img.setAttribute('height', node.attrs.height)
-            } else {
-                // naturalWidth and naturalHeight will be zero if not known
-                let width = Math.max(e.target.naturalWidth, this._minImageSize)
-                node.attrs.width = width
-                img.setAttribute('width', width)
-                let height = Math.max(e.target.naturalHeight, this._minImageSize)
-                node.attrs.height = height
-                img.setAttribute('height', height)
-            }
-            this.imageLoaded(src)
-        })
-
-        // Display a broken image background and notify of any errors.
-        img.addEventListener('error', () => {
-            // https://fonts.google.com/icons?selected=Material+Symbols+Outlined:broken_image:FILL@0;wght@400;GRAD@0;opsz@20&icon.query=missing&icon.size=18&icon.color=%231f1f1f
-            const imageSvg = '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1f1f1f"><path d="M216-144q-29 0-50.5-21.5T144-216v-528q0-29.7 21.5-50.85Q187-816 216-816h528q29.7 0 50.85 21.15Q816-773.7 816-744v528q0 29-21.15 50.5T744-144H216Zm48-303 144-144 144 144 144-144 48 48v-201H216v249l48 48Zm-48 231h528v-225l-48-48-144 144-144-144-144 144-48-48v177Zm0 0v-240 63-351 528Z"/></svg>';
-            const image64 = btoa(imageSvg);
-            const imageUrl = `url("data:image/svg+xml;base64,${image64}")`
-            img.style.background = "lightgray"  // So we can see it in light or dark mode
-            img.style.backgroundImage = imageUrl
-            img.setAttribute('width', this._minImageSize)
-            img.setAttribute('height', this._minImageSize)
-            this.imageLoaded(src)
-        });
-        
-        img.setAttribute("src", src)
-
-        return img
-    }
-
-    /**
-     * Return the HTML Content Span element that contains the imageElement.
-     * 
-     * Note that the resizing handles, which are themselves spans, are inserted 
-     * before and after the imageElement at selection time, and removed at 
-     * deselect time.
-     * 
-     * @param {HTMLImageElement} imageElement 
-     * @returns HTML Content Span element
-     */
-    containerFor(imageElement) {
-        const imageContainer = document.createElement('span');
-        imageContainer.appendChild(imageElement);
-        return imageContainer
-    }
-
-    /**
-     * Set the attributes for the imageContainer and populate the spans that show the 
-     * resizing handles. Add the mousedown event listener to initiate resizing.
-     */
-    select() {
-        this.imageContainer.setAttribute('class', 'resize-container');
-        const nwHandle = document.createElement('span');
-        nwHandle.setAttribute('class', 'resize-handle resize-handle-nw');
-        this.imageContainer.insertBefore(nwHandle, this.imageElement);
-        const neHandle = document.createElement('span');
-        neHandle.setAttribute('class', 'resize-handle resize-handle-ne');
-        this.imageContainer.insertBefore(neHandle, this.imageElement);
-        const swHandle = document.createElement('span');
-        swHandle.setAttribute('class', 'resize-handle resize-handle-sw');
-        this.imageContainer.insertBefore(swHandle, null);
-        const seHandle = document.createElement('span');
-        seHandle.setAttribute('class', 'resize-handle resize-handle-se');
-        this.imageContainer.insertBefore(seHandle, null);
-        this.imageContainer.addEventListener('mousedown', this.startResize = this.startResize.bind(this));
-        this.addPinchGestureEvents();
-    }
-
-    /**
-     * Remove the attributes for the imageContainer and the spans that show the 
-     * resizing handles. Remove the mousedown event listener.
-     */
-    deselect() {
-        this.removePinchGestureEvents();
-        this.imageContainer.removeEventListener('mousedown', this.startResize);
-        const handles = this.imageContainer.querySelectorAll('span');
-        handles.forEach((handle) => {this.imageContainer.removeChild(handle)});
-        this.imageContainer.removeAttribute('class');
-    }
-
-    /**
-     * Return an object containing the width and height of imageElement as integers.
-     * @param {HTMLImageElement} imageElement 
-     * @returns An object with Int width and height.
-     */
-    dimensionsFrom(imageElement) {
-        const width = parseInt(imageElement.getAttribute('width'));
-        const height = parseInt(imageElement.getAttribute('height'));
-        return {width: width, height: height};
-    };
-    
-    /**
-     * Add touch event listeners to support pinch resizing.
-     *
-     * Listeners are added when the resizableImage is selected.
-     */
-    addPinchGestureEvents() {
-        _document().addEventListener('touchstart', this.handleTouchStart = this.handleTouchStart.bind(this));
-        _document().addEventListener('touchmove', this.handleTouchMove = this.handleTouchMove.bind(this));
-        _document().addEventListener('touchend', this.handleTouchEnd = this.handleTouchEnd.bind(this));
-        _document().addEventListener('touchcancel', this.handleTouchEnd = this.handleTouchEnd.bind(this));
-    };
-    
-    /**
-     * Remove event listeners supporting pinch resizing.
-     *
-     * Listeners are removed when the resizableImage is deselected.
-     */
-    removePinchGestureEvents() {
-        _document().removeEventListener('touchstart', this.handleTouchStart);
-        _document().removeEventListener('touchmove', this.handleTouchMove);
-        _document().removeEventListener('touchend', this.handleTouchEnd);
-        _document().removeEventListener('touchcancel', this.handleTouchEnd);
-    };
-
-    /**
-     * Start resize on a mousedown event.
-     * @param {Event} ev    The mousedown Event.
-     */
-    startResize(ev) {
-        ev.preventDefault();
-        // The event can trigger on imageContainer and its contents, including spans and imageElement.
-        if (this._startEvent) return;   // We are already resizing
-        this._startEvent = ev;          // Track the event that kicked things off
-
-        //TODO: Avoid selecting text while resizing.
-        // Setting webkitUserSelect to 'none' used to help when the style could be applied to 
-        // the actual HTML document being edited, but it doesn't seem to work when applied to 
-        // view.dom. Leaving a record here for now.
-        // view.state.tr.style.webkitUserSelect = 'none';  // Prevent selection of text as mouse moves
-
-        // Use document to receive events even when cursor goes outside of the imageContainer
-        _document().addEventListener('mousemove', this.resizing = this.resizing.bind(this));
-        _document().addEventListener('mouseup', this.endResize = this.endResize.bind(this));
-        this._startDimensions = this.dimensionsFrom(this.imageElement);
-    };
-    
-    /**
-     * End resizing on a mouseup event.
-     * @param {Event} ev    The mouseup Event.
-     */
-    endResize(ev) {
-        ev.preventDefault();
-        this._startEvent = null;
-
-        //TODO: Restore selecting text when done resizing.
-        // Setting webkitUserSelect to 'text' used to help when the style could be applied to 
-        // the actual HTML document being edited, but it doesn't seem to work when applied to 
-        // view.dom. Leaving a record here for now.
-        //view.dom.style.webkitUserSelect = 'text';  // Restore selection of text now that we are done
-
-        _document().removeEventListener('mousemove', this.resizing);
-        _document().removeEventListener('mouseup', this.endResize);
-        this._startDimensions = this.currentDimensions;
-        this.imageResized();
-    };
-    
-    /**
-     * Continuously resize the imageElement as the mouse moves.
-     * @param {Event} ev    The mousemove Event.
-     */
-    resizing(ev) {
-        ev.preventDefault();
-        const ev0 = this._startEvent;
-        // FYI: x increases to the right, y increases down
-        const x = ev.clientX;
-        const y = ev.clientY;
-        const x0 = ev0.clientX;
-        const y0 = ev0.clientY;
-        const classList = ev0.target.classList;
-        let dx, dy;
-        if (classList.contains('resize-handle-nw')) {
-            dx = x0 - x;
-            dy = y0 - y;
-        } else if (classList.contains('resize-handle-ne')) {
-            dx = x - x0;
-            dy = y0 - y;
-        } else if (classList.contains('resize-handle-sw')) {
-            dx = x0 - x;
-            dy = y - y0;
-        } else if (classList.contains('resize-handle-se')) {
-            dx = x - x0;
-            dy = y - y0;
-        } else {
-            // If not in a handle, treat movement like resize-handle-ne (upper right)
-            dx = x - x0;
-            dy = y0 - y;
-        }
-        const scaleH = Math.abs(dy) > Math.abs(dx);
-        const w0 = this._startDimensions.width;
-        const h0 = this._startDimensions.height;
-        const ratio = w0 / h0;
-        let width, height;
-        if (scaleH) {
-            height = Math.max(h0 + dy, this._minImageSize);
-            width = Math.floor(height * ratio);
-        } else {
-            width = Math.max(w0 + dx, this._minImageSize);
-            height = Math.floor(width / ratio);
-        };
-        this._imageElement.setAttribute('width', width);
-        this._imageElement.setAttribute('height', height);
-    };
-    
-    /**
-     * A touch started while the resizableImage was selected.
-     * Cache the touch to support 2-finger gestures only.
-     */
-    handleTouchStart(ev) {
-        ev.preventDefault();
-        if (this._touchCache.length < 2) {
-            const touch = ev.changedTouches.length > 0 ? ev.changedTouches[0] : null;
-            if (touch) {
-                this._touchCache.push(touch);
-                this._touchStartCache.push(touch);
-            };
-        };
-    };
-    
-    /**
-     * A touch moved while the resizableImage was selected.
-     *
-     * If this is a touch we are tracking already, then replace it in the touchCache.
-     *
-     * If we only have one finger down, the update the startCache for it, since we are
-     * moving a finger but haven't start pinching.
-     *
-     * Otherwise, we are pinching and need to resize.
-     */
-    handleTouchMove(ev) {
-        ev.preventDefault();
-        const touch = this.touchMatching(ev);
-        if (touch) {
-            // Replace the touch in the touchCache with this touch
-            this.replaceTouch(touch, this._touchCache)
-            if (this._touchCache.length < 2) {
-                // If we are only touching a single place, then replace it in the touchStartCache as it moves
-                this.replaceTouch(touch, this._touchStartCache);
-            } else {
-                // Otherwise, we are touching two places and are pinching
-                this.startPinch();   // A no-op if we have already started
-                this.pinch();
-            };
-        }
-    };
-    
-    /**
-     * A touch ended while the resizableImage was selected.
-     *
-     * Remove the touch from the caches, and end the pinch operation.
-     * We might still have a touch point down when one ends, but the pinch operation
-     * itself ends at that time.
-     */
-    handleTouchEnd(ev) {
-        const touch = this.touchMatching(ev);
-        if (touch) {
-            const touchIndex = this.indexOfTouch(touch, this._touchCache);
-            if (touchIndex !== null) {
-                this._touchCache.splice(touchIndex, 1);
-                this._touchStartCache.splice(touchIndex, 1);
-                this.endPinch();
-            };
-        };
-    };
-    
-    /**
-     * Return the touch in ev.changedTouches that matches what's in the touchCache, or null if it isn't there
-     */
-    touchMatching(ev) {
-        const changedTouches = ev.changedTouches;
-        const touchCache = this._touchCache;
-        for (let i = 0; i < touchCache.length; i++) {
-            for (let j = 0; j < changedTouches.length; j++) {
-                if (touchCache[i].identifier === changedTouches[j].identifier) {
-                    return changedTouches[j];
-                };
-            };
-        };
-        return null;
-    };
-    
-    /**
-     * Return the index into touchArray of touch based on identifier, or null if not found
-     *
-     * Note: Due to JavaScript idiocy, must always check return value against null, because
-     * indices of 1 and 0 are true and false, too. Fun!
-     */
-    indexOfTouch(touch, touchArray) {
-        for (let i = 0; i < touchArray.length; i++) {
-            if (touch.identifier === touchArray[i].identifier) {
-                return i;
-            };
-        };
-        return null;
-    };
-    
-    /**
-     * Replace the touch in touchArray if it has the same identifier, else do nothing
-     */
-    replaceTouch(touch, touchArray) {
-        const i = this.indexOfTouch(touch, touchArray);
-        if (i !== null) { touchArray[i] = touch }
-    };
-    
-    /**
-     * We received the touchmove event and need to initialize things for pinching.
-     *
-     * If the resizableImage._startDx is -1, then we need to initialize; otherwise,
-     * a call to startPinch is a no-op.
-     *
-     * The initialization captures a new startDx and startDy that track the distance
-     * between the two touch points when pinching starts. We also track the startDimensions,
-     * because scaling is done relative to it.
-     */
-    startPinch() {
-        if (this._startDx === -1) {
-            const touchStartCache = this._touchStartCache;
-            this._startDx = Math.abs(touchStartCache[0].pageX - touchStartCache[1].pageX);
-            this._startDy = Math.abs(touchStartCache[0].pageY - touchStartCache[1].pageY);
-            this._startDimensions = this.dimensionsFrom(this._imageElement);
-        };
-    };
-
-    /**
-     * Pinch the resizableImage based on the information in the touchCache and the startDx/startDy
-     * we captured when pinching started. The touchCache has the two touches that are active.
-     */
-    pinch() {
-        // Here currentDx and currentDx are the current distance between the two
-        // pointers, which have to be compared to the start distances to determine
-        // if we are zooming in or out
-        const touchCache = this._touchCache;
-        const x0 = touchCache[0].pageX
-        const y0 = touchCache[0].pageY
-        const x1 = touchCache[1].pageX
-        const y1 = touchCache[1].pageY
-        const currentDx = Math.abs(x1 - x0);
-        const currentDy = Math.abs(y1 - y0);
-        const dx = currentDx - this._startDx;
-        const dy = currentDy - this._startDy;
-        const scaleH = Math.abs(dy) > Math.abs(dx);
-        const w0 = this._startDimensions.width;
-        const h0 = this._startDimensions.height;
-        const ratio = w0 / h0;
-        let width, height;
-        if (scaleH) {
-            height = Math.max(h0 + dy, this._minImageSize);
-            width = Math.floor(height * ratio);
-        } else {
-            width = Math.max(w0 + dx, this._minImageSize);
-            height = Math.floor(width / ratio);
-        };
-        this._imageElement.setAttribute('width', width);
-        this._imageElement.setAttribute('height', height);
-    };
-    
-    /**
-     * The pinch operation has ended because we stopped touching one of the two touch points.
-     *
-     * If we are only touching one point, then endPinch is a no-op. For example, if the
-     * resizableImage is selected and you touch and release at a point, endPinch gets called
-     * but does nothing. Similarly for lifting the second touch point after releasing the first.
-     */
-    endPinch() {
-        if (this._touchCache.length === 1) {
-            this._startDx = -1;
-            this._startDy = -1;
-            this._startDimensions = this.currentDimensions;
-            this.imageResized();
-        };
-    };
-   
-    /**
-     * Callback with the resizableImage data that allows us to put an image
-     * in the clipboard without all the browser shenanigans.
-     */
-    copyToClipboard() {
-        const image = this._imageElement;
-        if (!image) { return };
-        const messageDict = {
-            'messageType' : 'copyImage',
-            'src' : image.src,
-            'alt' : image.alt,
-            'dimensions' : this._startDimensions
-        };
-        _callback(JSON.stringify(messageDict), _document());
-    };
-    
-};
 
 /**
  * Define various arrays of tags used to represent MarkupEditor-specific concepts.
@@ -762,6 +38,20 @@ const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', '
 export let selectedID = null;
 
 /**
+ * The searcher is the singleton that handles finding ranges that
+ * contain a search string within editor.
+ */
+export function searchIsActive() { return activeSearcher().isActive }
+
+//TODO: Replace with another mechanism to track if doc changed
+/** changed tracks whether the document has changed since `setHTML` */
+let changed = false;
+
+export function isChanged() {
+    return changed
+}
+
+/**
  * MUError captures internal errors and makes it easy to communicate them externally.
  *
  * Usage is generally via the statics defined here, altho supplementary info can
@@ -776,7 +66,6 @@ export let selectedID = null;
  * in MarkupWKWebView.copyImage if anything goes wrong, because the copying to the
  * clipboard is handled on the Swift side.
  */
-//MARK: Error Reporting
 class MUError {
 
     constructor(name, message, info, alert=true) {
@@ -804,233 +93,9 @@ class MUError {
     };
     
     callback() {
-        _callback(JSON.stringify(this.messageDict()), _document());
+        callbackError(JSON.stringify(this.messageDict()), activeDocument());
     };
 };
-
-/**
- * The Searcher class lets us find text ranges that match a search string within the editor element.
- * 
- * The searcher uses the ProseMirror search plugin https://github.com/proseMirror/prosemirror-search to create 
- * and track ranges within the doc that match a given SearchQuery.
- * 
- * Note that `isActive` and intercepting Enter/Shift-Enter is only relevant in the Swift case, where the search 
- * bar is implemented in Swift.
- */
-class Searcher {
-    
-    constructor() {
-        this._searchString = null;      // what we are searching for
-        this._direction = 'forward';    // direction we are searching in
-        this._caseSensitive = false;    // whether the search is case sensitive
-        this._forceIndexing = true;     // true === rebuild foundRanges before use; false === use foundRanges\
-        this._searchQuery = null        // the SearchQuery we use
-        this._isActive = false;         // whether we are in "search mode", intercepting Enter/Shift-Enter
-        this._matchCount = null;        // the current number of matches, null when not active
-        this._matchIndex = null;        // the index into matches we are at in the current search, null when not active
-    };
-    
-    /**
-     * Select and return the selection.from and selection.to in the direction that matches text.
-     * 
-     * In Swift, the text is passed with smartquote nonsense removed and '&quot;'
-     * instead of quotes and '&apos;' instead of apostrophes, so that we can search on text
-     * that includes them and pass them from Swift to JavaScript consistently.
-     */
-    searchFor(text, direction='forward', searchOnEnter=false) {
-        const view = _view()
-        let command = searchForCommand(text, direction, searchOnEnter);
-        return command(view.state, view.dispatch, view);
-    };
-
-    /**
-     * Return a command that will execute a search, typically assigned as a button action.
-     * @param {string}                  text            The text to search for.
-     * @param {'forward' | 'backward'}  direction       The direction to search in.
-     * @param {boolean}                 searchOnEnter   Whether to begin intercepting Enter in the view until cancelled.
-     * @returns {Command}                               A command that will execute a search for text given the state, dispatch, and view.
-     */
-    searchForCommand(text, direction='forward', searchOnEnter=false) {
-        const commandAdapter = (state, dispatch, view) => {
-            let result = {};
-            if (!text || (text.length === 0)) {
-                this.cancel()
-                return result;
-            }
-            // On the Swift side, we replace smart quotes and apostrophes with &quot; and &apos;
-            // before getting here, but when doing searches in markupeditor-base, they will come 
-            // in here unchanged. So replace them with the proper " or ' now.
-            text = text.replaceAll('’', "'")
-            text = text.replaceAll('‘', "'")
-            text = text.replaceAll('“', '"')
-            text = text.replaceAll('”', '"')
-            text = text.replaceAll('&quot;', '"')       // Fix the hack for quotes in the call
-            text = text.replaceAll('&apos;', "'")       // Fix the hack for apostrophes in the call
-
-            // Rebuild the query if forced or if the search string changed
-            if (this._forceIndexing || (text !== this._searchString)) {
-                this._searchString = text;
-                this._isActive = searchOnEnter
-                this._buildQuery();
-                const transaction = setSearchState(view.state.tr, this._searchQuery);
-                view.dispatch(transaction);             // Show all the matches
-                this._setMatchCount(view.state);
-                this._forceIndexing = false;
-            };
-
-            // Search for text and return the result containing from and to that was found
-            //
-            // TODO: Fix bug that occurs when searching for next or prev when the current selection 
-            //          is unique within the doc. The `nextMatch` in prosemirror-search when failing,  
-            //          should set the to value to `Math.min(curTo, range.to))` or it misses the 
-            //          existing selection. Similarly on `prevMatch`. This needs to be done in a 
-            //          patch of prosemirror-search. For example:
-            //
-            //  function nextMatch(search, state, wrap, curFrom, curTo) {
-            //      let range = search.range || { from: 0, to: state.doc.content.size };
-            //      let next = search.query.findNext(state, Math.max(curTo, range.from), range.to);
-            //      if (!next && wrap)
-            //          next = search.query.findNext(state, range.from, Math.min(curTo, range.to));
-            //      return next;
-            //  }
-
-            result = this._searchInDirection(direction, view.state, view.dispatch);
-            if (!result.from) {
-                this.deactivate(view);
-            } else {
-                let increment = (direction == 'forward') ? 1 : -1;
-                let index = this._matchIndex + increment;
-                let total = this._matchCount;
-                let zeroIndex = index % total;
-                this._matchIndex = (zeroIndex <= 0) ? total : zeroIndex;
-                this._direction = direction;
-                if (searchOnEnter) { this._activate(view) };    // Only intercept Enter if searchOnEnter is explicitly passed as true
-            }
-            return result;
-        };
-
-        return commandAdapter;
-    };
-
-    _setMatchCount(state) {
-        this._matchCount = getMatchHighlights(state).find().length;
-        this._matchIndex = 0;
-    }
-
-    get matchCount() {
-        return this._matchCount;
-    }
-
-    get matchIndex() {
-        return this._matchIndex;
-    }
-    
-    /**
-     * Reset the query by forcing it to be recomputed at find time.
-     */
-    _resetQuery() {
-        this._forceIndexing = true;
-    };
-    
-    /**
-     * Return whether search is active, and Enter should be interpreted as a search request
-     */
-    get isActive() {
-        return this._isActive;
-    };
-
-    get caseSensitive() {
-        return this._caseSensitive;
-    }
-
-    set caseSensitive(value) {
-        this._caseSensitive = value;
-    }
-    
-    /**
-     * Activate search mode where Enter is being intercepted
-     */
-    _activate(view) {
-        this._isActive = true;
-        view.dom.classList.add("searching");
-        _callback('activateSearch', _document());
-    }
-    
-    /**
-     * Deactivate search mode where Enter is being intercepted
-     */
-    deactivate(view) {
-        if (this.isActive) _callback('deactivateSearch', view.dom.getRootNode());
-        view.dom.classList.remove("searching");
-        this._isActive = false;
-        this._searchQuery = new SearchQuery({search: "", caseSensitive: this._caseSensitive});
-        const transaction = setSearchState(view.state.tr, this._searchQuery);
-        view.dispatch(transaction);
-        this._matchCount = null;
-        this._matchIndex = null;
-    }
-    
-    /**
-     * Stop searchForward()/searchBackward() from being executed on Enter. Force reindexing for next search.
-     */
-    cancel() {
-        const view = _view()
-        this.deactivate(view)
-        this._resetQuery();
-    };
-    
-    /**
-     * Search forward (might be from Enter when isActive).
-     */
-    searchForward() {
-        const view = _view()
-        return this._searchInDirection('forward', view.state, view.dispatch);
-    };
-    
-    /*
-     * Search backward (might be from Shift+Enter when isActive).
-     */
-    searchBackward() {
-        const view = _view()
-        return this._searchInDirection('backward', view.state, view.dispatch);
-    }
-    
-    /*
-     * Search in the specified direction.
-     */
-    _searchInDirection(direction, state, dispatch) {
-        const view = _view()
-        if (this._searchString && (this._searchString.length > 0)) {
-            if (direction == "forward") { findNext(state, dispatch)} else { findPrev(state, dispatch)};
-            _callback('searched', _document())
-            // Return the selection from and to from the view, because that is what changed
-            return {from: view.state.tr.selection.from, to: view.state.tr.selection.to};
-        };
-        return {}
-    };
-
-    /**
-     * Create a new SearchQuery and highlight all the matches in the document.
-     */
-    _buildQuery() {
-        this._searchQuery = new SearchQuery({search: this._searchString, caseSensitive: this._caseSensitive});
-    }
-
-};
-
-/**
- * The searcher is the singleton that handles finding ranges that
- * contain a search string within editor.
- */
-const searcher = new Searcher();
-export function searchIsActive() { return searcher.isActive }
-
-/** changed tracks whether the document has changed since `setHTML` */
-let changed = false;
-
-export function isChanged() {
-    return changed
-}
 
 /**
  * Handle pressing Enter.
@@ -1044,9 +109,9 @@ export function isChanged() {
  *                  else true if execution should stop here (like when search is active)
  */
 export function handleEnter() {
-    const view = _view()
-    if (searcher.isActive) {
-        searcher.searchForward();
+    const view = activeView()
+    if (activeSearcher()?.isActive) {
+        activeSearcher()?.searchForward();
         return true;
     }
     stateChanged(view)
@@ -1063,9 +128,9 @@ export function handleEnter() {
  *                  else true if execution should stop here (like when search is active)
  */
 export function handleShiftEnter() {
-    const view = _view()
-    if (searcher.isActive) {
-        searcher.searchBackward();
+    const view = activeView()
+    if (activeSearcher()?.isActive) {
+        activeSearcher()?.searchBackward();
         return true;
     }
     stateChanged(view)
@@ -1081,7 +146,7 @@ export function handleShiftEnter() {
  *                      else true if execution should stop here.
  */
 export function handleDelete() {
-    const view = _view()
+    const view = activeView()
     const imageAttributes = _getImageAttributes();
     if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID ?? '') });
     stateChanged(view);
@@ -1098,7 +163,7 @@ export function handleDelete() {
  */
 export function setTopLevelAttributes(jsonString) {
     const attributes = JSON.parse(jsonString);
-    const editor = _document().getElementById('editor');
+    const editor = activeDocument().getElementById('editor');
     if (editor && attributes) {   
         for (const [key, value] of Object.entries(attributes)) {
             if (key !== 'contenteditable') editor.setAttribute(key, value);
@@ -1164,7 +229,7 @@ function _callback(message, element) {
     if (element && element.getRootNode() instanceof ShadowRoot) {
         _dispatchMuCallback(message, element)
     } else {
-        _messageHandler().postMessage(message)
+        activeMessageHandler().postMessage(message)
     }
 };
 
@@ -1173,58 +238,6 @@ function _dispatchMuCallback(message, element) {
     muCallback.message = message
     element.dispatchEvent(muCallback)
 }
-
-function _messageHandler() {
-    return activeMessageHandler()
-}
-
-/**
- * Return the first shadow DOM found in the global `viewRegistry`, or `window.document` if not found.
- */
-function _document() {
-    return activeDocument()
-}
-
-/**
- * Return the first non-null EditorView found in the global `window.viewRegistry`. 
- * 
- * TODO: Fix callers to eliminate this method completely.
- * 
- * There was a lot of code that referenced the global `window.view` because it was 
- * assumed there would only be a single `view` within the `window.document`. With 
- * the introduction of markupeditor-base (as opposed to just using it in Swift or 
- * even VSCode) and web components, there could easily be more than one editor.
- * This _view() method is used to replace the old use of `window.view`, but anywhere
- * that uses it presupposes that there is only one view within the document.
- * 
- * Return null if the `viewRegistry` contains no views. The 
- * `viewRegistry` is defined when a MarkupEditor instance is created.
- */
-function _view() {
-    return activeView()
-}
-
-/**
- * Callback to signal that input came-in, passing along the DIV ID
- * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
- * callback means the change happened in the 'editor' div.
- */
-export function callbackInput(element) {
-    changed = true;
-    _callback('input' + (selectedID ?? ''), element)
-};
-
-function _callbackReady() {
-    _messageHandler()?.postMessage('ready')
-}
-
-/**
- * Callback to signal that user-provided CSS and/or script files have
- * been loaded.
- */
-function _loadedUserFiles(target) {
-    _callback('loadedUserFiles', target ?? _document());
-};
 
 /**
  * Called to load user script before loading html.
@@ -1276,7 +289,7 @@ if (typeof window != 'undefined') {
      * If the window is resized, call back so that the holder can adjust its height tracking if needed.
      */
     window.addEventListener('resize', function () {
-        _callback('updateHeight', _document());
+        _callback('updateHeight', activeDocument());
     });
 }
 
@@ -1299,7 +312,7 @@ if (typeof window != 'undefined') {
  * @returns {Object}                        The {to: number, from: number} location of the match.
  */
 export function searchFor(text, direction, activate) {
-    const view = _view()
+    const view = activeView()
     const searchOnEnter = activate === 'true';
     let command = searchForCommand(text, direction, searchOnEnter);
     return command(view.state, view.dispatch, view);
@@ -1315,7 +328,7 @@ export function searchFor(text, direction, activate) {
  * @returns {Command}                       The command that can be executed to return the location of the match.
  */
 export function searchForCommand(text, direction, activate) {
-    return searcher.searchForCommand(text, direction, activate);
+    return activeSearcher()?.searchForCommand(text, direction, activate);
 }
 
 /**
@@ -1324,21 +337,22 @@ export function searchForCommand(text, direction, activate) {
  * @param {boolean} caseSensitive 
  */
 export function matchCase(caseSensitive) {
-    searcher.caseSensitive = caseSensitive;
+    let searcher = activeSearcher()
+    if (searcher) searcher.caseSensitive = caseSensitive;
 }
 
 /**
  * Deactivate search mode, stop intercepting Enter to search.
  */
 export function deactivateSearch(view) {
-    searcher.deactivate(view);
+    activeSearcher()?.deactivate(view);
 };
 
 /**
  * Cancel searching, resetting search state.
  */
 export function cancelSearch() {
-    searcher.cancel()
+    activeSearcher()?.cancel()
 }
 
 /**
@@ -1347,7 +361,7 @@ export function cancelSearch() {
  * @returns {number | null }
  */
 export function matchCount() {
-    return searcher.matchCount;
+    return activeSearcher()?.matchCount;
 }
 
 /**
@@ -1357,7 +371,7 @@ export function matchCount() {
  * @returns {number | null }
  */
 export function matchIndex() {
-    return searcher.matchIndex;
+    return activeSearcher()?.matchIndex;
 }
 
 /********************************************************************************
@@ -1371,7 +385,7 @@ export function matchIndex() {
  * `event` is a mocked ClipboardEvent for testing purposes, else nil.
  */
 export function pasteHTML(html, event) {
-    const view = _view()
+    const view = activeView()
     view.pasteHTML(html, event);
     stateChanged(view);
 };
@@ -1388,7 +402,7 @@ export function pasteHTML(html, event) {
  */
 export function pasteText(html, event) {
     const node = _nodeFromHTML(html);
-    const htmlFragment = _fragmentFromNode(node);
+    const htmlFragment = fragmentFromNode(node);
     const minimalHTML = _minimalHTML(htmlFragment); // Reduce to MarkupEditor-equivalent of "plain" text
     pasteHTML(minimalHTML, event);
 };
@@ -1502,7 +516,7 @@ export function resetSelectedID(id) {
  * @returns {[string]}
  */
 export function getDataImages() {
-    let images = _document().getElementsByTagName('img');
+    let images = activeDocument().getElementsByTagName('img');
     let dataImages = []
     for (let i = 0; i < images.length; i++) {
         let src = images[i].getAttribute('src');
@@ -1519,8 +533,8 @@ export function getDataImages() {
  * @param {string} newSrc The src that should replace the old src
  */
 export function savedDataImage(oldSrc, newSrc) {
-    const view = _view()
-    let images = _document().getElementsByTagName('img');
+    const view = activeView()
+    let images = activeDocument().getElementsByTagName('img');
     for (let i = 0; i < images.length; i++) {
         let img = images[i]
         let src = img.getAttribute('src');
@@ -1549,7 +563,7 @@ export function savedDataImage(oldSrc, newSrc) {
  * @return {string} The HTML for the div with id `divID` or of the full doc.
  */
 export function getHTML(pretty='true', clean='true', divID) {
-    const view = _view()
+    const view = activeView()
     const prettyHTML = pretty === 'true';
     const cleanHTML = clean === 'true';
     const divNode = (divID) ? _getNode(divID)?.node : view.state.doc;
@@ -1581,7 +595,7 @@ export function getHTML(pretty='true', clean='true', divID) {
  *
  * @return {String}     A string showing the raw HTML with tags, etc.
  */
-const _allPrettyHTML = function(fragment) {
+function _allPrettyHTML(fragment) {
     let text = '';
     const childNodes = fragment.childNodes;
     const childNodesLength = childNodes.length;
@@ -1600,7 +614,7 @@ const _allPrettyHTML = function(fragment) {
  * of the text. By passing it in rather than computing it from node, we
  * can avoid putting a newline in front of the first element in _allPrettyHTML.
  */
-const _prettyHTML = function(node, indent, text, inlined) {
+function _prettyHTML(node, indent, text, inlined) {
     const nodeName = node.nodeName.toLowerCase();
     const nodeIsText = _isTextNode(node);
     const nodeIsElement = _isElementNode(node);
@@ -1636,7 +650,7 @@ const _prettyHTML = function(node, indent, text, inlined) {
 /**
  * Return a new string that has all < replaced with &lt; and all > replaced with &gt;
  */
-const _replaceAngles = function(textContent) {
+function _replaceAngles(textContent) {
     return textContent.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 };
 
@@ -1644,7 +658,7 @@ const _replaceAngles = function(textContent) {
  * Return whether node should be inlined during the prettyHTML assembly. An inlined node
  * like <I> in a <P> ends up looking like <P>This is an <I>italic</I> node</P>.
  */
-const _isInlined = function(node) {
+function _isInlined(node) {
     return _isTextNode(node) || _isFormatElement(node) || _isLinkNode(node) || _isVoidNode(node)
 };
 
@@ -1681,7 +695,7 @@ export function setHTML(contents, focusAfterLoad=true, base, editorView) {
     // If defined, set base; else remove base if it exists. This way, when setHTML is used to,
     // say, create a new empty document, base will be reset.
     setBase(base)
-    const htmlView = (editorView) ? editorView : _view()
+    const htmlView = (editorView) ? editorView : activeView()
     const state = htmlView.state;
     const doc = state.doc;
     const tr = state.tr;
@@ -1719,13 +733,13 @@ export function setHTML(contents, focusAfterLoad=true, base, editorView) {
  * auto-sizing of a WKWebView based on its contents.
  */
 export function getHeight() {
-   const editor = _document().getElementById('editor');
+   const editor = activeDocument().getElementById('editor');
    const paddingBlockStart = editor.style.getPropertyValue('padding-block-start');
    const paddingBlockEnd = editor.style.getPropertyValue('padding-block-end');
    editor.style['padding-block-start'] = '0px';
    editor.style['padding-block-end'] = '0px';
    // TODO: Check this works on iOS or is even still needed
-   const height = _view().dom.getBoundingClientRect().height;
+   const height = activeView().dom.getBoundingClientRect().height;
    editor.style['padding-block-start'] = paddingBlockStart;
    editor.style['padding-block-end'] = paddingBlockEnd;
    return height;
@@ -1740,7 +754,7 @@ export function getHeight() {
  * of the screen.
  */
 export function padBottom(fullHeight) {
-    const editor = _document().getElementById('editor');
+    const editor = activeDocument().getElementById('editor');
     const padHeight = fullHeight - getHeight();
     if (padHeight > 0) {
         editor.style.setProperty('--padBottom', padHeight+'px');
@@ -1753,14 +767,14 @@ export function padBottom(fullHeight) {
  * Focus immediately, leaving range alone
  */
 export function focus() {
-    _view().focus()
+    activeView().focus()
 };
 
 /**
  * Reset the selection to the beginning of the document
  */
 export function resetSelection() {
-    const view = _view()
+    const view = activeView()
     const {node, pos} = _firstEditableTextNode();
     const doc = view.state.doc;
     const selection = (node) ? new TextSelection(doc.resolve(pos)) : new AllSelection(doc);
@@ -1773,7 +787,7 @@ export function resetSelection() {
  * a text node inside of a contentEditable div.
  */
 function _firstEditableTextNode() {
-    const view = _view()
+    const view = activeView()
     const divNodeType = schema.nodes.div;
     const fromPos = TextSelection.atStart(view.state.doc).from
     const toPos = TextSelection.atEnd(view.state.doc).to
@@ -1802,7 +816,7 @@ function _firstEditableTextNode() {
  * already exist so that we can find it.
  */
 export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, htmlContents) {
-    const view = _view()
+    const view = activeView()
     const divNodeType = schema.nodes.div;
     const editableAttributes = (attributesJSON && JSON.parse(attributesJSON)) ?? {};
     const editable = editableAttributes.contenteditable === true;
@@ -1833,7 +847,7 @@ export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, 
             // Now we have to update the htmlContent markup of the parent
             const $divPos = transaction.doc.resolve(divPos);
             const parent = $divPos.node();
-            const htmlContents = _htmlFromFragment(_fragmentFromNode(parent));
+            const htmlContents = htmlFromFragment(fragmentFromNode(parent));
             transaction.setNodeAttribute(pos, "htmlContents", htmlContents);
             view.dispatch(transaction);
         }
@@ -1888,7 +902,7 @@ function _buttonGroupDiv(buttonGroupJSON) {
  * @param {string} id   The id of the div to remove
  */
 export function removeDiv(id) {
-    const view = _view()
+    const view = activeView()
     const divNodeType = schema.nodes.div;
     const {node, pos} = _getNode(id)
     if (divNodeType === node?.type) {
@@ -1908,7 +922,7 @@ export function removeDiv(id) {
         if (isButtonGroup) {
             // Now we have to update the htmlContents attribute of the parent
             const parent = _getNode(node.attrs.parentId, transaction.doc);
-            const htmlContents = _htmlFromFragment(_fragmentFromNode(parent.node));
+            const htmlContents = htmlFromFragment(fragmentFromNode(parent.node));
             transaction.setNodeAttribute(parent.pos, "htmlContents", htmlContents);
         }
         view.dispatch(transaction);
@@ -1923,7 +937,7 @@ export function removeDiv(id) {
  * @param {string} label        The label for the button.
  */
 export function addButton(id, parentId, cssClass, label) {
-    const view = _view()
+    const view = activeView()
     const buttonNodeType = schema.nodes.button;
     const button = document.createElement('button');
     button.setAttribute('id', id);
@@ -1944,7 +958,7 @@ export function addButton(id, parentId, cssClass, label) {
             // Now we have to update the htmlContent markup of the parent
             const $divPos = transaction.doc.resolve(divPos);
             const parent = $divPos.node();
-            const htmlContents = _htmlFromFragment(_fragmentFromNode(parent));
+            const htmlContents = htmlFromFragment(fragmentFromNode(parent));
             transaction.setNodeAttribute(pos, "htmlContents", htmlContents);
             view.dispatch(transaction);
         }
@@ -1956,7 +970,7 @@ export function addButton(id, parentId, cssClass, label) {
  * @param {string} id   The ID of the button to be removed.
  */
 export function removeButton(id) {
-    const view = _view()
+    const view = activeView()
     const {node, pos} = _getNode(id)
     if (schema.nodes.button === node?.type) {
         const nodeSelection = new NodeSelection(view.state.doc.resolve(pos));
@@ -1972,7 +986,7 @@ export function removeButton(id) {
  * @param {string} id   The ID of the DIV to focus on.
  */
 export function focusOn(id) {
-    const view = _view()
+    const view = activeView()
     const {node, pos} = _getNode(id);
     if (node && (node.attrs.id !== selectedID)) {
         const selection = new TextSelection(view.state.doc.resolve(pos));
@@ -1985,7 +999,7 @@ export function focusOn(id) {
  * Remove all divs in the document.
  */
 export function removeAllDivs() {
-    const view = _view()
+    const view = activeView()
     const allSelection = new AllSelection(view.state.doc);
     const transaction = view.state.tr.delete(allSelection.from, allSelection.to);
     view.dispatch(transaction);
@@ -2002,7 +1016,7 @@ export function removeAllDivs() {
  * @returns {Object}            The node and position that matched the search.
  */
 function _getNode(id, doc, from, to) {
-    const view = _view()
+    const view = activeView()
     const source = doc ?? view.state.doc;
     const fromPos = from ?? TextSelection.atStart(source).from;
     const toPos = to ?? TextSelection.atEnd(source).to;
@@ -2085,7 +1099,7 @@ export function toggleSuperscript() {
  * @param {string} type     The *uppercase* type to be toggled at the selection.
  */
 function _toggleFormat(type) {
-    const view = _view()
+    const view = activeView()
     let command = toggleFormatCommand(type)
     return command(view.state, view.dispatch, view)
 };
@@ -2141,7 +1155,7 @@ export function toggleFormatCommand(type) {
  * @param {String}  style    One of the styles P or H1-H6 to set the selection to.
  */
 export function setStyle(style) {
-    const view = _view()
+    const view = activeView()
     let command = setStyleCommand(style)
     let result = command(view.state, view.dispatch, view)
     return result
@@ -2263,7 +1277,7 @@ function _nodeFor(paragraphStyle, schema) {
  * @param {String}  listType     The kind of list we want the list item to be in if we are turning it on or changing it.
  */
 export function toggleListItem(listType) {
-    const view = _view()
+    const view = activeView()
     const targetListType = nodeTypeFor(listType, schema);
     if (targetListType !== null) {
         const command = wrapInListCommand(schema, targetListType);
@@ -2305,7 +1319,7 @@ export function getListType(state) {
 }
 
 function _getListType() {
-    const view = _view()
+    const view = activeView()
     return getListType(view.state);
 };
 
@@ -2511,7 +1525,7 @@ function updateNode(node, targetListType, targetListItemType, listTypes, listIte
  *
  */
 export function indent() {
-    const view = _view()
+    const view = activeView()
     let command = indentCommand();
     return command(view.state, view.dispatch, view)
 };
@@ -2624,7 +1638,7 @@ export function indentCommand() {
  *
  */
 export function outdent() {
-    const view = _view()
+    const view = activeView()
     let command = outdentCommand()
     return command(view.state, view.dispatch, view)
 };
@@ -2822,7 +1836,7 @@ export function getSelectionState() {
  *
  * @return {String: String}     The dictionary of properties describing the selection
  */
-const _getSelectionState = function() {
+function _getSelectionState() {
     const state = {};
     // When we have multiple contentEditable elements within editor, we need to
     // make sure we selected something that is editable. If we didn't
@@ -2900,7 +1914,7 @@ const _getSelectionState = function() {
  * @returns {Object} The id and editable state that is selected.
  */
 function _getContentEditable() {
-    const view = _view()
+    const view = activeView()
     const anchor = view.state.selection.$anchor;
     const divNode = outermostOfTypeAt(schema.nodes.div, anchor);
     if (divNode) {
@@ -2915,7 +1929,7 @@ function _getContentEditable() {
  * @returns {String | null} The text that is selected.
  */
 function _getSelectionText() {
-    const view = _view()
+    const view = activeView()
     const doc = view.state.doc;
     const selection = view.state.selection;
     if (selection.empty) return '';
@@ -2936,7 +1950,7 @@ function _getSelectionText() {
  * @returns {Object} The selection rectangle's top, bottom, left, right.
  */
 export function getSelectionRect() {
-    const view = _view()
+    const view = activeView()
     const selection = view.state.selection;
     const fromCoords = view.coordsAtPos(selection.from);
     if (selection.empty) return fromCoords;
@@ -2954,7 +1968,7 @@ export function getSelectionRect() {
  * @returns {Set<MarkType>}   The set of MarkTypes at the selection.
  */
 function _getMarkTypes() {
-    const view = _view()
+    const view = activeView()
     const state = view.state;
     const {from, $from, to, empty} = state.selection;
     if (empty) {
@@ -2975,7 +1989,7 @@ function _getMarkTypes() {
  * @returns {Object}   An Object whose properties are <a> attributes (like href, link) at the selection.
  */
 export function getLinkAttributes() {
-    const view = _view()
+    const view = activeView()
     const selection = view.state.selection;
     const selectedNodes = [];
     view.state.doc.nodesBetween(selection.from, selection.to, node => {
@@ -2992,7 +2006,7 @@ export function getLinkAttributes() {
 };
 
 function _getImageAttributes() {
-    const view = _view()
+    const view = activeView()
     return getImageAttributes(view.state)
 }
 
@@ -3024,7 +2038,7 @@ export function getImageAttributes(state) {
  * @returns {Object}   An object with properties populated.
  */
 function _getTableAttributes(state) {
-    const view = _view()
+    const view = activeView()
     const viewState = state ?? view.state;
     const selection = viewState.selection;
     const nodeTypes = viewState.schema.nodes;
@@ -3088,7 +2102,7 @@ function _getTableAttributes(state) {
  * @return {String}   {Tag name | 'Multiple'} that represents the selected paragraph style.
  */
 function _getParagraphStyle() {
-    const view = _view()
+    const view = activeView()
     return paragraphStyle(view.state)
 };
 
@@ -3126,7 +2140,7 @@ function _paragraphStyleFor(node) {
 };
 
 export function isIndented(activeState) {
-    const view = _view()
+    const view = activeView()
     let state = activeState ? activeState : view.state;
     return _getIndented(state); 
 }
@@ -3148,6 +2162,30 @@ function _getIndented(state) {
     return indented;
 };
 
+//MARK: Callbacks
+
+/**
+ * Callback to signal that input came-in, passing along the DIV ID
+ * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
+ * callback means the change happened in the 'editor' div.
+ */
+export function callbackInput(element) {
+    changed = true;
+    _callback('input' + (selectedID ?? ''), element)
+};
+
+function _callbackReady() {
+    activeMessageHandler()?.postMessage('ready')
+}
+
+/**
+ * Callback to signal that user-provided CSS and/or script files have
+ * been loaded.
+ */
+function _loadedUserFiles(target) {
+    _callback('loadedUserFiles', target ?? activeDocument());
+};
+
 /**
  * Report a selection change.
  */
@@ -3164,21 +2202,45 @@ export function clicked(view, element) {
 }
 
 /**
- * Report focus.
+ * Report a button click.
+ */
+export function buttonClicked(message, element) {
+    _callback(message, element)
+}
+
+/// Search-related callbacks
+
+export function searchedCallback(element) {
+    _callback('searched', element)
+}
+
+export function activateSearchCallback(element) {
+    _callback('activateSearch', element)
+}
+
+export function deactivateSearchCallback(element) {
+    _callback('deactivateSearch', element)
+}
+
+/**
+ * Set the active document and report focus.
  */
 export function focused(element) {
-    console.log('activeMuId: ' + element.getRootNode().muId)
-    setActiveMuId(element.getRootNode().muId)
+    setActiveDocument(element.getRootNode())
     _callback('focus', element)
 }
 
 /**
- * Report blur.
+ * Report blur. Note we don't reset active `muId` because elements 
+ * lose focus (e.g., during user interaction like search) and we 
+ * still want to use the same root node `muId`.
  */
 export function blurred(element) {
-    console.log('activeMuId: null')
-    setActiveMuId(null)
     _callback('blur', element)
+}
+
+export function callbackError(message, element) {
+    _callback(message, element)
 }
 
 /**
@@ -3206,7 +2268,7 @@ function _editor(view) {
  * @param {string | Object} message  A JSON-serializable JavaScript object.
  */
 export function postMessage(message) {
-    _callback(JSON.stringify(message), _document())
+    _callback(JSON.stringify(message), activeDocument())
 }
 
 /********************************************************************************
@@ -3227,7 +2289,7 @@ export function postMessage(message) {
  * @param {*} sel       An embedded character in contents marking selection point(s)
  */
 export function setTestHTML(contents, sel) {
-    const view = _view()
+    const view = activeView()
     // Start by resetting the view state.
     let state = EditorState.create({schema: schema, doc: view.state.doc, plugins: view.state.plugins});
     view.updateState(state);
@@ -3237,11 +2299,11 @@ export function setTestHTML(contents, sel) {
     if (!sel) return;           // Don't do any selection if we don't know what marks it
 
     // We need to clear the search state because we use it to find sel markers.
-    searcher.cancel();
+    activeSearcher()?.cancel();
 
     // It's important that deleting the sel markers is not part of history, because 
     // otherwise undoing later will put them back.
-    const selFrom = searcher.searchFor(sel).from;   // Find the first marker
+    const selFrom = activeSearcher()?.searchFor(sel).from;   // Find the first marker
     if (selFrom) {              // Delete the 1st sel
         const transaction = view.state.tr
             .deleteSelection()
@@ -3251,7 +2313,7 @@ export function setTestHTML(contents, sel) {
         return;                 // There was no marker to find
     }
 
-    let selTo = searcher.searchFor(sel).to;         // May be the same if only one marker
+    let selTo = activeSearcher()?.searchFor(sel).to;         // May be the same if only one marker
     if (selTo != selFrom) {     // Delete the 2nd sel if there is one; if not, they are the same
         const transaction = view.state.tr
             .deleteSelection()
@@ -3274,7 +2336,7 @@ export function setTestHTML(contents, sel) {
  */
 export function getTestHTML(sel) {
     if (!sel) return getHTML(false);   // Return the compressed/unformatted HTML if no sel
-    const view = _view()
+    const view = activeView()
     let state = view.state;
     const selection = state.selection;
     const selFrom = selection.from;
@@ -3290,7 +2352,7 @@ export function getTestHTML(sel) {
 };
 
 export function doUndo() {
-    const view = _view()
+    const view = activeView()
     let command = undoCommand();
     let result = command(view.state, view.dispatch, view);
     return result
@@ -3311,7 +2373,7 @@ export function undoCommand() {
 };
 
 export function doRedo() {
-    const view = _view()
+    const view = activeView()
     let command = redoCommand();
     let result = command(view.state, view.dispatch, view);
     return result
@@ -3341,7 +2403,7 @@ export function testBlockquoteEnter() {
  * For testing purposes, invoke _doListEnter programmatically.
  */
 export function testListEnter() {
-    const view = _view()
+    const view = activeView()
     const splitCommand = splitListItem(schema.nodes.list_item);
     splitCommand(view.state, view.dispatch);
 };
@@ -3363,8 +2425,8 @@ export function testExtractContents() {
  */
 export function testPasteHTMLPreprocessing(html) {
     const node = _nodeFromHTML(html);
-    const fragment = _fragmentFromNode(node);
-    return _htmlFromFragment(fragment);
+    const fragment = fragmentFromNode(node);
+    return htmlFromFragment(fragment);
 };
 
 /**
@@ -3373,7 +2435,7 @@ export function testPasteHTMLPreprocessing(html) {
  */
 export function testPasteTextPreprocessing(html) {
     const node = _nodeFromHTML(html);
-    const fragment = _fragmentFromNode(node);
+    const fragment = fragmentFromNode(node);
     const minimalHTML = _minimalHTML(fragment);
     return minimalHTML;
 };
@@ -3392,7 +2454,7 @@ export function testPasteTextPreprocessing(html) {
  * @param {String}  url             The url/href to use for the link
  */
 export function insertLink(url) {
-    const view = _view()
+    const view = activeView()
     let command = insertLinkCommand(url);
     let result = command(view.state, view.dispatch, view);
     return result
@@ -3562,7 +2624,7 @@ export function headers(state) {
  * areas outside of the link.
  */
 export function deleteLink() {
-    const view = _view()
+    const view = activeView()
     // Make sure the selection is in a single text node with a linkType Mark and 
     // that the full link is selected in the view.
     selectFullLink(view)
@@ -3633,7 +2695,7 @@ export function selectFullLink(view) {
  * @param {String}              alt         The alt text describing the image.
  */
 export function insertImage(src, alt) {
-    const view = _view()
+    const view = activeView()
     let command = insertImageCommand(src, alt);
     return command(view.state, view.dispatch, view)
 };
@@ -3657,7 +2719,7 @@ export function insertImageCommand(src, alt) {
  * @param {String}              alt         The alt text describing the image.
  */
 export function modifyImage(src, alt) {
-    const view = _view()
+    const view = activeView()
     let command = modifyImageCommand(src, alt);
     return command(view.state, view.dispatch, view)
 };
@@ -3697,7 +2759,7 @@ export function modifyImageCommand(src, alt) {
  * by the side holding the copy buffer, not via JavaScript.
  */
 export function cutImage() {
-    const view = _view()
+    const view = activeView()
     const selection = view.state.selection
     const imageNode = selection.node;
     if (imageNode?.type === schema.nodes.image) {
@@ -3720,7 +2782,7 @@ function copyImage(node) {
         'alt' : node.attrs.alt,
         'dimensions' : {width: node.attrs.width, height: node.attrs.height}
     };
-    _callback(JSON.stringify(messageDict), _document());
+    _callback(JSON.stringify(messageDict), activeDocument());
 };
 
 /********************************************************************************
@@ -3735,7 +2797,7 @@ function copyImage(node) {
  * @param   {Int}                 cols        The number of columns in the table to be created.
  */
 export function insertTable(rows, cols) {
-    const view = _view()
+    const view = activeView()
     if ((rows < 1) || (cols < 1)) return;
     let command = insertTableCommand(rows, cols);
     let result = command(view.state, view.dispatch, view);
@@ -3815,7 +2877,7 @@ export function insertTableCommand(rows, cols) {
  * @param {String}  direction   Either 'BEFORE' or 'AFTER' to identify where the new row goes relative to the selection.
  */
 export function addRow(direction) {
-    const view = _view()
+    const view = activeView()
     if (!_tableSelected()) return;
     let command = addRowCommand(direction);
     let result = command(view.state, view.dispatch, view)
@@ -3845,7 +2907,7 @@ export function addRowCommand(direction) {
  * @param {String}  direction   Either 'BEFORE' or 'AFTER' to identify where the new column goes relative to the selection.
  */
 export function addCol(direction) {
-    const view = _view()
+    const view = activeView()
     if (!_tableSelected()) return;
     let command = addColCommand(direction);
     let result = command(view.state, view.dispatch, view);
@@ -3889,7 +2951,7 @@ export function addColCommand(direction) {
  * @param {boolean} colspan     Whether the header should span all columns of the table or not.
  */
 export function addHeader(colspan=true) {
-    const view = _view()
+    const view = activeView()
     let tableAttributes = _getTableAttributes();
     if (!tableAttributes.table || tableAttributes.header) return;   // We're not in a table or we are but it has a header already
     let command = addHeaderCommand(colspan);
@@ -3946,7 +3008,7 @@ export function addHeaderCommand(colspan = true) {
  */
 export function deleteTableArea(area) {
     if (!_tableSelected()) return;
-    const view = _view()
+    const view = activeView()
     let command = deleteTableAreaCommand(area);
     let result = command(view.state, view.dispatch, view);
     view.focus();
@@ -3978,7 +3040,7 @@ export function deleteTableAreaCommand(area) {
  */
 export function borderTable(border) {
     if (_tableSelected()) {
-        const view = _view()
+        const view = activeView()
         let command = setBorderCommand(border);
         let result = command(view.state, view.dispatch, view);
         stateChanged(view);
@@ -4192,8 +3254,19 @@ function _nodeFromElement(htmlElement) {
  * @param {Node} node 
  * @returns DocumentFragment
  */
-function _fragmentFromNode(node) {
+export function fragmentFromNode(node) {
     return DOMSerializer.fromSchema(schema).serializeFragment(node.content);
+};
+
+/**
+ * Return the innerHTML string contained in a DocumentFragment.
+ * @param {DocumentFragment} fragment 
+ * @returns string
+ */
+export function htmlFromFragment(fragment) {
+    const div = document.createElement('div');
+    div.appendChild(fragment);
+    return div.innerHTML;
 };
 
 /**
@@ -4226,17 +3299,6 @@ function _sliceFromHTML(html) {
 function _sliceFromElement(htmlElement) {
     return DOMParser.fromSchema(schema).parseSlice(htmlElement, { preserveWhiteSpace: true });
 }
-
-/**
- * Return the innerHTML string contained in a DocumentFragment.
- * @param {DocumentFragment} fragment 
- * @returns string
- */
-function _htmlFromFragment(fragment) {
-    const div = document.createElement('div');
-    div.appendChild(fragment);
-    return div.innerHTML;
-};
 
 /**
  * Return whether node is a textNode or not
@@ -4282,5 +3344,5 @@ function _consoleLog(string) {
         'messageType' : 'log',
         'log' : string
     }
-    _callback(JSON.stringify(messageDict), _document());
+    _callback(JSON.stringify(messageDict), activeDocument());
 };
