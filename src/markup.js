@@ -2251,6 +2251,7 @@ export function callbackError(message, element) {
  * @returns Bool    Return false so we can use in chainCommands directly
  */
 export function stateChanged(view) {
+    if (!view) return
     deactivateSearch(view)
     selectionChanged(_editor(view))
     callbackInput(_editor(view))
