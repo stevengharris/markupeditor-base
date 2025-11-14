@@ -18776,6 +18776,7 @@
    * @returns Bool    Return false so we can use in chainCommands directly
    */
   function stateChanged(view) {
+      if (!view) return
       deactivateSearch(view);
       selectionChanged(_editor(view));
       callbackInput(_editor(view));
@@ -23774,14 +23775,11 @@
       // Toolbar configuration
       if (toolbarConfig) {
         if (typeof toolbarConfig === 'string') {
-          console.log("toolbarConfig1: " + toolbarConfig);
           this.config.toolbar = getConfig(toolbarConfig);
         } else {
-          console.log("toolbarConfig2: " + toolbarConfig);
           this.config.toolbar = toolbarConfig;
         }
       } else {
-        console.log("toolbarConfig3: " + toolbarConfig);
         this.config.toolbar = ToolbarConfig.standard();
       }
 

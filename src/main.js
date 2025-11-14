@@ -224,14 +224,11 @@ class MarkupEditor {
     // Toolbar configuration
     if (toolbarConfig) {
       if (typeof toolbarConfig === 'string') {
-        console.log("toolbarConfig1: " + toolbarConfig)
         this.config.toolbar = getConfig(toolbarConfig)
       } else {
-        console.log("toolbarConfig2: " + toolbarConfig)
         this.config.toolbar = toolbarConfig
       }
     } else {
-      console.log("toolbarConfig3: " + toolbarConfig)
       this.config.toolbar = ToolbarConfig.standard()
     }
 
