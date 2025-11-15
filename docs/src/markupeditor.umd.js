@@ -23395,60 +23395,62 @@
    */
   class ToolbarConfig {
 
-    static all = {
-      "visibility": {             // Control the visibility of toolbars, etc
-        "toolbar": true,          // Whether the toolbar is visible at all
-        "correctionBar": true,    // Whether the correction bar (undo/redo) is visible
-        "insertBar": true,        // Whether the insert bar (link, image, table) is visible
-        "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
-        "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
-        "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
-        "search": true,           // Whether the search item (hide/show search bar) is visible
-      },
-      "ordering": {               // Control the ordering of toolbars, etc, ascending left-to-right
-        "correctionBar": 10,      // Correction bar order if it is visible
-        "insertBar": 20,          // Insert bar (link, image, table) order if it is visible
-        "styleMenu": 30,          // Style menu (p, h1-h6, code) order if it is visible
-        "styleBar": 40,           // Style bar (bullet/numbered lists) order if it is visible
-        "formatBar": 50,          // Format bar (b, i, u, etc) order if it is visible
-        "search": 60,             // Search item (hide/show search bar) order if it is visible
-      },
-      "insertBar": {
-        "link": true,             // Whether the link menu item is visible
-        "image": true,            // Whether the image menu item is visible
-        "tableMenu": true,        // Whether the table menu is visible
-      },
-      "formatBar": {
-        "bold": true,             // Whether the bold menu item is visible
-        "italic": true,           // Whether the italic menu item is visible
-        "underline": true,        // Whether the underline menu item is visible
-        "code": true,             // Whether the code menu item is visible
-        "strikethrough": true,    // Whether the strikethrough menu item is visible
-        "subscript": true,        // Whether the subscript menu item is visible
-        "superscript": true,      // Whether the superscript menu item is visible
-      },
-      "styleMenu": {
-        "p": "Body",              // The label in the menu for "P" style
-        "h1": "H1",               // The label in the menu for "H1" style
-        "h2": "H2",               // The label in the menu for "H2" style
-        "h3": "H3",               // The label in the menu for "H3" style
-        "h4": "H4",               // The label in the menu for "H4" style
-        "h5": "H5",               // The label in the menu for "H5" style
-        "h6": "H6",               // The label in the menu for "H6" style
-        "pre": "Code",            // The label in the menu for "PRE" aka code_block style
-      },
-      "styleBar": {
-        "list": true,             // Whether bullet and numbered list items are visible
-        "dent": true,             // Whether indent and outdent items are visible
-      },
-      "tableMenu": {
-        "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
-        "border": true,           // Whether the "Border" item is visible in the "Table" menu
-      },
+    static _all() {                 // Needs to be a function not property for multiple editors
+      return {
+        "visibility": {             // Control the visibility of toolbars, etc
+          "toolbar": true,          // Whether the toolbar is visible at all
+          "correctionBar": true,    // Whether the correction bar (undo/redo) is visible
+          "insertBar": true,        // Whether the insert bar (link, image, table) is visible
+          "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
+          "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
+          "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
+          "search": true,           // Whether the search item (hide/show search bar) is visible
+        },
+        "ordering": {               // Control the ordering of toolbars, etc, ascending left-to-right
+          "correctionBar": 10,      // Correction bar order if it is visible
+          "insertBar": 20,          // Insert bar (link, image, table) order if it is visible
+          "styleMenu": 30,          // Style menu (p, h1-h6, code) order if it is visible
+          "styleBar": 40,           // Style bar (bullet/numbered lists) order if it is visible
+          "formatBar": 50,          // Format bar (b, i, u, etc) order if it is visible
+          "search": 60,             // Search item (hide/show search bar) order if it is visible
+        },
+        "insertBar": {
+          "link": true,             // Whether the link menu item is visible
+          "image": true,            // Whether the image menu item is visible
+          "tableMenu": true,        // Whether the table menu is visible
+        },
+        "formatBar": {
+          "bold": true,             // Whether the bold menu item is visible
+          "italic": true,           // Whether the italic menu item is visible
+          "underline": true,        // Whether the underline menu item is visible
+          "code": true,             // Whether the code menu item is visible
+          "strikethrough": true,    // Whether the strikethrough menu item is visible
+          "subscript": true,        // Whether the subscript menu item is visible
+          "superscript": true,      // Whether the superscript menu item is visible
+        },
+        "styleMenu": {
+          "p": "Body",              // The label in the menu for "P" style
+          "h1": "H1",               // The label in the menu for "H1" style
+          "h2": "H2",               // The label in the menu for "H2" style
+          "h3": "H3",               // The label in the menu for "H3" style
+          "h4": "H4",               // The label in the menu for "H4" style
+          "h5": "H5",               // The label in the menu for "H5" style
+          "h6": "H6",               // The label in the menu for "H6" style
+          "pre": "Code",            // The label in the menu for "PRE" aka code_block style
+        },
+        "styleBar": {
+          "list": true,             // Whether bullet and numbered list items are visible
+          "dent": true,             // Whether indent and outdent items are visible
+        },
+        "tableMenu": {
+          "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
+          "border": true,           // Whether the "Border" item is visible in the "Table" menu
+        },
+      }
     }
 
     static full(correction=false) {
-      let full = this.all;
+      let full = this._all();
       full.visibility.correctionBar = correction;
       return full
     }
@@ -23493,41 +23495,43 @@
    * by setting its value to null or an empty string. 
    */
   class KeymapConfig {
-      static all = {
-          // Correction
-          "undo": "Mod-z",
-          "redo": "Shift-Mod-z",
-          // Insert
-          "link": ["Mod-K", "Mod-k"],
-          "image": ["Mod-G", "Mod-g"],
-          //"table": ["Mod-T", "Mod-t"],  // Does not work anyway
-          // Stylemenu
-          "p": "Ctrl-Shift-0",
-          "h1": "Ctrl-Shift-1",
-          "h2": "Ctrl-Shift-2",
-          "h3": "Ctrl-Shift-3",
-          "h4": "Ctrl-Shift-4",
-          "h5": "Ctrl-Shift-5",
-          "h6": "Ctrl-Shift-6",
-          // Stylebar
-          "bullet": ["Ctrl-U", "Ctrl-u"],
-          "number": ["Ctrl-O", "Ctrl-o"],
-          "indent": ["Mod-]", "Ctrl-q"],
-          "outdent": ["Mod-[", "Shift-Ctrl-q"],
-          // Format
-          "bold": ["Mod-B", "Mod-b"],
-          "italic": ["Mod-I", "Mod-i"],
-          "underline": ["Mod-U", "Mod-u"],
-          "strikethrough": ["Ctrl-S", "Ctrl-s"],
-          "code": "Mod-`",
-          "subscript": "Ctrl-Mod--",
-          "superscript": "Ctrl-Mod-+",
-          // Search
-          "search": ["Ctrl-F", "Ctrl-f"],
+      static _all() {                 // Needs to be a function not property for multiple editors
+          return {
+              // Correction
+              "undo": "Mod-z",
+              "redo": "Shift-Mod-z",
+              // Insert
+              "link": ["Mod-K", "Mod-k"],
+              "image": ["Mod-G", "Mod-g"],
+              //"table": ["Mod-T", "Mod-t"],  // Does not work anyway
+              // Stylemenu
+              "p": "Ctrl-Shift-0",
+              "h1": "Ctrl-Shift-1",
+              "h2": "Ctrl-Shift-2",
+              "h3": "Ctrl-Shift-3",
+              "h4": "Ctrl-Shift-4",
+              "h5": "Ctrl-Shift-5",
+              "h6": "Ctrl-Shift-6",
+              // Stylebar
+              "bullet": ["Ctrl-U", "Ctrl-u"],
+              "number": ["Ctrl-O", "Ctrl-o"],
+              "indent": ["Mod-]", "Ctrl-q"],
+              "outdent": ["Mod-[", "Shift-Ctrl-q"],
+              // Format
+              "bold": ["Mod-B", "Mod-b"],
+              "italic": ["Mod-I", "Mod-i"],
+              "underline": ["Mod-U", "Mod-u"],
+              "strikethrough": ["Ctrl-S", "Ctrl-s"],
+              "code": "Mod-`",
+              "subscript": "Ctrl-Mod--",
+              "superscript": "Ctrl-Mod-+",
+              // Search
+              "search": ["Ctrl-F", "Ctrl-f"],
+          }
       }
 
       static full() {
-          return this.all
+          return this._all()
       }
 
       static standard() {
@@ -23564,19 +23568,21 @@
    */
   class BehaviorConfig {
 
-      static all = {
-          "focusAfterLoad": true,     // Whether the editor should take focus after loading
-          "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
-          "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
-          "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
+      static _all() {                     // Needs to be a function not property for multiple editors
+          return {
+              "focusAfterLoad": true,     // Whether the editor should take focus after loading
+              "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
+              "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
+              "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
+          }
       }
 
       static standard() { 
-          return this.all
+          return this._all()
       }
 
       static desktop() { 
-          let desktop = this.all;
+          let desktop = this._all();
           desktop.selectImage = true;
           return desktop
       }
@@ -23770,9 +23776,9 @@
       // dereferenced to an instance using `getConfig`, or as an instance
       // modeled on ToolbarConfig, KeymapConfig, or BehaviorConfig.
       this.config = config ?? {};
-      let toolbarConfig = this.config.toolbar;
 
       // Toolbar configuration
+      let toolbarConfig = this.config.toolbar;
       if (toolbarConfig) {
         if (typeof toolbarConfig === 'string') {
           this.config.toolbar = getConfig(toolbarConfig);

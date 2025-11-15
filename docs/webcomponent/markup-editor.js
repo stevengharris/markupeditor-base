@@ -52,13 +52,13 @@ class MarkupEditorElement extends HTMLElement {
     // Have this MarkupEditorElement instance listen for the `ready` callback
     // that is dispatched from `loadedEditorScript`.
     this.addEventListener('muCallback', (e) => {
-      console.log(`muCallback(${e.message}) on MarkupEditorElement`)
+      //console.log(`muCallback(${e.message}) on MarkupEditorElement`)
       switch (e.message) {
         case 'ready':
           this.appendEditorStyle()
           break
         default:
-          console.log(' Did nothing.')
+          //console.log(' Did nothing.')
       }
     })
 
@@ -67,7 +67,7 @@ class MarkupEditorElement extends HTMLElement {
     // other than `loadedUserFiles` are handled by the `messageHandler` 
     // for the `view`. This way a user can override `messageHandler` 
     this.editorContainer.addEventListener('muCallback', (e) => {
-      console.log(`muCallback(${e.message}) on editorContainer`)
+      //console.log(`muCallback(${e.message}) on editorContainer`)
       switch (e.message) {
         case 'loadedUserFiles':
           this.createEditor()
@@ -93,7 +93,7 @@ class MarkupEditorElement extends HTMLElement {
    * configured MarkupEditor instance.
    */ 
   connectedCallback() {
-    console.log("connectedCallback")
+    //console.log("connectedCallback")
     this.appendEditorScript()
   }
 
@@ -106,7 +106,7 @@ class MarkupEditorElement extends HTMLElement {
    * its `destroy` method.
    */
   disconnectedCallback() {
-    console.log("disconnectedCallback")
+    //console.log("disconnectedCallback")
     this.editor.destroy();
 	}
 
@@ -130,7 +130,7 @@ class MarkupEditorElement extends HTMLElement {
   appendEditorScript() {
     if (window.markupEditorScriptLoaded) return  // Only load it once
     window.markupEditorScriptLoaded = true
-    console.log('appendEditorScript')
+    //console.log('appendEditorScript')
     const muScript = this.getAttribute('muScript') ?? './markupeditor.umd.js'
     const baseScript = document.createElement('script')
     baseScript.setAttribute('src', muScript)
@@ -160,7 +160,7 @@ class MarkupEditorElement extends HTMLElement {
    * (finally) creates the MarkupEditor and sets its HTML.
    */
   appendEditorStyle() {
-    console.log('appendEditorStyle')
+    //console.log('appendEditorStyle')
     const muStyle = this.getAttribute('mustyle') ?? './markupeditor.css'
     const link = document.createElement('link')
     link.setAttribute('href', muStyle)
@@ -181,7 +181,7 @@ class MarkupEditorElement extends HTMLElement {
    * has access to the file system (e.g., node.js, but not a browser).
    */
   createEditor() {
-    console.log('createEditor')
+    //console.log('createEditor')
     const config = { 
       filename: this.getAttribute('filename'), 
       placeholder: this.getAttribute('placeholder'), 
@@ -189,7 +189,7 @@ class MarkupEditorElement extends HTMLElement {
       toolbar: this.getAttribute('toolbar'),
       behavior: this.getAttribute('behavior'),
       keymap: this.getAttribute('keymap')
-     }
+    }
     this.editor = new MU.MarkupEditor(this.editorContainer, config)
     MU.setHTML(this.innerHTML, null, null, this.editor.view)
   }

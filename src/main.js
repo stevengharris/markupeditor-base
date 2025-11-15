@@ -219,9 +219,9 @@ class MarkupEditor {
     // dereferenced to an instance using `getConfig`, or as an instance
     // modeled on ToolbarConfig, KeymapConfig, or BehaviorConfig.
     this.config = config ?? {}
-    let toolbarConfig = this.config.toolbar
 
     // Toolbar configuration
+    let toolbarConfig = this.config.toolbar
     if (toolbarConfig) {
       if (typeof toolbarConfig === 'string') {
         this.config.toolbar = getConfig(toolbarConfig)
