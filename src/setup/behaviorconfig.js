@@ -15,19 +15,21 @@
  */
 export class BehaviorConfig {
 
-    static all = {
-        "focusAfterLoad": true,     // Whether the editor should take focus after loading
-        "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
-        "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
-        "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
+    static _all() {                     // Needs to be a function not property for multiple editors
+        return {
+            "focusAfterLoad": true,     // Whether the editor should take focus after loading
+            "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
+            "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
+            "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
+        }
     }
 
     static standard() { 
-        return this.all
+        return this._all()
     }
 
     static desktop() { 
-        let desktop = this.all
+        let desktop = this._all()
         desktop.selectImage = true
         return desktop
     }
