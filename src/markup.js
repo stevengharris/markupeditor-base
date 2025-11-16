@@ -1,4 +1,5 @@
 import {activeEditor, activeView, activeMessageHandler, activeDocument, setActiveDocument, activeSearcher} from './registry'
+import {MUError} from './muerror.js'
 import {schema} from "./schema/index.js"
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
 import {DOMParser, DOMSerializer} from 'prosemirror-model'
@@ -50,52 +51,6 @@ let changed = false;
 export function isChanged() {
     return changed
 }
-
-/**
- * MUError captures internal errors and makes it easy to communicate them externally.
- *
- * Usage is generally via the statics defined here, altho supplementary info can
- * be provided to the MUError instance when useful.
- *
- * Alert is set to true when the user might want to know an error occurred. Because
- * this is generally the case, it's set to true by default and certain MUErrors that
- * are more informational in nature are set to false.
- *
- * Note that there is at least one instance of the Swift side notifying its MarkupDelegate
- * of an error using this same approach, but originating on the Swift side. That happens
- * in MarkupWKWebView.copyImage if anything goes wrong, because the copying to the
- * clipboard is handled on the Swift side.
- */
-class MUError {
-
-    constructor(name, message, info, alert=true) {
-        this.name = name;
-        this.message = message;
-        this.info = info;
-        this.alert = alert;
-    };
-    
-    static NoDiv = new MUError('NoDiv', 'A div could not be found to return HTML from.');
-    static Style = new MUError('Style', 'Unable to apply style at selection.')
-    
-    setInfo(info) {
-        this.info = info
-    };
-    
-    messageDict() {
-        return {
-            'messageType' : 'error',
-            'code' : this.name,
-            'message' : this.message,
-            'info' : this.info,
-            'alert' : this.alert
-        };
-    };
-    
-    callback() {
-        callbackError(JSON.stringify(this.messageDict()), activeDocument());
-    };
-};
 
 /**
  * Handle pressing Enter.
@@ -281,8 +236,8 @@ if (typeof window != 'undefined') {
      * with the call stack and reproduction instructions if at all possible.
      */
     window.addEventListener('error', function () {
-        const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... in Safari Web Inspector to debug.');
-        muError.callback()
+        const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... to debug.');
+        _callbackError(muError)
     });
 
     /**
@@ -568,7 +523,7 @@ export function getHTML(pretty='true', clean='true', divID) {
     const cleanHTML = clean === 'true';
     const divNode = (divID) ? _getNode(divID)?.node : view.state.doc;
     if (!divNode) {
-        MUError.NoDiv.callback();
+        _callbackError(MUError.NoDiv)
         return "";
     }
     const editor = DOMSerializer.fromSchema(schema).serializeFragment(divNode.content);
@@ -1195,9 +1150,9 @@ export function setStyleCommand(style) {
             return false;   // We only need top-level nodes within doc
         });
         if (error) {
-            //error.alert = true;
-            //error.callback();
-            return false;
+            //error.alert = true
+            //_callbackError(error)
+            return false
         } else if (view) {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
@@ -2187,6 +2142,14 @@ function _loadedUserFiles(target) {
 };
 
 /**
+ * Callback to signal that an error occurred.
+ * @param {MUError} error 
+ */
+function _callbackError(error) {
+    _callback(error.messageDict(), activeDocument())
+}
+
+/**
  * Report a selection change.
  */
 export function selectionChanged(element) {
@@ -2237,10 +2200,6 @@ export function focused(element) {
  */
 export function blurred(element) {
     _callback('blur', element)
-}
-
-export function callbackError(message, element) {
-    _callback(message, element)
 }
 
 /**
