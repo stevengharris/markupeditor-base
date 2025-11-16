@@ -12,11 +12,11 @@ window.markupEditorScriptLoaded = window.markupEditorScriptLoaded || false; // I
  * 
  * We use the `connectedCallback`, which is called for each MarkupEditorElement, 
  * to trigger appending MarkupEditor base script only once. It's loaded into 
- * the first MarkupEditorElement, and produces the global MU the provides access
+ * the first MarkupEditorElement, and produces the global MU that provides access
  * to all editor functionality regardless of where subsequent scripts are run.
  * When the base script finishes loading, we dispatch the `ready` `muCallback` 
  * event for each MarkupEditorElement instance in `document`. From that point, 
- * the MarkupEditor styling is appended for editor set up for each individual 
+ * the MarkupEditor styling is appended to the `editor` set up for each individual 
  * MarkupEditorElement instance. Any user-supplied script and styling are also 
  * appended. Once those are appended (and even if they are not specified), the 
  * `loadedUserFiles` `muCallback` is dispatched for the MarkupEditorElement 
