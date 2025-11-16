@@ -16657,38 +16657,6 @@
   const activeConfig = _muRegistry.activeConfig.bind(_muRegistry);
 
   /**
-   * Define various arrays of tags used to represent MarkupEditor-specific concepts.
-   *
-   * For example, "Paragraph Style" is a MarkupEditor concept that doesn't map directly to HTML or CSS.
-   */
-
-  // Add STRONG and EM (leaving B and I) to support default ProseMirror output   
-  const _formatTags = ['B', 'STRONG', 'I', 'EM', 'U', 'DEL', 'SUB', 'SUP', 'CODE'];       // All possible (nestable) formats
-
-  const _minimalStyleTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE'];           // Convert to 'P' for pasteText
-
-  const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', 'META', 'PARAM']; // Tags that are self-closing
-
-  /**
-   * `selectedID` is the id of the contentEditable DIV containing the currently selected element.
-   */
-  let selectedID = null;
-
-  /**
-   * The searcher is the singleton that handles finding ranges that
-   * contain a search string within editor.
-   */
-  function searchIsActive() { return activeSearcher().isActive }
-
-  //TODO: Replace with another mechanism to track if doc changed
-  /** changed tracks whether the document has changed since `setHTML` */
-  let changed = false;
-
-  function isChanged() {
-      return changed
-  }
-
-  /**
    * MUError captures internal errors and makes it easy to communicate them externally.
    *
    * Usage is generally via the statics defined here, altho supplementary info can
@@ -16728,11 +16696,41 @@
               'alert' : this.alert
           };
       };
-      
-      callback() {
-          callbackError(JSON.stringify(this.messageDict()), activeDocument());
-      };
+
   }
+
+  /**
+   * Define various arrays of tags used to represent MarkupEditor-specific concepts.
+   *
+   * For example, "Paragraph Style" is a MarkupEditor concept that doesn't map directly to HTML or CSS.
+   */
+
+  // Add STRONG and EM (leaving B and I) to support default ProseMirror output   
+  const _formatTags = ['B', 'STRONG', 'I', 'EM', 'U', 'DEL', 'SUB', 'SUP', 'CODE'];       // All possible (nestable) formats
+
+  const _minimalStyleTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE'];           // Convert to 'P' for pasteText
+
+  const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', 'META', 'PARAM']; // Tags that are self-closing
+
+  /**
+   * `selectedID` is the id of the contentEditable DIV containing the currently selected element.
+   */
+  let selectedID = null;
+
+  /**
+   * The searcher is the singleton that handles finding ranges that
+   * contain a search string within editor.
+   */
+  function searchIsActive() { return activeSearcher().isActive }
+
+  //TODO: Replace with another mechanism to track if doc changed
+  /** changed tracks whether the document has changed since `setHTML` */
+  let changed = false;
+
+  function isChanged() {
+      return changed
+  }
+
   /**
    * Handle pressing Enter.
    * 
@@ -16909,8 +16907,8 @@
        * with the call stack and reproduction instructions if at all possible.
        */
       window.addEventListener('error', function () {
-          const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... in Safari Web Inspector to debug.');
-          muError.callback();
+          const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... to debug.');
+          _callbackError(muError);
       });
 
       /**
@@ -17182,7 +17180,7 @@
       const cleanHTML = clean === 'true';
       const divNode = (divID) ? _getNode(divID)?.node : view.state.doc;
       if (!divNode) {
-          MUError.NoDiv.callback();
+          _callbackError(MUError.NoDiv);
           return "";
       }
       const editor = DOMSerializer.fromSchema(schema).serializeFragment(divNode.content);
@@ -17766,9 +17764,9 @@
               }            return false;   // We only need top-level nodes within doc
           });
           if (error) {
-              //error.alert = true;
-              //error.callback();
-              return false;
+              //error.alert = true
+              //_callbackError(error)
+              return false
           } else if (view) {
               const newState = view.state.apply(transaction);
               view.updateState(newState);
@@ -18712,6 +18710,14 @@
       _callback('loadedUserFiles', target ?? activeDocument());
   }
   /**
+   * Callback to signal that an error occurred.
+   * @param {MUError} error 
+   */
+  function _callbackError(error) {
+      _callback(error.messageDict(), activeDocument());
+  }
+
+  /**
    * Report a selection change.
    */
   function selectionChanged(element) {
@@ -18762,10 +18768,6 @@
    */
   function blurred(element) {
       _callback('blur', element);
-  }
-
-  function callbackError(message, element) {
-      _callback(message, element);
   }
 
   /**
