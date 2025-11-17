@@ -44,14 +44,6 @@ export let selectedID = null;
  */
 export function searchIsActive() { return activeSearcher().isActive }
 
-//TODO: Replace with another mechanism to track if doc changed
-/** changed tracks whether the document has changed since `setHTML` */
-let changed = false;
-
-export function isChanged() {
-    return changed
-}
-
 /**
  * Handle pressing Enter.
  * 
@@ -666,8 +658,6 @@ export function setHTML(contents, focusAfterLoad=true, base, editorView) {
         .scrollIntoView();
     htmlView.dispatch(transaction);
     if (focusAfterLoad) htmlView.focus();
-    // Reset change tracking
-    changed = false;
 };
 
 /**
@@ -2125,7 +2115,6 @@ function _getIndented(state) {
  * callback means the change happened in the 'editor' div.
  */
 export function callbackInput(element) {
-    changed = true;
     _callback('input' + (selectedID ?? ''), element)
 };
 

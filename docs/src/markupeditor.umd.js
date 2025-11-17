@@ -16723,14 +16723,6 @@
    */
   function searchIsActive() { return activeSearcher().isActive }
 
-  //TODO: Replace with another mechanism to track if doc changed
-  /** changed tracks whether the document has changed since `setHTML` */
-  let changed = false;
-
-  function isChanged() {
-      return changed
-  }
-
   /**
    * Handle pressing Enter.
    * 
@@ -17309,8 +17301,6 @@
           .scrollIntoView();
       htmlView.dispatch(transaction);
       if (focusAfterLoad) htmlView.focus();
-      // Reset change tracking
-      changed = false;
   }
   /**
    * Return the height of the editor element that encloses the text.
@@ -18695,7 +18685,6 @@
    * callback means the change happened in the 'editor' div.
    */
   function callbackInput(element) {
-      changed = true;
       _callback('input' + (selectedID ?? ''), element);
   }
   function _callbackReady() {
@@ -23879,6 +23868,10 @@
       // Track the Searcher instance for this editor, using the same muId
       this.searcher = new Searcher();
 
+      // Track the ID of the selected contentEditable element (relevant when 
+      // there is more than one; othewise is `editor` or null)
+      this.selectedID = null;
+
       // Finally, track the editor in the muRegistry.
       registerEditor(this);
     }
@@ -23953,7 +23946,6 @@
   exports.insertImage = insertImage;
   exports.insertLink = insertLink;
   exports.insertTable = insertTable;
-  exports.isChanged = isChanged;
   exports.loadUserFiles = loadUserFiles;
   exports.modifyImage = modifyImage;
   exports.openImageDialog = openImageDialog;

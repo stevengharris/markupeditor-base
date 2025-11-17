@@ -16,7 +16,6 @@ import {
   emptyDocument,
   getHTML,
   getTestHTML,
-  isChanged,
   setHTML,
   setTestHTML,
   getHeight,
@@ -130,7 +129,6 @@ export {
   getHTML,
   getTestHTML,
   setHTML,
-  isChanged,
   setTestHTML,
   getHeight,
   padBottom,
@@ -321,6 +319,10 @@ class MarkupEditor {
 
     // Track the Searcher instance for this editor, using the same muId
     this.searcher = new Searcher()
+
+    // Track the ID of the selected contentEditable element (relevant when 
+    // there is more than one; othewise is `editor` or null)
+    this.selectedID = null
 
     // Finally, track the editor in the muRegistry.
     registerEditor(this)
