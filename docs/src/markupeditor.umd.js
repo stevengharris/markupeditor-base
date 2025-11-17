@@ -16551,16 +16551,6 @@
           this._activeMuId = muId;
       }
 
-      /** Set `activeMuId` based on the `document` (could be shadow root). */
-      setActiveDocument(document) {
-          this._setActiveMuId(document?.muId);
-      }
-
-      /** Set `activeMuId` based on the `view` (whose root has `muId`). */
-      setActiveView(view) {
-          this.setActiveDocument(view?.root);
-      }
-
       /**
        * Add the `editor` to the registry.
        * 
@@ -16617,9 +16607,19 @@
           return this.activeEditor()?.view
       }
 
+      /** Set `activeMuId` based on the `view` (whose root has `muId`). */
+      setActiveView(view) {
+          this.setActiveDocument(view?.root);
+      }
+
       /** Return the active editor's `document` (could be the shadow root). */
       activeDocument() {
           return this.activeEditor()?.element.getRootNode()
+      }
+
+      /** Set `activeMuId` based on the `document` (could be shadow root). */
+      setActiveDocument(document) {
+          this._setActiveMuId(document?.muId);
       }
 
       /** Return the active editor's `messageHandler`. */
@@ -16636,11 +16636,18 @@
       activeConfig() {
           return this.activeEditor()?.config
       }
+
+      /** Return the ID of the selected contentEditable element */
+      selectedID() {
+          return this.activeEditor()?.selectedID
+      }
+
+      setSelectedID(string) {
+          this.activeEditor().selectedID = string;
+      }
   }
 
   const _muRegistry = new MURegistry();
-  const setActiveDocument = _muRegistry.setActiveDocument.bind(_muRegistry);
-  const setActiveView = _muRegistry.setActiveView.bind(_muRegistry);
   const registerEditor = _muRegistry.registerEditor.bind(_muRegistry);
   const unregisterEditor = _muRegistry.unregisterEditor.bind(_muRegistry);
   const registerDelegate = _muRegistry.registerDelegate.bind(_muRegistry);
@@ -16651,10 +16658,14 @@
   const getConfig = _muRegistry.getConfig.bind(_muRegistry);
   const activeEditor = _muRegistry.activeEditor.bind(_muRegistry);
   const activeView = _muRegistry.activeView.bind(_muRegistry);
+  const setActiveView = _muRegistry.setActiveView.bind(_muRegistry);
   const activeDocument = _muRegistry.activeDocument.bind(_muRegistry);
+  const setActiveDocument = _muRegistry.setActiveDocument.bind(_muRegistry);
   const activeMessageHandler = _muRegistry.activeMessageHandler.bind(_muRegistry);
   const activeSearcher = _muRegistry.activeSearcher.bind(_muRegistry);
   const activeConfig = _muRegistry.activeConfig.bind(_muRegistry);
+  const selectedID = _muRegistry.selectedID.bind(_muRegistry);
+  const setSelectedID = _muRegistry.setSelectedID.bind(_muRegistry);
 
   /**
    * MUError captures internal errors and makes it easy to communicate them externally.
@@ -16713,11 +16724,6 @@
   const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', 'META', 'PARAM']; // Tags that are self-closing
 
   /**
-   * `selectedID` is the id of the contentEditable DIV containing the currently selected element.
-   */
-  let selectedID = null;
-
-  /**
    * The searcher is the singleton that handles finding ranges that
    * contain a search string within editor.
    */
@@ -16774,7 +16780,7 @@
   function handleDelete() {
       const view = activeView();
       const imageAttributes = _getImageAttributes();
-      if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID ?? '') });
+      if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') });
       stateChanged(view);
       return false;
   }
@@ -17099,9 +17105,10 @@
    * Clean out the document and replace it with an empty paragraph
    */
   function emptyDocument() {
-      selectedID = null;
+      setSelectedID(null);
       setHTML(emptyHTML());
   }
+
   function emptyHTML() {
       return '<p></p>'
   }
@@ -17112,8 +17119,9 @@
    * @param {string} id 
    */
   function resetSelectedID(id) { 
-      selectedID = id;
+      setSelectedID(id);
   }
+
   /**
    * Return an array of `src` attributes for images that are encoded as data, empty if there are none.
    * 
@@ -17561,7 +17569,7 @@
   function focusOn(id) {
       const view = activeView();
       const {node, pos} = _getNode(id);
-      if (node && (node.attrs.id !== selectedID)) {
+      if (node && (node.attrs.id !== selectedID())) {
           const selection = new TextSelection(view.state.doc.resolve(pos));
           const transaction = view.state.tr.setSelection(selection).scrollIntoView();
           view.dispatch(transaction);
@@ -18685,7 +18693,7 @@
    * callback means the change happened in the 'editor' div.
    */
   function callbackInput(element) {
-      _callback('input' + (selectedID ?? ''), element);
+      _callback('input' + (selectedID() ?? ''), element);
   }
   function _callbackReady() {
       activeMessageHandler()?.postMessage('ready');
@@ -23869,7 +23877,7 @@
       this.searcher = new Searcher();
 
       // Track the ID of the selected contentEditable element (relevant when 
-      // there is more than one; othewise is `editor` or null)
+      // there is more than one; otherwise is `editor` or null)
       this.selectedID = null;
 
       // Finally, track the editor in the muRegistry.

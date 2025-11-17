@@ -12,12 +12,8 @@ import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
 import {setPrefix} from "../domaccess.js"
 import {LinkItem, ImageItem, SearchItem} from "./menuitems.js"
-import {
-  postMessage, 
-  selectedID, 
-  searchIsActive, 
-} from "../markup"
-import { activeConfig } from "../registry.js"
+import {postMessage, searchIsActive} from "../markup"
+import {activeConfig, selectedID} from "../registry.js"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 

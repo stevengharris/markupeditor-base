@@ -19,16 +19,6 @@ class MURegistry {
         this._activeMuId = muId
     }
 
-    /** Set `activeMuId` based on the `document` (could be shadow root). */
-    setActiveDocument(document) {
-        this._setActiveMuId(document?.muId)
-    }
-
-    /** Set `activeMuId` based on the `view` (whose root has `muId`). */
-    setActiveView(view) {
-        this.setActiveDocument(view?.root)
-    }
-
     /**
      * Add the `editor` to the registry.
      * 
@@ -85,9 +75,19 @@ class MURegistry {
         return this.activeEditor()?.view
     }
 
+    /** Set `activeMuId` based on the `view` (whose root has `muId`). */
+    setActiveView(view) {
+        this.setActiveDocument(view?.root)
+    }
+
     /** Return the active editor's `document` (could be the shadow root). */
     activeDocument() {
         return this.activeEditor()?.element.getRootNode()
+    }
+
+    /** Set `activeMuId` based on the `document` (could be shadow root). */
+    setActiveDocument(document) {
+        this._setActiveMuId(document?.muId)
     }
 
     /** Return the active editor's `messageHandler`. */
@@ -104,11 +104,18 @@ class MURegistry {
     activeConfig() {
         return this.activeEditor()?.config
     }
+
+    /** Return the ID of the selected contentEditable element */
+    selectedID() {
+        return this.activeEditor()?.selectedID
+    }
+
+    setSelectedID(string) {
+        this.activeEditor().selectedID = string
+    }
 }
 
 const _muRegistry = new MURegistry()
-export const setActiveDocument = _muRegistry.setActiveDocument.bind(_muRegistry)
-export const setActiveView = _muRegistry.setActiveView.bind(_muRegistry)
 export const registerEditor = _muRegistry.registerEditor.bind(_muRegistry)
 export const unregisterEditor = _muRegistry.unregisterEditor.bind(_muRegistry)
 export const registerDelegate = _muRegistry.registerDelegate.bind(_muRegistry)
@@ -119,7 +126,11 @@ export const unregisterConfig = _muRegistry.unregisterConfig.bind(_muRegistry)
 export const getConfig = _muRegistry.getConfig.bind(_muRegistry)
 export const activeEditor = _muRegistry.activeEditor.bind(_muRegistry)
 export const activeView = _muRegistry.activeView.bind(_muRegistry)
+export const setActiveView = _muRegistry.setActiveView.bind(_muRegistry)
 export const activeDocument = _muRegistry.activeDocument.bind(_muRegistry)
+export const setActiveDocument = _muRegistry.setActiveDocument.bind(_muRegistry)
 export const activeMessageHandler = _muRegistry.activeMessageHandler.bind(_muRegistry)
 export const activeSearcher = _muRegistry.activeSearcher.bind(_muRegistry)
 export const activeConfig = _muRegistry.activeConfig.bind(_muRegistry)
+export const selectedID = _muRegistry.selectedID.bind(_muRegistry)
+export const setSelectedID = _muRegistry.setSelectedID.bind(_muRegistry)

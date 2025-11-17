@@ -321,7 +321,7 @@ class MarkupEditor {
     this.searcher = new Searcher()
 
     // Track the ID of the selected contentEditable element (relevant when 
-    // there is more than one; othewise is `editor` or null)
+    // there is more than one; otherwise is `editor` or null)
     this.selectedID = null
 
     // Finally, track the editor in the muRegistry.

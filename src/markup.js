@@ -1,4 +1,13 @@
-import {activeEditor, activeView, activeMessageHandler, activeDocument, setActiveDocument, activeSearcher} from './registry'
+import {
+    activeEditor, 
+    activeView, 
+    activeMessageHandler, 
+    activeDocument, 
+    setActiveDocument, 
+    activeSearcher, 
+    selectedID,             // `selectedID` is the id of the contentEditable DIV containing the currently selected element
+    setSelectedID,
+} from './registry'
 import {MUError} from './muerror.js'
 import {schema} from "./schema/index.js"
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
@@ -32,11 +41,6 @@ const _formatTags = ['B', 'STRONG', 'I', 'EM', 'U', 'DEL', 'SUB', 'SUP', 'CODE']
 const _minimalStyleTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE'];           // Convert to 'P' for pasteText
 
 const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', 'META', 'PARAM'] // Tags that are self-closing
-
-/**
- * `selectedID` is the id of the contentEditable DIV containing the currently selected element.
- */
-export let selectedID = null;
 
 /**
  * The searcher is the singleton that handles finding ranges that
@@ -95,7 +99,7 @@ export function handleShiftEnter() {
 export function handleDelete() {
     const view = activeView()
     const imageAttributes = _getImageAttributes();
-    if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID ?? '') });
+    if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') });
     stateChanged(view);
     return false;
 }
@@ -440,9 +444,9 @@ function _minimalLink(div) {
  * Clean out the document and replace it with an empty paragraph
  */
 export function emptyDocument() {
-    selectedID = null;
-    setHTML(emptyHTML());
-};
+    setSelectedID(null)
+    setHTML(emptyHTML())
+}
 
 export function emptyHTML() {
     return '<p></p>'
@@ -454,8 +458,8 @@ export function emptyHTML() {
  * @param {string} id 
  */
 export function resetSelectedID(id) { 
-    selectedID = id;
-};
+    setSelectedID(id)
+}
 
 /**
  * Return an array of `src` attributes for images that are encoded as data, empty if there are none.
@@ -933,7 +937,7 @@ export function removeButton(id) {
 export function focusOn(id) {
     const view = activeView()
     const {node, pos} = _getNode(id);
-    if (node && (node.attrs.id !== selectedID)) {
+    if (node && (node.attrs.id !== selectedID())) {
         const selection = new TextSelection(view.state.doc.resolve(pos));
         const transaction = view.state.tr.setSelection(selection).scrollIntoView();
         view.dispatch(transaction);
@@ -2115,7 +2119,7 @@ function _getIndented(state) {
  * callback means the change happened in the 'editor' div.
  */
 export function callbackInput(element) {
-    _callback('input' + (selectedID ?? ''), element)
+    _callback('input' + (selectedID() ?? ''), element)
 };
 
 function _callbackReady() {
