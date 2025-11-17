@@ -86,6 +86,7 @@ import {
   registerDelegate,
   getDelegate,
   registerConfig,
+  activeConfig,
   getConfig,
 } from "./registry.js"
 
@@ -198,7 +199,8 @@ export {
   BehaviorConfig,
   // muRegistry access
   registerDelegate,
-  registerConfig
+  registerConfig,
+  activeConfig
 }
 
 /**

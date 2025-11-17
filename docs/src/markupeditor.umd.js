@@ -23924,6 +23924,7 @@
   exports.MarkupEditor = MarkupEditor;
   exports.MenuItem = MenuItem;
   exports.ToolbarConfig = ToolbarConfig;
+  exports.activeConfig = activeConfig;
   exports.addButton = addButton;
   exports.addCol = addCol;
   exports.addDiv = addDiv;
