@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="EN">
+
+    <head>
+        <meta charset="utf-8">
+        <title>Multiple MarkupEditors</title>
+        <link href="index.css" rel="stylesheet">
+    </head>
+    
+    <body>
+        <h1>MarkupEditor Web Component Demo</h1>
+        <p>
+            The simplest way to embed WYSIWYG editing in your web site is to use the MarkupEditor web component. 
+            The web component makes sure the MarkupEditor script is only loaded once, and that the base MarkupEditor styling is 
+            applied (e.g., that handles the way the toolbar looks, font sizing, etc) to the editor within the web component
+            without potential side-effects to the page you embed it in. You have access to all of the customization tools 
+            provided by the base MarkupEditor, including:
+        </p>
+        <ul>
+            <li><p>Provide initial HTML contents for editing directly or by a file name.</p></li>
+            <li><p>Specify placeholder text for when the document is empty.</p></li>
+            <li><p>Provide your own scripting and styling within the editor.</p></li>
+            <li><p>Provide a custom MarkupDelegate to receive document change notifications.</p></li>
+            <li><p>Customize toolbar visibility, contents, element ordering, and augment contents.</p></li>
+            <li><p>Customize key mapping or use hot key editing defaults.</p></li>
+            <li><p>Customize behavior, such as whether local images can be embedded, and whether to take focus immediately.</p></li>
+            <li><p>Identify the location for the MarkupEditor base script and styling if needed.</p></li>
+        </ul>
+
+        <p>
+            If the MarkupEditor base script and styling (markupeditor.umd.js and markupeditor.css) and the web component 
+            definition (markup-editor.js) reside in the same directory as your document, and you want a full page WYSIWYG
+            editor with a default toolbar, you can embed the MarkupEditor web component in just two lines:
+        </p>
+
+        <pre><code>
+            &lt;markup-editor>&lt;/markup-editor>
+            &lt;script src="markup-editor.js">&lt;/script>
+        </code></pre>
+
+        <h2>Default Web Component</h2>
+        <markup-editor userstyle="editor1.css" muscript="../src/markupeditor.umd.js" mustyle="../styles/markupeditor.css">
+            <p>
+                This &lt;markup-editor> element uses the default toolbar and specifies <code>editor1.css</code> in the <code>userstyle</code> attribute.
+                In this case, the <code>editor1.css</code> styling is used to set the border and height of the &lt;markup-editor> element.
+            </p>
+            <pre><code>
+&lt;markup-editor 
+    userstyle="editor1.css" 
+    muscript="../src/markupeditor.umd.js" 
+    mustyle="../styles/markupeditor.css">
+&lt;/markup-editor>
+            </code></pre>
+            <p>
+                The demos share common MarkupEditor base script (markupeditor.umd.js) and styling (markupeditor.css), so we also have to specify their 
+                location in <code>muscript</code> and <code>mustyle</code>.
+            </p>
+        </markup-editor>
+
+        <h2>Customized Web Component</h2>
+        <markup-editor 
+            filename="editor2.html" 
+            userscript="editor2.js" 
+            userstyle="editor2.css" 
+            delegate="MyDelegate" 
+            toolbar="MyToolbarConfig" 
+            muscript="../src/markupeditor.umd.js" 
+            mustyle="../styles/markupeditor.css">
+        </markup-editor>
+
+        <script src="../src/markup-editor.js"></script>
+    </body>
+    
+</html>
