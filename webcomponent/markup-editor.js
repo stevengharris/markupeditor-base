@@ -184,8 +184,10 @@ class MarkupEditorElement extends HTMLElement {
    */
   createEditor() {
     //console.log('createEditor')
+    const html = (this.innerHTML.length == 0) ? MU.emptyDocument() : this.innerHTML
+    const filename = this.getAttribute('filename')
     const config = { 
-      filename: this.getAttribute('filename'), 
+      filename: filename, 
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
       toolbar: this.getAttribute('toolbar'),
@@ -193,7 +195,25 @@ class MarkupEditorElement extends HTMLElement {
       keymap: this.getAttribute('keymap')
     }
     this.editor = new MU.MarkupEditor(this.editorContainer, config)
-    MU.setHTML(this.innerHTML, null, null, this.editor.view)
+    if (!config.filename) {
+      MU.setHTML(html, null, null, this.editor.view)
+    } else {
+      fetch(filename)
+        .then((response) => response.text())
+        .then((text) => {
+          MU.setHTML(text, null, null, this.editor.view)
+        })
+        .catch((error) => {
+          MU.setHTML(
+            `
+            <p>
+                Failed to load ${filename}.
+                Error message: ${error.message}.
+                You may be trying to load HTML from a local file in a browser.
+            </p>
+            `, null, null, this.editor.view)
+        });
+    }
   }
 
 }
