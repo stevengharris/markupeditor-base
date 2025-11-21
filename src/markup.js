@@ -639,8 +639,10 @@ function setBase(string) {
  * 
  * The exported placeholderText is set after setting the contents.
  *
- * @param {string}  contents            The HTML for the editor
- * @param {boolean} selectAfterLoad     Whether we should focus after load
+ * @param {string}      contents            The HTML for the editor
+ * @param {boolean}     focusAfterLoad      Whether we should focus after load
+ * @param {string}      base                Value for base element for resolving relative src and hrefs
+ * @param {EditorView}  editorView          The EditorView to set HTML for, `activeView()` default
  */
 export function setHTML(contents, focusAfterLoad=true, base, editorView) {
     // If defined, set base; else remove base if it exists. This way, when setHTML is used to,
