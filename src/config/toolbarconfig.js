@@ -75,6 +75,10 @@ export class ToolbarConfig {
         "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
         "border": true,           // Whether the "Border" item is visible in the "Table" menu
       },
+      "augmentation": {
+        "prepend": null,          // Name of a registered array of cmdItems to prepend
+        "append": null            // Name of a registered array of cmdItems to append
+      }
     }
   }
 
