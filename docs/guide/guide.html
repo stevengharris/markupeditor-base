@@ -10,6 +10,7 @@
     <p><a href="#essentials">Essentials</a></p>
     <blockquote>
         <p><a href="#using-the-markupeditor-in-a-browser">Using the MarkupEditor in a Browser</a></p>
+        <p><a href="#markupeditor-as-a-web-component">MarkupEditor as a Web Component</a></p>
         <p><a href="#using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</a></p>
     </blockquote>
     <p><a href="#configuration">Configuration</a></p>
@@ -99,6 +100,66 @@
 <blockquote>
     <p><strong>Note</strong>: If you encounter a MarkupEditor bug, providing a test or usage flow that reproduces the bug in a browser will ensure it can be debugged with no setup barriers, increasing the likelihood of it being worked on.</p>
 </blockquote>
+
+<h3 id="markupeditor-as-a-web-component">MarkupEditor as a Web Component</h3>
+
+<p>The &lt;markup-editor&gt; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">web component</a> is the recommended way to use the MarkupEditor.  The web component hides complexity and allows the MarkupEditor to be used like other HTML elements. The web component reduces the essentials only to identifying the locations of the MarkupEditor base script and style, but it requires loading the <code>markup-editor</code> web component script, typically at the end of the <code>body</code>. The initial HTML can just be part of the &lt;markup-editor&gt; element itself.</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+    &lt;head&gt;
+        &lt;title&gt;Hello MarkupEditor&lt;/title&gt;
+        &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;markup-editor muscript="../src/markupeditor.umd.js" mustyle="../styles/markupeditor.css"&gt;
+            &lt;h1&gt;Hello, world!&lt;/h1&gt;
+        &lt;/markup-editor&gt;
+        &lt;script src="../src/markup-editor.js"&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>Under the covers, the &lt;markup-editor&gt; web component uses the same “essentials” covered <a href="#using-the-markupeditor-in-a-browser">above</a>. You can see how it does this in markupeditor-base/webcomponent/markup-editor.js. It loads the MarkupEditor base script (only once, even if you have multiple &lt;markup-editor&gt; elements), and it applies the MarkupEditor base styling to each element. For each &lt;markup-editor&gt; element, it creates an “editor” DIV and an instance of MU.MarkupEditor for it, with a configuration extracted from the &lt;markup-editor&gt; attributes you specify.</p>
+
+<h4>Web Component Attributes</h4>
+
+<p>The following attributes can be specified for the &lt;markup-editor&gt; element. Like all HTML element attributes, values are always strings.</p>
+
+<ul>
+    <li>
+        <p><strong>muscript</strong>: The location of the MarkupEditor base script. The MarkupEditor base script is located at dist/markupeditor.umd.js in the markupeditor-base project. If you have copied markupeditor.umd.js from the markupeditor-base/dist/markupeditor.umd.js into the same directory as your html page, then there is no need to set the <code>muscript</code> attribute in the &lt;markup-editor&gt; element.</p>
+    </li>
+    <li>
+        <p><strong>mustyle</strong>: The location of the MarkupEditor base css file. The MarkupEditor base script is located at styles/markupeditor.css in the markupeditor-base project. The markupeditor.css uses <code>@import</code> to combine three css files needed by the MarkupEditor: mirror.css, markup.css, and toolbar.css. If you have copied markupeditor.css and these other three css files from the markupeditor-base/styles directory into the same directory as your html page, then there is no need to set the <code>mustyles</code> attribute in the &lt;markup-editor&gt; element.</p>
+    </li>
+    <li>
+        <p><strong>filename</strong>: An HTML file whose contents should be loaded for the initial contents of the editor. If you also supply HTML within the &lt;markup-editor&gt; itself (e.g., <code>&lt;markup-editor&gt;&lt;p&gt;Hello, world&lt;/p&gt;&lt;/markupeditor&gt;</code>), the content of <code>filename</code> will take precedence.</p>
+    </li>
+    <li>
+        <p><strong>base</strong>: The <em>relative</em> path for image <code>src</code> attributes in the editor. For example, if <code>filename</code> is “demo/guide/guide.html”, and a local image <code>src</code> is specified as “myImage.png” in guide.html, then “myImage.png” will load only if it is contained in “demo/guide/”. If you want this image to load from the “demo/guide/resources” directory, then set <code>base</code> to “resources/” (with a trailing slash). You can specify a relative path like “../resources/” if needed.</p>
+    </li>
+    <li>
+        <p><strong>placeholder</strong>: HTML that should be displayed when the editor is empty.</p>
+    </li>
+    <li>
+        <p><strong>userscript</strong>: A JavaScript file that should be loaded as a script within the &lt;markup-editor&gt; element. The script can reference the global <code>MU</code> for access to MarkupEditor functionality. For example, the script could contain code to create and register a MarkupDelegate to receive callbacks during editing, or define a custom ToolbarConfiguration.</p>
+    </li>
+    <li>
+        <p><strong>userstyle</strong>: A CSS file that should be linked within the &lt;markup-editor&gt; element, to override the MarkupEditor base styling and provide custom styling.</p>
+    </li>
+    <li>
+        <p><strong>delegate</strong>: The string name of a MarkupDelegate that has been registered. See the section on <a href="#markupdelegate">MarkupDelegates</a> for details on implementation, usage, and registration.</p>
+    </li>
+    <li>
+        <p><strong>toolbar</strong>: The string name of a ToolbarConfig that has been registered. See the section on <a href="#toolbarconfig">ToolbarConfig</a> for details or customizing the toolbar configuration and registering configs.</p>
+    </li>
+    <li>
+        <p><strong>keymap</strong>: The string name of a KeymapConfig that has been registered. See the section on <a href="#keymapconfig">KeymapConfig</a> for details or customizing the keymap configuration and registering configs.</p>
+    </li>
+    <li>
+        <p><strong>behavior</strong>: The string name of a BehaviorConfig that has been registered. See the section on <a href="#behaviorconfig">BehaviorConfig</a> for details or customizing the behavior configuration and registering configs.</p>
+    </li>
+</ul>
 
 <h3 id="using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</h3>
 
@@ -474,7 +535,7 @@ class DemoToolbar {
 
 <p>The MarkupEditor makes callbacks to a delegate, aka the <em>MarkupDelegate</em>, as you edit the document and its state changes. You can view the full of set callbacks in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Let’s take a look at how to set up your MarkupDelegate and make use of the callbacks.</p>
 
-<p>Here’s a simple MarkupDelegate. We can put it in a <code>mydelegate.js</code> file and then load it via a script. Its methods will be called when the MarkupEditor is “ready” and when you type into the document or otherwise make editing changes:</p>
+<p>Here’s a simple MarkupDelegate. We can put it in a “mydelegate.js” file and then load it via a script. Its methods will be called when the MarkupEditor is “ready” and when you type into the document or otherwise make editing changes:</p>
 
 <pre><code>class MarkupDelegate {
 
@@ -492,7 +553,21 @@ class DemoToolbar {
     }
 }</code></pre>
 
-<p>You can load the script and pass the MarkupDelegate instance to the MarkupEditor. Here is what it would look like to load a <code>demo.html</code> file and pass this delegate instance to the MarkupEditor:</p>
+<p>You can call your MarkupDelegate anything you want. The MarkupEditor will only invoke the callbacks if the delegate exists and the function is defined. For example, if you don’t define <code>markupInput</code>, it just won’t be called.</p>
+
+<p>The code in the MarkupDelegate above will execute in the web view. It has access to all of the MarkupEditor functionality via the <code>MU</code> global. Often, access to <code>MU</code> and its functionality will be all you’ll need. For example, the <a href="https://stevengharris.github.io/markupeditor-base/demo/index.html">MarkupEditor demo</a> uses <code>markupInput</code> to update the view of the “raw HTML” as the user edits the document. You can also use the MarkupDelegate to communicate with your application environment, but the mechanism for doing that will be specific to the application environment.</p>
+
+<h4>Using MarkupDelegate in the Web Component</h4>
+
+<p>To load the script “mydelegate.js”, set the <code>userscript</code> attribute in &lt;markup-editor&gt; to “mydelegate.js”. In the script, you need to <em>register</em> an instance of MarkupDelegate. </p>
+
+<pre><code>MU.registerDelegate(new MarkupDelegate())</code></pre>
+
+<p>The &lt;markup-editor&gt; web component allows you to identify an instance of your MarkupDelegate class by name in the <code>delegate</code> attribute.</p>
+
+<h4>Using MarkupDelegate Directly</h4>
+
+<p>You can load the script and pass the MarkupDelegate instance directly to the MarkupEditor. Here is what it would look like to load a <code>demo.html</code> file and pass this delegate instance to the MarkupEditor:</p>
 
 <pre><code>&lt;script src="../src/markupeditor.umd.js"&gt;&lt;/script&gt;
 &lt;script src="src/mydelegate.js"&gt;&lt;/script&gt;
@@ -505,10 +580,6 @@ class DemoToolbar {
         }
     )
 &lt;/script&gt;</code></pre>
-
-<p>You can call your MarkupDelegate anything you want. The MarkupEditor will only invoke the callbacks if the delegate exists and the function is defined. For example, if you don’t define <code>markupInput</code>, it just won’t be called.</p>
-
-<p>Again, the code in the MarkupDelegate above will execute in the web view. It has access to all of the MarkupEditor functionality via the <code>MU</code> global. Often, access to <code>MU</code> and its functionality will be all you’ll need. For example, the <a href="https://stevengharris.github.io/markupeditor-base/demo/index.html">MarkupEditor demo</a> uses <code>markupInput</code> to update the view of the “raw HTML” as the user edits the document. You can also use the MarkupDelegate to communicate with your application environment, but the mechanism for doing that will be specific to the application environment.</p>
 
 <h3 id="round-trip-from-the-markupeditor">Round-Trip from the MarkupEditor</h3>
 
@@ -712,7 +783,7 @@ Test Suites: 22 passed, 22 total
 Tests:       225 passed, 225 total
 Snapshots:   0 total
 Time:        1.422 s
-Ran all test suites matching /.\/test\/baseline.test.js|.\/test\/denting-multi.test.js|.\/test\/denting.test.js|.\/test\/format-multi.test.js|.\/test\/format-off.test.js|.\/test\/format-on.test.js|.\/test\/format-selection.test.js|.\/test\/insert-image-url.test.js|.\/test\/insert-link.test.js|.\/test\/insert-table.test.js|.\/test\/list-enter-collapsed.test.js|.\/test\/list-enter-range.test.js|.\/test\/list-multi.test.js|.\/test\/list.test.js|.\/test\/paste-html-preprocessing.test.js|.\/test\/paste-html.test.js|.\/test\/paste-text-preprocessing.test.js|.\/test\/paste-text.test.js|.\/test\/search.test.js|.\/test\/style-multi.test.js|.\/test\/style.test.js|.\/test\/table-actions.test.js/i.
+Ran all test suites matching /./test/baseline.test.js|./test/denting-multi.test.js|./test/denting.test.js|./test/format-multi.test.js|./test/format-off.test.js|./test/format-on.test.js|./test/format-selection.test.js|./test/insert-image-url.test.js|./test/insert-link.test.js|./test/insert-table.test.js|./test/list-enter-collapsed.test.js|./test/list-enter-range.test.js|./test/list-multi.test.js|./test/list.test.js|./test/paste-html-preprocessing.test.js|./test/paste-html.test.js|./test/paste-text-preprocessing.test.js|./test/paste-text.test.js|./test/search.test.js|./test/style-multi.test.js|./test/style.test.js|./test/table-actions.test.js/i.
 Waiting for the debugger to disconnect...
 $ </code></pre>
 

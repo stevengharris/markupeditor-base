@@ -3,33 +3,27 @@
     <head>
         <title>MarkupEditor Demo</title>
         <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="script-src-elem 'self' 'unsafe-inline' src/*; style-src-elem 'self' styles/*" />
-        <link href="../styles/markupeditor.css" rel="stylesheet">
-        <link href="styles/demo.css" rel="stylesheet">
+        <link href="demo.css" rel="stylesheet">
     </head>
     <body>
+        <!-- Wrap the editor and the raw html divs in an editor-wrapper div for styling purposes. -->
         <div class="editor-wrapper">
-            <div id="editor"></div>
+            <!-- We need to do some flex magic with the markup-editor to hide/show, so use an id to look it up. -->
+            <markup-editor 
+                id="markup-editor"
+                filename="demo.html" 
+                muscript="../src/markupeditor.umd.js"
+                mustyle="../styles/markupeditor.css"
+                placeholder="Edit document..." 
+                userscript="demo.js" 
+                delegate="DemoDelegate",
+                prepend="DemoToolbar">
+            </markup-editor>
             <div id="htmldiv" class="htmldiv">
                 <pre id="htmldiv-body" class="htmldiv-body"></pre>
             </div>
         </div> 
         <input id="docpicker" type="file" accept=".html" style="display: none">
-        <script src="../src/markupeditor.umd.js"></script>
-        <script src="src/demodelegate.js"></script>
-        <script src="src/demotoolbar.js"></script>
-        <script>
-            const markupEditor = new MU.MarkupEditor(
-                document.querySelector('#editor'),
-                {
-                    delegate: new DemoDelegate(),
-                    placeholder: 'Edit document...',
-                    filename: 'demo.html',
-                }
-            )
-            // Instantiate the DemoToolbar and place its `menuItems` at the front of the toolbar.
-            const demoToolbar = new DemoToolbar()
-            MU.prependToolbar(demoToolbar.menuItems)
-        </script>
+        <script src="../src/markup-editor.js"></script>
     </body>
 </html>

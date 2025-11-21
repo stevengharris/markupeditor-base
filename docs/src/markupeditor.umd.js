@@ -16543,6 +16543,7 @@
           this._editors = new Map();
           this._delegates = new Map();
           this._configs = new Map();
+          this._augmentations = new Map();
           this._activeMuId = null;
       }
 
@@ -16566,6 +16567,11 @@
       unregisterEditor(editor) {
           delete this._editors.delete(editor.muId);
       }
+      
+      /** Return the editor with `muId` of `this._activeMuId`. */
+      activeEditor() {
+          return this._editors.get(this._activeMuId)
+      }
 
       /** Add the `delegate` to the registry. */
       registerDelegate(delegate) {
@@ -16575,6 +16581,11 @@
       /** Remove the `delegate` from the registry. */
       unregisterDelegate(delegate) {
           this._delegates.delete(delegate.constructor.name);
+      }
+
+      /** Return the `delegate` with `name`. */
+      getDelegate(name) {
+          return this._delegates.get(name)
       }
 
       /** Add the `config` to the registry. */
@@ -16587,19 +16598,21 @@
           this._configs.delete(config.constructor.name);
       }
 
-      /** Return the `delegate` with `name`. */
-      getDelegate(name) {
-          return this._delegates.get(name)
-      }
-
       /** Return the `config` with `name`. */
       getConfig(name) {
           return this._configs.get(name)
       }
 
-      /** Return the editor with `muId` of `this._activeMuId`. */
-      activeEditor() {
-          return this._editors.get(this._activeMuId)
+      registerAugmentation(toolbar) {
+          this._augmentations.set(toolbar.constructor.name, toolbar);
+      }
+
+      unregisterAugmentation(toolbar) {
+          this._augmentations.delete(toolbar.constructor.name);
+      }
+
+      getAugmentation(name) {
+          return this._augmentations.get(name)
       }
 
       /** Return the active editor's `view`. */
@@ -16637,11 +16650,12 @@
           return this.activeEditor()?.config
       }
 
-      /** Return the ID of the selected contentEditable element */
+      /** Return the cached ID of the selected contentEditable element. */
       selectedID() {
           return this.activeEditor()?.selectedID
       }
 
+      /** Set/cache the ID of the selected contentEditable element to `string`. */
       setSelectedID(string) {
           this.activeEditor().selectedID = string;
       }
@@ -16656,6 +16670,9 @@
   const registerConfig = _muRegistry.registerConfig.bind(_muRegistry);
   _muRegistry.unregisterConfig.bind(_muRegistry);
   const getConfig = _muRegistry.getConfig.bind(_muRegistry);
+  const registerAugmentation = _muRegistry.registerAugmentation.bind(_muRegistry);
+  _muRegistry.unregisterAugmentation.bind(_muRegistry);
+  const getAugmentation = _muRegistry.getAugmentation.bind(_muRegistry);
   const activeEditor = _muRegistry.activeEditor.bind(_muRegistry);
   const activeView = _muRegistry.activeView.bind(_muRegistry);
   const setActiveView = _muRegistry.setActiveView.bind(_muRegistry);
@@ -17286,8 +17303,10 @@
    * 
    * The exported placeholderText is set after setting the contents.
    *
-   * @param {string}  contents            The HTML for the editor
-   * @param {boolean} selectAfterLoad     Whether we should focus after load
+   * @param {string}      contents            The HTML for the editor
+   * @param {boolean}     focusAfterLoad      Whether we should focus after load
+   * @param {string}      base                Value for base element for resolving relative src and hrefs
+   * @param {EditorView}  editorView          The EditorView to set HTML for, `activeView()` default
    */
   function setHTML(contents, focusAfterLoad=true, base, editorView) {
       // If defined, set base; else remove base if it exists. This way, when setHTML is used to,
@@ -23445,6 +23464,10 @@
           "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
           "border": true,           // Whether the "Border" item is visible in the "Table" menu
         },
+        "augmentation": {
+          "prepend": null,          // Name of a registered array of cmdItems to prepend
+          "append": null            // Name of a registered array of cmdItems to append
+        }
       }
     }
 
@@ -23926,6 +23949,7 @@
   exports.MenuItem = MenuItem;
   exports.ToolbarConfig = ToolbarConfig;
   exports.activeConfig = activeConfig;
+  exports.activeEditor = activeEditor;
   exports.addButton = addButton;
   exports.addCol = addCol;
   exports.addDiv = addDiv;
@@ -23945,6 +23969,7 @@
   exports.endModalInput = endModalInput;
   exports.focus = focus;
   exports.focusOn = focusOn;
+  exports.getAugmentation = getAugmentation;
   exports.getDataImages = getDataImages;
   exports.getHTML = getHTML;
   exports.getHeight = getHeight;
@@ -23963,6 +23988,7 @@
   exports.pasteHTML = pasteHTML;
   exports.pasteText = pasteText;
   exports.prependToolbar = prependToolbar;
+  exports.registerAugmentation = registerAugmentation;
   exports.registerConfig = registerConfig;
   exports.registerDelegate = registerDelegate;
   exports.removeAllDivs = removeAllDivs;
@@ -23974,6 +24000,7 @@
   exports.resetSelection = resetSelection;
   exports.savedDataImage = savedDataImage;
   exports.searchFor = searchFor;
+  exports.setActiveView = setActiveView;
   exports.setHTML = setHTML;
   exports.setMessageHandler = setMessageHandler;
   exports.setStyle = setStyle;

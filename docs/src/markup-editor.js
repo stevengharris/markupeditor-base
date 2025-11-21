@@ -1,29 +1,28 @@
 /* global MU */
 
 // Track a global indicating that the MarkupEditor base script was loaded
-window.markupEditorScriptLoaded = window.markupEditorScriptLoaded || false; // Initialize if not already present
+window.markupEditorScriptLoaded = false
 
 /**
  * MarkupEditorElement is the Web Component for the MarkupEditor.
  * 
  * The lifecycle and resulting document structure are probably most interesting 
- * aspects of the MarkupEditorElement, especially when the HTML page can contain  
- * multiple of them. The MarkupEditor "base" script should be loaded only
- * once in the first (or only) MarkupEditorElement. It defines the global `MU`
- * along with the global `muRegistry` with exported methods to access it.
+ * aspects of the MarkupEditorElement, especially because the HTML page can   
+ * contain multiple of them. The MarkupEditor "base" script should be loaded 
+ * only once in the first (or only) MarkupEditorElement. It defines the global
+ * `MU` along with the global `muRegistry` with exported methods to access it.
  * 
  * We use the `connectedCallback`, which is called for each MarkupEditorElement, 
  * to trigger appending MarkupEditor base script only once. It's loaded into 
- * the first MarkupEditorElement, and produces the global MU that provides access
+ * the first MarkupEditorElement, and produces the global `MU` that provides access
  * to all editor functionality regardless of where subsequent scripts are run.
  * When the base script finishes loading, we dispatch the `ready` `muCallback` 
  * event for each MarkupEditorElement instance in `document`. From that point, 
  * the MarkupEditor styling is appended to the `editor` set up for each individual 
  * MarkupEditorElement instance. Any user-supplied script and styling are also 
  * appended. Once those are appended (and even if they are not specified), the 
- * `loadedUserFiles` `muCallback` is dispatched for the MarkupEditorElement 
- * instance, and we can finally `createEditor` for the element and set its HTML 
- * contents.
+ * `loadedUserFiles` `muCallback` is dispatched for the `editorContainer`, and 
+ * we can finally `createEditor` for the element and set its HTML contents.
  */
 class MarkupEditorElement extends HTMLElement {
 
@@ -32,8 +31,7 @@ class MarkupEditorElement extends HTMLElement {
    * drive loading of scripts, styles, configuration, and contents.
    */
   constructor() {
-    // Establish prototype chain
-    super()
+    super()   // Establish prototype chain
 
     // Attach shadow tree and hold onto root reference
     // https://developer.mozilla.org/en-US/docs/Web/API/Element/attachShadow
@@ -52,15 +50,15 @@ class MarkupEditorElement extends HTMLElement {
     // element (i.e., `this.editorContainer`) is in the shadow DOM.
 
     // Have this MarkupEditorElement instance listen for the `ready` callback
-    // that is dispatched from `loadedEditorScript`.
+    // that is dispatched from `loadedEditorScript`. This is the only `muCallback` 
+    // this MarkupEditorElement should see.
     this.addEventListener('muCallback', (e) => {
-      //console.log(`muCallback(${e.message}) on MarkupEditorElement`)
       switch (e.message) {
         case 'ready':
           this.appendEditorStyle()
           break
         default:
-          //console.log(' Did nothing.')
+          console.log('Unexpected muCallback to MarkupEditorElement: ', e.message)
       }
     })
 
@@ -69,7 +67,6 @@ class MarkupEditorElement extends HTMLElement {
     // other than `loadedUserFiles` are handled by the `messageHandler` 
     // for the `view`. This way a user can override `messageHandler` 
     this.editorContainer.addEventListener('muCallback', (e) => {
-      //console.log(`muCallback(${e.message}) on editorContainer`)
       switch (e.message) {
         case 'loadedUserFiles':
           this.createEditor()
@@ -95,7 +92,6 @@ class MarkupEditorElement extends HTMLElement {
    * configured MarkupEditor instance.
    */ 
   connectedCallback() {
-    //console.log("connectedCallback")
     this.appendEditorScript()
   }
 
@@ -108,7 +104,6 @@ class MarkupEditorElement extends HTMLElement {
    * its `destroy` method.
    */
   disconnectedCallback() {
-    //console.log("disconnectedCallback")
     this.editor.destroy();
 	}
 
@@ -132,7 +127,6 @@ class MarkupEditorElement extends HTMLElement {
   appendEditorScript() {
     if (window.markupEditorScriptLoaded) return  // Only load it once
     window.markupEditorScriptLoaded = true
-    //console.log('appendEditorScript')
     const muScript = this.getAttribute('muScript') ?? './markupeditor.umd.js'
     const baseScript = document.createElement('script')
     baseScript.setAttribute('src', muScript)
@@ -162,7 +156,6 @@ class MarkupEditorElement extends HTMLElement {
    * (finally) creates the MarkupEditor and sets its HTML.
    */
   appendEditorStyle() {
-    //console.log('appendEditorStyle')
     const muStyle = this.getAttribute('mustyle') ?? './markupeditor.css'
     const link = document.createElement('link')
     link.setAttribute('href', muStyle)
@@ -183,25 +176,43 @@ class MarkupEditorElement extends HTMLElement {
    * has access to the file system (e.g., node.js, but not a browser).
    */
   createEditor() {
-    //console.log('createEditor')
     const html = (this.innerHTML.length == 0) ? MU.emptyDocument() : this.innerHTML
     const filename = this.getAttribute('filename')
     const config = { 
       filename: filename, 
+      base: this.getAttribute('base'),
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
       toolbar: this.getAttribute('toolbar'),
       behavior: this.getAttribute('behavior'),
-      keymap: this.getAttribute('keymap')
+      keymap: this.getAttribute('keymap'),
+      prepend: this.getAttribute('prepend'),
+      append: this.getAttribute('append'),
     }
     this.editor = new MU.MarkupEditor(this.editorContainer, config)
+    
+    this.editor.config.delegate?.markupReady && this.editor.config.delegate?.markupReady()
+
+    // Prepend and/or append any augmentations
+    const prependItems = MU.getAugmentation(config.prepend)?.menuItems
+    if (prependItems) MU.prependToolbar(prependItems)
+    const appendItems = MU.getAugmentation(config.append)?.menuItems
+    if (appendItems) MU.appendToolbar(appendItems)
+
+    // Whether this editor takes focus (and shows the keyboard on iOS) is 
+    // set in BehaviorConfig, which can be overridden using a registered
+    // instance whose name is passed as an attribute of this element. If 
+    // not overridden, the default `true` behavior is used.
+    const focusAfterLoad = this.editor.config.behavior.focusAfterLoad
+
+    // Set the initial HTML contents based on `filename` or the innerHTML
     if (!config.filename) {
-      MU.setHTML(html, null, null, this.editor.view)
+      MU.setHTML(html, focusAfterLoad, config.base, this.editor.view)
     } else {
       fetch(filename)
         .then((response) => response.text())
         .then((text) => {
-          MU.setHTML(text, null, null, this.editor.view)
+          MU.setHTML(text, focusAfterLoad, config.base, this.editor.view)
         })
         .catch((error) => {
           MU.setHTML(
