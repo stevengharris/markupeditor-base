@@ -13,15 +13,15 @@
             The simplest way to embed WYSIWYG editing in your web site is to use the MarkupEditor web component. 
             The web component makes sure the MarkupEditor script is only loaded once, and that the base MarkupEditor styling is 
             applied (e.g., that handles the way the toolbar looks, font sizing, etc) to the editor within the web component
-            without potential side-effects to the page you embed it in. You have access to all of the customization tools 
-            provided by the base MarkupEditor, including:
+            without potential side-effects to the page you embed it in. You have access to all of the customization features 
+            of the base MarkupEditor, including:
         </p>
         <ul>
             <li><p>Provide initial HTML contents for editing directly or by a file name.</p></li>
             <li><p>Specify placeholder text for when the document is empty.</p></li>
             <li><p>Provide your own scripting and styling within the editor.</p></li>
             <li><p>Provide a custom MarkupDelegate to receive document change notifications.</p></li>
-            <li><p>Customize toolbar visibility, contents, element ordering, and augment contents.</p></li>
+            <li><p>Customize toolbar visibility, contents, element ordering, and augment toolbar contents.</p></li>
             <li><p>Customize key mapping or use hot key editing defaults.</p></li>
             <li><p>Customize behavior, such as whether local images can be embedded, and whether to take focus immediately.</p></li>
             <li><p>Identify the location for the MarkupEditor base script and styling if needed.</p></li>
@@ -52,7 +52,7 @@
 &lt;/markup-editor>
             </code></pre>
             <p>
-                The demos share common MarkupEditor base script (markupeditor.umd.js) and styling (markupeditor.css), so we also have to specify their 
+                The demos share a common MarkupEditor base script (markupeditor.umd.js) and styling (markupeditor.css), so we also have to specify their 
                 location in <code>muscript</code> and <code>mustyle</code>.
             </p>
         </markup-editor>
@@ -64,6 +64,7 @@
             userstyle="editor2.css" 
             delegate="MyDelegate" 
             toolbar="MyToolbarConfig" 
+            behavior="MyBehaviorConfig"
             muscript="../src/markupeditor.umd.js" 
             mustyle="../styles/markupeditor.css">
         </markup-editor>

@@ -1,4 +1,4 @@
-<p>The editor contents are supplied from the contents of <code>filename</code>, editor2.html. This &lt;markup-editor&gt; element uses a <code>userscript</code> (editor2.js) to define a MarkupDelegate class (MyDelegate) and ToolbarConfig class (MyToolbarConfig). The <code>delegate</code> and <code>toolbar</code> config are identified by name in the &lt;markup-editor&gt; element attributes. </p>
+<p>The initial HTML contents of this editor are fetched from <code>filename</code>, editor2.html.</p>
 
 <pre><code>
 &lt;markup-editor 
@@ -7,11 +7,22 @@
     userstyle="editor2.css" 
     delegate="MyDelegate" 
     toolbar="MyToolbarConfig" 
+    behavior="MyBehaviorConfig"
     muscript="../src/markupeditor.umd.js" 
     mustyle="../styles/markupeditor.css"&gt;
 &lt;/markup-editor&gt;
 </code></pre>
 
-<p>MyToolbarConfig in <code>setup.js</code> removes the image and table items from the "insert bar", leaving only the ability to insert links. It adds underline in as a formatting option. It drops the "search" item and adds in undo/redo (the "correction bar"), which is handy on mobile devices.</p>
+<p>The <code>userscript</code> file, editor2.js, defines the classes for MyToolbarConfig, MyBehaviorConfig, and MyDelegate, and registers instances of them so they can be looked up the names passed in <code>delegate</code>, <code>toolbar</code>, and <code>behavior</code>.</p>
 
-<p>MyDelegate in this case doesn't do much, other than log to the console as you type into this editor. The MarkupDelegate will receive callbacks as the document you're editing changes and is the simplest way to "hook into" the editor to react to those changes.</p>
+<ul>
+    <li>
+        <p>MyToolbarConfig removes the image and table items from the "insert bar", leaving only the ability to insert links. It adds underline in as a formatting option. It drops the "search" item and adds in undo/redo (the "correction bar"), which is handy on mobile devices.</p>
+    </li>
+    <li>
+        <p>MyBehaviorConfig stops this editor from taking focus when the page is loaded, leaving the editor above with focus.</p>
+    </li>
+    <li>
+        <p>MyDelegate in this case doesn't do much, other than log to the console as you type into this editor. The MarkupDelegate will receive callbacks as the document you're editing changes and is the simplest way to "hook into" the editor to react to those changes.</p>
+    </li>
+</ul>
