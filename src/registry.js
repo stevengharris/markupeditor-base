@@ -11,6 +11,7 @@ class MURegistry {
         this._editors = new Map()
         this._delegates = new Map()
         this._configs = new Map()
+        this._augmentations = new Map()
         this._activeMuId = null
     }
 
@@ -34,6 +35,11 @@ class MURegistry {
     unregisterEditor(editor) {
         delete this._editors.delete(editor.muId)
     }
+    
+    /** Return the editor with `muId` of `this._activeMuId`. */
+    activeEditor() {
+        return this._editors.get(this._activeMuId)
+    }
 
     /** Add the `delegate` to the registry. */
     registerDelegate(delegate) {
@@ -43,6 +49,11 @@ class MURegistry {
     /** Remove the `delegate` from the registry. */
     unregisterDelegate(delegate) {
         this._delegates.delete(delegate.constructor.name)
+    }
+
+    /** Return the `delegate` with `name`. */
+    getDelegate(name) {
+        return this._delegates.get(name)
     }
 
     /** Add the `config` to the registry. */
@@ -55,19 +66,21 @@ class MURegistry {
         this._configs.delete(config.constructor.name)
     }
 
-    /** Return the `delegate` with `name`. */
-    getDelegate(name) {
-        return this._delegates.get(name)
-    }
-
     /** Return the `config` with `name`. */
     getConfig(name) {
         return this._configs.get(name)
     }
 
-    /** Return the editor with `muId` of `this._activeMuId`. */
-    activeEditor() {
-        return this._editors.get(this._activeMuId)
+    registerAugmentation(toolbar) {
+        this._augmentations.set(toolbar.constructor.name, toolbar)
+    }
+
+    unregisterAugmentation(toolbar) {
+        this._augmentations.delete(toolbar.constructor.name)
+    }
+
+    getAugmentation(name) {
+        return this._augmentations.get(name)
     }
 
     /** Return the active editor's `view`. */
@@ -105,11 +118,12 @@ class MURegistry {
         return this.activeEditor()?.config
     }
 
-    /** Return the ID of the selected contentEditable element */
+    /** Return the cached ID of the selected contentEditable element. */
     selectedID() {
         return this.activeEditor()?.selectedID
     }
 
+    /** Set/cache the ID of the selected contentEditable element to `string`. */
     setSelectedID(string) {
         this.activeEditor().selectedID = string
     }
@@ -124,6 +138,9 @@ export const getDelegate = _muRegistry.getDelegate.bind(_muRegistry)
 export const registerConfig = _muRegistry.registerConfig.bind(_muRegistry)
 export const unregisterConfig = _muRegistry.unregisterConfig.bind(_muRegistry)
 export const getConfig = _muRegistry.getConfig.bind(_muRegistry)
+export const registerAugmentation = _muRegistry.registerAugmentation.bind(_muRegistry)
+export const unregisterAugmentation = _muRegistry.unregisterAugmentation.bind(_muRegistry)
+export const getAugmentation = _muRegistry.getAugmentation.bind(_muRegistry)
 export const activeEditor = _muRegistry.activeEditor.bind(_muRegistry)
 export const activeView = _muRegistry.activeView.bind(_muRegistry)
 export const setActiveView = _muRegistry.setActiveView.bind(_muRegistry)
