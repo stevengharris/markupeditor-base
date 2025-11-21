@@ -73,20 +73,24 @@ import {
   blurred,
 } from "./markup.js"
 
-import {LinkView} from "./nodeviews/linkview.js"
-import {ImageView} from "./nodeviews/imageview.js"
-import {DivView} from "./nodeviews/divview.js"
+import {LinkView} from "./nodeview/linkview.js"
+import {ImageView} from "./nodeview/imageview.js"
+import {DivView} from "./nodeview/divview.js"
 
 import {Searcher} from "./searcher.js"
 
 import {
   registerEditor,
   unregisterEditor,
+  activeEditor,
   registerDelegate,
   getDelegate,
   registerConfig,
   activeConfig,
   getConfig,
+  registerAugmentation,
+  getAugmentation,
+  setActiveView,
 } from "./registry.js"
 
 import { 
@@ -98,9 +102,9 @@ import {
   renderDropdownItems
  } from "./setup/menuitems.js"
 
-import {ToolbarConfig} from "./setup/toolbarconfig.js"
-import {KeymapConfig} from "./setup/keymapconfig.js"
-import {BehaviorConfig} from "./setup/behaviorconfig.js"
+import {ToolbarConfig} from "./config/toolbarconfig.js"
+import {KeymapConfig} from "./config/keymapconfig.js"
+import {BehaviorConfig} from "./config/behaviorconfig.js"
 
 import { 
   prependToolbar, 
@@ -196,9 +200,13 @@ export {
   KeymapConfig,
   BehaviorConfig,
   // muRegistry access
+  activeEditor,
   registerDelegate,
   registerConfig,
-  activeConfig
+  activeConfig,
+  registerAugmentation,
+  getAugmentation,
+  setActiveView,
 }
 
 /**
