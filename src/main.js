@@ -314,8 +314,8 @@ class MarkupEditor {
       createSelectionBetween: this.createSelectionBetween.bind(this)
     })
 
-    // The `messageHandler` is specific to this `editor` and is accessible from the 
-    // muRegistry or from `firstMessageHandler` when there is only one.
+    // The `messageHandler` is specific to this `editor` and is accessible from 
+    // `activeMessageHandler()` or directly from an editor instance.
     this.messageHandler = this.config.messageHandler ?? new MessageHandler(this)
 
     // Assign a generated `muId` to the document or shadow root. We can get 

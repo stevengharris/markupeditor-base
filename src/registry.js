@@ -1,7 +1,7 @@
 /**
- * The global registry used to hold _editors, _delegates, and _configs and to 
- * track the active muId (of which there can be only one, generally set
- * by focus/blur but sometimes by toolbar actions.
+ * The global registry used to hold _editors, _delegates, _configs, 
+ * _augmentations, and to track the active muId (of which there can be 
+ * only one, generally set by focus/blur but sometimes by toolbar actions.
  * 
  * The registry is a singleton global but is only accessed via the methods exported 
  * here.
@@ -71,14 +71,24 @@ class MURegistry {
         return this._configs.get(name)
     }
 
+    /** 
+     * Add the `augmentation` to the registry.
+     * An augmentation is a toolbar that holds `cmdItems` that can 
+     * either be prepended or appended to the normal MarkupEditor toolbar.
+     */
     registerAugmentation(toolbar) {
         this._augmentations.set(toolbar.constructor.name, toolbar)
     }
 
+    /** Remove the `augmentation` from the registry. */
     unregisterAugmentation(toolbar) {
         this._augmentations.delete(toolbar.constructor.name)
     }
 
+    /**
+     * Return the `augmentation` toolbar whose `menuItems` will be 
+     * either prepended or appended to the normal MarkupEditor toolbar.
+     */
     getAugmentation(name) {
         return this._augmentations.get(name)
     }
@@ -125,10 +135,11 @@ class MURegistry {
 
     /** Set/cache the ID of the selected contentEditable element to `string`. */
     setSelectedID(string) {
-        this.activeEditor().selectedID = string
+        if (this.activeEditor()) this.activeEditor().selectedID = string
     }
 }
 
+/** Define the global _muRegistry instance and export methods that provide access to it. */
 const _muRegistry = new MURegistry()
 export const registerEditor = _muRegistry.registerEditor.bind(_muRegistry)
 export const unregisterEditor = _muRegistry.unregisterEditor.bind(_muRegistry)

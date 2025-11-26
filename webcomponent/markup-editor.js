@@ -6,14 +6,14 @@ window.markupEditorScriptLoaded = false
 /**
  * MarkupEditorElement is the Web Component for the MarkupEditor.
  * 
- * The lifecycle and resulting document structure are probably most interesting 
+ * The lifecycle and resulting document structure are probably the most interesting 
  * aspects of the MarkupEditorElement, especially because the HTML page can   
  * contain multiple of them. The MarkupEditor "base" script should be loaded 
  * only once in the first (or only) MarkupEditorElement. It defines the global
  * `MU` along with the global `muRegistry` with exported methods to access it.
  * 
  * We use the `connectedCallback`, which is called for each MarkupEditorElement, 
- * to trigger appending MarkupEditor base script only once. It's loaded into 
+ * to trigger appending the MarkupEditor base script only once. It's loaded into 
  * the first MarkupEditorElement, and produces the global `MU` that provides access
  * to all editor functionality regardless of where subsequent scripts are run.
  * When the base script finishes loading, we dispatch the `ready` `muCallback` 
@@ -176,7 +176,7 @@ class MarkupEditorElement extends HTMLElement {
    * has access to the file system (e.g., node.js, but not a browser).
    */
   createEditor() {
-    const html = (this.innerHTML.length == 0) ? MU.emptyDocument() : this.innerHTML
+    const html = (this.innerHTML.length == 0) ? '<p></p>' : this.innerHTML
     const filename = this.getAttribute('filename')
     const config = { 
       filename: filename, 
