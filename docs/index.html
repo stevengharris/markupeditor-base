@@ -3,8 +3,7 @@
     <head>
         <title>MarkupEditor</title>
         <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-        <link href="styles/markupeditor.css" rel="stylesheet">
-        <link href="styles/index.css" rel="stylesheet">
+        <link href="styles/markup.css" rel="stylesheet">
     </head>
     <body>
         <p align="center">
@@ -13,8 +12,8 @@
         <h1>Welcome to the MarkupEditor</h1>
         <p>
             The MarkupEditor supports WYSIWYG editing in a web view. The "source of truth" for the MarkupEditor is standard HTML, styled using standard 
-            CSS. The MarkupEditor comes with a toolbar and hot key bindings to access its editing functionality. The toolbar visibility and contents, 
-            as well as the key bindings, are configurable and extensible.
+            CSS. The MarkupEditor is available as a web component with a toolbar and hot key bindings to access its editing functionality. The toolbar 
+            visibility and contents, as well as the key bindings, are configurable and extensible.
         </p>
         <h3>Why</h3>
         <p>
@@ -31,66 +30,67 @@
         </p>
 
         <h2>Try</h2>
-        <div id="editor"></div>
-        <script src="src/markupeditor.umd.js"></script>
-        <script>
-            new MU.MarkupEditor(
-                document.querySelector('#editor'), 
-                { 
-                    html: `
-                        <p>The MarkupEditor's default toolbar lets you...</p>
-                        <ul>
-                            <li><p>Insert and edit links, images, and tables.</p></li>
-                            <li><p>Set paragraph styles.</p></li>
-                            <li><p>Add lists and indenting.</p></li>
-                            <li><p>Set text formatting.</p></li>
-                            <li><p>Search for text.</p></li>
-                        </ul>
-                        <p>
-                            Learn more about the MarkupEditor in the Resources section below or 
-                            jump right into the <a href="guide/index.html">Developer's Guide</a>.
-                        </p>
-                    `,
-                }
-            )
-        </script>
+        <markup-editor muscript="src/markupeditor.umd.js" mustyle="styles/markupeditor.css" userstyle="styles/index.css">
+            <p>The MarkupEditor is available as a web component. In its simplest form:</p>
+            <blockquote><pre><code>&lt;markup-editor>&lt;p>Hello, world!&lt;/p>&lt;/markup-editor>
+&lt;script src="src/markup-editor.js">&lt;/script></code></pre></blockquote>
+            <p>
+                Optional &lt;markup-editor> element attributes provide extensive customization options and let you 
+                load HTML content from file. The default MarkupEditor toolbar enables features to...
+            </p>
+            <ul>
+                <li><p>Insert and edit links, images, and tables.</p></li>
+                <li><p>Set paragraph styles.</p></li>
+                <li><p>Add lists and indenting.</p></li>
+                <li><p>Set text formatting.</p></li>
+                <li><p>Search for text.</p></li>
+            </ul>
+            <p>You can customize the toolbar visibility, contents, ordering, and the hotkey mapping.</p>
+            <p>
+                Learn more about the MarkupEditor in the Resources section below or 
+                jump right into the <a href="guide/index.html">Developer's Guide</a>.
+            </p>
+        </markup-editor>
+
         <h2 id="resources">Resources</h2>
         <h3>Demos</h3>
         <ul>
             <li><p>
                 <strong><a href="demo/index.html">MarkupEditor Demo</a></strong>. 
-                A demo of all of the elements supported by the MarkupEditor. The demo includes a 
-                customized toolbar and the ability to watch the underlying HTML update as you edit.
+                Exercise all of the MarkupEditor features on a document containing all of the supported
+                HTML elements. The demo includes a customized toolbar and the ability to watch the underlying 
+                HTML update as you edit.
             </p></li>
             <li><p>
                 <strong><a href="helloworld/index.html">Hello, world</a></strong>. 
                 Every project needs a "Hello, world!" demo to highlight the simplest possible case. 
-                The demo uses the &lt;markup-editor> web component element.
                 Follow <a href="helloworld/content.html">this link</a> to see the page source or 
                 "view source" in your browser to see what's required to present "Hello, world!" in 
                 an editable HTML document.
             </p></li>
             <li><p>
-                <strong><a href="webcomponent/index.html">Web Components</a></strong>. The simplest 
-                way to insert WYSIWYG editing into your document or web site is to use the 
-                &lt;markup-editor> element with attributes to customize it. This demo shows multiple 
-                web components on a single page, one using defaults, and the other with a customized 
-                toolbar.
+                <strong><a href="webcomponent/index.html">Web Components</a></strong>. This demo shows 
+                multiple &lt;markup-editor> web components on a single page, one using defaults, and the 
+                other with a customized toolbar. It's a compact example of MarkupEditor customization.
             </p></li>
         </ul>
+
         <h3>Documentation</h3>
         <ul>
             <li><p>
                 <strong><a href="guide/index.html">Developer's Guide</a></strong>. 
-                Learn how to customize the toolbar and key mappings. 
-                Learn how to embed the MarkupEditor in a web site like this one and how to 
-                edit documents locally using the MarkupEditor.
-                Learn about the architecture of the MarkupEditor and how to modify its code.
+                Learn the details and capabilities behind customizing the toolbar and key mappings 
+                and the behavior of the MarkupEditor. Learn how your application or web site 
+                can communicate with the MarkupEditor to be able to save edited documents and 
+                react to changes as you edit. Learn about the architecture of the MarkupEditor 
+                and how to modify its code.
             </p></li>
             <li><p>
                 <strong><a href="api/index.html">MarkupEditor API</a></strong>.
+                The MarkupEditor API documentation is a work in progress.
             </p></li>
         </ul>
+
         <h3>Code and Tools</h3>
         <ul>
             <li><p>
@@ -120,5 +120,6 @@
                 was to use it in a VSCode extension. That project is under active development.
             </p></li>
         </ul>
+        <script src="src/markup-editor.js"></script>
     </body>
 </html>

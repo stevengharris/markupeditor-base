@@ -9,8 +9,11 @@
     </blockquote>
     <p><a href="#essentials">Essentials</a></p>
     <blockquote>
-        <p><a href="#using-the-markupeditor-in-a-browser">Using the MarkupEditor in a Browser</a></p>
-        <p><a href="#markupeditor-as-a-web-component">MarkupEditor as a Web Component</a></p>
+        <p><a href="#markupeditor-as-a-web-component">Using the MarkupEditor Web Component</a></p>
+        <blockquote>
+            <p><a href="#web-component-attributes">Web Component Attributes</a></p>
+        </blockquote>
+        <p><a href="#using-the-markupeditor-in-a-browser">Using the MarkupEditor Directly</a></p>
         <p><a href="#using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</a></p>
     </blockquote>
     <p><a href="#configuration">Configuration</a></p>
@@ -54,56 +57,9 @@
 
 <p>Let’s take a look at what is required for WYSIWYG editing directly in your web browser or using Node.js. These “essentials” are common to other environments that the MarkupEditor can be used in.</p>
 
-<h3 id="using-the-markupeditor-in-a-browser">Using the MarkupEditor in a Browser</h3>
+<h3 id="markupeditor-as-a-web-component">Using the MarkupEditor Web Component</h3>
 
-<p>By our nebulous definition, a web browser provides an application environment. Here’s an <a href="https://stevengharris.github.io/markupeditor-base/helloworld/index.html"><code>index.html</code></a> you can load in your browser to display an editable version of “Hello, world!”:</p>
-
-<pre><code>&lt;!DOCTYPE html&gt;
-&lt;html lang="en"&gt;
-    &lt;head&gt;
-        &lt;title&gt;Hello MarkupEditor&lt;/title&gt;
-        &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
-        &lt;link href="../styles/markupeditor.css" rel="stylesheet"&gt;
-    &lt;/head&gt;
-    &lt;body&gt;
-        &lt;div id="editor"&gt;&lt;/div&gt;
-        &lt;script src="../src/markupeditor.umd.js"&gt;&lt;/script&gt;
-        &lt;script&gt;
-            new MU.MarkupEditor(document.querySelector('#editor'), {html: '&lt;h1&gt;Hello, world!&lt;/h1&gt;'})
-        &lt;/script&gt;
-    &lt;/body&gt;
-&lt;/html&gt;</code></pre>
-
-<p>The essentials involve:</p>
-
-<ol>
-    <li>
-        <p>Linking to the MarkupEditor style sheets that are gathered together in <code>markupeditor.css</code>.</p>
-    </li>
-    <li>
-        <p>Creating an empty <code>editor</code> div to edit in.</p>
-    </li>
-    <li>
-        <p>Loading the MarkupEditor script <code>markupeditor.umd.js</code> which exposes its public API in a global, <code>MU</code>.</p>
-    </li>
-    <li>
-        <p>Creating an instance of the MarkupEditor in the editor element, and in this case providing its initial HTML.</p>
-    </li>
-</ol>
-
-<p>These essentials are common whenever you use the MarkupEditor, but the details will vary.</p>
-
-<p><img src="c4f425be-396a-40b0-a219-4e599b921872.png" width="432" height="237"></p>
-
-<p>Above, you see the result in the Vivaldi browser. Note the default toolbar shows up without any work on your part. The MarkupEditor lets you edit the document, but there is a very security-limited set of things you can do from a browser. While the browser is pretty much the simplest possible environment to use the MarkupEditor in, it also provides access to an array of development tools for debugging.</p>
-
-<blockquote>
-    <p><strong>Note</strong>: If you encounter a MarkupEditor bug, providing a test or usage flow that reproduces the bug in a browser will ensure it can be debugged with no setup barriers, increasing the likelihood of it being worked on.</p>
-</blockquote>
-
-<h3 id="markupeditor-as-a-web-component">MarkupEditor as a Web Component</h3>
-
-<p>The &lt;markup-editor&gt; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">web component</a> is the recommended way to use the MarkupEditor.  The web component hides complexity and allows the MarkupEditor to be used like other HTML elements. The web component reduces the essentials only to identifying the locations of the MarkupEditor base script and style, but it requires loading the <code>markup-editor</code> web component script, typically at the end of the <code>body</code>. The initial HTML can just be part of the &lt;markup-editor&gt; element itself.</p>
+<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">web component</a> is the recommended way to use the MarkupEditor.  The &lt;markup-editor&gt; web component hides complexity and allows the MarkupEditor to be used like other HTML elements. When you use the web component, its content and styling is isolated in the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM">shadow DOM</a>.</p>
 
 <pre><code>&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
@@ -119,18 +75,38 @@
     &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 
-<p>Under the covers, the &lt;markup-editor&gt; web component uses the same “essentials” covered <a href="#using-the-markupeditor-in-a-browser">above</a>. You can see how it does this in markupeditor-base/webcomponent/markup-editor.js. It loads the MarkupEditor base script (only once, even if you have multiple &lt;markup-editor&gt; elements), and it applies the MarkupEditor base styling to each element. For each &lt;markup-editor&gt; element, it creates an “editor” DIV and an instance of MU.MarkupEditor for it, with a configuration extracted from the &lt;markup-editor&gt; attributes you specify.</p>
+<p>The essentials involve:</p>
 
-<h4>Web Component Attributes</h4>
+<ol>
+    <li>
+        <p>Insert a &lt;markup-editor&gt; element into your document. Add the <code>muscript</code> and <code>mustyle</code> attributes to specify the location of the MarkupEditor base script and styling if they are not in the directory containing your HTML. See the discussion in <a href="#web-component-attributes">Web Component Attributes</a> below for more detail.</p>
+    </li>
+    <li>
+        <p>Add the initial editable HTML in the &lt;markup-editor&gt; element. (Alternatively, when running in node.js, you can provide the initial HTML contents by adding a <code>filename</code> attribute to the element. )You can also specify a <code>placeholder</code> for an empty document.</p>
+    </li>
+    <li>
+        <p>Load the MarkupEditorElement web component definition script, <code>markup-editor.js</code>.</p>
+    </li>
+</ol>
+
+<p><img src="c4f425be-396a-40b0-a219-4e599b921872.png" width="432" height="237"></p>
+
+<p>Above, you can see the result in the Vivaldi browser. Note that the default toolbar shows up without any work on your part. The MarkupEditor lets you edit the document, but there is a very security-limited set of things you can do from a browser. While the browser is pretty much the simplest possible environment to use the MarkupEditor in, it also provides access to an array of development tools for debugging.</p>
+
+<blockquote>
+    <p><strong>Note</strong>: If you encounter a MarkupEditor bug, providing a test or usage flow that reproduces the bug in a browser will ensure it can be debugged with no setup barriers, increasing the likelihood of it being worked on.</p>
+</blockquote>
+
+<h4 id="web-component-attributes">Web Component Attributes</h4>
 
 <p>The following attributes can be specified for the &lt;markup-editor&gt; element. Like all HTML element attributes, values are always strings.</p>
 
 <ul>
     <li>
-        <p><strong>muscript</strong>: The location of the MarkupEditor base script. The MarkupEditor base script is located at dist/markupeditor.umd.js in the markupeditor-base project. If you have copied markupeditor.umd.js from the markupeditor-base/dist/markupeditor.umd.js into the same directory as your html page, then there is no need to set the <code>muscript</code> attribute in the &lt;markup-editor&gt; element.</p>
+        <p><strong>muscript</strong>: The location of the MarkupEditor base script. The MarkupEditor base script is located at dist/markupeditor.umd.js in the markupeditor-base project. If you have copied markupeditor.umd.js from the markupeditor-base/dist/markupeditor.umd.js into the same directory as your HTML page, then there is no need to set the <code>muscript</code> attribute in the &lt;markup-editor&gt; element.</p>
     </li>
     <li>
-        <p><strong>mustyle</strong>: The location of the MarkupEditor base css file. The MarkupEditor base script is located at styles/markupeditor.css in the markupeditor-base project. The markupeditor.css uses <code>@import</code> to combine three css files needed by the MarkupEditor: mirror.css, markup.css, and toolbar.css. If you have copied markupeditor.css and these other three css files from the markupeditor-base/styles directory into the same directory as your html page, then there is no need to set the <code>mustyles</code> attribute in the &lt;markup-editor&gt; element.</p>
+        <p><strong>mustyle</strong>: The location of the MarkupEditor base css file. The MarkupEditor base styling is located at styles/markupeditor.css in the markupeditor-base project. The markupeditor.css file uses <code>@import</code> to combine three css files needed by the MarkupEditor: mirror.css, markup.css, and toolbar.css. If you have copied markupeditor.css and these other three css files from the markupeditor-base/styles directory into the same directory as your HTML page, then there is no need to set the <code>mustyles</code> attribute in the &lt;markup-editor&gt; element.</p>
     </li>
     <li>
         <p><strong>filename</strong>: An HTML file whose contents should be loaded for the initial contents of the editor. If you also supply HTML within the &lt;markup-editor&gt; itself (e.g., <code>&lt;markup-editor&gt;&lt;p&gt;Hello, world&lt;/p&gt;&lt;/markupeditor&gt;</code>), the content of <code>filename</code> will take precedence.</p>
@@ -142,46 +118,69 @@
         <p><strong>placeholder</strong>: HTML that should be displayed when the editor is empty.</p>
     </li>
     <li>
-        <p><strong>userscript</strong>: A JavaScript file that should be loaded as a script within the &lt;markup-editor&gt; element. The script can reference the global <code>MU</code> for access to MarkupEditor functionality. For example, the script could contain code to create and register a MarkupDelegate to receive callbacks during editing, or define a custom ToolbarConfiguration.</p>
+        <p><strong>userscript</strong>: A JavaScript file that should be loaded as a script within the &lt;markup-editor&gt; element. The script can reference the global <code>MU</code> for access to MarkupEditor functionality. For example, the script could contain code to create and register a MarkupDelegate to receive callbacks during editing, or define a custom ToolbarConfiguration. Bear in mind that globals you create in your script are still going to be globals, not somehow isolated like the shadow DOM and styling.</p>
     </li>
     <li>
-        <p><strong>userstyle</strong>: A CSS file that should be linked within the &lt;markup-editor&gt; element, to override the MarkupEditor base styling and provide custom styling.</p>
+        <p><strong>userstyle</strong>: A CSS file that should be linked within the &lt;markup-editor&gt; element to supplement the MarkupEditor base styling.</p>
     </li>
     <li>
-        <p><strong>delegate</strong>: The string name of a MarkupDelegate that has been registered. See the section on <a href="#markupdelegate">MarkupDelegates</a> for details on implementation, usage, and registration.</p>
+        <p><strong>delegate</strong>: The name of a MarkupDelegate that has been registered. See the section on <a href="#markupdelegate">MarkupDelegates</a> for details on implementation, usage, and registration.</p>
     </li>
     <li>
-        <p><strong>toolbar</strong>: The string name of a ToolbarConfig that has been registered. See the section on <a href="#toolbarconfig">ToolbarConfig</a> for details or customizing the toolbar configuration and registering configs.</p>
+        <p><strong>toolbar</strong>: The name of a ToolbarConfig that has been registered. See the section on <a href="#toolbarconfig">ToolbarConfig</a> for details of customizing the toolbar configuration and registering configs.</p>
     </li>
     <li>
-        <p><strong>keymap</strong>: The string name of a KeymapConfig that has been registered. See the section on <a href="#keymapconfig">KeymapConfig</a> for details or customizing the keymap configuration and registering configs.</p>
+        <p><strong>keymap</strong>: The name of a KeymapConfig that has been registered. See the section on <a href="#keymapconfig">KeymapConfig</a> for details of customizing the keymap configuration and registering configs.</p>
     </li>
     <li>
-        <p><strong>behavior</strong>: The string name of a BehaviorConfig that has been registered. See the section on <a href="#behaviorconfig">BehaviorConfig</a> for details or customizing the behavior configuration and registering configs.</p>
+        <p><strong>behavior</strong>: The name of a BehaviorConfig that has been registered. See the section on <a href="#behaviorconfig">BehaviorConfig</a> for details of customizing the behavior configuration and registering configs.</p>
+    </li>
+    <li>
+        <p><strong>prepend</strong>: The name of a toolbar that has been registered, whose <code>menuItems</code> will be placed before the MarkupToolbar. See the section on <a href="#extending-the-toolbar">Extending the Toolbar</a> for details.</p>
+    </li>
+    <li>
+        <p><strong>append</strong>: The name of a toolbar that has been registered, whose <code>menuItems</code> will be placed after the MarkupToolbar. See the section on <a href="#extending-the-toolbar">Extending the Toolbar</a> for details.</p>
     </li>
 </ul>
 
 <h3 id="using-the-markupeditor-in-node.js">Using the MarkupEditor in Node.js</h3>
 
-<p>When you use the MarkupEditor in Node.js, you get access to the file system, among other things. In concrete terms, this means you can fetch file contents without the requirement that the access be gated by a trusted user action, as is required in the browser. The MarkupEditor lets you identify a <code>filename</code> containing the HTML contents it will show. Here’s how the contents of <code>guide.html</code> (which you’re reading now) are loaded into the MarkupEditor:</p>
+<p>When you use the MarkupEditor in Node.js, you get access to the file system, among other things. In concrete terms, this means you can fetch file contents without the requirement that the access be gated by a trusted user action, as is required in the browser. The MarkupEditor lets you identify a <code>filename</code> containing the HTML contents it will show. Here’s how the contents of <code>guide.html</code> (which you’re reading now) are loaded into the MarkupEditor using the &lt;markup-editor&gt; web component:</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+    &lt;head&gt;
+        &lt;title&gt;Developer's Guide&lt;/title&gt;
+        &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;p align="center"&gt;
+            &lt;img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" &gt;
+        &lt;/p&gt;
+        &lt;markup-editor filename="guide.html" muscript="../src/markupeditor.umd.js" mustyle="../styles/markupeditor.css"&gt;&lt;/markup-editor&gt;
+        &lt;script src="../src/markup-editor.js"&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>The equivalent using MU.MarkupEditor directly is:</p>
 
 <pre><code>&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
   &lt;head&gt;
     &lt;title&gt;docs/demo/demo.html&lt;/title&gt;
     &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
-    &lt;link href="styles/markupeditor.css" rel="stylesheet"&gt;
+    &lt;link href="../styles/markupeditor.css" rel="stylesheet"&gt;
   &lt;/head&gt;
   &lt;body&gt;
     &lt;div id="editor"&gt;&lt;/div&gt;
-    &lt;script src="dist/markupeditor.umd.js"&gt;&lt;/script&gt;
+    &lt;script src="../src/markupeditor.umd.js"&gt;&lt;/script&gt;
     &lt;script&gt;
-      new MU.MarkupEditor(document.querySelector('#editor'), {filename: "docs/guide/guide.html", base: "docs/guide/"})
+      new MU.MarkupEditor(document.querySelector('#editor'), {filename: "guide.html"})
     &lt;/script&gt;
   &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 
-<p>Note that if you saved the HTML shown above as a file and attempted to load it in your browser, say by double-clicking on the file, it would fail with <code>Failed to load docs/guide/guide.html</code>. You would see the toolbar show up, but the browser fails when fetching <code>guide.html</code>. You can, however, do it with Node.js! Here is a script, <code>guide.js</code>, that can be executed using <code>node guide.js</code>:</p>
+<p>Note that if you saved either of the examples above as a file and attempted to load it in your browser, say by double-clicking on the file, it would fail with <code>Failed to load guide.html</code>. You would see the toolbar show up, but the browser fails when fetching <code>guide.html</code>. You can, however, do it with Node.js! Here is a script, <code>guide.js</code>, that can be executed from the markupeditor-base/docs directory using <code>node guide.js</code>:</p>
 
 <pre><code>const express = require('express');
 
@@ -200,16 +199,17 @@ app.get('/', (req, res) =&gt; {
       &lt;!DOCTYPE html&gt;
       &lt;html lang="en"&gt;
         &lt;head&gt;
-          &lt;title&gt;docs/demo/demo.html&lt;/title&gt;
+          &lt;title&gt;docs/guide/guide.html&lt;/title&gt;
           &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
-          &lt;link href="styles/markupeditor.css" rel="stylesheet"&gt;
         &lt;/head&gt;
         &lt;body&gt;
-          &lt;div id="editor"&gt;&lt;/div&gt;
-          &lt;script src="dist/markupeditor.umd.js"&gt;&lt;/script&gt;
-          &lt;script&gt;
-            new MU.MarkupEditor(document.querySelector('#editor'), {filename: "docs/guide/guide.html", base: "docs/guide/"})
-          &lt;/script&gt;
+            &lt;markup-editor 
+              filename="guide/guide.html" 
+              muscript="src/markupeditor.umd.js" 
+              mustyle="styles/markupeditor.css" 
+              base="guide/"&gt;
+            &lt;/markup-editor&gt;
+            &lt;script src="src/markup-editor.js"&gt;&lt;/script&gt;
         &lt;/body&gt;
       &lt;/html&gt;
     `
@@ -220,28 +220,31 @@ app.listen('3000', () =&gt; {
   console.log(`Server listening at http://localhost:3000`);
 });</code></pre>
 
-<p>Here we use <a href="https://expressjs.com">Express</a> to respond with the HTML we showed earlier when you open your browser on <code>http://localhost:3000</code>. Note that <code>base</code> is passed as part of the MarkupEditor configuration. Under the covers, this ends up adding an <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/base">HTML base element</a> to the document, so that the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img"><code>img src</code></a> attribute and other references in the document are specified relative to the HTML document being edited.</p>
+<p>Here we use <a href="https://expressjs.com">Express</a> to respond with the HTML we showed earlier when you open your browser on <code>http://localhost:3000</code>. Note that <code>base</code> is passed as an attribute in the &lt;markup-element&gt;. Under the covers, this ends up adding an <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/base">HTML base element</a> to the document, so that the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img"><code>img src</code></a> attribute and other references in the document are specified relative to the HTML document being edited.</p>
 
 <p>There is a more robust version of this script - <a href="https://github.com/stevengharris/markupeditor-base">markupeditor.js</a> in the markupeditor-base project - that you can execute from anywhere, identifying the HTML file to open (or none if you just want an empty document) and the port to listen on. For example:</p>
 
 <pre><code>$ node markupeditor.js docs/demo/demo.html --port 8000
 Server listening at http://localhost:8000</code></pre>
 
+<h3>Local MarkupEditor Documentation and Demos</h3>
+
 <p>The MarkupEditor documentation, including this Developer’s Guide, is hosted using GitHub Pages. You can use npm/node to view the docs locally using:</p>
 
 <pre><code>$ npm run docs
 
-&gt; markupeditor-base@0.8.0 predocs
+&gt; markupeditor-base@0.8.8 predocs
 &gt; sh predocs.sh
 
 Updating ./docs dependencies...
 cp -f ./dist/markupeditor.umd.js ./docs/src/markupeditor.umd.js
+cp -f ./webcomponent/markup-editor.js ./docs/src/markup-editor.js
 cp -f ./styles/markupeditor.css ./docs/styles/markupeditor.css
 cp -f ./styles/markup.css ./docs/styles/markup.css
 cp -f ./styles/mirror.css ./docs/styles/mirror.css
 cp -f ./styles/toolbar.css ./docs/styles/toolbar.css
 
-&gt; markupeditor-base@0.8.0 docs
+&gt; markupeditor-base@0.8.8 docs
 &gt; node ./docs/index.js
 
 Server listening at http://localhost:3000</code></pre>
@@ -788,6 +791,47 @@ Waiting for the debugger to disconnect...
 $ </code></pre>
 
 <h2 id="advanced-topics">Advanced Topics</h2>
+
+<h3 id="using-the-markupeditor-in-a-browser">Using the MarkupEditor Directly</h3>
+
+<p>The web component script, markup-editor.js, uses the MU.MarkupEditor class directly to set up an editor. It loads the MarkupEditor base script (only once, even if you have multiple &lt;markup-editor&gt; elements), and it applies the MarkupEditor base styling to each element. For each &lt;markup-editor&gt; element, it creates an “editor” DIV and an instance of MU.MarkupEditor for it, with a configuration extracted from the &lt;markup-editor&gt; attributes you specify.</p>
+
+<p>You might want to do this yourself if you feel you need more control over the MarkupEditor. For example, the Swift version of the MarkupEditor doesn’t use the JavaScript toolbar at all, and there are other requirements that make the direct usage of the MarkupEditor class preferable. Here is the same “Hello, world!” example presented above, but implemented without using the web component.</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+    &lt;head&gt;
+        &lt;title&gt;Hello MarkupEditor&lt;/title&gt;
+        &lt;meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0"&gt;
+        &lt;link href="../styles/markupeditor.css" rel="stylesheet"&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div id="editor"&gt;&lt;/div&gt;
+        &lt;script src="../src/markupeditor.umd.js"&gt;&lt;/script&gt;
+        &lt;script&gt;
+            new MU.MarkupEditor(document.querySelector('#editor'), {html: '&lt;h1&gt;Hello, world!&lt;/h1&gt;'})
+        &lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>Here, the essentials involve:</p>
+
+<ol>
+    <li>
+        <p>Link to the MarkupEditor style sheets that are gathered together in <code>markupeditor.css</code>.</p>
+    </li>
+    <li>
+        <p>Create an empty <code>editor</code> div to edit in.</p>
+    </li>
+    <li>
+        <p>Load the MarkupEditor base script <code>markupeditor.umd.js</code> which exposes its public API in a global, <code>MU</code>.</p>
+    </li>
+    <li>
+        <p>Create an instance of the MarkupEditor in the editor element, and in this case provide its initial HTML.</p>
+    </li>
+</ol>
+
+<p>The result is the same, except that the editor resides in the window <code>document</code>, not the web component shadow DOM. This approach is fully supported (or the web component would not work!), so you should feel free to use it.</p>
 
 <h3 id="messagehandler">MessageHandler</h3>
 

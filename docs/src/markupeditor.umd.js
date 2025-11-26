@@ -16657,7 +16657,7 @@
 
       /** Set/cache the ID of the selected contentEditable element to `string`. */
       setSelectedID(string) {
-          this.activeEditor().selectedID = string;
+          if (this.activeEditor()) this.activeEditor().selectedID = string;
       }
   }
 

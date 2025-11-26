@@ -3,18 +3,20 @@
 
     <head>
         <meta charset="utf-8">
-        <title>Multiple MarkupEditors</title>
-        <link href="index.css" rel="stylesheet">
+        <title>Customization Demo</title>
+        <!-- Why load this stylesheet here? Just so the overall page has the same style as the MarkupEditor itself. -->
+        <link href="../styles/markup.css" rel="stylesheet">
     </head>
     
     <body>
-        <h1>MarkupEditor Web Component Demo</h1>
+        <h1>MarkupEditor Customization Demo</h1>
         <p>
             The simplest way to embed WYSIWYG editing in your web site is to use the MarkupEditor web component. 
             The web component makes sure the MarkupEditor script is only loaded once, and that the base MarkupEditor styling is 
             applied (e.g., that handles the way the toolbar looks, font sizing, etc) to the editor within the web component
-            without potential side-effects to the page you embed it in. You have access to all of the customization features 
-            of the base MarkupEditor, including:
+            without potential side-effects to the page you embed it in. Using the &lt;markup-editor> 
+            <a href="../guide/index.html#web-component-attributes">web component attributes</a>, 
+            you have access to all of the customization features of the base MarkupEditor, including:
         </p>
         <ul>
             <li><p>Provide initial HTML contents for editing directly or by a file name.</p></li>
@@ -34,8 +36,8 @@
         </p>
 
         <pre><code>
-            &lt;markup-editor>&lt;/markup-editor>
-            &lt;script src="markup-editor.js">&lt;/script>
+    &lt;markup-editor>&lt;/markup-editor>
+    &lt;script src="markup-editor.js">&lt;/script>
         </code></pre>
 
         <h2>Default Web Component</h2>

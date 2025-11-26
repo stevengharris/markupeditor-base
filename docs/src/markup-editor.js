@@ -176,7 +176,7 @@ class MarkupEditorElement extends HTMLElement {
    * has access to the file system (e.g., node.js, but not a browser).
    */
   createEditor() {
-    const html = (this.innerHTML.length == 0) ? MU.emptyDocument() : this.innerHTML
+    const html = (this.innerHTML.length == 0) ? '<p></p>' : this.innerHTML
     const filename = this.getAttribute('filename')
     const config = { 
       filename: filename, 
