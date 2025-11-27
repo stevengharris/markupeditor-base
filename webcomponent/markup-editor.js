@@ -128,7 +128,9 @@ class MarkupEditorElement extends HTMLElement {
     if (window.markupEditorScriptLoaded) return  // Only load it once
     window.markupEditorScriptLoaded = true
     const muScript = this.getAttribute('muScript') ?? './markupeditor.umd.js'
+    const nonce = this.getAttribute('nonce')
     const baseScript = document.createElement('script')
+    if (nonce) baseScript.setAttribute('nonce', nonce)
     baseScript.setAttribute('src', muScript)
     baseScript.addEventListener('load', this.loadedEditorScript.bind(this))
     this.editorContainer.appendChild(baseScript)
@@ -162,7 +164,8 @@ class MarkupEditorElement extends HTMLElement {
     link.setAttribute('rel', 'stylesheet')
     const userStyle = this.getAttribute('userstyle')
     const userScript = this.getAttribute('userscript')
-    link.onload = () => { MU.loadUserFiles(userScript, userStyle, this.editorContainer) }
+    const nonce = this.getAttribute('nonce')
+    link.onload = () => { MU.loadUserFiles(userScript, userStyle, this.editorContainer, nonce) }
     this.editorContainer.appendChild(link)
   }
 
@@ -183,6 +186,7 @@ class MarkupEditorElement extends HTMLElement {
       base: this.getAttribute('base'),
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
+      messageHandler: this.getAttribute('messageHandler'),
       toolbar: this.getAttribute('toolbar'),
       behavior: this.getAttribute('behavior'),
       keymap: this.getAttribute('keymap'),
