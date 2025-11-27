@@ -88,6 +88,8 @@ import {
   registerConfig,
   activeConfig,
   getConfig,
+  registerMessageHandler,
+  getMessageHandler,
   registerAugmentation,
   getAugmentation,
   setActiveView,
@@ -203,6 +205,8 @@ export {
   activeEditor,
   registerDelegate,
   registerConfig,
+  registerMessageHandler,
+  getMessageHandler,
   activeConfig,
   registerAugmentation,
   getAugmentation,
@@ -315,8 +319,21 @@ class MarkupEditor {
     })
 
     // The `messageHandler` is specific to this `editor` and is accessible from 
-    // `activeMessageHandler()` or directly from an editor instance.
-    this.messageHandler = this.config.messageHandler ?? new MessageHandler(this)
+    // `activeMessageHandler()` or directly from an editor instance. It can 
+    // be passed-in as a string that is dereferenced from the registry using 
+    // `getMessageHandler` by name, or as an instance. In any case, the 
+    // expectation is that there will be a MessageHandler of some kind to 
+    // receive `postMessage`.
+    let messageHandler = this.config.messageHandler
+    if (messageHandler) {
+      if (typeof messageHandler === 'string') {
+        this.messageHandler = getMessageHandler(messageHandler)
+      } else {
+        this.messageHandler = messageHandler
+      }
+    } else {
+      this.messageHandler = new MessageHandler(this)
+    }
 
     // Assign a generated `muId` to the document or shadow root. We can get 
     // `muId` from the `view.root.muId` if we have `view`, or directly from the `editor`.
