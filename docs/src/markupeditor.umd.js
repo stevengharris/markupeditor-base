@@ -16531,9 +16531,9 @@
   const findPrev = findCommand(true, -1);
 
   /**
-   * The global registry used to hold _editors, _delegates, and _configs and to 
-   * track the active muId (of which there can be only one, generally set
-   * by focus/blur but sometimes by toolbar actions.
+   * The global registry used to hold _editors, _delegates, _configs, 
+   * _augmentations, and to track the active muId (of which there can be 
+   * only one, generally set by focus/blur but sometimes by toolbar actions.
    * 
    * The registry is a singleton global but is only accessed via the methods exported 
    * here.
@@ -16544,12 +16544,17 @@
           this._delegates = new Map();
           this._configs = new Map();
           this._augmentations = new Map();
+          this._handlers = new Map();
           this._activeMuId = null;
       }
 
       /** Private method to set `activeMuId`. */
       _setActiveMuId(muId) {
           this._activeMuId = muId;
+      }
+
+      _keyFor(value, map) {
+          return [...map].find(([, val]) => value === val)[0]
       }
 
       /**
@@ -16574,13 +16579,14 @@
       }
 
       /** Add the `delegate` to the registry. */
-      registerDelegate(delegate) {
-          this._delegates.set(delegate.constructor.name, delegate);
+      registerDelegate(delegate, name) {
+          this._delegates.set(name ?? delegate.constructor.name, delegate);
       }
 
       /** Remove the `delegate` from the registry. */
-      unregisterDelegate(delegate) {
-          this._delegates.delete(delegate.constructor.name);
+      unregisterDelegate(delegate, name) {
+          const key = name ?? this._keyFor(delegate, this._delegates);
+          this._delegates.delete(key);
       }
 
       /** Return the `delegate` with `name`. */
@@ -16589,13 +16595,14 @@
       }
 
       /** Add the `config` to the registry. */
-      registerConfig(config) {
-          this._configs.set(config.constructor.name, config);
+      registerConfig(config, name) {
+          this._configs.set(name ?? config.constructor.name, config);
       }
 
       /** Remove the config from the registry. */
-      unregisterConfig(config) {
-          this._configs.delete(config.constructor.name);
+      unregisterConfig(config, name) {
+          const key = name ?? this._keyFor(config, this._configs);
+          this._configs.delete(key);
       }
 
       /** Return the `config` with `name`. */
@@ -16603,14 +16610,38 @@
           return this._configs.get(name)
       }
 
-      registerAugmentation(toolbar) {
-          this._augmentations.set(toolbar.constructor.name, toolbar);
+      registerMessageHandler(handler, name) {
+          this._handlers.set(name ?? handler.constructor.name, handler);
       }
 
-      unregisterAugmentation(toolbar) {
-          this._augmentations.delete(toolbar.constructor.name);
+      unregisterMessageHandler(handler, name) {
+          const key = name ?? this._keyFor(handler, this._handlers);
+          this._handlers.delete(key);
       }
 
+      getMessageHandler(name) {
+          return this._handlers.get(name)
+      }
+
+      /** 
+       * Add the `augmentation` to the registry.
+       * An augmentation is a toolbar that holds `cmdItems` that can 
+       * either be prepended or appended to the normal MarkupEditor toolbar.
+       */
+      registerAugmentation(toolbar, name) {
+          this._augmentations.set(name ?? toolbar.constructor.name, toolbar);
+      }
+
+      /** Remove the `toolbar` augmentation from the registry. */
+      unregisterAugmentation(toolbar, name) {
+          const key = name ?? this._keyFor(toolbar, this._augmentations);
+          this._augmentations.delete(key);
+      }
+
+      /**
+       * Return the `augmentation` toolbar whose `menuItems` will be 
+       * either prepended or appended to the normal MarkupEditor toolbar.
+       */
       getAugmentation(name) {
           return this._augmentations.get(name)
       }
@@ -16661,6 +16692,7 @@
       }
   }
 
+  /** Define the global _muRegistry instance and export methods that provide access to it. */
   const _muRegistry = new MURegistry();
   const registerEditor = _muRegistry.registerEditor.bind(_muRegistry);
   const unregisterEditor = _muRegistry.unregisterEditor.bind(_muRegistry);
@@ -16670,6 +16702,9 @@
   const registerConfig = _muRegistry.registerConfig.bind(_muRegistry);
   _muRegistry.unregisterConfig.bind(_muRegistry);
   const getConfig = _muRegistry.getConfig.bind(_muRegistry);
+  const registerMessageHandler = _muRegistry.registerMessageHandler.bind(_muRegistry);
+  _muRegistry.unregisterMessageHandler.bind(_muRegistry);
+  const getMessageHandler = _muRegistry.getMessageHandler.bind(_muRegistry);
   const registerAugmentation = _muRegistry.registerAugmentation.bind(_muRegistry);
   _muRegistry.unregisterAugmentation.bind(_muRegistry);
   const getAugmentation = _muRegistry.getAugmentation.bind(_muRegistry);
@@ -16836,12 +16871,12 @@
    * nor cssFile are specified, then the 'loadedUserFiles' callback happens anyway,
    * since this ends up driving the loading process further.
    */
-  function loadUserFiles(scriptFile, cssFile, target=null) {
+  function loadUserFiles(scriptFile, cssFile, target=null, nonce=null) {
       if (scriptFile) {
           if (cssFile) {
-              _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile, target); }, target);
+              _loadUserScriptFile(scriptFile, nonce, function() { _loadUserCSSFile(cssFile, target); }, target);
           } else {
-              _loadUserScriptFile(scriptFile, function() { _loadedUserFiles(target); }, target);
+              _loadUserScriptFile(scriptFile, nonce, function() { _loadedUserFiles(target); }, target);
           }
       } else if (cssFile) {
           _loadUserCSSFile(cssFile, target);
@@ -16853,18 +16888,22 @@
    * Callback to the global `messageHandler` using `postMessage` or to the 
    * `element` that is listening for a `muCallback`
    * 
-   * The global messageHandler is only defined when *not* using MarkupEditorElements, 
+   * The global messageHandler is only used here when *not* using MarkupEditorElements, 
    * the Markup Editor web component. When using web components, callbacks are 
    * invoked by dispatching an `muCallback` CustomEvent to the `element` provided.
-   * The `element` is commonly the `editor` div. When not using MarkupEditorElements, 
-   * the global `messageHandler` will be defined, and callbacks are handled by  
-   * invoking `postMessage` on the `messageHandler`.
+   * In this case, the `element` will end up invoking `postMessage` on the 
+   * `messageHandler` for most callbacks.
    * 
-   * In Swift, the message is handled by the WKScriptMessageHandler, 
-   * but in other cases, it might have been reassigned.
-   * In Swift, the WKScriptMessageHandler is the MarkupCoordinator,
-   * and the userContentController(_ userContentController:didReceive:)
+   * The `element` is commonly the `editor` div. 
+   * 
+   * When not using MarkupEditorElements, the `messageHandler` will be defined, 
+   * and callbacks are handled by invoking `postMessage` on it.
+   * 
+   * In Swift, the `messageHandler` is a WKScriptMessageHandler, 
+   * the MarkupCoordinator, and the userContentController(_ userContentController:didReceive:)
    * function receives message as a WKScriptMessage.
+   * 
+   * In VSCode, the `messageHandler` is `vscode`.
    *
    * @param {String}      message     The message, which might be a JSONified string
    * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
@@ -16885,11 +16924,12 @@
   /**
    * Called to load user script before loading html.
    */
-  function _loadUserScriptFile(file, callback, target) {
+  function _loadUserScriptFile(file, nonce, callback, target) {
       let scriptTarget = target ?? document.getElementsByTagName('body')[0];
       let script = document.createElement('script');
       script.type = 'text/javascript';
       script.addEventListener('load', callback);
+      if (nonce) script.setAttribute('nonce', nonce);
       script.setAttribute('src', file);
       scriptTarget.appendChild(script);
   }
@@ -23885,9 +23925,22 @@
         createSelectionBetween: this.createSelectionBetween.bind(this)
       });
 
-      // The `messageHandler` is specific to this `editor` and is accessible from the 
-      // muRegistry or from `firstMessageHandler` when there is only one.
-      this.messageHandler = this.config.messageHandler ?? new MessageHandler(this);
+      // The `messageHandler` is specific to this `editor` and is accessible from 
+      // `activeMessageHandler()` or directly from an editor instance. It can 
+      // be passed-in as a string that is dereferenced from the registry using 
+      // `getMessageHandler` by name, or as an instance. In any case, the 
+      // expectation is that there will be a MessageHandler of some kind to 
+      // receive `postMessage`.
+      let messageHandler = this.config.messageHandler;
+      if (messageHandler) {
+        if (typeof messageHandler === 'string') {
+          this.messageHandler = getMessageHandler(messageHandler);
+        } else {
+          this.messageHandler = messageHandler;
+        }
+      } else {
+        this.messageHandler = new MessageHandler(this);
+      }
 
       // Assign a generated `muId` to the document or shadow root. We can get 
       // `muId` from the `view.root.muId` if we have `view`, or directly from the `editor`.
@@ -23973,6 +24026,7 @@
   exports.getDataImages = getDataImages;
   exports.getHTML = getHTML;
   exports.getHeight = getHeight;
+  exports.getMessageHandler = getMessageHandler;
   exports.getSelectionState = getSelectionState;
   exports.getTestHTML = getTestHTML;
   exports.indent = indent;
@@ -23991,6 +24045,7 @@
   exports.registerAugmentation = registerAugmentation;
   exports.registerConfig = registerConfig;
   exports.registerDelegate = registerDelegate;
+  exports.registerMessageHandler = registerMessageHandler;
   exports.removeAllDivs = removeAllDivs;
   exports.removeButton = removeButton;
   exports.removeDiv = removeDiv;
