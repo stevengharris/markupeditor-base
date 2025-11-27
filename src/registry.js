@@ -12,12 +12,17 @@ class MURegistry {
         this._delegates = new Map()
         this._configs = new Map()
         this._augmentations = new Map()
+        this._handlers = new Map()
         this._activeMuId = null
     }
 
     /** Private method to set `activeMuId`. */
     _setActiveMuId(muId) {
         this._activeMuId = muId
+    }
+
+    _keyFor(value, map) {
+        return [...map].find(([, val]) => value === val)[0]
     }
 
     /**
@@ -42,13 +47,14 @@ class MURegistry {
     }
 
     /** Add the `delegate` to the registry. */
-    registerDelegate(delegate) {
-        this._delegates.set(delegate.constructor.name, delegate)
+    registerDelegate(delegate, name) {
+        this._delegates.set(name ?? delegate.constructor.name, delegate)
     }
 
     /** Remove the `delegate` from the registry. */
-    unregisterDelegate(delegate) {
-        this._delegates.delete(delegate.constructor.name)
+    unregisterDelegate(delegate, name) {
+        const key = name ?? this._keyFor(delegate, this._delegates)
+        this._delegates.delete(key)
     }
 
     /** Return the `delegate` with `name`. */
@@ -57,13 +63,14 @@ class MURegistry {
     }
 
     /** Add the `config` to the registry. */
-    registerConfig(config) {
-        this._configs.set(config.constructor.name, config)
+    registerConfig(config, name) {
+        this._configs.set(name ?? config.constructor.name, config)
     }
 
     /** Remove the config from the registry. */
-    unregisterConfig(config) {
-        this._configs.delete(config.constructor.name)
+    unregisterConfig(config, name) {
+        const key = name ?? this._keyFor(config, this._configs)
+        this._configs.delete(key)
     }
 
     /** Return the `config` with `name`. */
@@ -71,18 +78,32 @@ class MURegistry {
         return this._configs.get(name)
     }
 
+    registerMessageHandler(handler, name) {
+        this._handlers.set(name ?? handler.constructor.name, handler)
+    }
+
+    unregisterMessageHandler(handler, name) {
+        const key = name ?? this._keyFor(handler, this._handlers)
+        this._handlers.delete(key)
+    }
+
+    getMessageHandler(name) {
+        return this._handlers.get(name)
+    }
+
     /** 
      * Add the `augmentation` to the registry.
      * An augmentation is a toolbar that holds `cmdItems` that can 
      * either be prepended or appended to the normal MarkupEditor toolbar.
      */
-    registerAugmentation(toolbar) {
-        this._augmentations.set(toolbar.constructor.name, toolbar)
+    registerAugmentation(toolbar, name) {
+        this._augmentations.set(name ?? toolbar.constructor.name, toolbar)
     }
 
-    /** Remove the `augmentation` from the registry. */
-    unregisterAugmentation(toolbar) {
-        this._augmentations.delete(toolbar.constructor.name)
+    /** Remove the `toolbar` augmentation from the registry. */
+    unregisterAugmentation(toolbar, name) {
+        const key = name ?? this._keyFor(toolbar, this._augmentations)
+        this._augmentations.delete(key)
     }
 
     /**
@@ -149,6 +170,9 @@ export const getDelegate = _muRegistry.getDelegate.bind(_muRegistry)
 export const registerConfig = _muRegistry.registerConfig.bind(_muRegistry)
 export const unregisterConfig = _muRegistry.unregisterConfig.bind(_muRegistry)
 export const getConfig = _muRegistry.getConfig.bind(_muRegistry)
+export const registerMessageHandler = _muRegistry.registerMessageHandler.bind(_muRegistry)
+export const unregisterMessageHandler = _muRegistry.unregisterMessageHandler.bind(_muRegistry)
+export const getMessageHandler = _muRegistry.getMessageHandler.bind(_muRegistry)
 export const registerAugmentation = _muRegistry.registerAugmentation.bind(_muRegistry)
 export const unregisterAugmentation = _muRegistry.unregisterAugmentation.bind(_muRegistry)
 export const getAugmentation = _muRegistry.getAugmentation.bind(_muRegistry)
