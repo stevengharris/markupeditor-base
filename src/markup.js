@@ -142,12 +142,12 @@ export function setMessageHandler(handler) {
  * nor cssFile are specified, then the 'loadedUserFiles' callback happens anyway,
  * since this ends up driving the loading process further.
  */
-export function loadUserFiles(scriptFile, cssFile, target=null) {
+export function loadUserFiles(scriptFile, cssFile, target=null, nonce=null) {
     if (scriptFile) {
         if (cssFile) {
-            _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile, target) }, target);
+            _loadUserScriptFile(scriptFile, nonce, function() { _loadUserCSSFile(cssFile, target) }, target);
         } else {
-            _loadUserScriptFile(scriptFile, function() { _loadedUserFiles(target) }, target);
+            _loadUserScriptFile(scriptFile, nonce, function() { _loadedUserFiles(target) }, target);
         }
     } else if (cssFile) {
         _loadUserCSSFile(cssFile, target);
@@ -160,18 +160,22 @@ export function loadUserFiles(scriptFile, cssFile, target=null) {
  * Callback to the global `messageHandler` using `postMessage` or to the 
  * `element` that is listening for a `muCallback`
  * 
- * The global messageHandler is only defined when *not* using MarkupEditorElements, 
+ * The global messageHandler is only used here when *not* using MarkupEditorElements, 
  * the Markup Editor web component. When using web components, callbacks are 
  * invoked by dispatching an `muCallback` CustomEvent to the `element` provided.
- * The `element` is commonly the `editor` div. When not using MarkupEditorElements, 
- * the global `messageHandler` will be defined, and callbacks are handled by  
- * invoking `postMessage` on the `messageHandler`.
+ * In this case, the `element` will end up invoking `postMessage` on the 
+ * `messageHandler` for most callbacks.
  * 
- * In Swift, the message is handled by the WKScriptMessageHandler, 
- * but in other cases, it might have been reassigned.
- * In Swift, the WKScriptMessageHandler is the MarkupCoordinator,
- * and the userContentController(_ userContentController:didReceive:)
+ * The `element` is commonly the `editor` div. 
+ * 
+ * When not using MarkupEditorElements, the `messageHandler` will be defined, 
+ * and callbacks are handled by invoking `postMessage` on it.
+ * 
+ * In Swift, the `messageHandler` is a WKScriptMessageHandler, 
+ * the MarkupCoordinator, and the userContentController(_ userContentController:didReceive:)
  * function receives message as a WKScriptMessage.
+ * 
+ * In VSCode, the `messageHandler` is `vscode`.
  *
  * @param {String}      message     The message, which might be a JSONified string
  * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
@@ -193,11 +197,12 @@ function _dispatchMuCallback(message, element) {
 /**
  * Called to load user script before loading html.
  */
-function _loadUserScriptFile(file, callback, target) {
+function _loadUserScriptFile(file, nonce, callback, target) {
     let scriptTarget = target ?? document.getElementsByTagName('body')[0];
     let script = document.createElement('script');
     script.type = 'text/javascript';
     script.addEventListener('load', callback);
+    if (nonce) script.setAttribute('nonce', nonce)
     script.setAttribute('src', file);
     scriptTarget.appendChild(script);
 };
