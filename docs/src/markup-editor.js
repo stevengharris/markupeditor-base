@@ -6,14 +6,14 @@ window.markupEditorScriptLoaded = false
 /**
  * MarkupEditorElement is the Web Component for the MarkupEditor.
  * 
- * The lifecycle and resulting document structure are probably most interesting 
+ * The lifecycle and resulting document structure are probably the most interesting 
  * aspects of the MarkupEditorElement, especially because the HTML page can   
  * contain multiple of them. The MarkupEditor "base" script should be loaded 
  * only once in the first (or only) MarkupEditorElement. It defines the global
  * `MU` along with the global `muRegistry` with exported methods to access it.
  * 
  * We use the `connectedCallback`, which is called for each MarkupEditorElement, 
- * to trigger appending MarkupEditor base script only once. It's loaded into 
+ * to trigger appending the MarkupEditor base script only once. It's loaded into 
  * the first MarkupEditorElement, and produces the global `MU` that provides access
  * to all editor functionality regardless of where subsequent scripts are run.
  * When the base script finishes loading, we dispatch the `ready` `muCallback` 
@@ -128,7 +128,9 @@ class MarkupEditorElement extends HTMLElement {
     if (window.markupEditorScriptLoaded) return  // Only load it once
     window.markupEditorScriptLoaded = true
     const muScript = this.getAttribute('muScript') ?? './markupeditor.umd.js'
+    const nonce = this.getAttribute('nonce')
     const baseScript = document.createElement('script')
+    if (nonce) baseScript.setAttribute('nonce', nonce)
     baseScript.setAttribute('src', muScript)
     baseScript.addEventListener('load', this.loadedEditorScript.bind(this))
     this.editorContainer.appendChild(baseScript)
@@ -162,7 +164,8 @@ class MarkupEditorElement extends HTMLElement {
     link.setAttribute('rel', 'stylesheet')
     const userStyle = this.getAttribute('userstyle')
     const userScript = this.getAttribute('userscript')
-    link.onload = () => { MU.loadUserFiles(userScript, userStyle, this.editorContainer) }
+    const nonce = this.getAttribute('nonce')
+    link.onload = () => { MU.loadUserFiles(userScript, userStyle, this.editorContainer, nonce) }
     this.editorContainer.appendChild(link)
   }
 
@@ -183,6 +186,7 @@ class MarkupEditorElement extends HTMLElement {
       base: this.getAttribute('base'),
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
+      messageHandler: this.getAttribute('messageHandler'),
       toolbar: this.getAttribute('toolbar'),
       behavior: this.getAttribute('behavior'),
       keymap: this.getAttribute('keymap'),
