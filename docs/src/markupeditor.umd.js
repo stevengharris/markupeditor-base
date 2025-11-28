@@ -17185,7 +17185,8 @@
    * @returns {[string]}
    */
   function getDataImages() {
-      let images = activeDocument().getElementsByTagName('img');
+      let root = (activeDocument() instanceof ShadowRoot) ? activeDocument().firstChild : activeDocument();
+      let images = root.getElementsByTagName('img');
       let dataImages = [];
       for (let i = 0; i < images.length; i++) {
           let src = images[i].getAttribute('src');
@@ -23931,12 +23932,12 @@
       // `getMessageHandler` by name, or as an instance. In any case, the 
       // expectation is that there will be a MessageHandler of some kind to 
       // receive `postMessage`.
-      let messageHandler = this.config.messageHandler;
-      if (messageHandler) {
-        if (typeof messageHandler === 'string') {
-          this.messageHandler = getMessageHandler(messageHandler);
+      let handler = this.config.handler;
+      if (handler) {
+        if (typeof handler === 'string') {
+          this.messageHandler = getMessageHandler(handler);
         } else {
-          this.messageHandler = messageHandler;
+          this.messageHandler = handler;
         }
       } else {
         this.messageHandler = new MessageHandler(this);

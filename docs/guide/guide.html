@@ -59,7 +59,7 @@
 
 <h3 id="markupeditor-as-a-web-component">Using the MarkupEditor Web Component</h3>
 
-<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">web component</a> is the recommended way to use the MarkupEditor.  The &lt;markup-editor&gt; web component hides complexity and allows the MarkupEditor to be used like other HTML elements. When you use the web component, its content and styling is isolated in the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM">shadow DOM</a>.</p>
+<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">web component</a> is the recommended way to use the MarkupEditor. The &lt;markup-editor&gt; web component hides complexity and allows the MarkupEditor to be used like other HTML elements. When you use the web component, its content and styling is isolated in the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM">shadow DOM</a>.</p>
 
 <pre><code>&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
@@ -125,6 +125,9 @@
     </li>
     <li>
         <p><strong>delegate</strong>: The name of a MarkupDelegate that has been registered. See the section on <a href="#markupdelegate">MarkupDelegates</a> for details on implementation, usage, and registration.</p>
+    </li>
+    <li>
+        <p><strong>handler</strong>: The name of a MessageHandler that has been registered. See the section on <a href="#messagehandler">MessageHandler</a> for details.</p>
     </li>
     <li>
         <p><strong>toolbar</strong>: The name of a ToolbarConfig that has been registered. See the section on <a href="#toolbarconfig">ToolbarConfig</a> for details of customizing the toolbar configuration and registering configs.</p>
@@ -562,7 +565,7 @@ class DemoToolbar {
 
 <h4>Using MarkupDelegate in the Web Component</h4>
 
-<p>To load the script “mydelegate.js”, set the <code>userscript</code> attribute in &lt;markup-editor&gt; to “mydelegate.js”. In the script, you need to <em>register</em> an instance of MarkupDelegate. </p>
+<p>To load the script “mydelegate.js”, set the <code>userscript</code> attribute in &lt;markup-editor&gt; to “mydelegate.js”. In the script, you need to <em>register</em> an instance of MarkupDelegate.</p>
 
 <pre><code>MU.registerDelegate(new MarkupDelegate())</code></pre>
 
