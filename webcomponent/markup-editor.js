@@ -186,7 +186,7 @@ class MarkupEditorElement extends HTMLElement {
       base: this.getAttribute('base'),
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
-      messageHandler: this.getAttribute('messageHandler'),
+      handler: this.getAttribute('handler'),
       toolbar: this.getAttribute('toolbar'),
       behavior: this.getAttribute('behavior'),
       keymap: this.getAttribute('keymap'),
