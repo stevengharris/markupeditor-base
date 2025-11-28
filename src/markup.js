@@ -472,7 +472,8 @@ export function resetSelectedID(id) {
  * @returns {[string]}
  */
 export function getDataImages() {
-    let images = activeDocument().getElementsByTagName('img');
+    let root = (activeDocument() instanceof ShadowRoot) ? activeDocument().firstChild : activeDocument()
+    let images = root.getElementsByTagName('img');
     let dataImages = []
     for (let i = 0; i < images.length; i++) {
         let src = images[i].getAttribute('src');
