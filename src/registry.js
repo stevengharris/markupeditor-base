@@ -134,6 +134,10 @@ class MURegistry {
         this._setActiveMuId(document?.muId)
     }
 
+    activeEditorElement() {
+        return this.activeEditor().element
+    }
+
     /** Return the active editor's `messageHandler`. */
     activeMessageHandler() {
         return this.activeEditor()?.messageHandler
@@ -181,6 +185,7 @@ export const activeView = _muRegistry.activeView.bind(_muRegistry)
 export const setActiveView = _muRegistry.setActiveView.bind(_muRegistry)
 export const activeDocument = _muRegistry.activeDocument.bind(_muRegistry)
 export const setActiveDocument = _muRegistry.setActiveDocument.bind(_muRegistry)
+export const activeEditorElement = _muRegistry.activeEditorElement.bind(_muRegistry)
 export const activeMessageHandler = _muRegistry.activeMessageHandler.bind(_muRegistry)
 export const activeSearcher = _muRegistry.activeSearcher.bind(_muRegistry)
 export const activeConfig = _muRegistry.activeConfig.bind(_muRegistry)
