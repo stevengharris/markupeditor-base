@@ -22,21 +22,24 @@ try {
 }
 
 if ((values.length > 1) || (positionals.length > 1)) {
-  console.log('Usage: node markupeditor.js [--port number] [<filename.html>]')
+  console.log('Usage: node muedit.js [--port number] [<filename>]')
 } else {
   let port = parseInt(values.port)
   let filename = (positionals.length > 0) ? positionals[0] : null
-  let config = 'placeholder: "Edit document..."'
+  let filenameString, baseString
   if (filename) {
     let fullFilename = path.join(process.cwd(), filename)
     let relativeFilename = path.relative(__dirname, fullFilename)
+    filenameString = `filename="${relativeFilename}"`
     let base = path.dirname(relativeFilename) + '/'
-    config += `, filename: "${relativeFilename}", base: "${base}"`
+    baseString = `base="${base}"`
   }
+  let placeholder = 'Edit document...'
 
   // These files are always located relative to node's __dirname
-  let markupeditorcss = 'styles/markupeditor.css'
-  let markupeditorscript = 'dist/markupeditor.umd.js'
+  let muscript = 'dist/markupeditor.umd.js'
+  let mustyle = 'styles/markupeditor.css'
+  let webcomponent = 'webcomponent/markup-editor.js'
 
   // Allow the relative references for css and scripts to work in index.html
   app.use(express.static(`${__dirname}`))
@@ -53,14 +56,17 @@ if ((values.length > 1) || (positionals.length > 1)) {
         <head>
           <title>${filename}</title>
           <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-          <link href="${markupeditorcss}" rel="stylesheet">
         </head>
         <body>
-          <div id="editor"></div>
-          <script src="${markupeditorscript}"></script>
-          <script>
-            new MU.MarkupEditor(document.querySelector('#editor'), {${config}})
-          </script>
+          <markup-editor
+            muscript="${muscript}"
+            mustyle="${mustyle}"
+            placeholder="${placeholder}"
+            ${filenameString ?? ""}
+            ${baseString ?? ""}
+          >
+          </markup-editor>
+          <script src="${webcomponent}"></script>
         </body>
       </html>
     `
