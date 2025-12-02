@@ -46,6 +46,7 @@ import {
   selectionChanged,
   callbackInput,
   clicked,
+  consoleLog,
   doUndo,
   doRedo,
   resetSelectedID,
@@ -161,6 +162,7 @@ export {
   startModalInput,
   endModalInput,
   getSelectionState,
+  consoleLog,
   doUndo,
   doRedo,
   testBlockquoteEnter,
@@ -236,7 +238,10 @@ class MarkupEditor {
     let toolbarConfig = this.config.toolbar
     if (toolbarConfig) {
       if (typeof toolbarConfig === 'string') {
-        this.config.toolbar = getConfig(toolbarConfig)
+        // If the toolbarConfig is something that can't be found (e.g., 'none'),
+        // then set toolbar.visibility to false, which avoids creating a 
+        // toolbar at all.
+        this.config.toolbar = getConfig(toolbarConfig) ?? ToolbarConfig.none()
       } else {
         this.config.toolbar = toolbarConfig
       }
@@ -248,7 +253,7 @@ class MarkupEditor {
     let keymapConfig = this.config.keymap
     if (keymapConfig) {
       if (typeof keymapConfig === 'string') {
-        this.config.keymap = getConfig(keymapConfig)
+        this.config.keymap = getConfig(keymapConfig) ?? KeymapConfig.standard()
       } else {
         this.config.keymap = keymapConfig
       }
@@ -260,7 +265,7 @@ class MarkupEditor {
     let behaviorConfig = this.config.behavior
     if (behaviorConfig) {
       if (typeof behaviorConfig === 'string') {
-        this.config.behavior = getConfig(behaviorConfig)
+        this.config.behavior = getConfig(behaviorConfig) ?? BehaviorConfig.standard()
       } else {
         this.config.behavior = behaviorConfig
       }
@@ -327,7 +332,11 @@ class MarkupEditor {
     let handler = this.config.handler
     if (handler) {
       if (typeof handler === 'string') {
-        this.messageHandler = getMessageHandler(handler)
+        if (handler === 'swift') {
+          this.messageHandler = MessageHandler.swift
+        } else {
+          this.messageHandler = getMessageHandler(handler) ?? new MessageHandler(this)
+        }
       } else {
         this.messageHandler = handler
       }
