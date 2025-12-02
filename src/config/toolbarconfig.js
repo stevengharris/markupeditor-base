@@ -96,6 +96,12 @@ export class ToolbarConfig {
     return this.full(correction)
   }
 
+  static none() {
+    let none = this._all()
+    none.visibility.toolbar = false
+    return none
+  }
+
   static markdown(correction=false) {
     let markdown = this.full(correction)
     markdown.formatBar.underline = false
