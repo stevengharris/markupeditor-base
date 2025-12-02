@@ -20,6 +20,9 @@ import { loadUserFiles, getHeight } from "./markup";
  * of auto-save method within your app, for example.
  */
 export class MessageHandler {
+
+    static swift = window.webkit?.messageHandlers?.markup
+
     constructor(editor) {
         this.editor = editor
     }
