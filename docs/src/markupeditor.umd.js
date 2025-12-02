@@ -16666,6 +16666,10 @@
           this._setActiveMuId(document?.muId);
       }
 
+      activeEditorElement() {
+          return this.activeEditor().element
+      }
+
       /** Return the active editor's `messageHandler`. */
       activeMessageHandler() {
           return this.activeEditor()?.messageHandler
@@ -16713,6 +16717,7 @@
   const setActiveView = _muRegistry.setActiveView.bind(_muRegistry);
   const activeDocument = _muRegistry.activeDocument.bind(_muRegistry);
   const setActiveDocument = _muRegistry.setActiveDocument.bind(_muRegistry);
+  const activeEditorElement = _muRegistry.activeEditorElement.bind(_muRegistry);
   const activeMessageHandler = _muRegistry.activeMessageHandler.bind(_muRegistry);
   const activeSearcher = _muRegistry.activeSearcher.bind(_muRegistry);
   const activeConfig = _muRegistry.activeConfig.bind(_muRegistry);
@@ -16832,7 +16837,7 @@
   function handleDelete() {
       const view = activeView();
       const imageAttributes = _getImageAttributes();
-      if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') });
+      if (imageAttributes.src) _callback({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') });
       stateChanged(view);
       return false;
   }
@@ -16909,11 +16914,7 @@
    * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
    */
   function _callback(message, element) {
-      if (element && element.getRootNode() instanceof ShadowRoot) {
-          _dispatchMuCallback(message, element);
-      } else {
-          activeMessageHandler().postMessage(message);
-      }
+      _dispatchMuCallback(message, element ?? activeEditorElement());
   }
   function _dispatchMuCallback(message, element) {
       const muCallback = new CustomEvent("muCallback");
@@ -17185,8 +17186,7 @@
    * @returns {[string]}
    */
   function getDataImages() {
-      let root = (activeDocument() instanceof ShadowRoot) ? activeDocument().firstChild : activeDocument();
-      let images = root.getElementsByTagName('img');
+      let images = activeEditorElement().getElementsByTagName('img');
       let dataImages = [];
       for (let i = 0; i < images.length; i++) {
           let src = images[i].getAttribute('src');
@@ -18853,7 +18853,7 @@
    * @param {string | Object} message  A JSON-serializable JavaScript object.
    */
   function postMessage(message) {
-      _callback(JSON.stringify(message), activeDocument());
+      _callback(JSON.stringify(message));
   }
 
   /********************************************************************************
@@ -19350,7 +19350,7 @@
           'alt' : node.attrs.alt,
           'dimensions' : {width: node.attrs.width, height: node.attrs.height}
       };
-      _callback(JSON.stringify(messageDict), activeDocument());
+      _callback(JSON.stringify(messageDict));
   }
   /********************************************************************************
    * Tables
@@ -19869,6 +19869,16 @@
    */
   function _isLinkNode(node) {
       return node && (node.nodeName === 'A');
+  }
+  /**
+   * Callback to show a string in the console, like console.log(), but for environments like Xcode.
+   */
+  function consoleLog(string) {
+      let messageDict = {
+          'messageType' : 'log',
+          'log' : string
+      };
+      _callback(JSON.stringify(messageDict));
   }
 
   /**
@@ -23526,6 +23536,12 @@
       return this.full(correction)
     }
 
+    static none() {
+      let none = this._all();
+      none.visibility.toolbar = false;
+      return none
+    }
+
     static markdown(correction=false) {
       let markdown = this.full(correction);
       markdown.formatBar.underline = false;
@@ -23673,6 +23689,9 @@
    * of auto-save method within your app, for example.
    */
   class MessageHandler {
+
+      static swift = window.webkit?.messageHandlers?.markup
+
       constructor(editor) {
           this.editor = editor;
       }
@@ -23844,7 +23863,10 @@
       let toolbarConfig = this.config.toolbar;
       if (toolbarConfig) {
         if (typeof toolbarConfig === 'string') {
-          this.config.toolbar = getConfig(toolbarConfig);
+          // If the toolbarConfig is something that can't be found (e.g., 'none'),
+          // then set toolbar.visibility to false, which avoids creating a 
+          // toolbar at all.
+          this.config.toolbar = getConfig(toolbarConfig) ?? ToolbarConfig.none();
         } else {
           this.config.toolbar = toolbarConfig;
         }
@@ -23856,7 +23878,7 @@
       let keymapConfig = this.config.keymap;
       if (keymapConfig) {
         if (typeof keymapConfig === 'string') {
-          this.config.keymap = getConfig(keymapConfig);
+          this.config.keymap = getConfig(keymapConfig) ?? KeymapConfig.standard();
         } else {
           this.config.keymap = keymapConfig;
         }
@@ -23868,7 +23890,7 @@
       let behaviorConfig = this.config.behavior;
       if (behaviorConfig) {
         if (typeof behaviorConfig === 'string') {
-          this.config.behavior = getConfig(behaviorConfig);
+          this.config.behavior = getConfig(behaviorConfig) ?? BehaviorConfig.standard();
         } else {
           this.config.behavior = behaviorConfig;
         }
@@ -23935,7 +23957,11 @@
       let handler = this.config.handler;
       if (handler) {
         if (typeof handler === 'string') {
-          this.messageHandler = getMessageHandler(handler);
+          if (handler === 'swift') {
+            this.messageHandler = MessageHandler.swift;
+          } else {
+            this.messageHandler = getMessageHandler(handler) ?? new MessageHandler(this);
+          }
         } else {
           this.messageHandler = handler;
         }
@@ -24013,6 +24039,7 @@
   exports.borderTable = borderTable;
   exports.cancelSearch = cancelSearch;
   exports.cmdItem = cmdItem;
+  exports.consoleLog = consoleLog;
   exports.cutImage = cutImage;
   exports.deactivateSearch = deactivateSearch;
   exports.deleteLink = deleteLink;

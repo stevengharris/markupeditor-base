@@ -225,9 +225,9 @@ app.listen('3000', () =&gt; {
 
 <p>Here we use <a href="https://expressjs.com">Express</a> to respond with the HTML we showed earlier when you open your browser on <code>http://localhost:3000</code>. Note that <code>base</code> is passed as an attribute in the &lt;markup-element&gt;. Under the covers, this ends up adding an <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/base">HTML base element</a> to the document, so that the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img"><code>img src</code></a> attribute and other references in the document are specified relative to the HTML document being edited.</p>
 
-<p>There is a more robust version of this script - <a href="https://github.com/stevengharris/markupeditor-base">markupeditor.js</a> in the markupeditor-base project - that you can execute from anywhere, identifying the HTML file to open (or none if you just want an empty document) and the port to listen on. For example:</p>
+<p>There is a more robust version of this script - <a href="https://github.com/stevengharris/markupeditor-base">muedit.js</a> in the markupeditor-base project - that you can execute from anywhere, identifying the HTML file to open (or none if you just want an empty document) and the port to listen on. For example:</p>
 
-<pre><code>$ node markupeditor.js docs/demo/demo.html --port 8000
+<pre><code>$ node muedit.js docs/demo/demo.html --port 8000
 Server listening at http://localhost:8000</code></pre>
 
 <h3>Local MarkupEditor Documentation and Demos</h3>
@@ -258,7 +258,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <h2 id="configuration">Configuration</h2>
 
-<p>So far, we have seen how to pass some initial HTML to the MarkupEditor, and how to identify a <code>filename</code> to open using Node.js. When you want to call into the MarkupEditor, you do that by invoking the public API exposed via the <code>MU</code> object. We saw <code>MU</code> used earlier when we created an instance of MarkupEditor using <code>new MU.MarkupEditor(&lt;target div&gt;, &lt;config&gt;)</code>. Let’s examine the configuration passed when the MarkupEditor instance is created.</p>
+<p>So far, we have seen how to pass some initial HTML to the MarkupEditor, and how to identify a <code>filename</code> to open using Node.js. When you want to call into the MarkupEditor, you do that by invoking the public API exposed via the <code>MU</code> object. Let’s examine the configuration passed when the MarkupEditor instance is created.</p>
 
 <h3 id="configuration-classes">Configuration Classes</h3>
 
