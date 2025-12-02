@@ -50,8 +50,7 @@ class MarkupEditorElement extends HTMLElement {
     // element (i.e., `this.editorContainer`) is in the shadow DOM.
 
     // Have this MarkupEditorElement instance listen for the `ready` callback
-    // that is dispatched from `loadedEditorScript`. This is the only `muCallback` 
-    // this MarkupEditorElement should see.
+    // that is dispatched from `loadedEditorScript`.
     this.addEventListener('muCallback', (e) => {
       switch (e.message) {
         case 'ready':
@@ -63,17 +62,22 @@ class MarkupEditorElement extends HTMLElement {
     })
 
     // Have the `editorContainer` listen for callbacks from within the 
-    // MarkupEditor base script, dispatched from `_callback`. Messages
-    // other than `loadedUserFiles` are handled by the `messageHandler` 
-    // for the `view`. This way a user can override `messageHandler` 
+    // MarkupEditor base script, dispatched from `_callback`. The
+    // `messageHandler` can be overridden (as it is for VSCode and 
+    // Swift) so all document editing notifications can be dealt 
+    // with in a custom way.
+    //
+    // Note that while `ready` is a notification to `this` dispatched 
+    // to every MarkupEditorElement from `loadedEditorScript` within this 
+    // script, other editing events are dispatched to `editorContainer` 
+    // from within the MarkupEditor base script.
+    // 
+    // The first `muCallback` will be `loadedUserFiles`, which will 
+    // cause the editor instance to be created before posting the 
+    // message.
     this.editorContainer.addEventListener('muCallback', (e) => {
-      switch (e.message) {
-        case 'loadedUserFiles':
-          this.createEditor()
-          break
-        default:
-          this.editor.messageHandler.postMessage(e.message)
-      }
+      if (!this.editor) this.createEditor()
+      this.editor.messageHandler.postMessage(e.message)
     })
 
     // Append the container to the shadow DOM
@@ -179,10 +183,11 @@ class MarkupEditorElement extends HTMLElement {
    * has access to the file system (e.g., node.js, but not a browser).
    */
   createEditor() {
-    const html = (this.innerHTML.length == 0) ? '<p></p>' : this.innerHTML
+    const html = (this.innerHTML.length == 0) ? null : this.innerHTML
     const filename = this.getAttribute('filename')
     const config = { 
       filename: filename, 
+      html: html,
       base: this.getAttribute('base'),
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
@@ -193,8 +198,11 @@ class MarkupEditorElement extends HTMLElement {
       prepend: this.getAttribute('prepend'),
       append: this.getAttribute('append'),
     }
+
+    // Create an editor instance and hold onto it here
     this.editor = new MU.MarkupEditor(this.editorContainer, config)
     
+    // Let the delegate know the editor is ready
     this.editor.config.delegate?.markupReady && this.editor.config.delegate?.markupReady()
 
     // Prepend and/or append any augmentations
@@ -202,33 +210,6 @@ class MarkupEditorElement extends HTMLElement {
     if (prependItems) MU.prependToolbar(prependItems)
     const appendItems = MU.getAugmentation(config.append)?.menuItems
     if (appendItems) MU.appendToolbar(appendItems)
-
-    // Whether this editor takes focus (and shows the keyboard on iOS) is 
-    // set in BehaviorConfig, which can be overridden using a registered
-    // instance whose name is passed as an attribute of this element. If 
-    // not overridden, the default `true` behavior is used.
-    const focusAfterLoad = this.editor.config.behavior.focusAfterLoad
-
-    // Set the initial HTML contents based on `filename` or the innerHTML
-    if (!config.filename) {
-      MU.setHTML(html, focusAfterLoad, config.base, this.editor.view)
-    } else {
-      fetch(filename)
-        .then((response) => response.text())
-        .then((text) => {
-          MU.setHTML(text, focusAfterLoad, config.base, this.editor.view)
-        })
-        .catch((error) => {
-          MU.setHTML(
-            `
-            <p>
-                Failed to load ${filename}.
-                Error message: ${error.message}.
-                You may be trying to load HTML from a local file in a browser.
-            </p>
-            `, null, null, this.editor.view)
-        });
-    }
   }
 
 }
