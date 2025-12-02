@@ -7,6 +7,7 @@ import {
     activeSearcher, 
     selectedID,             // `selectedID` is the id of the contentEditable DIV containing the currently selected element
     setSelectedID,
+    activeEditorElement,
 } from './registry'
 import {MUError} from './muerror.js'
 import {schema} from "./schema/index.js"
@@ -99,7 +100,7 @@ export function handleShiftEnter() {
 export function handleDelete() {
     const view = activeView()
     const imageAttributes = _getImageAttributes();
-    if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') });
+    if (imageAttributes.src) _callback({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') });
     stateChanged(view);
     return false;
 }
@@ -181,11 +182,7 @@ export function loadUserFiles(scriptFile, cssFile, target=null, nonce=null) {
  * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
  */
 function _callback(message, element) {
-    if (element && element.getRootNode() instanceof ShadowRoot) {
-        _dispatchMuCallback(message, element)
-    } else {
-        activeMessageHandler().postMessage(message)
-    }
+    _dispatchMuCallback(message, element ?? activeEditorElement())
 };
 
 function _dispatchMuCallback(message, element) {
@@ -472,8 +469,7 @@ export function resetSelectedID(id) {
  * @returns {[string]}
  */
 export function getDataImages() {
-    let root = (activeDocument() instanceof ShadowRoot) ? activeDocument().firstChild : activeDocument()
-    let images = root.getElementsByTagName('img');
+    let images = activeEditorElement().getElementsByTagName('img');
     let dataImages = []
     for (let i = 0; i < images.length; i++) {
         let src = images[i].getAttribute('src');
@@ -2229,7 +2225,7 @@ function _editor(view) {
  * @param {string | Object} message  A JSON-serializable JavaScript object.
  */
 export function postMessage(message) {
-    _callback(JSON.stringify(message), activeDocument())
+    _callback(JSON.stringify(message))
 }
 
 /********************************************************************************
@@ -2657,14 +2653,14 @@ export function selectFullLink(view) {
  */
 export function insertImage(src, alt) {
     const view = activeView()
-    let command = insertImageCommand(src, alt);
+    let command = insertImageCommand(src, alt)
     return command(view.state, view.dispatch, view)
 };
 
 export function insertImageCommand(src, alt) {
     const commandAdapter = (state, dispatch, view) => {
         const imageNode = view.state.schema.nodes.image.create({src: src, alt: alt})
-        const transaction = view.state.tr.replaceSelectionWith(imageNode, true);
+        const transaction = view.state.tr.replaceSelectionWith(imageNode, true)
         view.dispatch(transaction);
         stateChanged(view);
         return true;
@@ -2743,7 +2739,7 @@ function copyImage(node) {
         'alt' : node.attrs.alt,
         'dimensions' : {width: node.attrs.width, height: node.attrs.height}
     };
-    _callback(JSON.stringify(messageDict), activeDocument());
+    _callback(JSON.stringify(messageDict));
 };
 
 /********************************************************************************
@@ -3299,11 +3295,10 @@ function _isLinkNode(node) {
 /**
  * Callback to show a string in the console, like console.log(), but for environments like Xcode.
  */
-// eslint-disable-next-line no-unused-vars
-function _consoleLog(string) {
+export function consoleLog(string) {
     let messageDict = {
         'messageType' : 'log',
         'log' : string
     }
-    _callback(JSON.stringify(messageDict), activeDocument());
+    _callback(JSON.stringify(messageDict));
 };
