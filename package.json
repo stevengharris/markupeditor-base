@@ -1,20 +1,23 @@
 {
-  "name": "markupeditor-base",
-  "version": "0.8.8",
-  "description": "MarkupEditor - WYSIWYG editing in a web view",
+  "name": "markupeditor",
+  "version": "0.9.0",
+  "description": "A web component and API for WYSIWYG HTML editing.",
   "keywords": [
     "wysiwyg",
-    "html",
     "editor",
-    "rich text"
+    "html",
+    "web-component",
+    "rich-text"
   ],
-  "main": "dist/markupeditor.cjs.js",
-  "module": "dist/markupeditor.esm.js",
-  "browser": "dist/markupeditor.umd.js",
+  "main": "markup-editor.js",
+  "bin": {
+    "muedit": "muedit.js"
+  },
   "files": [
+    "markup-editor.js",
+    "muedit.js",
     "dist",
-    "styles",
-    "webcomponent"
+    "styles"
   ],
   "sideEffects": [
     "./styles/*.css"
