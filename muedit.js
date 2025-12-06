@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * A script to run with node.js to open the MarkupEditor on an HTML file (or empty)
  */
@@ -18,31 +20,31 @@ const options = {
 try {
   var { values, positionals } = parseArgs({ argv, options, allowPositionals: true })
 } catch {
+  values = []
   positionals = []
 }
 
-if ((values.length > 1) || (positionals.length > 1)) {
-  console.log('Usage: node muedit.js [--port number] [<filename>]')
+if ((values.length > 1) || (!values.port) || (positionals.length > 1)) {
+  console.log('Usage: muedit [--port number] [<filename>]')
 } else {
   let port = parseInt(values.port)
   let filename = (positionals.length > 0) ? positionals[0] : null
-  let filenameString, baseString
-  if (filename) {
-    let fullFilename = path.join(process.cwd(), filename)
-    let relativeFilename = path.relative(__dirname, fullFilename)
-    filenameString = `filename="${relativeFilename}"`
-    let base = path.dirname(relativeFilename) + '/'
-    baseString = `base="${base}"`
-  }
+  let filenameAttribute = (filename) ? `filename="${filename}"` : ''          // Empty for a new document
+  let baseAttribute = (filename) ? `base="${path.dirname(filename)}/"` : ''   // Empty for a new document
   let placeholder = 'Edit document...'
 
-  // These files are always located relative to node's __dirname
+  // These files are always located relative to node's `__dirname`
+  // which `app.use(express.static(__dirname))` ensures is available
+  // no matter what `process.cwd()` is.
   let muscript = 'dist/markupeditor.umd.js'
   let mustyle = 'styles/markupeditor.css'
-  let webcomponent = 'webcomponent/markup-editor.js'
+  let webcomponent = `markup-editor.js`
 
   // Allow the relative references for css and scripts to work in index.html
-  app.use(express.static(`${__dirname}`))
+  app.use(express.static(`${process.cwd()}/`, {index: false}))
+
+  // Allow references to dist, styles, and webcomponent to work in index.html
+  app.use(express.static(__dirname))
 
   // For parsing application/json
   app.use(express.json())
@@ -62,8 +64,8 @@ if ((values.length > 1) || (positionals.length > 1)) {
             muscript="${muscript}"
             mustyle="${mustyle}"
             placeholder="${placeholder}"
-            ${filenameString ?? ""}
-            ${baseString ?? ""}
+            ${filenameAttribute}
+            ${baseAttribute}
           >
           </markup-editor>
           <script src="${webcomponent}"></script>
