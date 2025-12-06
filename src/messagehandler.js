@@ -166,7 +166,7 @@ export class MessageHandler {
                 })
         } else {
             let html = config.html ?? '<p></p>'
-            MU.setHTML(html, focusAfterLoad, null, this.editor.view)
+            MU.setHTML(html, focusAfterLoad, base, this.editor.view)
         }
     }
 }
