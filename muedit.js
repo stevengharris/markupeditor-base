@@ -3,10 +3,12 @@
 /**
  * A script to run with node.js to open the MarkupEditor on an HTML file (or empty)
  */
-const {argv} = require('node:process')
-const {parseArgs} = require('node:util')
-const express = require('express')
-const path = require('path')
+import {argv} from 'node:process'
+import {parseArgs} from 'node:util'
+import express from 'express'
+import path from 'node:path'
+
+const __dirname = import.meta.dirname
 
 const app = express()
 
@@ -36,7 +38,7 @@ if ((values.length > 1) || (!values.port) || (positionals.length > 1)) {
   // These files are always located relative to node's `__dirname`
   // which `app.use(express.static(__dirname))` ensures is available
   // no matter what `process.cwd()` is.
-  let muscript = 'dist/markupeditor.umd.js'
+  let muscript = 'markupeditor.esm.js'
   let mustyle = 'styles/markupeditor.css'
   let webcomponent = `markup-editor.js`
 
@@ -68,7 +70,7 @@ if ((values.length > 1) || (!values.port) || (positionals.length > 1)) {
             ${baseAttribute}
           >
           </markup-editor>
-          <script src="${webcomponent}"></script>
+          <script src="${webcomponent}" type="module"></script>
         </body>
       </html>
     `
