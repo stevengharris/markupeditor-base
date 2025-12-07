@@ -197,7 +197,7 @@ function _dispatchMuCallback(message, element) {
 function _loadUserScriptFile(file, nonce, callback, target) {
     let scriptTarget = target ?? document.getElementsByTagName('body')[0];
     let script = document.createElement('script');
-    script.type = 'text/javascript';
+    script.type = 'module';
     script.addEventListener('load', callback);
     if (nonce) script.setAttribute('nonce', nonce)
     script.setAttribute('src', file);
