@@ -4,9 +4,18 @@
 
 # MarkupEditor
 
-The MarkupEditor supports WYSIWYG editing in a web view. The "source of truth" for the MarkupEditor is standard HTML, styled using standard CSS.
-The MarkupEditor comes with a toolbar and hot key bindings to access its editing functionality. The toolbar visibility and contents, 
-as well as the key bindings, are configurable and extensible.
+The MarkupEditor consists of a web component and API for WYSIWYG HTML editing. The "source of truth" for the MarkupEditor is standard HTML, 
+styled using standard CSS. The MarkupEditor comes with a toolbar and hot key bindings to access its editing functionality. The toolbar 
+visibility and contents, as well as the key bindings, are configurable and extensible.
+
+![Hello, MarkupEditor!](hellomarkupeditor.png)
+
+The web component makes embedding WYSIWYG editing as simple as:
+
+```
+<markup-editor><h1>Hello, MarkupEditor!</h1></markup-editor>
+<script src="markup-editor.js"></script>
+```
 
 ### Why
 
@@ -38,6 +47,14 @@ even non-developers expect when they edit a document, like image resizing and se
 * Search.
 * Image resizing using gestures.
 * Table editing: visually select table size, add/remove row/column/header, border options.
+
+The API provides hooks for callbacks as your document changes, as well as access to the edited HTML 
+so that you can save contents in a way that makes sense in your own context.
+
+The web component and customization capabilities allow the MarkupEditor to be embedded in different 
+environments, such as an Electron-based [desktop editing app](https://github.com/stevengharris/markupeditor-desktop), 
+a [Swift library for WYSIWYG editing](https://github.com/stevengharris/MarkupEditor), and 
+a [VSCode extension](https://github.com/stevengharris/markupeditor-vs).
 
 ## Try
 
@@ -72,43 +89,42 @@ Build the project.
 ```
 $ npm run build
 
-> markupeditor-base@0.8.0 build
+> markupeditor@0.9.0 build
 > rollup -c
 
-
 src/main.js → dist/markupeditor.umd.js...
-created dist/markupeditor.umd.js in 321ms
-
-src/main.js → dist/markupeditor.cjs.js, dist/markupeditor.esm.js...
-created dist/markupeditor.cjs.js, dist/markupeditor.esm.js in 60ms
-$ 
+created dist/markupeditor.umd.js in 335ms
 ```
 
-Open the editor on a doc using node.js. You can use the demo.html file that is part of the docs:
+The installation identifies `muedit` in the package.json `bin` property. You can open the editor on a doc using node.js with 
+the `muedit` command, providing a filename to edit (and optionally a port for node.js). You can use the demo.html file that 
+is part of the docs:
 
 ```
-$ node markupeditor.js docs/demo/demo.html 
+$ muedit docs/demo/demo.html 
 Server listening at http://localhost:3000
 ```
 
-Then open http://localhost:3000 in your browser. The port can be passed to node as `--port <number>`.
+Then open http://localhost:3000 in your browser. The port can be passed to node as `--port <number>`. Alternatively, you 
+can run node directly as `node muedit.js docs/demo/demo.html`.
 
 You can also use the web site docs to test:
 
 ```
 $ npm run docs
 
-> markupeditor-base@0.8.0 predocs
+> markupeditor@0.9.0 predocs
 > sh predocs.sh
 
 Updating ./docs dependencies...
 cp -f ./dist/markupeditor.umd.js ./docs/src/markupeditor.umd.js
+cp -f ./markup-editor.js ./docs/src/markup-editor.js
 cp -f ./styles/markupeditor.css ./docs/styles/markupeditor.css
 cp -f ./styles/markup.css ./docs/styles/markup.css
 cp -f ./styles/mirror.css ./docs/styles/mirror.css
 cp -f ./styles/toolbar.css ./docs/styles/toolbar.css
 
-> markupeditor-base@0.8.0 docs
+> markupeditor@0.9.0 docs
 > node ./docs/index.js
 
 Server listening at http://localhost:3000
