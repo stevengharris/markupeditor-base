@@ -1,3 +1,5 @@
+import { MU } from "../src/markupeditor.esm.js"
+
 class DemoDelegate {
 
     markupReady(editor) {

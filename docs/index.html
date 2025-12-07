@@ -30,10 +30,10 @@
         </p>
 
         <h2>Try</h2>
-        <markup-editor muscript="src/markupeditor.umd.js" mustyle="styles/markupeditor.css" userstyle="styles/index.css">
+        <markup-editor muscript="src/markupeditor.esm.js" mustyle="styles/markupeditor.css" userstyle="styles/index.css">
             <p>The MarkupEditor is available as a web component. In its simplest form:</p>
             <blockquote><pre><code>&lt;markup-editor>&lt;p>Hello, world!&lt;/p>&lt;/markup-editor>
-&lt;script src="src/markup-editor.js">&lt;/script></code></pre></blockquote>
+&lt;script src="markup-editor.js">&lt;/script></code></pre></blockquote>
             <p>
                 Optional &lt;markup-editor> element attributes provide extensive customization options and let you 
                 load HTML content from file. The default MarkupEditor toolbar enables features to...
@@ -120,6 +120,6 @@
                 was to use it in a VSCode extension. That project is under active development.
             </p></li>
         </ul>
-        <script src="src/markup-editor.js"></script>
+        <script src="src/markup-editor.js" type="module"></script>
     </body>
 </html>

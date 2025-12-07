@@ -1,3 +1,5 @@
+import { MU } from "../src/markupeditor.esm.js"
+
 /**
  * A MarkupDelegate that will receive callbacks as the document state changes.
  */
