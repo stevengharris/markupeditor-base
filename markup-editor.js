@@ -1,7 +1,4 @@
-/* global MU */
-
-// Track a global indicating that the MarkupEditor base script was loaded
-window.markupEditorScriptLoaded = false
+import { MU } from "./markupeditor.esm.js"
 
 /**
  * MarkupEditorElement is the Web Component for the MarkupEditor.
@@ -129,13 +126,12 @@ class MarkupEditorElement extends HTMLElement {
    * that results in `appendEditorStyle` being called next.
    */
   appendEditorScript() {
-    if (window.markupEditorScriptLoaded) return  // Only load it once
-    window.markupEditorScriptLoaded = true
-    const muScript = this.getAttribute('muScript') ?? './markupeditor.umd.js'
+    const muScript = this.getAttribute('muScript') ?? './markupeditor.esm.js'
     const nonce = this.getAttribute('nonce')
     const baseScript = document.createElement('script')
     if (nonce) baseScript.setAttribute('nonce', nonce)
     baseScript.setAttribute('src', muScript)
+    baseScript.setAttribute('type', 'module')
     baseScript.addEventListener('load', this.loadedEditorScript.bind(this))
     this.editorContainer.appendChild(baseScript)
   }
