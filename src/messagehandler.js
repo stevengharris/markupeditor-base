@@ -1,5 +1,4 @@
-/* global MU */
-import { loadUserFiles, getHeight } from "./markup";
+import { loadUserFiles, getHeight, setHTML } from "./markup.js";
 
 /**
  * The MessageHandler receives `postMessage` from the MarkupEditor as the document state changes.
@@ -158,15 +157,15 @@ export class MessageHandler {
                 .then((response) => response.text())
                 .then((text) => {
                     // A fetch failure returns 'Cannot GET <filename with path>'
-                    MU.setHTML(text, focusAfterLoad, base)
+                    setHTML(text, focusAfterLoad, base)
                 })
                 .catch(() => {
                     // But just in case, report a failure if needed.
-                    MU.setHTML(`<p>Failed to load ${filename}.</p>`, focusAfterLoad)
+                    setHTML(`<p>Failed to load ${filename}.</p>`, focusAfterLoad)
                 })
         } else {
             let html = config.html ?? '<p></p>'
-            MU.setHTML(html, focusAfterLoad, base, this.editor.view)
+            setHTML(html, focusAfterLoad, base, this.editor.view)
         }
     }
 }
