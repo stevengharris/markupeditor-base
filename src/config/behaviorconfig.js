@@ -24,6 +24,14 @@ export class BehaviorConfig {
         }
     }
 
+    static fromJSON(string) {
+        try {
+            return JSON.parse(string)
+        } catch {
+            return null
+        }
+    }
+
     static standard() { 
         return this._all()
     }

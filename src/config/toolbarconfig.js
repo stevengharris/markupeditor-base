@@ -82,6 +82,14 @@ export class ToolbarConfig {
     }
   }
 
+  static fromJSON(string) {
+    try {
+      return JSON.parse(string)
+    } catch {
+      return null
+    }
+  }
+
   static full(correction=false) {
     let full = this._all()
     full.visibility.correctionBar = correction

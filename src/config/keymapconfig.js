@@ -56,6 +56,14 @@ export class KeymapConfig {
         }
     }
 
+    static fromJSON(string) {
+        try {
+            return JSON.parse(string)
+        } catch {
+            return null
+        }
+    }
+
     static full() {
         return this._all()
     }
