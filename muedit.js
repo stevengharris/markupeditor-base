@@ -35,12 +35,10 @@ if ((values.length > 1) || (!values.port) || (positionals.length > 1)) {
   let baseAttribute = (filename) ? `base="${path.dirname(filename)}/"` : ''   // Empty for a new document
   let placeholder = 'Edit document...'
 
-  // These files are always located relative to node's `__dirname`
+  // The web component is always located relative to node's `__dirname`
   // which `app.use(express.static(__dirname))` ensures is available
   // no matter what `process.cwd()` is.
-  let muscript = 'markupeditor.esm.js'
-  let mustyle = 'styles/markupeditor.css'
-  let webcomponent = `markup-editor.js`
+  let webcomponent = path.relative(__dirname, `./dist/markup-editor.js`)
 
   // Allow the relative references for css and scripts to work in index.html
   app.use(express.static(`${process.cwd()}/`, {index: false}))
@@ -63,8 +61,6 @@ if ((values.length > 1) || (!values.port) || (positionals.length > 1)) {
         </head>
         <body>
           <markup-editor
-            muscript="${muscript}"
-            mustyle="${mustyle}"
             placeholder="${placeholder}"
             ${filenameAttribute}
             ${baseAttribute}
