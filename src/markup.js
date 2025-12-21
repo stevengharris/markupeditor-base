@@ -1,7 +1,6 @@
 import {
     activeEditor, 
     activeView, 
-    activeMessageHandler, 
     activeDocument, 
     setActiveDocument, 
     activeSearcher, 
@@ -218,12 +217,15 @@ function _loadUserCSSFile(file, target) {
 };
 
 if (typeof window != 'undefined') {
-    /**
-     * The 'ready' callback indicated that the editor and this js is properly loaded.
-     */
-    window.addEventListener('load', function (e) {
-        _callbackReady(e);
-    });
+
+    //
+    //For history, the 'ready' callback used to indicate that the editor and this js is properly
+    //loaded, which in turn triggered loading of user script and style, which in turn informed 
+    //the MarkupDelegate that things were really in a "ready" state. However when using a 
+    //web component and loading modules, the `connectedCallback` triggers loading of user 
+    //script and style. In summary, there we no longer use an event listener on load to 
+    //do a "ready" callback.
+    //
 
     /**
      * Capture all unexpected runtime errors in this script, report for debugging.
@@ -2125,10 +2127,6 @@ function _getIndented(state) {
 export function callbackInput(element) {
     _callback('input' + (selectedID() ?? ''), element)
 };
-
-function _callbackReady() {
-    activeMessageHandler()?.postMessage('ready')
-}
 
 /**
  * Callback to signal that user-provided CSS and/or script files have
