@@ -1,7 +1,7 @@
-const fs = require('node:fs')
-const path = require('path')
+import fs from 'node:fs'
+import path from 'node:path'
 
-class HtmlTestSuite {
+export class HtmlTestSuite {
 
     constructor(filename) {
         let fullFilename = path.join(process.cwd(), filename)
@@ -42,5 +42,3 @@ class HtmlTest {
     }
     
 }
-
-exports.HtmlTestSuite = HtmlTestSuite
