@@ -4,6 +4,7 @@
     <head>
         <meta charset="utf-8">
         <title>Customization Demo</title>
+        <link href="index.css" rel="stylesheet">
         <!-- Why load this stylesheet here? Just so the overall page has the same style as the MarkupEditor itself. -->
         <link href="../styles/markup.css" rel="stylesheet">
     </head>
@@ -41,7 +42,7 @@
         </code></pre>
 
         <h2>Default Web Component</h2>
-        <markup-editor userstyle="editor1.css" muscript="../src/markupeditor.esm.js" mustyle="../styles/markupeditor.css">
+        <markup-editor userstyle="../customization/editor1.css">
             <p>
                 This &lt;markup-editor> element uses the default toolbar and specifies <code>editor1.css</code> in the <code>userstyle</code> attribute.
                 In this case, the <code>editor1.css</code> styling is used to set the border and height of the &lt;markup-editor> element.
@@ -49,26 +50,23 @@
             <pre><code>
 &lt;markup-editor 
     userstyle="editor1.css" 
-    muscript="../src/markupeditor.umd.js" 
     mustyle="../styles/markupeditor.css">
 &lt;/markup-editor>
             </code></pre>
             <p>
-                The demos share a common MarkupEditor base script (markupeditor.umd.js) and styling (markupeditor.css), so we also have to specify their 
+                The demos share common styling (markupeditor.css), so we also have to specify its 
                 location in <code>muscript</code> and <code>mustyle</code>.
             </p>
         </markup-editor>
 
         <h2>Customized Web Component</h2>
         <markup-editor 
-            filename="editor2.html" 
-            userscript="editor2.js" 
-            userstyle="editor2.css" 
+            filename="../customization/editor2.html" 
+            userscript="../customization/editor2.js" 
+            userstyle="../customization/editor2.css" 
             delegate="MyDelegate" 
             toolbar="MyToolbarConfig" 
-            behavior="MyBehaviorConfig"
-            muscript="../src/markupeditor.esm.js" 
-            mustyle="../styles/markupeditor.css">
+            behavior="MyBehaviorConfig">
         </markup-editor>
 
         <script src="../src/markup-editor.js" type="module"></script>

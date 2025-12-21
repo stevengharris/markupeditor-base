@@ -1,8 +1,7 @@
 body {
-  background: white;
-  color: black;
+    background: white;
+    color: black;
 }
-
 @media (prefers-color-scheme: dark) {
   body {
     background: black;
