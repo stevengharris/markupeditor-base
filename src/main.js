@@ -137,6 +137,7 @@ class MarkupEditorElement extends HTMLElement {
     const html = (this.innerHTML.length == 0) ? null : this.innerHTML
     const filename = this.getAttribute('filename')
     const config = { 
+      id: this.getAttribute('id'),
       filename: filename, 
       html: html,
       base: this.getAttribute('base'),

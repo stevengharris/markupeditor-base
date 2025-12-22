@@ -24019,7 +24019,7 @@ class MarkupEditor {
         // `muId` from the `view.root.muId` if we have `view`, or directly from the `editor`.
         // Note `muId` is distinct from the `id` of the editor div or the web component id 
         // if that is set.
-        this.muId = this.generateMuId();
+        this.muId = config.id ?? this.generateMuId();
         this.view.root.muId = this.muId;
 
         // Track the Searcher instance for this editor, using the same muId
@@ -24295,6 +24295,7 @@ class MarkupEditorElement extends HTMLElement {
     const html = (this.innerHTML.length == 0) ? null : this.innerHTML;
     const filename = this.getAttribute('filename');
     const config = { 
+      id: this.getAttribute('id'),
       filename: filename, 
       html: html,
       base: this.getAttribute('base'),

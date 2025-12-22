@@ -248,11 +248,10 @@ export class MarkupEditor {
             this.messageHandler = new MessageHandler(this)
         }
 
-        // Assign a generated `muId` to the document or shadow root. We can get 
+        // Assign a the web component id or a generated `muId` to the shadow root. We can get 
         // `muId` from the `view.root.muId` if we have `view`, or directly from the `editor`.
-        // Note `muId` is distinct from the `id` of the editor div or the web component id 
-        // if that is set.
-        this.muId = this.generateMuId()
+        // Note `muId` is the same as the web component id if that is set.
+        this.muId = config.id ?? this.generateMuId()
         this.view.root.muId = this.muId
 
         // Track the Searcher instance for this editor, using the same muId
