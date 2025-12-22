@@ -46,7 +46,6 @@ import {
   insertImageCommand, 
   modifyImageCommand
 } from "../markup"
-import { icons } from "./icons";
 import { 
   MenuItem,
   Dropdown,
@@ -104,6 +103,7 @@ export function buildMenuItems(config, schema) {
 
 function correctionBarItems(config) {
   let keymap = config.keymap;
+  let icons = config.toolbar.icons
   let items = [];
   items.push(undoItem({ title: 'Undo' + keyString('undo', keymap), icon: icons.undo }));
   items.push(redoItem({ title: 'Redo' + keyString('redo', keymap), icon: icons.redo }));
@@ -150,6 +150,7 @@ function insertBarItems(config) {
 }
 
 function tableMenuItems(config) {
+  let icons = config.toolbar.icons
   let items = []
   let { header, border } = config.toolbar.tableMenu;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))
@@ -228,6 +229,7 @@ function tableBorderItem(command, options) {
  */
 function styleBarItems(config, schema) {
   let keymap = config.keymap
+  let icons = config.toolbar.icons
   let items = []
   let { list, dent } = config.toolbar.styleBar
   if (list) {
@@ -295,6 +297,7 @@ function outdentItem(options) {
  */
 function formatItems(config, schema) {
   let keymap = config.keymap
+  let icons = config.toolbar.icons
   let items = []
   let { bold, italic, underline, code, strikethrough, subscript, superscript } = config.toolbar.formatBar;
   if (bold) items.push(formatItem(schema.marks.strong, 'B', { title: 'Toggle bold' + keyString('bold', keymap), icon: icons.strong }))
@@ -327,6 +330,7 @@ function formatItem(markType, markName, options) {
  */
 function styleMenuItems(config, schema) {
   let keymap = config.keymap
+  let icons = config.toolbar.icons
   let items = []
   let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
   if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p, keymap: baseKeyString('p', keymap) }))
