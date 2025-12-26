@@ -135,7 +135,7 @@ class MURegistry {
     }
 
     activeEditorElement() {
-        return this.activeEditor().element
+        return this.activeEditor()?.element
     }
 
     /** Return the active editor's `messageHandler`. */
