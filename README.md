@@ -38,6 +38,8 @@ even non-developers expect when they edit a document, like image resizing and se
 
 * Customizable and extensible toolbar providing access to all editing features, auto-sized to width.
 * Customizable key mappings for hot-key access to editing features.
+* Customizable ordering of toolbar contents.
+* Customizable icons for toolbar.
 * Paragraph styles corresponding to P, H1-H6, and `CODE`.
 * Bold, italic, underline, strikethrough, subscript, superscript, and code text formatting.
 * Insert and edit links, images (local and https src), and tables.
@@ -75,9 +77,9 @@ You need node/npm installed. Install the dependencies.
 $ cd markupeditor-base/
 $ npm install
 
-added 126 packages, and audited 127 packages in 5s
+added 265 packages, and audited 266 packages in 9s
 
-18 packages are looking for funding
+70 packages are looking for funding
   run `npm fund` for details
 
 found 0 vulnerabilities
@@ -92,8 +94,9 @@ $ npm run build
 > markupeditor@0.9.0 build
 > rollup -c
 
-src/main.js → dist/markupeditor.umd.js...
-created dist/markupeditor.umd.js in 335ms
+
+src/main.js → dist/markup-editor.js...
+created dist/markup-editor.js in 300ms
 ```
 
 The installation identifies `muedit` in the package.json `bin` property. You can open the editor on a doc using node.js with 
@@ -106,7 +109,7 @@ Server listening at http://localhost:3000
 ```
 
 Then open http://localhost:3000 in your browser. The port can be passed to node as `--port <number>`. Alternatively, you 
-can run node directly as `node muedit.js docs/demo/demo.html`.
+can run node directly as `node ./bin/muedit.js docs/demo/demo.html`.
 
 You can also use the web site docs to test:
 
@@ -117,8 +120,7 @@ $ npm run docs
 > sh predocs.sh
 
 Updating ./docs dependencies...
-cp -f ./dist/markupeditor.umd.js ./docs/src/markupeditor.umd.js
-cp -f ./markup-editor.js ./docs/src/markup-editor.js
+cp -f ./dist/markup-editor.js ./docs/src/markup-editor.js
 cp -f ./styles/markupeditor.css ./docs/styles/markupeditor.css
 cp -f ./styles/markup.css ./docs/styles/markup.css
 cp -f ./styles/mirror.css ./docs/styles/mirror.css
