@@ -86,7 +86,7 @@ export class MenuItem {
       if (!dom.classList.contains(prefix + "-disabled")) {
         let result = spec.run(view.state, view.dispatch, view, e);
         if (spec.callback) {
-          spec.callback(result)
+          spec.callback(result, dom)
         }
       }
     });
