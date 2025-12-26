@@ -8,7 +8,7 @@ The MarkupEditor consists of a web component and API for WYSIWYG HTML editing. T
 styled using standard CSS. The MarkupEditor comes with a toolbar and hot key bindings to access its editing functionality. The toolbar 
 visibility and contents, as well as the key bindings, are configurable and extensible.
 
-![Hello, MarkupEditor!](hellomarkupeditor.png)
+![Hello, MarkupEditor!](resources/hellomarkupeditor.png)
 
 The web component makes embedding WYSIWYG editing as simple as:
 
