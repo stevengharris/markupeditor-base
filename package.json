@@ -12,11 +12,11 @@
   "main": "dist/markup-editor.js",
   "type": "module",
   "bin": {
-    "muedit": "muedit.js"
+    "muedit": "bin/muedit.js"
   },
   "files": [
     "dist",
-    "muedit.js",
+    "bin",
     "styles"
   ],
   "license": "MIT",
