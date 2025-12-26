@@ -141,7 +141,7 @@ class MURegistry {
     }
 
     activeEditorElement() {
-        return this.activeEditor().element
+        return this.activeEditor()?.element
     }
 
     /** Return the active editor's `messageHandler`. */
@@ -16221,8 +16221,8 @@ if (typeof window != 'undefined') {
      * Please file issues for any errors captured by this function,
      * with the call stack and reproduction instructions if at all possible.
      */
-    window.addEventListener('error', function () {
-        const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... to debug.');
+    window.addEventListener('error', function (e) {
+        const muError = new MUError('Internal', e.message);
         _callbackError(muError);
     });
 
@@ -18020,7 +18020,7 @@ function _loadedUserFiles(target) {
  * @param {MUError} error 
  */
 function _callbackError(error) {
-    _callback(error.messageDict(), activeDocument());
+    _callback(error.messageDict());
 }
 
 /**
@@ -20368,7 +20368,7 @@ class MenuItem {
       if (!dom.classList.contains(prefix + "-disabled")) {
         let result = spec.run(view.state, view.dispatch, view, e);
         if (spec.callback) {
-          spec.callback(result);
+          spec.callback(result, dom);
         }
       }
     });
