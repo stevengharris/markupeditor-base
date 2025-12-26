@@ -1,0 +1,28 @@
+/* Base toast styling */
+.toast {
+    font-size: 1rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: inline-block;
+    visibility: hidden; /* Hidden by default */
+    background-color: #333; 
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+    padding: 4px;
+    margin-bottom: 8px; /* Spacing between multiple toasts */
+    opacity: 0;
+    transition: opacity 0.5s, visibility 0.5s;
+}
+@media (prefers-color-scheme: dark) {
+  .toast {
+    background: #fff;
+    color: #333;
+  }
+}
+
+/* Class added by JavaScript to show the toast */
+.toast.show {
+    visibility: visible;
+    opacity: 1;
+}
