@@ -136,6 +136,10 @@ export class ToolbarConfig {
     }
   }
 
+  static iconFor(string) {
+    return this._all().icons[string]
+  }
+
   static full(correction=false) {
     let full = this._all()
     full.visibility.correctionBar = correction

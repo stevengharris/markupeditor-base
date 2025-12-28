@@ -35,6 +35,7 @@ import {
     headers,
 } from "../markup"
 import { activeView, setActiveView } from "../registry"
+import { ToolbarConfig } from "../config/toolbarconfig";
 
 function getIcon(root, icon) {
     let doc = (root.nodeType == 9 ? root : root.ownerDocument) || document;
@@ -1360,13 +1361,12 @@ export class SearchItem {
 /** A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar */
 export class MoreItem {
 
-  constructor(items, config) {
-    let icons = config.toolbar.icons
+  constructor(items) {
     let options = {
       enable: () => { return true },
       active: () => { return this.showing() },
       title: 'Show more',
-      icon: icons.more
+      icon: ToolbarConfig.iconFor('more')
     };
     this.command = this.toggleMore.bind(this);
     this.item = cmdItem(this.command, options);
