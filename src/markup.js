@@ -98,10 +98,13 @@ export function handleShiftEnter() {
  */
 export function handleDelete() {
     const view = activeView()
-    const imageAttributes = _getImageAttributes();
-    if (imageAttributes.src) _callback({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') });
-    stateChanged(view);
-    return false;
+    const imageAttributes = _getImageAttributes()
+    if (imageAttributes.src) {
+        let messageDict = { 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') }
+        _callback(JSON.stringify(messageDict))
+    }
+    stateChanged(view)
+    return false
 }
 
 /**
