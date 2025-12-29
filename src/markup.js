@@ -492,7 +492,7 @@ export function getDataImages() {
  */
 export function savedDataImage(oldSrc, newSrc) {
     const view = activeView()
-    let images = activeDocument().getElementsByTagName('img');
+    let images = activeEditorElement().getElementsByTagName('img');
     for (let i = 0; i < images.length; i++) {
         let img = images[i]
         let src = img.getAttribute('src');
