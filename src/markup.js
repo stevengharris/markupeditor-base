@@ -474,10 +474,10 @@ export function resetSelectedID(id) {
  * @returns {[string]}
  */
 export function getDataImages() {
-    let images = activeEditorElement().getElementsByTagName('img');
+    let images = Array.from(activeEditorElement().getElementsByTagName('img'))
     let dataImages = []
-    for (let i = 0; i < images.length; i++) {
-        let src = images[i].getAttribute('src');
+    for (let img of images) {
+        let src = img.getAttribute('src');
         if (src && src.startsWith('data')) dataImages.push(src)
     }
     return dataImages
@@ -492,9 +492,8 @@ export function getDataImages() {
  */
 export function savedDataImage(oldSrc, newSrc) {
     const view = activeView()
-    let images = activeEditorElement().getElementsByTagName('img');
-    for (let i = 0; i < images.length; i++) {
-        let img = images[i]
+    let images = Array.from(activeEditorElement().getElementsByTagName('img'));
+    for (let img of images) {
         let src = img.getAttribute('src');
         if (src && src.startsWith(oldSrc)) {
             let imgPos = view.posAtDOM(img, 0)
