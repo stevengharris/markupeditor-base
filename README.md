@@ -14,7 +14,7 @@ The web component makes embedding WYSIWYG editing as simple as:
 
 ```
 <markup-editor><h1>Hello, MarkupEditor!</h1></markup-editor>
-<script src="markup-editor.js"></script>
+<script src="markup-editor.js" type="module"></script>
 ```
 
 ### Why
