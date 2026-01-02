@@ -5,25 +5,41 @@ import { MU } from "./markupeditor.js"
 export { MU }
 
 /**
- * MarkupEditorElement is the Web Component for the MarkupEditor.
+ * A web component and API for WYSIWYG HTML editing.
  * 
- * The lifecycle and resulting document structure are probably the most interesting 
- * aspects of the MarkupEditorElement, especially because the HTML page can   
- * contain multiple of them. The MarkupEditor "base" script should be loaded 
- * only once in the first (or only) MarkupEditorElement. It defines the global
- * `MU` along with the global `muRegistry` with exported methods to access it.
+ * @element markup-editor
  * 
- * We use the `connectedCallback`, which is called for each MarkupEditorElement, 
- * to trigger appending the MarkupEditor base script only once. It's loaded into 
- * the first MarkupEditorElement, and produces the global `MU` that provides access
- * to all editor functionality regardless of where subsequent scripts are run.
- * When the base script finishes loading, we dispatch the `ready` `muCallback` 
- * event for each MarkupEditorElement instance in `document`. From that point, 
- * the MarkupEditor styling is appended to the `editor` set up for each individual 
- * MarkupEditorElement instance. Any user-supplied script and styling are also 
- * appended. Once those are appended (and even if they are not specified), the 
- * `loadedUserFiles` `muCallback` is dispatched for the `editorContainer`, and 
- * we can finally `createEditor` for the element and set its HTML contents.
+ * @attr {String} placeholder - HTML that should be displayed when the editor is empty.
+ * 
+ * @attr {String} filename - An HTML file whose contents should be loaded for the initial contents of the editor. If you also supply HTML within the <markup-editor> itself (e.g., <markup-editor><p>Hello, world</p></markupeditor>), the content of filename will take precedence.
+ * 
+ * @attr {String} base - The relative path for image src attributes in the editor. By default, if `filename` is specified with a path, `base` will be set to the directory containing the file. For example, if filename is “demo/guide/guide.html”, `base` will be set to “demo/guide/” so that an image with `src=“myImage.png”` will load. If you want this image to load from the “resources” directory below "demo/guide", then set base to “demo/guide/resources/” (with a trailing slash).
+ * 
+ * @attr {String} userscript - A JavaScript file that should be loaded as a script within the <markup-editor> element. The script can reference the global MU for access to MarkupEditor functionality. For example, the script could contain code to create and register a MarkupDelegate to receive callbacks during editing, or define a custom ToolbarConfiguration. 
+ * 
+ * @attr {String} userstyle - A CSS file that should be linked within the <markup-editor> element to supplement the MarkupEditor base styling.
+ * 
+ * @attr {String} delegate - The name of a MarkupDelegate that has been registered. See the documentation on MarkupDelegates for details on implementation, usage, and registration.
+ * 
+ * @attr {String} handler - The name of a MessageHandler that has been registered. See the documemtation on MessageHandler for details.
+ * 
+ * @attr {String} toolbar - The name of a ToolbarConfig that has been registered. See the documentation on ToolbarConfig for details of customizing the toolbar configuration and registering configs.
+ * 
+ * @attr {String} keymap - The name of a KeymapConfig that has been registered. See the documentation on KeymapConfig for details of customizing the keymap configuration and registering configs.
+ * 
+ * @attr {String} behavior - The name of a BehaviorConfig that has been registered. See the documentation on BehaviorConfig for details of customizing the behavior configuration and registering configs.
+ * 
+ * @attr {String} prepend: The name of a toolbar that has been registered, whose `menuItems` will be placed before the MarkupToolbar. See the documentation on Extending the Toolbar for details.
+ * 
+ * @attr {String} append - The name of a toolbar that has been registered, whose `menuItems` will be placed after the MarkupToolbar. See the documentation on Extending the Toolbar for details.
+ * 
+ * @property {HTMLDivElement} editorContainer - The DIV that contains the editor in the shadow DOM.
+ * 
+ * @property {ShadowRoot} shadowRoot - The ShadowRoot for this element.
+ * 
+ * @property {MarkupEditor} editor - The instance of MarkupEditor that holds onto configuration and a ProseMirror EditorView.
+ * 
+ * @property {Object} MU - The object whose methods comprise the MarkupEditor API.
  */
 class MarkupEditorElement extends HTMLElement {
 
@@ -130,17 +146,24 @@ class MarkupEditorElement extends HTMLElement {
    * Use the attributes from the <markup-editor> element to set up the 
    * configuration. Set the initial HTML based on the `innerHTML` for the 
    * <markup-editor> element, which will be overridden by `filename` contents 
-   * if it it specified and if the editor is running in an environment that 
-   * has access to the file system (e.g., node.js, but not a browser).
+   * if it is specified.
    */
   createEditor() {
     const html = (this.innerHTML.length == 0) ? null : this.innerHTML
     const filename = this.getAttribute('filename')
+    let base = this.getAttribute('base')
+    // Set `base` based on `filename` automatically when `base` is null but `filename` 
+    // is defined. The `filename` must include a "\" or "/", or `base` remains null.
+    if (!base && filename && (filename.includes('/') || filename.includes('\\'))) {
+      // Use a regex to match the last part (filename and extension) and replace 
+      // it with an empty string, handline both forward and backward slashes.
+      base = filename.replace(/[^/\\]*$/, '')
+    }
     const config = { 
       id: this.getAttribute('id'),
       filename: filename, 
       html: html,
-      base: this.getAttribute('base'),
+      base: base,
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
       handler: this.getAttribute('handler'),
@@ -153,9 +176,6 @@ class MarkupEditorElement extends HTMLElement {
 
     // Create an editor instance and hold onto it here
     this.editor = new MU.MarkupEditor(this.editorContainer, config)
-    
-    // Let the delegate know the editor is ready
-    //this.editor.config.delegate?.markupReady && this.editor.config.delegate?.markupReady()
 
     // Prepend and/or append any augmentations
     const prependItems = MU.getAugmentation(config.prepend)?.menuItems
