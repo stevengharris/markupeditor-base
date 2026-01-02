@@ -32,7 +32,7 @@ if ((values.length > 1) || (!values.port) || (positionals.length > 1)) {
   let port = parseInt(values.port)
   let filename = (positionals.length > 0) ? positionals[0] : null
   let filenameAttribute = (filename) ? `filename="${filename}"` : ''          // Empty for a new document
-  let baseAttribute = (filename) ? `base="${path.dirname(filename)}/"` : ''   // Empty for a new document
+  // Note that `base` is set to the filename path automatically
   let placeholder = 'Edit document...'
 
   // The web component is always located relative to node's `__dirname`,
@@ -66,7 +66,6 @@ if ((values.length > 1) || (!values.port) || (positionals.length > 1)) {
           <markup-editor
             placeholder="${placeholder}"
             ${filenameAttribute}
-            ${baseAttribute},
             userscript="/filetoolbar.js"
             userstyle="/filetoolbar.css"
             prepend="FileToolbar"
