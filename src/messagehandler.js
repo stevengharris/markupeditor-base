@@ -1,4 +1,4 @@
-import { loadUserFiles, getHeight, setHTML } from "./markup.js";
+import { getHeight, setHTML } from "./markup.js";
 
 /**
  * The MessageHandler receives `postMessage` from the MarkupEditor as the document state changes.
@@ -42,17 +42,9 @@ export class MessageHandler {
             return
         }
         switch (message) {
-            // The editor posts `ready` when the markupeditor script is loaded, so we can set the HTML. 
-            // If HTML is an empty document, then the config.placeholder will be shown. However, before 
-            // loading the html and/or placeholder, we load any script or css file that the user 
-            // identified into the `target` if it was specified. In the absence of `target`, the user
-            // script is appended to the body and the user css to the head. We need the target to be 
-            // specified when using the MarkupEditor as a web component, in which case the `target`
-            // is the web component itself. The result of `loadUserFiles` is that the `loadedUserFiles`
-            // message is received here, and then content loading can proceed. 
-            case 'ready': 
-                loadUserFiles(config.userScriptFile, config.userCssFile, config.target)
-                return
+            // The editor posts `loadedUserFiles` when the markup-editor.js script and `userscript` 
+            // (if any) are loaded, so we can set the HTML. After loading the contents into the 
+            // editor, we let the `delegate`, if specified, know we are ready for editing.
             case 'loadedUserFiles':
                 this.loadContents()
                 delegate?.markupReady && delegate?.markupReady()
