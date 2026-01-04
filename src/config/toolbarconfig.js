@@ -1,26 +1,24 @@
 /**
- * `ToolbarConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
- * to GitHub flavored markdown. It can be overridden by passing it a new config when instantiating
- * the MarkupEditor. You can use the pre-defined static methods like `full` or customize what they 
- * return. The predefined statics each allow you to turn on or off the `correctionBar` visibility.
- * The `correctionBar` visibility is off by default, because while it's useful for touch devices 
- * without a keyboard, undo/redo are mapped to the hotkeys most people have in muscle memory.
+ * `ToolbarConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
+ * passing a new ToolbarConfig by name using the `toolbar` attribute of the <markup-editor> 
+ * element. You can use the pre-defined static methods like `standard()` and customize what 
+ * it returns, or you can use your own ToolbarConfig.
  * 
- * To customize the menu bar, for example, in your index.html:
+ * To customize the toolbar, for example, in a `userscript` named `mytoolbar.js`:
  * 
- *    let toolbarConfig = MU.ToolbarConfig.full(true);  // Grab the full toolbar, including correction, as a baseline
- *    toolbarConfig.insertBar.table = false;               // Turn off table insert
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        toolbar: toolbarConfig,
- *      }
- *    )
+ *      import {MU} from "src/markup-editor.js"
+ *      let toolbarConfig = MU.ToolbarConfig.full(true);    // Grab the full toolbar, including correction, as a baseline
+ *      toolbarConfig.insertBar.tableMenu = false;          // Turn off table insert menu
+ *      MU.registerConfig(toolbarConfig, "MyToolbarConfig") // Register the instance by name so we can reference it
+ * 
+ * Then, where you insert the <markup-editor> element, set the ToolbarConfig by name:
+ * 
+ *      <markup-editor userscript="mytoolbar.js" toolbar="MyToolbarConfig">
  *    
  * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
  * within a toolbar or menu using the settings specific to that toolbar or menu. Customize 
- * left-to-right ordering using the "ordering" settings.
+ * left-to-right ordering using the "ordering" settings. Specify icon SVG in the "icon" settings.
+ * Use "augmentation" to prepend and/or append a toolbar you define yourself.
  */
 export class ToolbarConfig {
 

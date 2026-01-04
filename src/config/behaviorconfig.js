@@ -1,17 +1,22 @@
 /**
  * `BehaviorConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
- * passing a new BehaviorConfig when instantiating the MarkupEditor.
+ * passing a new BehaviorConfig by name using the `behavior` attribute of the <markup-editor> 
+ * element. You can use the pre-defined static methods like `standard()` and customize what 
+ * it returns, or you can use your own BehaviorConfig.
  * 
- * To customize the behavior config, for example, in your index.html:
+ * To customize the behavior config, for example, in a `userscript` named `mybehavior.js`:
  * 
- *    let behaviorConfig = MU.BehaviorConfig.desktop();    // Use the desktop editor config as a baseline
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        behavior: behaviorConfig,
- *      }
- *    )
+ *      import {MU} from "src/markup-editor.js"
+ *      let behaviorConfig = MU.BehaviorConfig.desktop()        // Use the desktop config as a baseline
+ *      MU.registerConfig(behaviorConfig, "MyBehaviorConfig")   // Register the instance by name so we can reference it
+ * 
+ * Then, where you insert the <markup-editor> element, set the BehaviorConfig by name:
+ * 
+ *      <markup-editor userscript="mybehavior.js" behavior="MyBehaviorConfig">
+ *    
+ * BehaviorConfig lets you control whether the editor takes focus immediately or not, and
+ * allows you to defer to the MarkupDelegate for insert options, so you can use your own 
+ * (perhaps "native") dialogs for file selection, link insertion, and image insertion.
  */
 export class BehaviorConfig {
 

@@ -1,19 +1,19 @@
 /**
  * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
- * passing a new KeymapConfig when instantiating the MarkupEditor. You can use the pre-defined 
- * static methods like `standard()` or customize what it returns.
+ * passing a new KeymapConfig by name using the `keymap` attribute of the <markup-editor> 
+ * element. You can use the pre-defined static methods like `standard()` and customize what 
+ * it returns, or you can use your own KeymapConfig.
  * 
- * To customize the key mapping, for example, in your index.html:
+ * To customize the key mapping, for example, in a `userscript` named `mykeymap.js`:
  * 
- *    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
- *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        keymap: keymapConfig,
- *      }
- *    )
+ *      import {MU} from "src/markup-editor.js"
+ *      let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
+ *      keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
+ *      MU.registerConfig(keymapConfig, "MyKeymapConfig") // Register the instance by name so we can reference it
+ * 
+ * Then, where you insert the <markup-editor> element, set the KeymapConfig by name:
+ * 
+ *      <markup-editor userscript="mykeymap.js" keymap="MyKeymapConfig">
  *    
  * Note that the key mapping will exist and work regardless of whether you disable a toolbar 
  * or a specific item in a menu. For example, undo/redo by default map to Mod-z/Shift-Mod-z even  
