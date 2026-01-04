@@ -16448,10 +16448,10 @@ function resetSelectedID(id) {
  * @returns {[string]}
  */
 function getDataImages() {
-    let images = activeEditorElement().getElementsByTagName('img');
+    let images = Array.from(activeEditorElement().getElementsByTagName('img'));
     let dataImages = [];
-    for (let i = 0; i < images.length; i++) {
-        let src = images[i].getAttribute('src');
+    for (let img of images) {
+        let src = img.getAttribute('src');
         if (src && src.startsWith('data')) dataImages.push(src);
     }
     return dataImages
@@ -16466,9 +16466,8 @@ function getDataImages() {
  */
 function savedDataImage(oldSrc, newSrc) {
     const view = activeView();
-    let images = activeDocument().getElementsByTagName('img');
-    for (let i = 0; i < images.length; i++) {
-        let img = images[i];
+    let images = Array.from(activeEditorElement().getElementsByTagName('img'));
+    for (let img of images) {
         let src = img.getAttribute('src');
         if (src && src.startsWith(oldSrc)) {
             let imgPos = view.posAtDOM(img, 0);
@@ -19134,28 +19133,26 @@ function consoleLog(string) {
 }
 
 /**
- * `ToolbarConfig.standard()` is the default for the MarkupEditor and is designed to correspond 
- * to GitHub flavored markdown. It can be overridden by passing it a new config when instantiating
- * the MarkupEditor. You can use the pre-defined static methods like `full` or customize what they 
- * return. The predefined statics each allow you to turn on or off the `correctionBar` visibility.
- * The `correctionBar` visibility is off by default, because while it's useful for touch devices 
- * without a keyboard, undo/redo are mapped to the hotkeys most people have in muscle memory.
+ * `ToolbarConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
+ * passing a new ToolbarConfig by name using the `toolbar` attribute of the <markup-editor> 
+ * element. You can use the pre-defined static methods like `standard()` and customize what 
+ * it returns, or you can use your own ToolbarConfig.
  * 
- * To customize the menu bar, for example, in your index.html:
+ * To customize the toolbar, for example, in a `userscript` named `mytoolbar.js`:
  * 
- *    let toolbarConfig = MU.ToolbarConfig.full(true);  // Grab the full toolbar, including correction, as a baseline
- *    toolbarConfig.insertBar.table = false;               // Turn off table insert
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        toolbar: toolbarConfig,
- *      }
- *    )
+ *      import {MU} from "src/markup-editor.js"
+ *      let toolbarConfig = MU.ToolbarConfig.full(true);    // Grab the full toolbar, including correction, as a baseline
+ *      toolbarConfig.insertBar.tableMenu = false;          // Turn off table insert menu
+ *      MU.registerConfig(toolbarConfig, "MyToolbarConfig") // Register the instance by name so we can reference it
+ * 
+ * Then, where you insert the <markup-editor> element, set the ToolbarConfig by name:
+ * 
+ *      <markup-editor userscript="mytoolbar.js" toolbar="MyToolbarConfig">
  *    
  * Turn off entire toolbars and menus using the "visibility" settings. Turn off specific items
  * within a toolbar or menu using the settings specific to that toolbar or menu. Customize 
- * left-to-right ordering using the "ordering" settings.
+ * left-to-right ordering using the "ordering" settings. Specify icon SVG in the "icon" settings.
+ * Use "augmentation" to prepend and/or append a toolbar you define yourself.
  */
 class ToolbarConfig {
 
@@ -19306,20 +19303,20 @@ class ToolbarConfig {
 
 /**
  * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
- * passing a new KeymapConfig when instantiating the MarkupEditor. You can use the pre-defined 
- * static methods like `standard()` or customize what it returns.
+ * passing a new KeymapConfig by name using the `keymap` attribute of the <markup-editor> 
+ * element. You can use the pre-defined static methods like `standard()` and customize what 
+ * it returns, or you can use your own KeymapConfig.
  * 
- * To customize the key mapping, for example, in your index.html:
+ * To customize the key mapping, for example, in a `userscript` named `mykeymap.js`:
  * 
- *    let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
- *    keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        keymap: keymapConfig,
- *      }
- *    )
+ *      import {MU} from "src/markup-editor.js"
+ *      let keymapConfig = MU.KeymapConfig.standard();    // Grab the standard keymap config as a baseline
+ *      keymapConfig.link = ["Ctrl-L", "Ctrl-l"];         // Use Control+L instead of Command+k
+ *      MU.registerConfig(keymapConfig, "MyKeymapConfig") // Register the instance by name so we can reference it
+ * 
+ * Then, where you insert the <markup-editor> element, set the KeymapConfig by name:
+ * 
+ *      <markup-editor userscript="mykeymap.js" keymap="MyKeymapConfig">
  *    
  * Note that the key mapping will exist and work regardless of whether you disable a toolbar 
  * or a specific item in a menu. For example, undo/redo by default map to Mod-z/Shift-Mod-z even  
@@ -19393,18 +19390,23 @@ class KeymapConfig {
 
 /**
  * `BehaviorConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
- * passing a new BehaviorConfig when instantiating the MarkupEditor.
+ * passing a new BehaviorConfig by name using the `behavior` attribute of the <markup-editor> 
+ * element. You can use the pre-defined static methods like `standard()` and customize what 
+ * it returns, or you can use your own BehaviorConfig.
  * 
- * To customize the behavior config, for example, in your index.html:
+ * To customize the behavior config, for example, in a `userscript` named `mybehavior.js`:
  * 
- *    let behaviorConfig = MU.BehaviorConfig.desktop();    // Use the desktop editor config as a baseline
- *    const markupEditor = new MU.MarkupEditor(
- *      document.querySelector('#editor'),
- *      {
- *        html: '<h1>Hello, world!</h1>',
- *        behavior: behaviorConfig,
- *      }
- *    )
+ *      import {MU} from "src/markup-editor.js"
+ *      let behaviorConfig = MU.BehaviorConfig.desktop()        // Use the desktop config as a baseline
+ *      MU.registerConfig(behaviorConfig, "MyBehaviorConfig")   // Register the instance by name so we can reference it
+ * 
+ * Then, where you insert the <markup-editor> element, set the BehaviorConfig by name:
+ * 
+ *      <markup-editor userscript="mybehavior.js" behavior="MyBehaviorConfig">
+ *    
+ * BehaviorConfig lets you control whether the editor takes focus immediately or not, and
+ * allows you to defer to the MarkupDelegate for insert options, so you can use your own 
+ * (perhaps "native") dialogs for file selection, link insertion, and image insertion.
  */
 class BehaviorConfig {
 
@@ -23511,17 +23513,9 @@ class MessageHandler {
             return
         }
         switch (message) {
-            // The editor posts `ready` when the markupeditor script is loaded, so we can set the HTML. 
-            // If HTML is an empty document, then the config.placeholder will be shown. However, before 
-            // loading the html and/or placeholder, we load any script or css file that the user 
-            // identified into the `target` if it was specified. In the absence of `target`, the user
-            // script is appended to the body and the user css to the head. We need the target to be 
-            // specified when using the MarkupEditor as a web component, in which case the `target`
-            // is the web component itself. The result of `loadUserFiles` is that the `loadedUserFiles`
-            // message is received here, and then content loading can proceed. 
-            case 'ready': 
-                loadUserFiles(config.userScriptFile, config.userCssFile, config.target);
-                return
+            // The editor posts `loadedUserFiles` when the markup-editor.js script and `userscript` 
+            // (if any) are loaded, so we can set the HTML. After loading the contents into the 
+            // editor, we let the `delegate`, if specified, know we are ready for editing.
             case 'loadedUserFiles':
                 this.loadContents();
                 delegate?.markupReady && delegate?.markupReady();
@@ -24126,25 +24120,41 @@ const MU = {
 };
 
 /**
- * MarkupEditorElement is the Web Component for the MarkupEditor.
+ * A web component and API for WYSIWYG HTML editing.
  * 
- * The lifecycle and resulting document structure are probably the most interesting 
- * aspects of the MarkupEditorElement, especially because the HTML page can   
- * contain multiple of them. The MarkupEditor "base" script should be loaded 
- * only once in the first (or only) MarkupEditorElement. It defines the global
- * `MU` along with the global `muRegistry` with exported methods to access it.
+ * @element markup-editor
  * 
- * We use the `connectedCallback`, which is called for each MarkupEditorElement, 
- * to trigger appending the MarkupEditor base script only once. It's loaded into 
- * the first MarkupEditorElement, and produces the global `MU` that provides access
- * to all editor functionality regardless of where subsequent scripts are run.
- * When the base script finishes loading, we dispatch the `ready` `muCallback` 
- * event for each MarkupEditorElement instance in `document`. From that point, 
- * the MarkupEditor styling is appended to the `editor` set up for each individual 
- * MarkupEditorElement instance. Any user-supplied script and styling are also 
- * appended. Once those are appended (and even if they are not specified), the 
- * `loadedUserFiles` `muCallback` is dispatched for the `editorContainer`, and 
- * we can finally `createEditor` for the element and set its HTML contents.
+ * @attr {String} placeholder - HTML that should be displayed when the editor is empty.
+ * 
+ * @attr {String} filename - An HTML file whose contents should be loaded for the initial contents of the editor. If you also supply HTML within the <markup-editor> itself (e.g., <markup-editor><p>Hello, world</p></markupeditor>), the content of filename will take precedence.
+ * 
+ * @attr {String} base - The relative path for image src attributes in the editor. By default, if `filename` is specified with a path, `base` will be set to the directory containing the file. For example, if filename is “demo/guide/guide.html”, `base` will be set to “demo/guide/” so that an image with `src=“myImage.png”` will load. If you want this image to load from the “resources” directory below "demo/guide", then set base to “demo/guide/resources/” (with a trailing slash).
+ * 
+ * @attr {String} userscript - A JavaScript file that should be loaded as a script within the <markup-editor> element. The script can reference the global MU for access to MarkupEditor functionality. For example, the script could contain code to create and register a MarkupDelegate to receive callbacks during editing, or define a custom ToolbarConfiguration. 
+ * 
+ * @attr {String} userstyle - A CSS file that should be linked within the <markup-editor> element to supplement the MarkupEditor base styling.
+ * 
+ * @attr {String} delegate - The name of a MarkupDelegate that has been registered. See the documentation on MarkupDelegates for details on implementation, usage, and registration.
+ * 
+ * @attr {String} handler - The name of a MessageHandler that has been registered. See the documemtation on MessageHandler for details.
+ * 
+ * @attr {String} toolbar - The name of a ToolbarConfig that has been registered. See the documentation on ToolbarConfig for details of customizing the toolbar configuration and registering configs.
+ * 
+ * @attr {String} keymap - The name of a KeymapConfig that has been registered. See the documentation on KeymapConfig for details of customizing the keymap configuration and registering configs.
+ * 
+ * @attr {String} behavior - The name of a BehaviorConfig that has been registered. See the documentation on BehaviorConfig for details of customizing the behavior configuration and registering configs.
+ * 
+ * @attr {String} prepend: The name of a toolbar that has been registered, whose `menuItems` will be placed before the MarkupToolbar. See the documentation on Extending the Toolbar for details.
+ * 
+ * @attr {String} append - The name of a toolbar that has been registered, whose `menuItems` will be placed after the MarkupToolbar. See the documentation on Extending the Toolbar for details.
+ * 
+ * @property {HTMLDivElement} editorContainer - The DIV that contains the editor in the shadow DOM.
+ * 
+ * @property {ShadowRoot} shadowRoot - The ShadowRoot for this element.
+ * 
+ * @property {MarkupEditor} editor - The instance of MarkupEditor that holds onto configuration and a ProseMirror EditorView.
+ * 
+ * @property {Object} MU - The object whose methods comprise the MarkupEditor API.
  */
 class MarkupEditorElement extends HTMLElement {
 
@@ -24251,17 +24261,24 @@ class MarkupEditorElement extends HTMLElement {
    * Use the attributes from the <markup-editor> element to set up the 
    * configuration. Set the initial HTML based on the `innerHTML` for the 
    * <markup-editor> element, which will be overridden by `filename` contents 
-   * if it it specified and if the editor is running in an environment that 
-   * has access to the file system (e.g., node.js, but not a browser).
+   * if it is specified.
    */
   createEditor() {
     const html = (this.innerHTML.length == 0) ? null : this.innerHTML;
     const filename = this.getAttribute('filename');
+    let base = this.getAttribute('base');
+    // Set `base` based on `filename` automatically when `base` is null but `filename` 
+    // is defined. The `filename` must include a "\" or "/", or `base` remains null.
+    if (!base && filename && (filename.includes('/') || filename.includes('\\'))) {
+      // Use a regex to match the last part (filename and extension) and replace 
+      // it with an empty string, handline both forward and backward slashes.
+      base = filename.replace(/[^/\\]*$/, '');
+    }
     const config = { 
       id: this.getAttribute('id'),
       filename: filename, 
       html: html,
-      base: this.getAttribute('base'),
+      base: base,
       placeholder: this.getAttribute('placeholder'), 
       delegate: this.getAttribute('delegate'),
       handler: this.getAttribute('handler'),
@@ -24274,9 +24291,6 @@ class MarkupEditorElement extends HTMLElement {
 
     // Create an editor instance and hold onto it here
     this.editor = new MU.MarkupEditor(this.editorContainer, config);
-    
-    // Let the delegate know the editor is ready
-    //this.editor.config.delegate?.markupReady && this.editor.config.delegate?.markupReady()
 
     // Prepend and/or append any augmentations
     const prependItems = MU.getAugmentation(config.prepend)?.menuItems;
