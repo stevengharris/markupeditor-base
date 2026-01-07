@@ -12,28 +12,23 @@
     <body>
         <h1>MarkupEditor Customization Demo</h1>
         <p>
-            The simplest way to embed WYSIWYG editing in your web site is to use the MarkupEditor web component. 
-            The web component makes sure the MarkupEditor script is only loaded once, and that the base MarkupEditor styling is 
-            applied (e.g., that handles the way the toolbar looks, font sizing, etc) to the editor within the web component
-            without potential side-effects to the page you embed it in. Using the &lt;markup-editor> 
-            <a href="../guide/index.html#web-component-attributes">web component attributes</a>, 
-            you have access to all of the customization features of the base MarkupEditor, including:
+            The customization features of the MarkupEditor are all exposed through the &lt;markup-editor> 
+            element <a href="../guide/index.html#web-component-attributes">web component attributes</a>. You can:
         </p>
         <ul>
             <li><p>Provide initial HTML contents for editing directly or by a file name.</p></li>
             <li><p>Specify placeholder text for when the document is empty.</p></li>
             <li><p>Provide your own scripting and styling within the editor.</p></li>
             <li><p>Provide a custom MarkupDelegate to receive document change notifications.</p></li>
-            <li><p>Customize toolbar visibility, contents, element ordering, and augment toolbar contents.</p></li>
+            <li><p>Customize toolbar visibility, contents, ordering, and icons, as well as augment toolbar contents.</p></li>
             <li><p>Customize key mapping or use hot key editing defaults.</p></li>
             <li><p>Customize behavior, such as whether local images can be embedded, and whether to take focus immediately.</p></li>
             <li><p>Identify the location for the MarkupEditor base script and styling if needed.</p></li>
         </ul>
 
         <p>
-            If the MarkupEditor base script and styling (markupeditor.umd.js and markupeditor.css) and the web component 
-            definition (markup-editor.js) reside in the same directory as your document, and you want a full page WYSIWYG
-            editor with a default toolbar, you can embed the MarkupEditor web component in just two lines:
+            In the simplest case, if you want a full page WYSIWYG editor with a default toolbar, you can embed 
+            the MarkupEditor in just two lines:
         </p>
 
         <pre><code>
