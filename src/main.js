@@ -1,6 +1,7 @@
 import mirrorStyle from "../styles/mirror.css" with { type: "css" }
 import markupStyle from "../styles/markup.css" with { type: "css" }
 import toolbarStyle from "../styles/toolbar.css" with { type: "css" }
+import { MarkupEditor } from "./markupeditor.js"
 import { MU } from "./markupeditor.js"
 export { MU }
 
@@ -175,7 +176,7 @@ class MarkupEditorElement extends HTMLElement {
     }
 
     // Create an editor instance and hold onto it here
-    this.editor = new MU.MarkupEditor(this.editorContainer, config)
+    this.editor = new MarkupEditor(this.editorContainer, config)
 
     // Prepend and/or append any augmentations
     const prependItems = MU.getAugmentation(config.prepend)?.menuItems

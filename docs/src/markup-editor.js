@@ -24570,8 +24570,6 @@ const MU = {
     toggleStrike,
     toggleSubscript,
     toggleSuperscript,
-    // Allow access to the MarkupEditor class and the instance config
-    MarkupEditor,
     // Helpers to create custom toolbar items
     MenuItem,
     Dropdown,
@@ -24771,7 +24769,7 @@ class MarkupEditorElement extends HTMLElement {
     };
 
     // Create an editor instance and hold onto it here
-    this.editor = new MU.MarkupEditor(this.editorContainer, config);
+    this.editor = new MarkupEditor(this.editorContainer, config);
 
     // Prepend and/or append any augmentations
     const prependItems = MU.getAugmentation(config.prepend)?.menuItems;

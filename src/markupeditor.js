@@ -363,8 +363,6 @@ export const MU = {
     toggleStrike,
     toggleSubscript,
     toggleSuperscript,
-    // Allow access to the MarkupEditor class and the instance config
-    MarkupEditor,
     // Helpers to create custom toolbar items
     MenuItem,
     Dropdown,
