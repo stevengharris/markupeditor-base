@@ -5,14 +5,17 @@ const sheet$1 = new CSSStyleSheet();sheet$1.replaceSync("#editor, .editor {\n   
 const sheet = new CSSStyleSheet();sheet.replaceSync("/* Spacing at the top */\n/* Note that toolbar-overlay below  is also set to these values */\n\n.Markup-searchbar-showing {\n  height: 38px;\n  top: 76px;\n}\n\n/* The wrapper lets us automatically embed a toolbar and scroll under it */\n.Markup-toolbar-wrapper {\n  margin-right: -12px;    /* Prevent side scroll even when menu fits */\n  height: inherit;\n  overflow-y: scroll;\n  position: relative; \n}\n\n/* We add Markup-prompt-showing to the wrapper to prevent scroll, and remove it when done */\n.Markup-prompt-showing {\n  overflow-y: hidden;\n}\n\n/* Z-indexes in one place */\n\n.body-content { \n  z-index: 1; \n}\n\n.Markup-prompt-overlay { \n  z-index: 2; \n}\n\n.Markup-prompt, .Markup-selection {\n  z-index: 3;\n}\n\n.Markup-searchbar {\n  z-index: 4;\n}\n\n.Markup-toolbar, .Markup-toolbar-more {\n  z-index: 5;\n}\n\n.Markup-toolbar-overlay { \n  z-index: 6; \n}\n\n.Markup-menu-dropdown-menu {\n  z-index: 7;\n}\n\n/* Toolbar, menu item, and dropdown styling */\n\n.Markup-toolbar {\n  display: inline-flex;\n  position: sticky;\n  overflow: visible;\n  width: 100%;\n  font-size: 24px;\n  vertical-align: middle;\n  border-top-left-radius: inherit;\n  border-top-right-radius: inherit;\n  top: 0;\n  max-height: 38px;\n  padding: 2px 8px;\n  color: blue;\n  background: rgba(250, 249, 246, 0.95);\n  border-bottom: 1px solid lightgray;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-toolbar {\n    color: rgb(250, 249, 246);\n    background: rgba(40, 40, 43, 0.9);\n    border-bottom: 1px solid gray;\n  }\n}\n\n.Markup-menuitem {\n  display: inline-block;\n  flex-shrink: 0;  /* Otherwise, the drop-downs with icons shrink */\n  overflow-y: visible;\n  vertical-align: middle;\n  min-width: 28px;\n  height: 28px;\n  cursor: pointer;\n  margin-right: 4px;\n  border-radius: 4px;\n  color: blue;\n  border: 1px solid blue;\n  background: white;\n  fill: blue;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menuitem {\n    color: lightblue;\n    border: 1px solid lightblue; \n    /* border: 1px solid #4183c4; */\n    background: black;\n    fill: lightblue;\n  }\n}\n\n.Markup-menuitem-active {\n  fill: white;\n  color: white;\n  background: blue;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menuitem-active {\n      fill: black;\n      color: black;\n      background: lightblue;\n  }\n}\n\n.Markup-menuitem-disabled {\n  cursor: default;\n  opacity: .3;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menuitem-disabled {\n    opacity: .6;\n  }\n}\n\n.Markup-icon {\n  display: inline-block;\n  width: 28px;\n  height: 28px;\n  border: 0;\n}\n\n.Markup-icon span {\n  vertical-align: middle;\n}\n\n.Markup-icon svg {\n  padding: 2px;\n  border: 0;\n  fill: inherit;\n}\n\n.Markup-menuseparator {\n  display: inline-block;\n  vertical-align: middle;\n  height: 28px;\n  border-right: 1px solid lightgray;\n  margin-right: 4px;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menuseparator {\n    border-right: 1px solid gray;\n  }\n}\n\n.Markup-menu-disabled .Markup-icon {\n  cursor: default;\n}\n\n.Markup-menu-dropdown, .Markup-menu-dropdown-menu {\n  background: inherit;\n  text-align: left;\n  white-space: nowrap;\n}\n\n.Markup-menu-dropdown span {\n  vertical-align: middle;\n}\n\n.Markup-menu-dropdown-icon span {\n  vertical-align: middle;\n}\n\n.Markup-menu-dropdown-wrap {\n  display: inline-block;\n  padding: 0 4px;\n  min-width: 3.0em;\n  height: inherit;\n  border-radius: 4px;\n  background: inherit;\n}\n\n.Markup-menu-dropdown-icon-wrap {\n  display: inline-block;\n  padding-right: 4px;\n  width: 1.8em;\n  height: inherit;\n  border-radius: 4px;\n  background: inherit;\n}\n\n.Markup-menu-dropdown-icon-wrap-noindicator {\n  display: inline-flex;\n  padding-right: 4px;\n  width: 1em;\n  height: inherit;\n  border-radius: 4px;\n  background: inherit;\n}\n\n.Markup-menu-dropdown {\n  display: inline-flex;\n  justify-content: space-between;\n  min-width: 3.0em;\n  height: inherit;\n  background: inherit;\n  position: absolute;\n}\n\n.Markup-menu-dropdown-icon {\n  display: inline-flex;\n  justify-content: space-between;\n  width: 1.8em;\n  cursor: pointer;\n  position: absolute;\n}\n\n.Markup-menu-dropdown-indicator, .Markup-menu-dropdown-icon-indicator{\n  opacity: .6;\n}\n\n.Markup-tooltip .Markup-menu {\n  width: -webkit-fit-content;\n  width: fit-content;\n  white-space: pre;\n}\n\n.Markup-menu-dropdown-menu, .Markup-menu-submenu {\n  position: absolute;\n  background: inherit;\n  padding: 2px;\n  background: inherit;\n  border: 1px solid gray;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menu-dropdown-menu, .Markup-menu-submenu {\n    border: 1px solid lightgray;\n  }\n}\n\n.Markup-menu-dropdown-menu {\n  margin-top: calc(1em + 6px);\n  min-width: 4em;\n}\n\n.Markup-menu-dropdown-item {\n  cursor: pointer;\n  padding: 2px 8px 2px 4px;\n}\n\n/* Used to overlfow and ellipsis-truncate text in Dropdown menu items */\n.Markup-menuitem-clipped {\n  white-space: nowrap;  /* Required for text-overflow */\n  overflow-x: hidden;   /* Required for text-overflow */\n  max-width: 30em;\n  text-overflow: ellipsis;\n}\n\n.Markup-menu-dropdown-item:hover, .Markup-menu-submenu-wrap:hover {\n  background: #f2f2f2;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menu-dropdown-item:hover, .Markup-menu-submenu-wrap:hover {\n    background: rgb(80, 80, 80);\n  }\n}\n\n.Markup-menu-dropdown-item p, \n.Markup-menu-dropdown-item h1, \n.Markup-menu-dropdown-item h2, \n.Markup-menu-dropdown-item h3, \n.Markup-menu-dropdown-item h4, \n.Markup-menu-dropdown-item h5, \n.Markup-menu-dropdown-item h6, \n.Markup-menu-dropdown-item pre {\n  padding: 0;\n  margin: 0;\n  min-height: 24px;\n}\n\n.Markup-stylelabel {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  white-space: pre;\n  width: 100%;\n}\n\n.Markup-stylelabel-keymap {\n  display: flex;\n  justify-content: flex-end;\n  font-size: 1.0rem;\n  font-weight: normal;\n  color: gray;\n}\n\n.Markup-menu-submenu-wrap:hover .Markup-menu-submenu, .Markup-menu-submenu-wrap-active .Markup-menu-submenu {\n  display: block;\n}\n\n.Markup-menu-submenu-wrap {\n  position: relative;\n  margin-right: -4px;\n  background: inherit;\n}\n\n.Markup-menu-submenu {\n  display: none;\n  min-width: 4em;\n  left: 100%;\n  top: -5px;\n  /* background cannot be inherited because of hover highlighting in dropdown */\n  background: white;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menu-submenu {\n    /* background cannot be inherited because of hover highlighting in dropdown */\n    background: black;\n  }\n}\n\n.Markup-menu-submenu-label:after {\n  content: \"\";\n  border-top: 4px solid transparent;\n  border-bottom: 4px solid transparent;\n  border-left: 4px solid currentColor;\n  opacity: .6;\n  position: absolute;\n  right: 4px;\n  top: calc(50% - 4px);\n}\n\n.Markup-selection {\n  position: absolute;\n  border: 1px solid blue;\n  background: transparent;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-selection {\n    border: 1px solid lightblue;\n  }\n}\n\n/* Toolbar-more styling */\n\n.Markup-toolbar-more {\n  display: inline-flex;\n  position: sticky;\n  overflow: visible;\n  width: 100%;\n  font-size: 24px;\n  vertical-align: middle;\n  border-top-left-radius: inherit;\n  border-top-right-radius: inherit;\n  top: 35px;\n  max-height: 38px;\n  padding: 2px 8px;\n  color: blue;\n  background: rgba(250, 249, 246, 0.95);\n  border-bottom: 1px solid lightgray;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-toolbar-more {\n    color: rgb(250, 249, 246);\n    background: rgba(40, 40, 43, 0.9);\n    border-bottom: 1px solid gray;\n  }\n}\n\n/* Searchbar styling */\n\n.Markup-searchbar {\n  display: inline-block;\n  font-size: 24px;\n  vertical-align: middle;\n  position: sticky;\n  top: 35px;\n  width: 100%;\n  line-height: 30px;\n  height: 37px;\n  color: blue;\n  background: rgba(250, 249, 246, 0.95);\n  border-bottom: 1px solid lightgray;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-searchbar {\n    color: rgb(250, 249, 246);\n    background: rgba(40, 40, 43, 0.9);\n    border-bottom: 1px solid gray;\n  }\n}\n\n.Markup-searchbar input {\n  appearance: none; /* Otherwise, in Safari/WebKit, the height is small and fixed */\n  position: relative;\n  font-size: 18px;\n  line-height: 30px;\n  height: 30px;\n  width: calc(100% - 128px);\n  margin: 0 8px;\n  padding: 0 4px;\n  outline: none;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  border: 1px solid lightgray;\n  border-radius: 6px;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-searchbar input {\n    color: rgb(250, 249, 246);\n    background: rgb(40, 40, 43);\n    border: 1px solid gray;\n  }\n}\n\n.Markup-searchbar .Markup-searchbar-status {\n  position: absolute;\n  display: flex;\n  justify-content: flex-end;\n  align-items: center;\n  white-space: nowrap;\n  font-size: 12px;\n  overflow-x: visible;\n  height: 28px;\n  top: 5px;\n  left: calc(100% - 13em);\n  width: 1px;\n  color: gray;\n  user-select: none;\n}\n\n/* Dialog/prompt styling for insert/edit actions */\n\n.Markup-prompt-overlay {\n\tposition: fixed;\n\ttop: 0;\n\tleft: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: rgba(0, 0, 0, 0.2);\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-prompt-overlay {\n    background-color: rgba(255, 255, 255, 0.2);\n  }\n}\n\n.Markup-toolbar-overlay {\n\tposition: absolute;\n\ttop: 0;\n\tleft: 0;\n\twidth: 100%;\n\tbackground-color: rgba(0, 0, 0, 0.1);\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-toolbar-overlay {\n    background-color: rgba(255, 255, 255, 0.1);\n  }\n}\n\n.Markup-toolbar-overlay.Markup-searchbar-hidden {\n  height: 38px;\n}\n\n.Markup-toolbar-overlay.Markup-searchbar-showing {\n  height: 76px;\n}\n\n.Markup-prompt {\n  margin: 0;\n  font-size: 18px;\n  background: white;\n  padding: 8px;\n  border: 1px solid silver;\n  position: absolute;\n  border-radius: 3px;\n  box-shadow: -.5px 2px 5px rgba(0, 0, 0, 0.2);\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-prompt {\n    background: black;\n    box-shadow: -.5px 2px 5px rgba(255, 255, 255, 0.8);\n  }\n}\n\n.Markup-prompt-link {\n  height: 96px;\n  width: 300px;\n}\n\n.Markup-prompt-image {\n  height: 130px;\n  width: 300px;\n}\n\n.Markup-prompt img {\n  display: inline-block;\n  vertical-align: middle;\n  min-width: 28px;\n  height: 28px;\n  margin-right: 4px;\n}\n\n.Markup-prompt p {\n  margin: 0 0 4px 0;\n  font-weight: normal;\n  color: black;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-prompt p {\n    color: white;\n  }\n}\n\n.Markup-prompt input[type=\"text\"] {\n  font-size: 100%;\n  line-height: 28px;\n  margin-top: 2px;\n  padding: 1px 4px;\n  width: 100%;\n  appearance: none;\n  background: #eee;\n  outline: none;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  border: 1px solid lightgray;\n  border-radius: 6px;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-prompt input[type=\"text\"] {\n    color: rgb(250, 249, 246);\n    background: rgb(40, 40, 43);\n    border: 1px solid gray;\n  }\n}\n\n.Markup-prompt input.invalid {\n  color: red;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-prompt input.invalid {\n    color: pink;\n  }\n}\n\n.Markup-prompt-buttons {\n  display: flex;\n  vertical-align: middle;\n  justify-content: space-between;\n  justify-items: center;\n  line-height: 28px;\n  height: 28px;\n  margin-top: 8px;\n  margin-bottom: 8px;\n}\n\n.Markup-prompt-buttongroup {\n  flex-shrink: 0;\n}\n\n.Markup-prompt-buttons img {\n  aspect-ratio: auto;\n  height: auto;\n  object-fit: contain;\n}\n\n.Markup-prompt-buttons .Markup-menuitem {\n  display: inline-flex;\n  padding-right: 4px;\n  padding-left: 4px;\n}\n\n/* The buttongroup contains OK and Cancel menuitems on the right */\n.Markup-prompt-buttongroup .Markup-menuitem {\n  margin-right: 0;\n  margin-left: 4px;\n}\n\n/* .Markup-menu-tablesizer is a specialized submenu */\n.Markup-menu-tablesizer {\n  display: none;\n  grid-template-columns: repeat(4, 1fr);\n  grid-auto-rows: 18px;\n  row-gap: 1px;\n  column-gap: 1px;\n  padding: 0;\n  left: 100%;\n  top: -5px;\n  /* background cannot be inherited because of hover highlighting in dropdown */\n  background: white;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menu-tablesizer {\n    /* background cannot be inherited because of hover highlighting in dropdown */\n    background: black;\n  }\n}\n\n.Markup-menu-submenu-wrap:hover .Markup-menu-tablesizer, .Markup-menu-submenu-wrap-active .Markup-menu-tablesizer {\n  display: grid;\n}\n\n.Markup-menu-dropdown-menu, .Markup-menu-tablesizer {\n  position: absolute;\n  background: inherit;\n  padding: 2px;\n  background: inherit;\n  border: 1px solid gray;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menu-dropdown-menu, .Markup-menu-submenu {\n    border: 1px solid lightgray;\n  }\n}\n\n.Markup-menu-tablesizer .Markup-menu-dropdown-item {\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  border: 1px solid blue;\n  width: 18px;\n  height: 18px;\n  padding: 0;\n  font-size: 13px;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menu-tablesizer .Markup-menu-dropdown-item {\n    border: 1px solid lightblue;\n  }\n}\n\n.Markup-menu-tablesizer .Markup-menuitem-active {\n    height: 13px;\n    padding-top: 3px;\n    fill: black;\n    color: black;\n    background: blue;\n}\n@media (prefers-color-scheme: dark) {\n  .Markup-menu-tablesizer .Markup-menuitem-active {\n      fill: black;\n      color: black;\n      background: lightblue;\n  }\n}");
 
 /**
- * The global registry used to hold _editors, _delegates, _configs, 
- * _augmentations, and to track the active muId (of which there can be 
- * only one, generally set by focus/blur but sometimes by toolbar actions.
+ * The registry used to hold delegates, configs, handlers, and
+ * augmentations. Internally, the registry tracks the active `muId` 
+ * (of which there can be only one, generally set by focus/blur but 
+ * sometimes by toolbar actions). The `muId` is then used to identify 
+ * the active view/editor/document.
  * 
- * The registry is a singleton global but is only accessed via the methods exported 
+ * The registry is a singleton but is only accessed via the methods exported 
  * here.
+ * @private
  */
-class MURegistry {
+class Registry {
     constructor() {
         this._editors = new Map();
         this._delegates = new Map();
@@ -22,11 +25,20 @@ class MURegistry {
         this._activeMuId = null;
     }
 
-    /** Private method to set `activeMuId`. */
+    /** 
+     * Private method to set `activeMuId`. 
+     */
     _setActiveMuId(muId) {
         this._activeMuId = muId;
     }
 
+    /**
+     * Return the key that maps to the first value
+     * 
+     * @param {object}  value       The value we are 
+     * @param {Map}     map         The Map we are doing the lookup in
+     * @returns {string | null}     The key we found
+     */
     _keyFor(value, map) {
         return [...map].find(([, val]) => value === val)[0]
     }
@@ -34,30 +46,47 @@ class MURegistry {
     /**
      * Add the `editor` to the registry.
      * 
-     * When we register an editor, it becomes the active editor, so 
-     * `activeMuId` is always set initially.
+     * When we register an editor, it becomes the active editor.
+     * 
+     * @param {MarkupEditor}  editor       The MarkupEditor to be added
      */
     registerEditor(editor) {
         this._editors.set(editor.muId, editor);
         this._setActiveMuId(editor.muId);
     }
 
-    /** Remove the `editor` from the registry. */
+    /** 
+     * Remove the `editor` from the registry. 
+     * 
+     * @param {MarkupEditor}  editor       The MarkupEditor to be removed
+     */
     unregisterEditor(editor) {
         delete this._editors.delete(editor.muId);
     }
-    
-    /** Return the editor with `muId` of `this._activeMuId`. */
+
+    /** 
+     * Return the active editor with `muId` of `this._activeMuId`. 
+     */
     activeEditor() {
         return this._editors.get(this._activeMuId)
     }
 
-    /** Add the `delegate` to the registry. */
+    /** 
+     * Add the `delegate` to the registry. 
+     * If `name` is supplied, it is used to track it; else, 
+     * the class of `delegate`, derived using `delegate.constructor.name`
+     * is used.
+     * 
+     * @param {MarkupDelegate | object}     delegate    A MarkupDelegate or appropriate object.
+     * @param {string}                      name        A name used to retrieve the `delegate`.
+     */
     registerDelegate(delegate, name) {
         this._delegates.set(name ?? delegate.constructor.name, delegate);
     }
 
-    /** Remove the `delegate` from the registry. */
+    /** 
+     * Remove the `delegate` from the registry. 
+     */
     unregisterDelegate(delegate, name) {
         const key = name ?? this._keyFor(delegate, this._delegates);
         this._delegates.delete(key);
@@ -68,7 +97,15 @@ class MURegistry {
         return this._delegates.get(name)
     }
 
-    /** Add the `config` to the registry. */
+    /** 
+     * Add the `config` to the registry. 
+     * If `name` is supplied, it is used to track it; else, 
+     * the class of `config`, derived using `config.constructor.name`
+     * is used.
+     * 
+     * @param {ToolbarConfig | KeymapConfig | BehaviorConfig | object}  config  One of the "configs" from the MarkupEditor API or appropriate object.
+     * @param {string}                      name        A name used to retrieve the `config`.
+     */
     registerConfig(config, name) {
         this._configs.set(name ?? config.constructor.name, config);
     }
@@ -84,23 +121,41 @@ class MURegistry {
         return this._configs.get(name)
     }
 
+    /** 
+     * Add the `handler` to the registry. 
+     * If `name` is supplied, it is used to track it; else, 
+     * the class of `handler`, derived using `handler.constructor.name`
+     * is used.
+     * 
+     * @param {MessageHandler | object}  handler  An instance of MessageHandler or appropriate object.
+     * @param {string}                   name     A name used to retrieve the `config`.
+     */
     registerMessageHandler(handler, name) {
         this._handlers.set(name ?? handler.constructor.name, handler);
     }
 
+    /** Remove the `handler` from the registry. */
     unregisterMessageHandler(handler, name) {
         const key = name ?? this._keyFor(handler, this._handlers);
         this._handlers.delete(key);
     }
 
+    /** Return the `handler` with `name`. */
     getMessageHandler(name) {
         return this._handlers.get(name)
     }
 
     /** 
-     * Add the `augmentation` to the registry.
-     * An augmentation is a toolbar that holds `cmdItems` that can 
-     * either be prepended or appended to the normal MarkupEditor toolbar.
+     * Add the `toolbar` to the registry.
+     * A toolbar holds `cmdItems` that can either be prepended or appended to 
+     * the normal MarkupEditor toolbar.
+     * 
+     * If `name` is supplied, it is used to track it; else, 
+     * the class of `toolbar`, derived using `toolbar.constructor.name`
+     * is used.
+     * 
+     * @param {object}  toolbar     A toolbar that holds `cmdItems`.
+     * @param {string}  name        A name used to retrieve the `toolbar`.
      */
     registerAugmentation(toolbar, name) {
         this._augmentations.set(name ?? toolbar.constructor.name, toolbar);
@@ -113,14 +168,17 @@ class MURegistry {
     }
 
     /**
-     * Return the `augmentation` toolbar whose `menuItems` will be 
+     * Return the `toolbar` whose `menuItems` will be 
      * either prepended or appended to the normal MarkupEditor toolbar.
      */
     getAugmentation(name) {
         return this._augmentations.get(name)
     }
 
-    /** Return the active editor's `view`. */
+    /** Return the active editor's `view`. 
+     * 
+     * @returns {EditorView | null}    The ProseMirror Editor view that is currently active
+     */
     activeView() {
         return this.activeEditor()?.view
     }
@@ -140,6 +198,7 @@ class MURegistry {
         this._setActiveMuId(document?.muId);
     }
 
+    /** Return the `editor` that is active (typically with focus).*/
     activeEditorElement() {
         return this.activeEditor()?.element
     }
@@ -148,7 +207,7 @@ class MURegistry {
     activeMessageHandler() {
         return this.activeEditor()?.messageHandler
     }
-    
+
     /** Return the active editor's instance of Searcher, `searcher`. */
     activeSearcher() {
         return this.activeEditor()?.searcher
@@ -170,33 +229,89 @@ class MURegistry {
     }
 }
 
-/** Define the global _muRegistry instance and export methods that provide access to it. */
-const _muRegistry = new MURegistry();
-const registerEditor = _muRegistry.registerEditor.bind(_muRegistry);
-const unregisterEditor = _muRegistry.unregisterEditor.bind(_muRegistry);
-const registerDelegate = _muRegistry.registerDelegate.bind(_muRegistry);
-_muRegistry.unregisterDelegate.bind(_muRegistry);
-const getDelegate = _muRegistry.getDelegate.bind(_muRegistry);
-const registerConfig = _muRegistry.registerConfig.bind(_muRegistry);
-_muRegistry.unregisterConfig.bind(_muRegistry);
-const getConfig = _muRegistry.getConfig.bind(_muRegistry);
-const registerMessageHandler = _muRegistry.registerMessageHandler.bind(_muRegistry);
-_muRegistry.unregisterMessageHandler.bind(_muRegistry);
-const getMessageHandler = _muRegistry.getMessageHandler.bind(_muRegistry);
-const registerAugmentation = _muRegistry.registerAugmentation.bind(_muRegistry);
-_muRegistry.unregisterAugmentation.bind(_muRegistry);
-const getAugmentation = _muRegistry.getAugmentation.bind(_muRegistry);
-const activeEditor = _muRegistry.activeEditor.bind(_muRegistry);
-const activeView = _muRegistry.activeView.bind(_muRegistry);
-const setActiveView = _muRegistry.setActiveView.bind(_muRegistry);
-const activeDocument = _muRegistry.activeDocument.bind(_muRegistry);
-const setActiveDocument = _muRegistry.setActiveDocument.bind(_muRegistry);
-const activeEditorElement = _muRegistry.activeEditorElement.bind(_muRegistry);
-_muRegistry.activeMessageHandler.bind(_muRegistry);
-const activeSearcher = _muRegistry.activeSearcher.bind(_muRegistry);
-const activeConfig = _muRegistry.activeConfig.bind(_muRegistry);
-const selectedID = _muRegistry.selectedID.bind(_muRegistry);
-const setSelectedID = _muRegistry.setSelectedID.bind(_muRegistry);
+/** 
+ * Define the global registry instance and export methods that provide access to it. 
+ * Only the register* methods are part of the public MarkupEditor API.
+ * 
+ * @private
+ */
+const _registry = new Registry();
+
+/** 
+ * Return the active editor's `view`. 
+ * 
+ * @returns {EditorView | null}    The ProseMirror Editor view that is currently active
+ */
+function activeView() {return _registry.activeView.bind(_registry)()}
+
+/** 
+ * Add the `toolbar` to the registry.
+ * A toolbar holds `cmdItems` that can either be prepended or appended to 
+ * the normal MarkupEditor toolbar.
+ * 
+ * If `name` is supplied, it is used to track it; else, 
+ * the class of `toolbar`, derived using `toolbar.constructor.name`
+ * is used.
+ * 
+ * @param {object}  toolbar     A toolbar that holds `cmdItems`.
+ * @param {string}  name        A name used to retrieve the `toolbar`.
+ */
+function registerAugmentation(toolbar, name) {_registry.registerAugmentation.bind(_registry)(toolbar, name);}
+
+/** 
+ * Add the `config` to the registry. 
+ * If `name` is supplied, it is used to track it; else, 
+ * the class of `config`, derived using `config.constructor.name`
+ * is used.
+ * 
+ * @param {ToolbarConfig | KeymapConfig | BehaviorConfig | object}  config  One of the "configs" from the MarkupEditor API or appropriate object.
+ * @param {string}                      name        A name used to retrieve the `config`.
+ */
+function registerConfig(config, name) {_registry.registerConfig.bind(_registry)(config, name);}
+
+/** 
+ * Add the `delegate` to the registry. 
+ * If `name` is supplied, it is used to track it; else, 
+ * the class of `delegate`, derived using `delegate.constructor.name`
+ * is used.
+ * 
+ * @param {MarkupDelegate | object}     delegate    A MarkupDelegate or appropriate object.
+ * @param {string}                      name        A name used to retrieve the `delegate`.
+ */
+function registerDelegate(delegate, name) {_registry.registerDelegate.bind(_registry)(delegate, name);}
+
+
+/** 
+ * Add the `handler` to the registry. 
+ * If `name` is supplied, it is used to track it; else, 
+ * the class of `handler`, derived using `handler.constructor.name`
+ * is used.
+ * 
+ * @param {MessageHandler | object}  handler  An instance of MessageHandler or appropriate object.
+ * @param {string}                   name     A name used to retrieve the `config`.
+ */
+function registerMessageHandler(handler, name) {_registry.registerMessageHandler.bind(_registry)(handler, name);}
+
+const registerEditor = _registry.registerEditor.bind(_registry);
+const unregisterEditor = _registry.unregisterEditor.bind(_registry);
+_registry.unregisterDelegate.bind(_registry);
+const getDelegate = _registry.getDelegate.bind(_registry);
+_registry.unregisterConfig.bind(_registry);
+const getConfig = _registry.getConfig.bind(_registry);
+_registry.unregisterMessageHandler.bind(_registry);
+const getMessageHandler = _registry.getMessageHandler.bind(_registry);
+_registry.unregisterAugmentation.bind(_registry);
+const getAugmentation = _registry.getAugmentation.bind(_registry);
+_registry.activeEditor.bind(_registry);
+const setActiveView = _registry.setActiveView.bind(_registry);
+const activeDocument = _registry.activeDocument.bind(_registry);
+const setActiveDocument = _registry.setActiveDocument.bind(_registry);
+const activeEditorElement = _registry.activeEditorElement.bind(_registry);
+_registry.activeMessageHandler.bind(_registry);
+const activeSearcher = _registry.activeSearcher.bind(_registry);
+const activeConfig = _registry.activeConfig.bind(_registry);
+const selectedID = _registry.selectedID.bind(_registry);
+const setSelectedID = _registry.setSelectedID.bind(_registry);
 
 /**
  * MUError captures internal errors and makes it easy to communicate them externally.
@@ -20763,13 +20878,55 @@ function getIcon(root, icon) {
 
 /**
  * An icon or label that, when clicked, executes a command.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
  */
 class MenuItem {
 
   /**
-   * Create a menu item.
+   * Create a menu item. The following items are supported in the MenuItem spec:
    * 
-   * @param {*} spec The spec used to create this item.
+   * * The function to execute when the menu item is activated.
+   * 
+   *    ```run: (state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView, event: Event) => void```
+   * 
+   * * Optional function that is used to determine whether the item is appropriate at the moment. Deselected items will be hidden.
+   * 
+   *    ```select?: (state: EditorState) => boolean```
+   * 
+   * * Function that is used to determine if the item is enabled. If given and returning false, the item will be given a disabled styling.
+   * 
+   *    ```enable?: (state: EditorState) => boolean```
+   * 
+   * * A predicate function to determine whether the item is 'active' (for example, the item for toggling the strong mark might be active then the cursor is in strong text).
+   * 
+   *    ```active?: (state: EditorState) => boolean```
+   * 
+   * * A function that renders the item. You must provide either this, [`icon`](#menu.MenuItemSpec.icon), or [`label`](#MenuItemSpec.label).
+   * 
+   *    ```render?: (view: EditorView) => HTMLElement```
+   * 
+   * * Describes an icon to show for this item using SVG.
+   * 
+   *    ```icon?: string```
+   * 
+   * * Makes the item show up as a text label. Mostly useful for items wrapped in a [drop-down](#menu.Dropdown) or similar menu. The object should have a `label` property providing the text to display.
+   * 
+   *    ```label?: string```
+   * 
+   * * Defines DOM title (mouseover) text for the item.
+   * 
+   *    ```title?: string | ((state: EditorState) => string)```
+   * 
+   * * Optionally adds a CSS class to the item's DOM representation.
+   * 
+   *    ```class?: string```
+   * 
+   * * Optionally adds a string of inline CSS to the item's DOM representation.
+   * 
+   *    ```css?: string```
+   * 
+   * @param {object} spec The spec used to create this item. See list above.
   */
   constructor(spec) {
     this.prefix = prefix + "-menuitem";
@@ -20777,10 +20934,11 @@ class MenuItem {
   }
 
   /**
-  Renders the icon according to its [display
-  spec](https://prosemirror.net/docs/ref/#menu.MenuItemSpec.display), and adds an event handler which
-  executes the command when the representation is clicked.
-  */
+   * Renders the item according to the `spec`, and adds an event handler which 
+   * executes the command when the representation is clicked.
+   * 
+   * @param {EditorView}  view  The view to render this MenuItem in.
+   */
   render(view) {
     let spec = this.spec;
     let prefix = this.prefix;
@@ -20831,23 +20989,39 @@ class MenuItem {
 }
 
 /**
-A drop-down menu, displayed as a label with a downwards-pointing
-triangle to the right of it.
-*/
+ * A drop-down menu, displayed as a label with a downwards-pointing triangle to the right of it.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
+ */
 class Dropdown {
 
   /**
-  Create a dropdown wrapping the elements.
-  */
+   * Create a dropdown wrapping the elements.
+   * The following options are available:
+   * 
+   * | Type                               | Property      | Description |
+   * |:--                                 |:--            |:-- |
+   * | `boolean`                        | `indicator`   | Whether an indicator triangle should be shown, default `true`. |
+   * | `Function(EditorState): string`  | `titleUpdate` | Function to execute that returns a label based on `state`. |
+   * | `Function(): boolean`            | `enable`      | Function to return true if MenuItem is enabled, else false |
+   * | `string`                         | `label`       | The string to show in the MenuItem |
+   * | `KeymapConfig`                   | `keymap`      | The KeymapConfig to use for the MenuItem |
+   * | `Command`                        | `run`         | The Command to run when the item is pressed |
+   * | `Function(): boolean`            | `active`      | Function to return true if MenuItem is active, else false. |
+   * | `object`                         | `attrs`       | Node attrs that can be used within the `enable` or `active` functions. |
+   */
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu";
     this.options = options;
     if (this.options.indicator == undefined) this.options.indicator = true;
     this.content = Array.isArray(content) ? content : [content];
   }
-  /**
-  Render the dropdown menu and sub-items.
-  */
+
+  /** 
+   * Render the dropdown menu and sub-items.
+   * 
+   * @param {EditorView} view The EditorView to render this DropDown in.
+   */
   render(view) {
     let options = this.options;
     let content = renderDropdownItems(this.content, view);
@@ -20929,15 +21103,28 @@ class Dropdown {
 }
 
 /**
-Represents a submenu wrapping a group of elements that start
-hidden and expand to the right when hovered over or tapped.
-*/
+ * Represents a submenu wrapping a group of elements that start
+ * hidden and expand to the right when hovered over or tapped.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
+ */
 class DropdownSubmenu {
 
-  /**
-  Creates a submenu for the given group of menu elements. The
-  following options are recognized:
-  */
+  /** 
+   * Creates a submenu for the given group of menu elements. The following options are available:
+   * 
+   * | Type                   | Property  | Description |
+   * |:--                     |:--        |:-- |
+   * | `Function(): boolean`  | `enable`  | Function to return true if MenuItem is enabled, else false.
+   * | `string`               | `label`   | The string to show in the MenuItem
+   * | `KeymapConfig`         | `keymap`  | The KeymapConfig to use for the MenuItem
+   * | `Command`              | `run`     | The Command to run when the item is pressed
+   * | `Function(): boolean`  | `active`  | Function to return true if MenuItem is active, else false.
+   * | `object`               | `attrs`   | Node attrs that can be used within the `enable` or `active` functions.
+   * 
+   * @param {Array<MenuItem | Array<MenuItem>>} content The submenu's contents in the form of MenuItems.
+   * @param {object}                            options See list above.
+   */
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu";
     this.options = options;
@@ -21024,6 +21211,8 @@ class ParagraphStyleItem {
  * with opening, closing, and positioning the dialog so it stays in view as much as possible.
  * Each of the subclasses defines its `dialogWidth` and `dialogHeight` and deals with its 
  * own content/layout.
+ * 
+ * @private
  */
 class DialogItem {
 
@@ -21154,6 +21343,7 @@ class DialogItem {
 
 /**
  * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
+ * 
  * @private
  */
 class LinkItem extends DialogItem {
@@ -22144,9 +22334,9 @@ class MoreItem {
  * 
  * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
  * what `cmd(state)` returns unless otherwise specified in `options`.
- * @param {Command}     cmd 
- * @param {*} options   The spec for the MenuItem
- * @returns {MenuItem}
+ * @param {Command}     cmd   A ProseMirror [Command](https://prosemirror.net/docs/ref/#state.Command)
+ * @param {object} options   The spec for the MenuItem
+ * @returns {MenuItem}        Similar to prosemirror-menu, but [MarkupEditor-modified](MenuItem.html)
  */
 function cmdItem(cmd, options) {
   let passedOptions = {
@@ -22972,6 +23162,8 @@ function buildKeymap(config, schema) {
 
 /**
  * The instance of ToolbarView in the editor.
+ * 
+ * @private
  */
 let toolbarView;
 
@@ -23248,6 +23440,7 @@ const imagePlugin = new Plugin({
 /**
  * Insert an array of MenuItems or a single MenuItem at the front of the toolbar.
  * 
+ * @private
  * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 function prependToolbar(menuItems) {
@@ -23258,6 +23451,7 @@ function prependToolbar(menuItems) {
 /**
  * Append an array of MenuItems or a single MenuItem at the end of the toolbar
  * 
+ * @private
  * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 function appendToolbar(menuItems) {
@@ -24384,7 +24578,7 @@ class MarkupEditor {
             this.config.behavior = BehaviorConfig.standard();
         }
 
-        // If `delegate` is supplied as a string, then dereference it to get the class from muRegistry.
+        // If `delegate` is supplied as a string, then dereference it to get the class from the Registry.
         let delegate = this.config.delegate;
         if (delegate && (typeof delegate === 'string')) {
             this.config.delegate = getDelegate(delegate);
@@ -24468,7 +24662,7 @@ class MarkupEditor {
         // there is more than one; otherwise is `editor` or null)
         this.selectedID = null;
 
-        // Finally, track the editor in the muRegistry.
+        // Finally, track the editor in the Registry.
         registerEditor(this);
     }
 
@@ -24498,7 +24692,7 @@ class MarkupEditor {
     }
 
     /**
-     * Destroy the EditorView we are holding onto and remove it from the `muRegistry`.
+     * Destroy the EditorView we are holding onto and remove it from the `Registry`.
      */
     destroy() {
         unregisterEditor(this);
@@ -24510,6 +24704,7 @@ class MarkupEditor {
  * The public MarkupEditor API callable as "MU.<function name>"
  */
 const MU = {
+    activeView,
     addButton,
     addCol,
     addDiv,
@@ -24526,8 +24721,8 @@ const MU = {
     doUndo,
     emptyDocument,
     focus,
-    focused,
     focusOn,
+    focused,
     getDataImages,
     getHTML,
     getHeight,
@@ -24566,10 +24761,10 @@ const MU = {
     toggleCode,
     toggleItalic,
     toggleListItem: toggleListItem$1,
-    toggleUnderline,
     toggleStrike,
     toggleSubscript,
     toggleSuperscript,
+    toggleUnderline,
     // Helpers to create custom toolbar items
     MenuItem,
     Dropdown,
@@ -24577,25 +24772,16 @@ const MU = {
     cmdItem,
     renderGrouped,
     renderDropdownItems,
-    toolbarView,
     toggleSearch,
-    // Helpers to add items to the toolbar
-    prependToolbar,
-    appendToolbar,
     // Config access
     ToolbarConfig,
     KeymapConfig,
     BehaviorConfig,
-    // muRegistry access
-    activeEditor,
-    registerDelegate,
-    registerConfig,
-    registerMessageHandler,
-    getMessageHandler,
-    activeConfig,
+    // Registry access
     registerAugmentation,
-    getAugmentation,
-    setActiveView,
+    registerConfig,
+    registerDelegate,
+    registerMessageHandler,
 };
 
 /**
@@ -24772,10 +24958,10 @@ class MarkupEditorElement extends HTMLElement {
     this.editor = new MarkupEditor(this.editorContainer, config);
 
     // Prepend and/or append any augmentations
-    const prependItems = MU.getAugmentation(config.prepend)?.menuItems;
-    if (prependItems) MU.prependToolbar(prependItems);
-    const appendItems = MU.getAugmentation(config.append)?.menuItems;
-    if (appendItems) MU.appendToolbar(appendItems);
+    const prependItems = getAugmentation(config.prepend)?.menuItems;
+    if (prependItems) prependToolbar(prependItems);
+    const appendItems = getAugmentation(config.append)?.menuItems;
+    if (appendItems) appendToolbar(appendItems);
 
     // Expose the MU API as a property of this element. In a well-behaved JavaScript 
     // modules world, we would not need to do this, but when using the web component 
