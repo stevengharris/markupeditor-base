@@ -98,7 +98,7 @@
     <p><strong>Note</strong>: If you encounter a MarkupEditor bug, providing a test or usage flow using node.js that reproduces the bug in a browser will ensure it can be debugged with no setup barriers, increasing the likelihood of it being worked on.</p>
 </blockquote>
 
-<h3>Web Component Attributes</h3>
+<h3 id="web-component-attributes">Web Component Attributes</h3>
 
 <p>Most applications using the MarkupEditor will require you to specify attributes on the &lt;markup-editor&gt; element. Like all HTML element attributes, values are always strings.</p>
 
@@ -208,9 +208,9 @@ Server listening at http://localhost:3000</code></pre>
 
 <p><img src="4ccedc98-37ba-454a-b247-eeb4a92b9729.png" width="434" height="280"></p>
 
-<p>Here is the <code>demo.html</code> contents opened for editing in Chrome. What you see above shows how <code>muedit</code> uses the <code>prepend</code> attribute to prepend a custom FileToolbar at the front of the standard toolbar. The FileToolbar lets you start over with an empty document, select a local HTML file to load, or to copy the HTML contents of the document you’re editing into the clipboard so you can paste it somewhere else. It also uses the <code>userstyle</code> attribute to set up a “toast” to let you know that the HTML copy worked. Take a look at <code>bin/muedit.js</code> and the <code>filetoolbar.js</code> and <code>filetoolbar.css</code> code that is supplied for more detail. </p>
+<p>Here is the <code>demo.html</code> contents opened for editing in Chrome. What you see above shows how <code>muedit</code> uses the <code>prepend</code> attribute to prepend a custom FileToolbar at the front of the standard toolbar. The FileToolbar lets you start over with an empty document, select a local HTML file to load, or to copy the HTML contents of the document you’re editing into the clipboard so you can paste it somewhere else. It also uses the <code>userstyle</code> attribute to set up a “toast” to let you know that the HTML copy worked. Take a look at <code>bin/muedit.js</code> and the <code>filetoolbar.js</code> and <code>filetoolbar.css</code> code that is supplied for more detail.</p>
 
-<p>Because <code>muedit</code> is running in the browser using Express, there is still not an easy way to save the file you’re editing.  For proper a proper native application WYSIWYG editing experience, you can use the <a href="https://github.com/stevengharris/markupeditor-desktop">markupeditor-desktop</a> project. The desktop app was used to compose and edit all of the content you’re reading here.</p>
+<p>Because <code>muedit</code> is running in the browser using Express, there is still not an easy way to save the file you’re editing. For proper a proper native application WYSIWYG editing experience, you can use the <a href="https://github.com/stevengharris/markupeditor-desktop">markupeditor-desktop</a> project. The desktop app was used to compose and edit all of the content you’re reading here.</p>
 
 <p>The <code>muedit</code> script is also identified as the binary for the <code>markupeditor</code> project, which means you can execute it using <code>npx</code> by identifying the project along with the file to open and a port to use:</p>
 
@@ -232,9 +232,9 @@ Server listening at http://localhost:8000</code></pre>
 
 <p>In the first case, you will typically use a <code>userscript</code> to customize the MarkupEditor using one of the <a href="#configuration-classes">configuration classes</a>. In the second case, you sometimes need to interact with the MarkupEditor from within the page that uses the &lt;markup-editor&gt; element. For example, you might have a “Save” button on your HTML page that needs to get the HTML contents from the editor before saving.</p>
 
-<p>You can use <code>MU</code> to get and set the configuration of the MarkupEditor and to specify how the editor communicates with your application environment. <code>MU</code> also provides programmatic access to all of the editing functionality that is made visible in the toolbar. This may be most useful if you have built your own toolbar, and is in fact what happens in the iOS Swift usage of the MarkupEditor. </p>
+<p>You can use <code>MU</code> to get and set the configuration of the MarkupEditor and to specify how the editor communicates with your application environment. <code>MU</code> also provides programmatic access to all of the editing functionality that is made visible in the toolbar. This may be most useful if you have built your own toolbar, and is in fact what happens in the iOS Swift usage of the MarkupEditor.</p>
 
-<p>See the MarkupEditor API Reference for full documentation.</p>
+<p>See the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a> documentation for more information.</p>
 
 <h4>Getting and Setting HTML Contents</h4>
 
@@ -340,7 +340,7 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <p>Here is the customized toolbar showing up in Firefox. Note that the undo/redo buttons show and the table menu button is missing. The link button hotkey is also set to <code>Ctrl-L</code>.</p>
 
-<p>Let’s take a closer look at each config class. See the MarkupEditor API Reference for full documentation.</p>
+<p>Let’s take a closer look at each config class. See the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a> for full documentation.</p>
 
 <h3 id="toolbarconfig">ToolbarConfig</h3>
 
@@ -709,7 +709,7 @@ contextBridge.exposeInMainWorld('markupAPI', {
 
 <p>The primary function of an HtmlTest is to define the <code>description</code>, <code>startHtml</code>, <code>endHtml</code>, and the <code>action</code> that will be applied to it. For testing purposes, the <code>startHtml</code> and <code>endHtml</code> mark the selection using a single <code>sel</code> character (by default, a vertical bar: |). We can set the selection in the document based on <code>startHtml</code>, and we can ensure that the selection matches <code>endHtml</code> after applying the <code>action</code>. By default, <code>undo</code> and <code>redo</code> are also run after applying the <code>action</code>, with the test making sure results match <code>startHtml</code> and <code>endHtml</code> respectively. (There are some exceptional tests where <code>undoHtml</code> is defined separately from <code>startHtml</code>.) You can skip a test using <code>skipTest</code>, which will result in the test showing as “passed”, but the description will be prepended with “SKIPPED…” to make it visible. There are also flags to skip setting the initial HTML (<code>skipSet</code>) and undo/redo (<code>skipUndoRedo</code>) if needed.</p>
 
-<p>The <code>action</code> and a single optional <code>arg</code> are translated into a JavaScript function using the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/Function">Function constructor</a>. The MarkupEditor API can be accessed using <code>MU</code> in your action string.</p>
+<p>The <code>action</code> and a single optional <code>arg</code> are translated into a JavaScript function using the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/Function">Function constructor</a>. The <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a> can be accessed using <code>MU</code> in your action string.</p>
 
 <h3 id="running-tests">Running Tests</h3>
 
@@ -888,7 +888,7 @@ webviewPanel.webview.onDidReceiveMessage((message) =&gt; {
 
 <p>is invoked from within a script as <code>MU.toggleBold()</code>. Similarly, when invoked from, say, Electron, you would use <code>evaluateJavaScript</code> to access the same function.</p>
 
-<p>Note that the exported functions in <code>markup.js</code> do not comprise the MarkupEditor API. The exports in <code>markupeditor.js</code> define the MarkupEditor API.</p>
+<p>Note that the exported functions in <code>markup.js</code> do not comprise the MarkupEditor API. The exports in <code>markupeditor.js</code> define the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>.</p>
 
 <p>Included in <code>markup.js</code> are two ProseMirror NodeViews: <code>ImageView</code> and <code>DivView</code>. NodeViews provide special handling when rendering a ProseMirror Node. For example, the <code>ImageView</code> lets us handle image resizing in the MarkupEditor using a combination of CSS styling of resize handles and the logic in the <code>ResizableImage</code> class defined in <code>markup.js</code>.</p>
 
