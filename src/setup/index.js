@@ -117,6 +117,7 @@ const imagePlugin = new Plugin({
 /**
  * Insert an array of MenuItems or a single MenuItem at the front of the toolbar.
  * 
+ * @private
  * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function prependToolbar(menuItems) {
@@ -127,6 +128,7 @@ export function prependToolbar(menuItems) {
 /**
  * Append an array of MenuItems or a single MenuItem at the end of the toolbar
  * 
+ * @private
  * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function appendToolbar(menuItems) {

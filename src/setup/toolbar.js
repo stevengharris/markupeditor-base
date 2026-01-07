@@ -5,6 +5,8 @@ import {renderGrouped, renderGroupedFit, separator} from "./menuitems"
 
 /**
  * The instance of ToolbarView in the editor.
+ * 
+ * @private
  */
 export let toolbarView;
 

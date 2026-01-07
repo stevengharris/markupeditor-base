@@ -47,13 +47,55 @@ function getIcon(root, icon) {
 
 /**
  * An icon or label that, when clicked, executes a command.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
  */
 export class MenuItem {
 
   /**
-   * Create a menu item.
+   * Create a menu item. The following items are supported in the MenuItem spec:
    * 
-   * @param {*} spec The spec used to create this item.
+   * * The function to execute when the menu item is activated.
+   * 
+   *    ```run: (state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView, event: Event) => void```
+   * 
+   * * Optional function that is used to determine whether the item is appropriate at the moment. Deselected items will be hidden.
+   * 
+   *    ```select?: (state: EditorState) => boolean```
+   * 
+   * * Function that is used to determine if the item is enabled. If given and returning false, the item will be given a disabled styling.
+   * 
+   *    ```enable?: (state: EditorState) => boolean```
+   * 
+   * * A predicate function to determine whether the item is 'active' (for example, the item for toggling the strong mark might be active then the cursor is in strong text).
+   * 
+   *    ```active?: (state: EditorState) => boolean```
+   * 
+   * * A function that renders the item. You must provide either this, [`icon`](#menu.MenuItemSpec.icon), or [`label`](#MenuItemSpec.label).
+   * 
+   *    ```render?: (view: EditorView) => HTMLElement```
+   * 
+   * * Describes an icon to show for this item using SVG.
+   * 
+   *    ```icon?: string```
+   * 
+   * * Makes the item show up as a text label. Mostly useful for items wrapped in a [drop-down](#menu.Dropdown) or similar menu. The object should have a `label` property providing the text to display.
+   * 
+   *    ```label?: string```
+   * 
+   * * Defines DOM title (mouseover) text for the item.
+   * 
+   *    ```title?: string | ((state: EditorState) => string)```
+   * 
+   * * Optionally adds a CSS class to the item's DOM representation.
+   * 
+   *    ```class?: string```
+   * 
+   * * Optionally adds a string of inline CSS to the item's DOM representation.
+   * 
+   *    ```css?: string```
+   * 
+   * @param {object} spec The spec used to create this item. See list above.
   */
   constructor(spec) {
     this.prefix = prefix + "-menuitem"
@@ -61,10 +103,11 @@ export class MenuItem {
   }
 
   /**
-  Renders the icon according to its [display
-  spec](https://prosemirror.net/docs/ref/#menu.MenuItemSpec.display), and adds an event handler which
-  executes the command when the representation is clicked.
-  */
+   * Renders the item according to the `spec`, and adds an event handler which 
+   * executes the command when the representation is clicked.
+   * 
+   * @param {EditorView}  view  The view to render this MenuItem in.
+   */
   render(view) {
     let spec = this.spec;
     let prefix = this.prefix;
@@ -115,23 +158,39 @@ export class MenuItem {
 }
 
 /**
-A drop-down menu, displayed as a label with a downwards-pointing
-triangle to the right of it.
-*/
+ * A drop-down menu, displayed as a label with a downwards-pointing triangle to the right of it.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
+ */
 export class Dropdown {
 
   /**
-  Create a dropdown wrapping the elements.
-  */
+   * Create a dropdown wrapping the elements.
+   * The following options are available:
+   * 
+   * | Type                               | Property      | Description |
+   * |:--                                 |:--            |:-- |
+   * | `boolean`                        | `indicator`   | Whether an indicator triangle should be shown, default `true`. |
+   * | `Function(EditorState): string`  | `titleUpdate` | Function to execute that returns a label based on `state`. |
+   * | `Function(): boolean`            | `enable`      | Function to return true if MenuItem is enabled, else false |
+   * | `string`                         | `label`       | The string to show in the MenuItem |
+   * | `KeymapConfig`                   | `keymap`      | The KeymapConfig to use for the MenuItem |
+   * | `Command`                        | `run`         | The Command to run when the item is pressed |
+   * | `Function(): boolean`            | `active`      | Function to return true if MenuItem is active, else false. |
+   * | `object`                         | `attrs`       | Node attrs that can be used within the `enable` or `active` functions. |
+   */
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu";
     this.options = options;
     if (this.options.indicator == undefined) this.options.indicator = true;
     this.content = Array.isArray(content) ? content : [content];
   }
-  /**
-  Render the dropdown menu and sub-items.
-  */
+
+  /** 
+   * Render the dropdown menu and sub-items.
+   * 
+   * @param {EditorView} view The EditorView to render this DropDown in.
+   */
   render(view) {
     let options = this.options;
     let content = renderDropdownItems(this.content, view);
@@ -213,15 +272,28 @@ export class Dropdown {
 }
 
 /**
-Represents a submenu wrapping a group of elements that start
-hidden and expand to the right when hovered over or tapped.
-*/
+ * Represents a submenu wrapping a group of elements that start
+ * hidden and expand to the right when hovered over or tapped.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
+ */
 export class DropdownSubmenu {
 
-  /**
-  Creates a submenu for the given group of menu elements. The
-  following options are recognized:
-  */
+  /** 
+   * Creates a submenu for the given group of menu elements. The following options are available:
+   * 
+   * | Type                   | Property  | Description |
+   * |:--                     |:--        |:-- |
+   * | `Function(): boolean`  | `enable`  | Function to return true if MenuItem is enabled, else false.
+   * | `string`               | `label`   | The string to show in the MenuItem
+   * | `KeymapConfig`         | `keymap`  | The KeymapConfig to use for the MenuItem
+   * | `Command`              | `run`     | The Command to run when the item is pressed
+   * | `Function(): boolean`  | `active`  | Function to return true if MenuItem is active, else false.
+   * | `object`               | `attrs`   | Node attrs that can be used within the `enable` or `active` functions.
+   * 
+   * @param {Array<MenuItem | Array<MenuItem>>} content The submenu's contents in the form of MenuItems.
+   * @param {object}                            options See list above.
+   */
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu"
     this.options = options;
@@ -308,6 +380,8 @@ export class ParagraphStyleItem {
  * with opening, closing, and positioning the dialog so it stays in view as much as possible.
  * Each of the subclasses defines its `dialogWidth` and `dialogHeight` and deals with its 
  * own content/layout.
+ * 
+ * @private
  */
 class DialogItem {
 
@@ -438,6 +512,7 @@ class DialogItem {
 
 /**
  * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
+ * 
  * @private
  */
 export class LinkItem extends DialogItem {
@@ -1430,9 +1505,9 @@ export class MoreItem {
  * 
  * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
  * what `cmd(state)` returns unless otherwise specified in `options`.
- * @param {Command}     cmd 
- * @param {*} options   The spec for the MenuItem
- * @returns {MenuItem}
+ * @param {Command}     cmd   A ProseMirror [Command](https://prosemirror.net/docs/ref/#state.Command)
+ * @param {object} options   The spec for the MenuItem
+ * @returns {MenuItem}        Similar to prosemirror-menu, but [MarkupEditor-modified](MenuItem.html)
  */
 export function cmdItem(cmd, options) {
   let passedOptions = {

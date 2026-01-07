@@ -86,17 +86,14 @@ import {
 import {
     registerEditor,
     unregisterEditor,
-    activeEditor,
     registerDelegate,
     getDelegate,
     registerConfig,
-    activeConfig,
     getConfig,
     registerMessageHandler,
     getMessageHandler,
     registerAugmentation,
-    getAugmentation,
-    setActiveView,
+    activeView,
 } from "./registry.js"
 import {
     MenuItem,
@@ -107,13 +104,10 @@ import {
     renderDropdownItems
 } from "./setup/menuitems.js"
 import {
-    prependToolbar,
-    appendToolbar,
     toggleSearch,
     openLinkDialog,
     openImageDialog
 } from "./setup/index.js"
-import {toolbarView} from "./setup/toolbar.js"
 
 /**
  * The MarkupEditor holds the properly set-up EditorView and any additional configuration.
@@ -176,7 +170,7 @@ export class MarkupEditor {
             this.config.behavior = BehaviorConfig.standard()
         }
 
-        // If `delegate` is supplied as a string, then dereference it to get the class from muRegistry.
+        // If `delegate` is supplied as a string, then dereference it to get the class from the Registry.
         let delegate = this.config.delegate
         if (delegate && (typeof delegate === 'string')) {
             this.config.delegate = getDelegate(delegate)
@@ -260,7 +254,7 @@ export class MarkupEditor {
         // there is more than one; otherwise is `editor` or null)
         this.selectedID = null
 
-        // Finally, track the editor in the muRegistry.
+        // Finally, track the editor in the Registry.
         registerEditor(this)
     }
 
@@ -291,7 +285,7 @@ export class MarkupEditor {
     }
 
     /**
-     * Destroy the EditorView we are holding onto and remove it from the `muRegistry`.
+     * Destroy the EditorView we are holding onto and remove it from the `Registry`.
      */
     destroy() {
         unregisterEditor(this)
@@ -303,6 +297,7 @@ export class MarkupEditor {
  * The public MarkupEditor API callable as "MU.<function name>"
  */
 export const MU = {
+    activeView,
     addButton,
     addCol,
     addDiv,
@@ -319,8 +314,8 @@ export const MU = {
     doUndo,
     emptyDocument,
     focus,
-    focused,
     focusOn,
+    focused,
     getDataImages,
     getHTML,
     getHeight,
@@ -359,10 +354,10 @@ export const MU = {
     toggleCode,
     toggleItalic,
     toggleListItem,
-    toggleUnderline,
     toggleStrike,
     toggleSubscript,
     toggleSuperscript,
+    toggleUnderline,
     // Helpers to create custom toolbar items
     MenuItem,
     Dropdown,
@@ -370,23 +365,14 @@ export const MU = {
     cmdItem,
     renderGrouped,
     renderDropdownItems,
-    toolbarView,
     toggleSearch,
-    // Helpers to add items to the toolbar
-    prependToolbar,
-    appendToolbar,
     // Config access
     ToolbarConfig,
     KeymapConfig,
     BehaviorConfig,
-    // muRegistry access
-    activeEditor,
-    registerDelegate,
-    registerConfig,
-    registerMessageHandler,
-    getMessageHandler,
-    activeConfig,
+    // Registry access
     registerAugmentation,
-    getAugmentation,
-    setActiveView,
+    registerConfig,
+    registerDelegate,
+    registerMessageHandler,
 }

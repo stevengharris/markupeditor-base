@@ -2,6 +2,8 @@ import mirrorStyle from "../styles/mirror.css" with { type: "css" }
 import markupStyle from "../styles/markup.css" with { type: "css" }
 import toolbarStyle from "../styles/toolbar.css" with { type: "css" }
 import { MarkupEditor } from "./markupeditor.js"
+import { getAugmentation } from "./registry.js"
+import { appendToolbar, prependToolbar } from "./setup/index.js"
 import { MU } from "./markupeditor.js"
 export { MU }
 
@@ -179,10 +181,10 @@ class MarkupEditorElement extends HTMLElement {
     this.editor = new MarkupEditor(this.editorContainer, config)
 
     // Prepend and/or append any augmentations
-    const prependItems = MU.getAugmentation(config.prepend)?.menuItems
-    if (prependItems) MU.prependToolbar(prependItems)
-    const appendItems = MU.getAugmentation(config.append)?.menuItems
-    if (appendItems) MU.appendToolbar(appendItems)
+    const prependItems = getAugmentation(config.prepend)?.menuItems
+    if (prependItems) prependToolbar(prependItems)
+    const appendItems = getAugmentation(config.append)?.menuItems
+    if (appendItems) appendToolbar(appendItems)
 
     // Expose the MU API as a property of this element. In a well-behaved JavaScript 
     // modules world, we would not need to do this, but when using the web component 
