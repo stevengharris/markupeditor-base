@@ -3,6 +3,9 @@ import {Plugin} from "prosemirror-state"
 import {prefix} from "../domaccess";
 import {renderGrouped, renderGroupedFit, separator} from "./menuitems"
 
+/**
+ * The instance of ToolbarView in the editor.
+ */
 export let toolbarView;
 
 export function toolbar(content) {
@@ -49,7 +52,7 @@ class ToolbarView {
 
   /**
    * Insert an array of MenuItems at the front of the toolbar
-   * @param {[MenuItem]} items 
+   * @param {Array<MenuItem>} items 
    */
   prepend(items) {
     this.content = [items].concat(this.content)
@@ -58,7 +61,7 @@ class ToolbarView {
 
   /**
    * Add an array of MenuItems at the end of the toolbar
-   * @param {[MenuItem]} items 
+   * @param {Array<MenuItem>} items 
    */
   append(items) {
     this.content = this.content.concat([items])

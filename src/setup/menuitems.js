@@ -46,8 +46,8 @@ function getIcon(root, icon) {
 }
 
 /**
-An icon or label that, when clicked, executes a command.
-*/
+ * An icon or label that, when clicked, executes a command.
+ */
 export class MenuItem {
 
   /**
@@ -265,6 +265,7 @@ export class DropdownSubmenu {
   }
 }
 
+/** @private */
 export class ParagraphStyleItem {
 
   constructor(nodeType, style, options) {
@@ -321,7 +322,7 @@ class DialogItem {
      * Command to open the link dialog and show it modally.
      *
      * @param {EditorState} state 
-     * @param {fn(tr: Transaction)} dispatch 
+     * @param {Function(Transaction)} dispatch 
      * @param {EditorView} view 
      */
     openDialog(state, dispatch, view) {
@@ -437,6 +438,7 @@ class DialogItem {
 
 /**
  * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
+ * @private
  */
 export class LinkItem extends DialogItem {
 
@@ -705,7 +707,7 @@ export class LinkItem extends DialogItem {
    * Insert the link provided in the hrefArea if it's valid, deleting any existing link first. Close if it worked.
    * 
    * @param {EditorState} state 
-   * @param {fn(tr: Transaction)} dispatch 
+   * @param {Function(Transaction)} dispatch 
    * @param {EditorView} view 
    */
   insertLink(state, dispatch, view) {
@@ -737,7 +739,7 @@ export class LinkItem extends DialogItem {
    * Delete the link at the selection. Close if it worked.
    * 
    * @param {EditorState} state 
-   * @param {fn(tr: Transaction)} dispatch 
+   * @param {Function(Transaction)} dispatch 
    * @param {EditorView} view 
    */
   deleteLink(state, dispatch, view) {
@@ -751,6 +753,8 @@ export class LinkItem extends DialogItem {
 /**
  * Represents the image MenuItem in the toolbar, which opens the image dialog and maintains its state.
  * Requires commands={getImageAttributes, insertImageCommand, modifyImageCommand, getSelectionRect}
+ * 
+ * @private
  */
 export class ImageItem extends DialogItem {
 
@@ -1016,7 +1020,7 @@ export class ImageItem extends DialogItem {
    * Note that the image that is saved might be not exist or be properly formed.
    * 
    * @param {EditorState} state 
-   * @param {fn(tr: Transaction)} dispatch 
+   * @param {Function(Transaction)} dispatch 
    * @param {EditorView} view 
    */
   insertImage(state, dispatch, view) {
@@ -1032,6 +1036,8 @@ export class ImageItem extends DialogItem {
 /**
  * A MenuItem that inserts a table of size rows/cols and invokes `onMouseover` when 
  * the mouse is over it to communicate the size of table it will create when selected.
+ * 
+ * @private
  */
 export class TableInsertItem {
 
@@ -1069,6 +1075,8 @@ export class TableInsertItem {
   will insert a table of a specific size. The items are bounded divs in a css grid 
   layout that highlight to show the size of the table being created, so we end up with 
   a compact way to display 24 TableInsertItems.
+
+  @private
   */
 export class TableCreateSubmenu {
   constructor(options = {}) {
@@ -1159,6 +1167,8 @@ export class TableCreateSubmenu {
 
 /**
  * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
+ * 
+ * @private
  */
 export class SearchItem {
 
@@ -1190,7 +1200,7 @@ export class SearchItem {
    * active `muId` rather than depend on it having been set from a focus event.
    * 
    * @param {EditorState} state 
-   * @param {fn(tr: Transaction)} dispatch 
+   * @param {Function(Transaction)} dispatch 
    * @param {EditorView} view 
    */
   toggleSearch(state, dispatch, view) {
@@ -1358,7 +1368,11 @@ export class SearchItem {
 
 }
 
-/** A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar */
+/** 
+ * A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar.
+ * 
+ * @private
+ */
 export class MoreItem {
 
   constructor(items) {
@@ -1432,13 +1446,19 @@ export function cmdItem(cmd, options) {
   return new MenuItem(passedOptions)
 }
 
-/** Return a span for a separator between groups of MenuItems */
+/** 
+ * Return a span for a separator between groups of MenuItems
+ * 
+ * @private
+ *  
+ */
 export function separator() {
     return crel("span", { class: prefix + "-menuseparator" });
 }
 
 /**
  * Return whether the selection in state is within a mark of type `markType`.
+ * @private
  * @param {EditorState} state 
  * @param {MarkType} type 
  * @returns {boolean} True if the selection is within a mark of type `markType`
@@ -1451,8 +1471,9 @@ export function markActive(state, type) {
 
 /**
  * Return a string intended for the user to see showing the first key mapping for `itemName`.
+ * @private
  * @param {string} itemName           The name of the item in the keymap
- * @param {[string : string]} keymap  The mapping between item names and hotkeys
+ * @param {object} keymap             The mapping between string item names and string hotkeys
  * @returns string
  */
 export function keyString(itemName, keymap) {
@@ -1473,6 +1494,13 @@ export function baseKeyString(itemName, keymap) {
   return keyString
 }
 
+/**
+ * Render the content in view as a group of MenuItems.
+ * 
+ * @param {EditorView} view The view to render content in
+ * @param {Array<MenuItem>} content The menuitems to be rendered
+ * @returns {object}  Object with the DOM containing content and an update method to display it.
+ */
 export function renderGrouped(view, content) {
     let result = document.createDocumentFragment();
     let updates = [], separators = [];
@@ -1513,10 +1541,11 @@ export function renderGrouped(view, content) {
  * face it, if you need to wrap a toolbar into more than two lines, you need to think
  * through your life choices.
  * 
+ * @private
  * @param {EditorView} view 
- * @param {[MenuItem | [MenuItem]]} content 
+ * @param {Array<MenuItem> | Array<Array<MenuItem>>} content 
  * @param {number}  wrapAtIndex             The index in  content` to wrap in another toolbar
- * @returns 
+ * @returns {object}  An object containing the DOM for the content and an update function to display it
  */
 export function renderGroupedFit(view, content, wrapAtIndex) {
   let result = document.createDocumentFragment();
@@ -1566,6 +1595,13 @@ export function renderGroupedFit(view, content, wrapAtIndex) {
   return { dom: result, update };
 }
 
+/**
+ * Render the items in a Dropdown in the view.
+ * 
+ * @param {Array<MenuItem>} items The content to be rendered in a Dropdown
+ * @param {EditorView} view       The EditorView to render the items in 
+ * @returns {object}  An object containing the DOM for the Dropdown and an update function to display it
+ */
 export function renderDropdownItems(items, view) {
     let rendered = [], updates = [];
     for (let i = 0; i < items.length; i++) {

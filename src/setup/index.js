@@ -18,6 +18,8 @@ import {activeConfig, selectedID} from "../registry.js"
 /**
  * The tablePlugin handles decorations that add CSS styling 
  * for table borders.
+ * 
+ * @private
  */
 const tablePlugin = new Plugin({
   state: {
@@ -84,6 +86,8 @@ const searchModePlugin  = new Plugin({
  * 
  * The Map is keyed by the src for the image. If the src is duplicated in the document, we only 
  * get one 'addedImage' notification.
+ * 
+ * @private
  */
 const imagePlugin = new Plugin({
   state: {
@@ -111,8 +115,9 @@ const imagePlugin = new Plugin({
 })
 
 /**
- * Insert an array of MenuItems or a single MenuItem at the front of the toolbar
- * @param {[MenuItem] | MenuItem} menuItems 
+ * Insert an array of MenuItems or a single MenuItem at the front of the toolbar.
+ * 
+ * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function prependToolbar(menuItems) {
   let items = Array.isArray(menuItems) ? menuItems : [menuItems];
@@ -121,13 +126,17 @@ export function prependToolbar(menuItems) {
 
 /**
  * Append an array of MenuItems or a single MenuItem at the end of the toolbar
- * @param {[MenuItem] | MenuItem} menuItems 
+ * 
+ * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function appendToolbar(menuItems) {
   let items = Array.isArray(menuItems) ? menuItems : [menuItems];
   toolbarView.append(items)
 }
 
+/**
+ * Toggle the search bar off and on.
+ */
 export function toggleSearch() {
   let searchItem = new SearchItem(activeConfig())
   // TODO: How to not rely on toolbarView being present
@@ -135,12 +144,18 @@ export function toggleSearch() {
   searchItem.toggleSearch(view.state, view.dispatch, view)
 }
 
+/**
+ * Open the default dialog to insert/edit links.
+ */
 export function openLinkDialog() {
   let linkItem = new LinkItem(activeConfig())
   let view = toolbarView.editorView
   linkItem.openDialog(view.state, view.dispatch, view)
 }
 
+/**
+ * Open the default dialog to insert/edit images.
+ */
 export function openImageDialog() {
   let imageItem = new ImageItem(activeConfig())
   let view = toolbarView.editorView
@@ -149,8 +164,9 @@ export function openImageDialog() {
 
 /**
  * Return an array of Plugins used for the MarkupEditor
+ * @private
  * @param {Schema} schema The schema used for the MarkupEditor
- * @returns 
+ * @returns {Array<Plugin>}
  */
 export function markupSetup(config, schema) {
   setPrefix('Markup')
