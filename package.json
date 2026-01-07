@@ -49,7 +49,9 @@
     "@rollup/plugin-node-resolve": "^16.0.0",
     "eslint": "^9.35.0",
     "express": "^5.1.0",
+    "jsdoc": "^4.0.5",
     "jsdom": "^27.0.1",
+    "modern-jsdoc-template": "^1.0.0",
     "rollup": "^4.31.0",
     "rollup-plugin-import-css": "4.0.1",
     "vitest": "^3.2.4"
@@ -60,7 +62,7 @@
     "test": "vitest run ./test/*.js",
     "pretest": "npm run build",
     "docs": "node ./docs/index.js",
-    "predocs": "sh predocs.sh",
+    "predocs": "sh predocs.sh && jsdoc -c jsdoc.json",
     "analyze": "wca analyze ./dist/markup-editor.js --outFile ./dist/custom-elements.json"
   },
   "customElements": "custom-elements.json"

@@ -1,0 +1,30 @@
+{
+    "opts": {
+        "destination": "./docs/api",
+        "readme": "./docs/resources/apireadme.md",
+        "template": "node_modules/modern-jsdoc-template/default"
+    },
+    "templates": {
+        "cleverLinks": true,
+        "default": {
+            "title": "MarkupEditor API",
+            "outputSourceFiles": false,
+            "layoutFile": "./docs/resources/apilayout.tmpl",
+            "includeDate": false
+        }
+    },
+    "plugins": [
+        "plugins/markdown"
+    ],
+    "source": {
+        "include": [
+            "./src/markup.js",
+            "./src/setup/menuitems.js",
+            "./src/setup/toolbar.js",
+            "./src/setup/index.js",
+            "./src/config/toolbarconfig.js",
+            "./src/config/keymapconfig.js",
+            "./src/config/behaviorconfig.js"
+        ]
+    }
+}

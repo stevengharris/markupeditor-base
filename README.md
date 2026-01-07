@@ -111,13 +111,19 @@ Server listening at http://localhost:3000
 Then open http://localhost:3000 in your browser. The port can be passed to node as `--port <number>`. Alternatively, you 
 can run node directly as `node ./bin/muedit.js docs/demo/demo.html`.
 
-You can also use the web site docs to test:
+## Local Documentation
+
+You can also set up the web site docs to test and view locally. The `npm run docs` command copies the `markup-editor.js` 
+file and css (which may have changed locally as you develop) to the proper position in the `docs` directory and then runs
+`jsdoc` to produce the API documentation. The API documentation contents and options are defined in `jsdoc.json` and
+use a customized template, `apilayout.tmpl`. The `apireadme.md` in the `docs/resources` directory is displayed as the 
+contents of the "home" page. 
 
 ```
 $ npm run docs
 
 > markupeditor@0.9.0 predocs
-> sh predocs.sh
+> sh predocs.sh && jsdoc -c jsdoc.json
 
 Updating ./docs dependencies...
 cp -f ./dist/markup-editor.js ./docs/src/markup-editor.js
@@ -133,6 +139,9 @@ Server listening at http://localhost:3000
 ```
 
 What http://localhost:3000 shows now is the contents hosted at https://stevengharris.github.io/markupeditor-base.
+
+Since the project web site is hosted on GitHub Pages, this process makes it simple to keep the docs up-to-date and 
+test the web site locally.
 
 ## Resources
 
