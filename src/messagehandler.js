@@ -3,7 +3,8 @@ import { getHeight, setHTML } from "./markup.js";
 /**
  * The MessageHandler receives `postMessage` from the MarkupEditor as the document state changes.
  * 
- * You can set the MessageHandler used by the MarkupEditor using `MU.setMessageHandler`. This is how 
+ * You can set the MessageHandler used by the MarkupEditor using `registerMessageHandler` and
+ * then identifying it by name as a <markup-editor> element attribute. This is how 
  * the MarkupEditor is embedded in Swift and VSCode. If you don't set your own MessageHandler, then 
  * this is the default version that will be used. These other MessageHandlers will typically use the 
  * same MarkupDelegate pattern to route document state notifications to an app-specific delegate.
