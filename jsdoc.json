@@ -24,7 +24,8 @@
             "./src/setup/index.js",
             "./src/config/toolbarconfig.js",
             "./src/config/keymapconfig.js",
-            "./src/config/behaviorconfig.js"
+            "./src/config/behaviorconfig.js",
+            "./src/registry.js"
         ]
     }
 }
