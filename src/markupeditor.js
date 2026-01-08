@@ -84,29 +84,30 @@ import {
     toggleSuperscript,
 } from "./markup.js"
 import {
-    registerEditor,
-    unregisterEditor,
-    registerDelegate,
-    getDelegate,
-    registerConfig,
+    activeConfig,
+    activeView,
     getConfig,
-    registerMessageHandler,
+    getDelegate,
     getMessageHandler,
     registerAugmentation,
-    activeView,
+    registerConfig,
+    registerDelegate,
+    registerEditor,
+    registerMessageHandler,
+    unregisterEditor,
 } from "./registry.js"
 import {
-    MenuItem,
+    cmdItem,
     Dropdown,
     DropdownSubmenu,
-    cmdItem,
+    MenuItem,
+    renderDropdownItems,
     renderGrouped,
-    renderDropdownItems
 } from "./setup/menuitems.js"
 import {
-    toggleSearch,
     openLinkDialog,
-    openImageDialog
+    openImageDialog,
+    toggleSearch,
 } from "./setup/index.js"
 
 /**
@@ -298,6 +299,7 @@ export class MarkupEditor {
  * The object whose methods comprise the MarkupEditor API.
  */
 export const MU = {
+    activeConfig,
     activeView,
     addButton,
     addCol,
