@@ -63,8 +63,7 @@
     "pretest": "npm run build",
     "docs": "node ./docs/index.js",
     "predocs": "sh predocs.sh && jsdoc -c jsdoc.json",
-    "analyze": "cem analyze --config custom-elements-manifest.config.js",
-    "publish": "npm run build && npm run docs && npm run analyze && npm publish --access public"
+    "analyze": "cem analyze --config custom-elements-manifest.config.js"
   },
   "customElements": "dist/custom-elements.json"
 }
