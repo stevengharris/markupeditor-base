@@ -18,6 +18,8 @@
     ],
     "source": {
         "include": [
+            "./src/main.js",
+            "./src/markupeditor.js",
             "./src/markup.js",
             "./src/setup/menuitems.js",
             "./src/setup/toolbar.js",

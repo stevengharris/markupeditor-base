@@ -63,7 +63,7 @@
     "pretest": "npm run build",
     "docs": "node ./docs/index.js",
     "predocs": "sh predocs.sh && jsdoc -c jsdoc.json",
-    "analyze": "wca analyze ./dist/markup-editor.js --outFile ./dist/custom-elements.json"
+    "analyze": "cem analyze --config custom-elements-manifest.config.js"
   },
-  "customElements": "custom-elements.json"
+  "customElements": "dist/custom-elements.json"
 }
