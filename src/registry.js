@@ -7,7 +7,7 @@
  * 
  * The registry is a singleton but is only accessed via the methods exported 
  * here.
- * @private
+ * @ignore
  */
 class Registry {
     constructor() {
@@ -227,7 +227,7 @@ class Registry {
  * Define the global registry instance and export methods that provide access to it. 
  * Only the register* methods are part of the public MarkupEditor API.
  * 
- * @private
+ * @ignore
  */
 const _registry = new Registry()
 

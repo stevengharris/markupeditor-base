@@ -19,7 +19,7 @@ import {activeConfig, selectedID} from "../registry.js"
  * The tablePlugin handles decorations that add CSS styling 
  * for table borders.
  * 
- * @private
+ * @ignore
  */
 const tablePlugin = new Plugin({
   state: {
@@ -87,7 +87,7 @@ const searchModePlugin  = new Plugin({
  * The Map is keyed by the src for the image. If the src is duplicated in the document, we only 
  * get one 'addedImage' notification.
  * 
- * @private
+ * @ignore
  */
 const imagePlugin = new Plugin({
   state: {
@@ -117,7 +117,7 @@ const imagePlugin = new Plugin({
 /**
  * Insert an array of MenuItems or a single MenuItem at the front of the toolbar.
  * 
- * @private
+ * @ignore
  * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function prependToolbar(menuItems) {
@@ -128,7 +128,7 @@ export function prependToolbar(menuItems) {
 /**
  * Append an array of MenuItems or a single MenuItem at the end of the toolbar
  * 
- * @private
+ * @ignore
  * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function appendToolbar(menuItems) {
@@ -166,7 +166,7 @@ export function openImageDialog() {
 
 /**
  * Return an array of Plugins used for the MarkupEditor
- * @private
+ * @ignore
  * @param {Schema} schema The schema used for the MarkupEditor
  * @returns {Array<Plugin>}
  */

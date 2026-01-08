@@ -45,7 +45,7 @@ export class BehaviorConfig {
      * 
      * If you add or modify these options, include those changes in the class doc above.
      * 
-     * @private
+     * @ignore
      * @returns {object} A JavaScript object with all options enabled.
      */
     static _all() {

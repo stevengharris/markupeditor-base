@@ -142,7 +142,7 @@ export class ToolbarConfig {
      * 
      * If you add or modify these options, include those changes in the class doc above.
      * 
-     * @private
+     * @ignore
      * @returns {object} A JavaScript object with all options enabled.
      */
     static _all() {                 // Needs to be a function not property for multiple editors

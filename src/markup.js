@@ -32,7 +32,7 @@ import {
  * Define various arrays of tags used to represent MarkupEditor-specific concepts.
  *
  * For example, "Paragraph Style" is a MarkupEditor concept that doesn't map directly to HTML or CSS.
- * @private
+ * @ignore
  */
 const _formatTags = ['B', 'STRONG', 'I', 'EM', 'U', 'DEL', 'SUB', 'SUP', 'CODE'];       // All possible (nestable) formats
 
@@ -44,7 +44,7 @@ const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', '
  * The searcher is the singleton that handles finding ranges that
  * contain a search string within editor.
  * 
- * @private
+ * @ignore
  */
 export function searchIsActive() { return activeSearcher().isActive }
 
@@ -56,7 +56,7 @@ export function searchIsActive() { return activeSearcher().isActive }
  * The logic for handling Enter is entirely MarkupEditor-specific, so is exported from here but imported in keymap.js.
  * We only need to report stateChanged when not in search mode.
  * 
- * @private
+ * @ignore
  * @returns {boolean}    Value is false if subsequent commands (like splitListItem) should execute;
  *                  else true if execution should stop here (like when search is active)
  */
@@ -76,7 +76,7 @@ export function handleEnter() {
  * The logic for handling Shift-Enter is entirely MarkupEditor-specific, so is exported from here but imported in keymap.js.
  * We only need to report stateChanged when not in search mode.
  * 
- * @private
+ * @ignore
  * @returns {boolean}    Value is false if subsequent commands should execute;
  *                  else true if execution should stop here (like when search is active)
  */
@@ -95,7 +95,7 @@ export function handleShiftEnter() {
  * 
  * Notify about deleted images if one was selected, but always notify state changed and return false.
  * 
- * @private
+ * @ignore
  * @returns {boolean}    Value is false if subsequent commands should execute;
  *                      else true if execution should stop here.
  */
@@ -178,7 +178,7 @@ export function loadUserFiles(scriptFile, cssFile, target=null, nonce=null) {
  * 
  * In VSCode, the `messageHandler` is `vscode`.
  *
- * @private
+ * @ignore
  * @param {string}      message     The message, which might be a JSONified string
  * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
  */
@@ -194,7 +194,7 @@ function _dispatchMuCallback(message, element) {
 
 /**
  * Called to load user script before loading html.
- * @private
+ * @ignore
  */
 function _loadUserScriptFile(file, nonce, callback, target) {
     let scriptTarget = target ?? document.getElementsByTagName('body')[0];
@@ -208,7 +208,7 @@ function _loadUserScriptFile(file, nonce, callback, target) {
 
 /**
  * Called to load user CSS before loading html if userCSSFile has been defined for this MarkupWKWebView
- * @private
+ * @ignore
  */
 function _loadUserCSSFile(file, target) {
     let cssTarget = target ?? document.getElementsByTagName('head')[0];
@@ -281,7 +281,7 @@ export function searchFor(text, direction, activate) {
  * Return the command that will execute search for `text` in `direction when provided with the 
  * view.state, view.dispatch, and view.
  *
- * @private
+ * @ignore
  * @param {string}              text        The string to search for in a case-insensitive manner
  * @param {string}              direction   Search direction, either `forward ` or `backward`.
  * @param {"true" | "false"}    activate    Set to "true" to activate "search mode", where Enter/Shift-Enter = Search forward/backward.
@@ -310,7 +310,7 @@ export function cancelSearch() {
 /**
  * Set whether searches will be case sensitive or not.
  * 
- * @private
+ * @ignore
  * @param {boolean} caseSensitive 
  */
 export function matchCase(caseSensitive) {
@@ -321,7 +321,7 @@ export function matchCase(caseSensitive) {
 /**
  * Return the number of matches in the current search or null if search has not yet been initiated.
  * 
- * @private
+ * @ignore
  * @returns {number | null}
  */
 export function matchCount() {
@@ -332,7 +332,7 @@ export function matchCount() {
  * Return the index of the match in the current search, starting at the first match which began 
  * at the selection point, or null if search has not yet been initiated.
  * 
- * @private
+ * @ignore
  * @returns {number | null}
  */
 export function matchIndex() {
@@ -380,7 +380,7 @@ export function pasteText(html, event) {
  * This equivalent is derived by making all top-level nodes into <P> and removing
  * formatting and links. However, we leave TABLE, UL, and OL alone, so they still
  * come in as tables and lists, but with formatting removed.
- * @private
+ * @ignore
  */
 function _minimalHTML(fragment) {
     // Create a div to hold fragment so that we can getElementsByTagName on it
@@ -395,7 +395,7 @@ function _minimalHTML(fragment) {
 
 /**
  * Replace all styles in the div with 'P'.
- * @private
+ * @ignore
  */
 function _minimalStyle(div) {
     _minimalStyleTags.forEach(tag => {
@@ -415,7 +415,7 @@ function _minimalStyle(div) {
 
 /**
  * Replace all formats in the div with unformatted text
- * @private
+ * @ignore
  */
 function _minimalFormat(div) {
     _formatTags.forEach(tag => {
@@ -436,7 +436,7 @@ function _minimalFormat(div) {
 
 /**
  * Replace all links with their text only
- * @private
+ * @ignore
  */
 function _minimalLink(div) {
     // Reset elements using getElementsByTagName as we go along or the
@@ -479,7 +479,7 @@ export function emptyHTML() {
  * Set the `selectedID` to `id`, a byproduct of clicking or otherwise iteractively
  * changing the selection, triggered by `createSelectionBetween`.
  * 
- * @private
+ * @ignore
  * @param {string} id 
  */
 export function resetSelectedID(id) { 
@@ -568,7 +568,7 @@ export function getHTML(pretty='true', clean='true', divID) {
  * Insert a newline between each top-level element so they are distinct
  * visually and each top-level element is in a contiguous text block vertically.
  *
- * @private
+ * @ignore
  * @returns {string}     A string showing the raw HTML with tags, etc.
  */
 function _allPrettyHTML(fragment) {
@@ -589,7 +589,7 @@ function _allPrettyHTML(fragment) {
  * The inlined parameter forces whether to put a newline at the beginning
  * of the text. By passing it in rather than computing it from node, we
  * can avoid putting a newline in front of the first element in _allPrettyHTML.
- * @private
+ * @ignore
  */
 function _prettyHTML(node, indent, text, inlined) {
     const nodeName = node.nodeName.toLowerCase();
@@ -626,7 +626,7 @@ function _prettyHTML(node, indent, text, inlined) {
 
 /**
  * Return a new string that has all < replaced with &lt; and all > replaced with &gt;
- * @private
+ * @ignore
  */
 function _replaceAngles(textContent) {
     return textContent.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -635,7 +635,7 @@ function _replaceAngles(textContent) {
 /**
  * Return whether node should be inlined during the prettyHTML assembly. An inlined node
  * like <I> in a <P> ends up looking like <P>This is an <I>italic</I> node</P>.
- * @private
+ * @ignore
  */
 function _isInlined(node) {
     return _isTextNode(node) || _isFormatElement(node) || _isLinkNode(node) || _isVoidNode(node)
@@ -646,7 +646,7 @@ function _isInlined(node) {
  * 
  * Used so relative hrefs and srcs work. 
  * If `string` is undefined, then the base element is removed if it exists.
- * @private
+ * @ignore
  */
 function _setBase(string) {
     let base = document.getElementsByTagName('base')[0]
@@ -767,7 +767,7 @@ export function resetSelection() {
 /**
  * Return the node and position of the first editable text; i.e., 
  * a text node inside of a contentEditable div.
- * @private
+ * @ignore
  */
 function _firstEditableTextNode() {
     const view = activeView()
@@ -859,7 +859,7 @@ export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, 
 };
 
 /**
- * @private
+ * @ignore
  * @param {string} buttonGroupJSON A JSON string describing the button group
  * @returns {HTMLDivElement}
  */
@@ -1002,7 +1002,7 @@ export function removeAllDivs() {
  * across the view.state.doc from position `from` to position `to`. 
  * If `from` or `to` are unspecified, they default to the beginning 
  * and end of view.state.doc.
- * @private
+ * @ignore
  * @param {string} id           The attrs.id of the node we are looking for.
  * @param {number} from         The position in the document to search from.
  * @param {number} to           The position in the document to search to.
@@ -1089,7 +1089,7 @@ export function toggleSuperscript() {
  * Although the HTML will contain <STRONG>, <EM>, and <S>, the types
  * passed here are <B>, <I>, and <DEL> for compatibility reasons.
  *
- * @private
+ * @ignore
  * @param {string} type     The *uppercase* type to be toggled at the selection.
  */
 function _toggleFormat(type) {
@@ -1159,7 +1159,7 @@ export function setStyle(style) {
 /**
  * Return a Command that sets the paragraph style at the selection to `style` 
  * 
- * @private
+ * @ignore
  * @param {string}  style    One of the styles P or H1-H6 to set the selection to.
  */
 export function setStyleCommand(style) {
@@ -1208,7 +1208,7 @@ export function setStyleCommand(style) {
 
 /**
  * Return a ProseMirror Node that corresponds to the MarkupEditor paragraph style.
- * @private
+ * @ignore
  * @param {string} paragraphStyle   One of the paragraph styles supported by the MarkupEditor.
  * @returns {Node | null}           A ProseMirror Node of the specified type or null if unknown.
  */
@@ -1285,7 +1285,7 @@ export function toggleListItem(listType) {
  * no longer contains a list. Similarly, if the list returned here is null, then  
  * the selection can be set to a list.
  * 
- * @private
+ * @ignore
  * @returns { 'UL' | 'OL' | null }
  */
 export function getListType(state) {
@@ -1315,7 +1315,7 @@ function _getListType() {
 /**
  * Return the NodeType corresponding to `listType`, else null.
  * 
- * @private
+ * @ignore
  * @param {"UL" | "OL" | string} listType The String corresponding to the NodeType
  * @returns {NodeType | null}
  */
@@ -1332,7 +1332,7 @@ export function nodeTypeFor(listType, schema) {
 /**
  * Return the String corresponding to `nodeType`, else null.
  * 
- * @private
+ * @ignore
  * @param {NodeType} nodeType The NodeType corresponding to the String
  * @returns {'UL' | 'OL' | null}
  */
@@ -1363,7 +1363,7 @@ export function listTypeFor(nodeType, schema) {
  * 
  * Adapted from code in https://discuss.prosemirror.net/t/changing-the-node-type-of-a-list/4996.
  * 
- * @private
+ * @ignore
  * @param {Schema}          schema              The schema holding the list and list item node types.
  * @param {NodeType}        targetNodeType      One of state.schema.nodes.bullet_list or ordered_list to change selection to.
  * @param {Attrs | null}    attrs               Attributes of the new list items.
@@ -1422,7 +1422,7 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
 /**
  * Return the common list node in the selection that is one of the `listTypes` if one exists.
  * 
- * @private
+ * @ignore
  * @param {EditorState}     state       The EditorState containing the selection.
  * @param {Array<NodeType>} listTypes   The list types we're looking for.
  * @returns {object}                    {node: Node, from: number, to: number}
@@ -1442,7 +1442,7 @@ function _findCommonListNode(state, listTypes) {
 /**
  * Return a Fragment with its children replaced by ones that are of `targetListType` or `targetListItemType`.
  * 
- * @private
+ * @ignore
  * @param {Fragment}        content             The ProseMirror Fragment taken from the selection.
  * @param {NodeType}        targetListType      The bullet_list or ordered_list NodeType we are changing children to.
  * @param {NodeType}        targetListItemType  The list_item NodeType we are changing children to.
@@ -1472,7 +1472,7 @@ function updateContent(content, targetListType, targetListItemType, listTypes, l
 /**
  * Return the `target` node type if the type of `node` is one of the `options`.
  * 
- * @private
+ * @ignore
  * @param {Node}            node 
  * @param {NodeType}        target 
  * @param {Array<NodeType>} options 
@@ -1485,7 +1485,7 @@ function getReplacementType(node, target, options) {
 /**
  * Return a new Node with one of the target types.
  * 
- * @private
+ * @ignore
  * @param {Node}            node                The node to change to targetListType or targetListItemType.
  * @param {NodeType}        targetListType      The list type we want to change `node` to.
  * @param {NodeType}        targetListItemType  The list item types we want to change `node` to.
@@ -1727,7 +1727,7 @@ function parents($pos, start, end) {
 
 /**
  * Remove all children with names in node.
- * @private
+ * @ignore
  * @param {string[]} names 
  * @param {HTMLElement} node 
  */
@@ -1748,7 +1748,7 @@ function _cleanUpTypesWithin(names, node) {
 /**
  * Do a depth-first traversal from node, removing spans starting at the leaf nodes.
  * 
- * @private
+ * @ignore
  * @returns {number}    The number of spans removed
  */
 function _cleanUpSpansWithin(node, spansRemoved) {
@@ -1758,7 +1758,7 @@ function _cleanUpSpansWithin(node, spansRemoved) {
 /**
  * Do a depth-first traversal from node, removing divs starting at the leaf nodes.
  * 
- * @private
+ * @ignore
  * @returns {number}    The number of divs removed
  */
 function _cleanUpDivsWithin(node, divsRemoved) {
@@ -1768,7 +1768,7 @@ function _cleanUpDivsWithin(node, divsRemoved) {
 /**
  * Do a depth-first traversal from node, removing divs/spans starting at the leaf nodes.
  * 
- * @private
+ * @ignore
  * @returns {number}    The number of divs/spans removed
  */
 function _cleanUpSpansDivsWithin(node, type, removed) {
@@ -1816,7 +1816,7 @@ export function getSelectionState() {
 /**
  * Populate a dictionary of properties about the current selection and return it.
  * 
- * @private
+ * @ignore
  * @returns {object}     The string-keyed dictionary of properties describing the selection
  */
 function _getSelectionState() {
@@ -1894,7 +1894,7 @@ function _getSelectionState() {
  * should not happen), then the return might be unexpected (haha, which 
  * should not happen, of course!).
  * 
- * @private
+ * @ignore
  * @returns {object} The id and editable state that is selected.
  */
 function _getContentEditable() {
@@ -1911,7 +1911,7 @@ function _getContentEditable() {
 /**
  * Return the text at the selection.
  * 
- * @private
+ * @ignore
  * @returns {string | null} The text that is selected.
  */
 function _getSelectionText() {
@@ -1934,7 +1934,7 @@ function _getSelectionText() {
 /**
  * Return the rectangle that encloses the selection.
  * 
- * @private
+ * @ignore
  * @returns {object} The selection rectangle's top, bottom, left, right.
  */
 export function getSelectionRect() {
@@ -1954,7 +1954,7 @@ export function getSelectionRect() {
 /**
  * Return the MarkTypes that exist at the selection.
  * 
- * @private
+ * @ignore
  * @returns {Set<MarkType>}   The set of MarkTypes at the selection.
  */
 function _getMarkTypes() {
@@ -2026,7 +2026,7 @@ export function getImageAttributes(state) {
  * In the MarkupEditor, if there is a header, it is always colspanned across the number 
  * of columns, and normal rows are never colspanned.
  *
- * @private
+ * @ignore
  * @returns {object}   An object with properties populated.
  */
 function _getTableAttributes(state) {
@@ -2091,7 +2091,7 @@ function _getTableAttributes(state) {
 /**
  * Return the paragraph style at the selection.
  * 
- * @private
+ * @ignore
  * @returns {string}   {Tag name | 'Multiple'} that represents the selected paragraph style.
  */
 function _getParagraphStyle() {
@@ -2114,7 +2114,7 @@ export function paragraphStyle(state) {
 /**
  * Given a ProseMirror Node, return the HTML tag it corresponds to in the MarkupEditor.
  * 
- * @private
+ * @ignore
  * @param {Node} node The node we want the paragraph style for
  * @returns { "P" | "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | "PRE" | null }
  */
@@ -2143,7 +2143,7 @@ export function isIndented(activeState) {
 /**
  * Return whether the selection is indented.
  * 
- * @private
+ * @ignore
  * @returns {boolean}   Whether the selection is in a blockquote.
  */
 function _getIndented(state) {
@@ -2165,7 +2165,7 @@ function _getIndented(state) {
  * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
  * callback means the change happened in the 'editor' div.
  * 
- * @private
+ * @ignore
  */
 export function callbackInput(element) {
     _callback('input' + (selectedID() ?? ''), element)
@@ -2175,7 +2175,7 @@ export function callbackInput(element) {
  * Callback to signal that user-provided CSS and/or script files have
  * been loaded.
  * 
- * @private
+ * @ignore
  */
 function _loadedUserFiles(target) {
     _callback('loadedUserFiles', target ?? activeDocument());
@@ -2184,7 +2184,7 @@ function _loadedUserFiles(target) {
 /**
  * Callback to signal that an error occurred.
  * 
- * @private
+ * @ignore
  * @param {MUError} error 
  */
 function _callbackError(error) {
@@ -2194,7 +2194,7 @@ function _callbackError(error) {
 /**
  * Report a selection change.
  * 
- * @private
+ * @ignore
  */
 export function selectionChanged(element) {
     _callback('selectionChanged', element)
@@ -2203,7 +2203,7 @@ export function selectionChanged(element) {
 /**
  * Report a click.
  * 
- * @private
+ * @ignore
  */
 export function clicked(view, element) {
     deactivateSearch(view)
@@ -2213,7 +2213,7 @@ export function clicked(view, element) {
 /**
  * Report a button click.
  * 
- * @private
+ * @ignore
  */
 export function buttonClicked(message, element) {
     _callback(message, element)
@@ -2247,7 +2247,7 @@ export function focused(element) {
  * Report blur. Note we don't reset active `muId` because elements 
  * lose focus (e.g., during user interaction like search) and we 
  * still want to use the same root node `muId`.
- * @private
+ * @ignore
  */
 export function blurred(element) {
     _callback('blur', element)
@@ -2258,7 +2258,7 @@ export function blurred(element) {
  * change might be from typing or formatting or styling, etc.
  * and triggers both a `selectionChanged` and `input` callback.
  * 
- * @private
+ * @ignore
  * @returns {boolean}    Return false so we can use in chainCommands directly
  */
 export function stateChanged(view) {
@@ -2278,7 +2278,7 @@ function _editor(view) {
  * 
  * Refer to MarkupCoordinator.swift source for message types and contents that are supported in Swift.
  * 
- * @private
+ * @ignore
  * @param {string | object} message  A JSON-serializable JavaScript object.
  */
 export function postMessage(message) {
@@ -2377,7 +2377,7 @@ export function doUndo() {
 /**
  * Return a command to undo and do the proper callbacks.
  * 
- * @private
+ * @ignore
  */
 export function undoCommand() {
     let commandAdapter = (state, dispatch, view) => {
@@ -2401,7 +2401,7 @@ export function doRedo() {
 /**
  * Return a command to redo and do the proper callbacks.
  * 
- * @private
+ * @ignore
  */
 export function redoCommand() {
     let commandAdapter = (state, dispatch, view) => {
@@ -2553,7 +2553,7 @@ export function insertInternalLinkCommand(hTag, index) {
  * Unlike other commands, this one returns an object identifying the id for the header with hTag. 
  * Other commands return true or false. This command also never does anything with the view or state.
  * 
- * @private
+ * @ignore
  * @param {string} hTag     One of the strings `H1`-`H6`
  * @param {number} index    Within existing elements with tag `hTag`, this is the index into them that is identified
  * @returns {Function(EditorState): object} A function that contains hTag, index, id, and whether the if already exists
@@ -2575,7 +2575,7 @@ export function idForInternalLinkCommand(hTag, index) {
  * Since the `node.textContent` can be arbitrarily large, we limit the id to 40 characters 
  * just to avoid unwieldy IDs.
  * 
- * @private
+ * @ignore
  * @param {Node}        node    A ProseMirror Node that is of heading type
  * @param {EditorState} state     
  * @returns {string}            A unique ID that is used by `node` or that can be assigned to `node`
@@ -2598,7 +2598,7 @@ function idForHeader(node, state) {
 /**
  * Return the node and its position that has an attrs.id matching `id`.
  * 
- * @private
+ * @ignore
  * @param {string} id           The id attr of a Node we are trying to match
  * @param {EditorState} state   The state of the ProseMirror editor
  * @returns {object}            The `node` and its `pos` in the `state.doc`
@@ -2630,7 +2630,7 @@ function headerMatching(hTag, index, state) {
 /**
  * Return all the headers that exist in `state.doc` as arrays keyed by level.
  * 
- * @private
+ * @ignore
  * @param {EditorState} state   The state of the ProseMirror editor
  */ 
 export function headers(state) {
@@ -2812,7 +2812,7 @@ export function cutImage() {
 /**
  * Post a message with src, alt, and dimensions, so the image contents can be put into the clipboard.
  * 
- * @private
+ * @ignore
  * @param {Node} node   A ProseMirror image node
  */
 function _copyImage(node) {
@@ -3092,7 +3092,7 @@ export function borderTable(border) {
 /**
  * Return whether the selection is within a table.
  * 
- * @private
+ * @ignore
  * @returns {boolean} True if the selection is within a table
  */
 function _tableSelected() {
@@ -3134,7 +3134,7 @@ function _selectInFirstCell(state, dispatch) {
  * merge the cells together when this happens. The operations that insert internal 
  * columns don't cause the header row to have a new cell.
  * 
- * @private
+ * @ignore
  */
 function _mergeHeaders(state, dispatch) {
     const nodeTypes = state.schema.nodes;
@@ -3225,7 +3225,7 @@ export function setBorderCommand(border) {
 /**
  * Get the border around and within the cell.
  * 
- * @private
+ * @ignore
  * @returns {'outer' | 'header' | 'cell' | 'none'} The type of table border known on the view holder's side.
  */
 function _getBorder(table) {
@@ -3253,7 +3253,7 @@ function _getBorder(table) {
 /**
  * Return the first node starting at depth 0 (the top) that is of type `type`.
  * 
- * @private
+ * @ignore
  * @param {NodeType}    type The NodeType we are looking for that contains $pos.
  * @param {ResolvedPos} $pos A resolved position within a document node.
  * @returns {Node | null}
@@ -3278,7 +3278,7 @@ export function outermostOfTypeAt(type, $pos) {
  * html before deriving a Node. Cleaning up means retaining the div contents while removing
  * the divs, and removing buttons.
  * 
- * @private
+ * @ignore
  * @param {string} html 
  * @returns {Node}
  */
@@ -3293,7 +3293,7 @@ function _nodeFromHTML(html) {
 /**
  * Return a ProseMirror Node derived from an HTMLElement.
  * 
- * @private
+ * @ignore
  * @param {HTMLElement} htmlElement 
  * @returns {Node}
  */
@@ -3304,7 +3304,7 @@ function _nodeFromElement(htmlElement) {
 /**
  * Return an HTML DocumentFragment derived from a ProseMirror node.
  * 
- * @private
+ * @ignore
  * @param {Node} node 
  * @returns {DocumentFragment}
  */
@@ -3315,7 +3315,7 @@ export function fragmentFromNode(node) {
 /**
  * Return the innerHTML string contained in a DocumentFragment.
  * 
- * @private
+ * @ignore
  * @param {DocumentFragment} fragment 
  * @returns {string}
  */
@@ -3328,7 +3328,7 @@ export function htmlFromFragment(fragment) {
 /**
  * Return an HTML DocumentFragment derived from HTML text.
  * 
- * @private
+ * @ignore
  * @param {string} html 
  * @returns {DocumentFragment}
  */
@@ -3341,7 +3341,7 @@ function _fragmentFromHTML(html) {
 /**
  * Return a ProseMirror Slice derived from HTML text.
  * 
- * @private
+ * @ignore
  * @param {string} html 
  * @returns {Slice}
  */
@@ -3354,7 +3354,7 @@ function _sliceFromHTML(html) {
 /**
  * Return a ProseMirror Slice derived from an HTMLElement.
  * 
- * @private
+ * @ignore
  * @param {HTMLElement} htmlElement 
  * @returns {Slice}
  */
@@ -3365,7 +3365,7 @@ function _sliceFromElement(htmlElement) {
 /**
  * Return whether node is a textNode or not
  * 
- * @private
+ * @ignore
  */
 function _isTextNode(node) {
     return node && (node.nodeType === Node.TEXT_NODE);
@@ -3374,7 +3374,7 @@ function _isTextNode(node) {
 /**
  * Return whether node is an ELEMENT_NODE or not
  * 
- * @private
+ * @ignore
  */
 function _isElementNode(node) {
     return node && (node.nodeType === Node.ELEMENT_NODE);
@@ -3383,7 +3383,7 @@ function _isElementNode(node) {
 /**
  * Return whether node is a format element; i.e., its nodeName is in _formatTags
  * 
- * @private
+ * @ignore
  */
 function _isFormatElement(node) {
     return _isElementNode(node) && _formatTags.includes(node.nodeName);
@@ -3392,7 +3392,7 @@ function _isFormatElement(node) {
 /**
  * Return whether node has a void tag (i.e., does not need a terminator)
  * 
- * @private
+ * @ignore
  */
 function _isVoidNode(node) {
     return node && (_voidTags.includes(node.nodeName));
@@ -3401,7 +3401,7 @@ function _isVoidNode(node) {
 /**
  * Return whether node is a link
  * 
- * @private
+ * @ignore
  */
 function _isLinkNode(node) {
     return node && (node.nodeName === 'A');

@@ -112,6 +112,7 @@ import {
 /**
  * The MarkupEditor holds the properly set-up EditorView and any additional configuration.
  * 
+ * @ignore
  * @param {HTMLElement} target  The div that will contain the editor.
  * @param {Object}      config  The configuration object. See the Developer's Guide.
  */
@@ -294,7 +295,7 @@ export class MarkupEditor {
 }
 
 /**
- * The public MarkupEditor API callable as "MU.<function name>"
+ * The object whose methods comprise the MarkupEditor API.
  */
 export const MU = {
     activeView,
