@@ -1,16 +1,11 @@
 body {
-    background: white;
-    color: black;
+  background: white;
+  color: black;
 }
+
 @media (prefers-color-scheme: dark) {
   body {
     background: black;
     color: white;
   }
-}
-
-#editor, .editor {
-   margin: 8px 0 8px 0; 
-   height: 300px; 
-   border: solid 1px lightgray;
 }

@@ -1,4 +1,14 @@
-/* global view */
+import {
+    activeView, 
+    activeDocument, 
+    setActiveDocument, 
+    activeSearcher, 
+    selectedID,             // `selectedID` is the id of the contentEditable DIV containing the currently selected element
+    setSelectedID,
+    activeEditorElement,
+} from './registry'
+import {MUError} from './muerror.js'
+import {schema} from "./schema/index.js"
 import {AllSelection, TextSelection, NodeSelection, EditorState} from 'prosemirror-state'
 import {DOMParser, DOMSerializer} from 'prosemirror-model'
 import {toggleMark} from 'prosemirror-commands'
@@ -17,630 +27,13 @@ import {
     mergeCells,
     toggleHeaderRow,
 } from 'prosemirror-tables'
-import {SearchQuery, setSearchState, findNext, findPrev, getMatchHighlights} from 'prosemirror-search'
-
-/**
- * The NodeView to support divs, as installed in main.js.
- */
-export class DivView {
-    constructor(node) {
-        const div = document.createElement('div');
-        div.setAttribute('id', node.attrs.id);
-        div.setAttribute('class', node.attrs.cssClass);
-        // Note that the click is reported using createSelectionBetween on the EditorView.
-        // Here we have access to the node id and can specialize for divs.
-        // Because the contentDOM is not set for non-editable divs, the selection never gets 
-        // set in them, but will be set to the first selectable node after.
-        div.addEventListener('click', () => {
-            selectedID = node.attrs.id;
-        })
-        const htmlFragment = _fragmentFromNode(node);
-        if (node.attrs.editable) {
-            div.innerHTML = _htmlFromFragment(htmlFragment)
-            this.dom = div
-            this.contentDOM = this.dom
-        } else {
-            // For non-editable divs, we have to handle all the interaction, which only occurs for buttons.
-            // Note ProseMirror does not render children inside of non-editable divs. We deal with this by 
-            // supplying the entire content of the div in htmlContents, and when we need to change the div
-            // (for example, adding and removing a button group), we must then update the htmlContents 
-            // accordingly. This happens in addDiv and removeDiv.
-            div.innerHTML = _htmlFromFragment(htmlFragment);
-            const buttons = Array.from(div.getElementsByTagName('button'));
-            buttons.forEach( button => {
-                button.addEventListener('click', () => {
-                    // Report the button that was clicked and its location
-                    _callback(
-                        JSON.stringify({
-                            'messageType' : 'buttonClicked',
-                            'id' : button.id,
-                            'rect' : this._getButtonRect(button)
-                        })
-                    )
-                })
-            })
-            this.dom = div;
-        }
-    }
-
-    /**
-     * Return the rectangle of the button in a form that can be digested consistently.
-     * @param {HTMLButton} button 
-     * @returns {Object} The button's (origin) x, y, width, and height.
-     */
-    _getButtonRect(button) {
-        const boundingRect = button.getBoundingClientRect();
-        const buttonRect = {
-            'x' : boundingRect.left,
-            'y' : boundingRect.top,
-            'width' : boundingRect.width,
-            'height' : boundingRect.height
-        };
-        return buttonRect;
-    };
-
-}
-
-export class LinkView {
-    constructor(node, view) {
-        let href = node.attrs.href
-        let title = '\u2325+Click to follow\n' + href
-        const link = document.createElement('a')
-        link.setAttribute('href', href)
-        link.setAttribute('title', title)
-        link.addEventListener('click', (ev)=> {
-            if (ev.altKey) {
-                if (href.startsWith('#')) {
-                    let id = href.substring(1)
-                    let {pos} = nodeWithId(id, view.state)
-                    if (pos) {
-                        let resolvedPos = view.state.tr.doc.resolve(pos)
-                        let selection = TextSelection.near(resolvedPos)
-                        let transaction = view.state.tr
-                            .setSelection(selection)
-                            .scrollIntoView()
-                        view.dispatch(transaction)
-                        selectionChanged()
-                    }
-                } else {
-                    window.open(href)
-                }
-            }
-        })
-        this.dom = link
-        this.contentDOM = this.dom
-    }
-}
-
-/**
- * The NodeView to support resizable images and callbacks, as installed in main.js.
- * 
- * The ResizableImage instance holds onto the actual HTMLImageElement and deals with the styling,
- * event listeners, and resizing work.
- * 
- * Many thanks to contributors to this thread: https://discuss.prosemirror.net/t/image-resize/1489
- * and the accompanying Glitch project https://glitch.com/edit/#!/toothsome-shoemaker
- */
-export class ImageView {
-    constructor(node, view, getPos) {
-        this.resizableImage = new ResizableImage(node, getPos())
-        this.dom = this.resizableImage.imageContainer
-    }
-    
-    selectNode() {
-        this.resizableImage.imageElement.classList.add("ProseMirror-selectednode")
-        this.resizableImage.select()
-        selectionChanged()
-    }
-  
-    deselectNode() {
-        this.resizableImage.imageElement.classList.remove("ProseMirror-selectednode")
-        this.resizableImage.deselect()
-        selectionChanged()
-    }
-
-}
-
-/**
- * A ResizableImage tracks a specific image element, and the imageContainer it is
- * contained in. The style of the container and its handles is handled in markup.css.
- *
- * As a resizing handle is dragged, the image size is adjusted. The underlying image
- * is never actually resized or changed.
- *
- * The approach of setting spans in the HTML and styling them in CSS to show the selected
- * ResizableImage, and dealing with mouseup/down/move was inspired by
- * https://tympanus.net/codrops/2014/10/30/resizing-cropping-images-canvas/
- */
-class ResizableImage {
-    
-    constructor(node, pos) {
-        this._pos = pos;                    // How to find node in view.state.doc
-        this._minImageSize = 18             // Large enough for visibility and for the handles to display properly
-        this._imageElement = this.imageElementFrom(node);
-        this._imageContainer = this.containerFor(this.imageElement);
-        this._startDimensions = this.dimensionsFrom(this.imageElement);
-        this._startEvent = null;            // The ev that was passed to startResize
-        this._startDx = -1;                 // Delta x between the two touches for pinching; -1 = not pinching
-        this._startDy = -1;                 // Delta y between the two touches for pinching; -1 = not pinching
-        this._touchCache = [];              // Touches that are active, max 2, min 0
-        this._touchStartCache = [];         // Touches at the start of a pinch gesture, max 2, min 0
-    }
-    
-    get imageElement() {
-        return this._imageElement;
-    };
-
-    get imageContainer() {
-        return this._imageContainer;
-    };
-    
-    /**
-     * The startDimensions are the width/height before resizing
-     */
-    get startDimensions() {
-        return this._startDimensions;
-    };
-    
-    /**
-     * Reset the start dimensions for the next resizing
-     */
-    set startDimensions(startDimensions) {
-        this._startDimensions = startDimensions;
-    };
-    
-    /*
-     * Return the width and height of the image element
-     */
-    get currentDimensions() {
-        const width = parseInt(this._imageElement.getAttribute('width'));
-        const height = parseInt(this._imageElement.getAttribute('height'));
-        return {width: width, height: height};
-    };
-
-    /**
-     * Dispatch a transaction to the view, using its metadata to pass the src
-     * of the image that just loaded. This method executes when the load 
-     * or error event is triggered for the image element. The image plugin 
-     * can hold state to avoid taking actions multiple times when the same 
-     * image loads.
-     * @param {string} src   The src attribute for the imageElement.
-     */
-    imageLoaded(src) {
-        const transaction = view.state.tr
-            .setMeta("imageLoaded", {'src': src})
-        view.dispatch(transaction);
-    };
-
-    /**
-     * Update the image size for the node in a transaction so that the resizing 
-     * can be undone.
-     * 
-     * Note that after the transaction is dispatched, the ImageView is recreated, 
-     * and `imageLoaded` gets called again.
-     */
-    imageResized() {
-        const {width, height} = this.currentDimensions
-        const transaction = view.state.tr
-            .setNodeAttribute(this._pos, 'width', width)
-            .setNodeAttribute(this._pos, 'height', height)
-        // Reselect the node again, so it ends like it started - selected
-        transaction.setSelection(new NodeSelection(transaction.doc.resolve(this._pos)))
-        view.dispatch(transaction);
-    };
-
-    /**
-     * Return the HTML Image Element displayed in the ImageView
-     * @param {Node} node 
-     * @returns HTMLImageElement
-     */
-    imageElementFrom(node) {
-        const img = document.createElement('img');
-        const src = node.attrs.src
-
-        // If the img node does not have both width and height attr, get them from naturalWidth 
-        // after loading. Use => style function to reference this.
-        img.addEventListener('load', e => {
-            if (node.attrs.width && node.attrs.height) {
-                img.setAttribute('width', node.attrs.width)
-                img.setAttribute('height', node.attrs.height)
-            } else {
-                // naturalWidth and naturalHeight will be zero if not known
-                let width = Math.max(e.target.naturalWidth, this._minImageSize)
-                node.attrs.width = width
-                img.setAttribute('width', width)
-                let height = Math.max(e.target.naturalHeight, this._minImageSize)
-                node.attrs.height = height
-                img.setAttribute('height', height)
-            }
-            this.imageLoaded(src)
-        })
-
-        // Display a broken image background and notify of any errors.
-        img.addEventListener('error', () => {
-            // https://fonts.google.com/icons?selected=Material+Symbols+Outlined:broken_image:FILL@0;wght@400;GRAD@0;opsz@20&icon.query=missing&icon.size=18&icon.color=%231f1f1f
-            const imageSvg = '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1f1f1f"><path d="M216-144q-29 0-50.5-21.5T144-216v-528q0-29.7 21.5-50.85Q187-816 216-816h528q29.7 0 50.85 21.15Q816-773.7 816-744v528q0 29-21.15 50.5T744-144H216Zm48-303 144-144 144 144 144-144 48 48v-201H216v249l48 48Zm-48 231h528v-225l-48-48-144 144-144-144-144 144-48-48v177Zm0 0v-240 63-351 528Z"/></svg>';
-            const image64 = btoa(imageSvg);
-            const imageUrl = `url("data:image/svg+xml;base64,${image64}")`
-            img.style.background = "lightgray"  // So we can see it in light or dark mode
-            img.style.backgroundImage = imageUrl
-            img.setAttribute('width', this._minImageSize)
-            img.setAttribute('height', this._minImageSize)
-            this.imageLoaded(src)
-        });
-        
-        img.setAttribute("src", src)
-
-        return img
-    }
-
-    /**
-     * Return the HTML Content Span element that contains the imageElement.
-     * 
-     * Note that the resizing handles, which are themselves spans, are inserted 
-     * before and after the imageElement at selection time, and removed at 
-     * deselect time.
-     * 
-     * @param {HTMLImageElement} imageElement 
-     * @returns HTML Content Span element
-     */
-    containerFor(imageElement) {
-        const imageContainer = document.createElement('span');
-        imageContainer.appendChild(imageElement);
-        return imageContainer
-    }
-
-    /**
-     * Set the attributes for the imageContainer and populate the spans that show the 
-     * resizing handles. Add the mousedown event listener to initiate resizing.
-     */
-    select() {
-        this.imageContainer.setAttribute('class', 'resize-container');
-        const nwHandle = document.createElement('span');
-        nwHandle.setAttribute('class', 'resize-handle resize-handle-nw');
-        this.imageContainer.insertBefore(nwHandle, this.imageElement);
-        const neHandle = document.createElement('span');
-        neHandle.setAttribute('class', 'resize-handle resize-handle-ne');
-        this.imageContainer.insertBefore(neHandle, this.imageElement);
-        const swHandle = document.createElement('span');
-        swHandle.setAttribute('class', 'resize-handle resize-handle-sw');
-        this.imageContainer.insertBefore(swHandle, null);
-        const seHandle = document.createElement('span');
-        seHandle.setAttribute('class', 'resize-handle resize-handle-se');
-        this.imageContainer.insertBefore(seHandle, null);
-        this.imageContainer.addEventListener('mousedown', this.startResize = this.startResize.bind(this));
-        this.addPinchGestureEvents();
-    }
-
-    /**
-     * Remove the attributes for the imageContainer and the spans that show the 
-     * resizing handles. Remove the mousedown event listener.
-     */
-    deselect() {
-        this.removePinchGestureEvents();
-        this.imageContainer.removeEventListener('mousedown', this.startResize);
-        const handles = this.imageContainer.querySelectorAll('span');
-        handles.forEach((handle) => {this.imageContainer.removeChild(handle)});
-        this.imageContainer.removeAttribute('class');
-    }
-
-    /**
-     * Return an object containing the width and height of imageElement as integers.
-     * @param {HTMLImageElement} imageElement 
-     * @returns An object with Int width and height.
-     */
-    dimensionsFrom(imageElement) {
-        const width = parseInt(imageElement.getAttribute('width'));
-        const height = parseInt(imageElement.getAttribute('height'));
-        return {width: width, height: height};
-    };
-    
-    /**
-     * Add touch event listeners to support pinch resizing.
-     *
-     * Listeners are added when the resizableImage is selected.
-     */
-    addPinchGestureEvents() {
-        document.addEventListener('touchstart', this.handleTouchStart = this.handleTouchStart.bind(this));
-        document.addEventListener('touchmove', this.handleTouchMove = this.handleTouchMove.bind(this));
-        document.addEventListener('touchend', this.handleTouchEnd = this.handleTouchEnd.bind(this));
-        document.addEventListener('touchcancel', this.handleTouchEnd = this.handleTouchEnd.bind(this));
-    };
-    
-    /**
-     * Remove event listeners supporting pinch resizing.
-     *
-     * Listeners are removed when the resizableImage is deselected.
-     */
-    removePinchGestureEvents() {
-        document.removeEventListener('touchstart', this.handleTouchStart);
-        document.removeEventListener('touchmove', this.handleTouchMove);
-        document.removeEventListener('touchend', this.handleTouchEnd);
-        document.removeEventListener('touchcancel', this.handleTouchEnd);
-    };
-
-    /**
-     * Start resize on a mousedown event.
-     * @param {Event} ev    The mousedown Event.
-     */
-    startResize(ev) {
-        ev.preventDefault();
-        // The event can trigger on imageContainer and its contents, including spans and imageElement.
-        if (this._startEvent) return;   // We are already resizing
-        this._startEvent = ev;          // Track the event that kicked things off
-
-        //TODO: Avoid selecting text while resizing.
-        // Setting webkitUserSelect to 'none' used to help when the style could be applied to 
-        // the actual HTML document being edited, but it doesn't seem to work when applied to 
-        // view.dom. Leaving a record here for now.
-        // view.state.tr.style.webkitUserSelect = 'none';  // Prevent selection of text as mouse moves
-
-        // Use document to receive events even when cursor goes outside of the imageContainer
-        document.addEventListener('mousemove', this.resizing = this.resizing.bind(this));
-        document.addEventListener('mouseup', this.endResize = this.endResize.bind(this));
-        this._startDimensions = this.dimensionsFrom(this.imageElement);
-    };
-    
-    /**
-     * End resizing on a mouseup event.
-     * @param {Event} ev    The mouseup Event.
-     */
-    endResize(ev) {
-        ev.preventDefault();
-        this._startEvent = null;
-
-        //TODO: Restore selecting text when done resizing.
-        // Setting webkitUserSelect to 'text' used to help when the style could be applied to 
-        // the actual HTML document being edited, but it doesn't seem to work when applied to 
-        // view.dom. Leaving a record here for now.
-        //view.dom.style.webkitUserSelect = 'text';  // Restore selection of text now that we are done
-
-        document.removeEventListener('mousemove', this.resizing);
-        document.removeEventListener('mouseup', this.endResize);
-        this._startDimensions = this.currentDimensions;
-        this.imageResized();
-    };
-    
-    /**
-     * Continuously resize the imageElement as the mouse moves.
-     * @param {Event} ev    The mousemove Event.
-     */
-    resizing(ev) {
-        ev.preventDefault();
-        const ev0 = this._startEvent;
-        // FYI: x increases to the right, y increases down
-        const x = ev.clientX;
-        const y = ev.clientY;
-        const x0 = ev0.clientX;
-        const y0 = ev0.clientY;
-        const classList = ev0.target.classList;
-        let dx, dy;
-        if (classList.contains('resize-handle-nw')) {
-            dx = x0 - x;
-            dy = y0 - y;
-        } else if (classList.contains('resize-handle-ne')) {
-            dx = x - x0;
-            dy = y0 - y;
-        } else if (classList.contains('resize-handle-sw')) {
-            dx = x0 - x;
-            dy = y - y0;
-        } else if (classList.contains('resize-handle-se')) {
-            dx = x - x0;
-            dy = y - y0;
-        } else {
-            // If not in a handle, treat movement like resize-handle-ne (upper right)
-            dx = x - x0;
-            dy = y0 - y;
-        }
-        const scaleH = Math.abs(dy) > Math.abs(dx);
-        const w0 = this._startDimensions.width;
-        const h0 = this._startDimensions.height;
-        const ratio = w0 / h0;
-        let width, height;
-        if (scaleH) {
-            height = Math.max(h0 + dy, this._minImageSize);
-            width = Math.floor(height * ratio);
-        } else {
-            width = Math.max(w0 + dx, this._minImageSize);
-            height = Math.floor(width / ratio);
-        };
-        this._imageElement.setAttribute('width', width);
-        this._imageElement.setAttribute('height', height);
-    };
-    
-    /**
-     * A touch started while the resizableImage was selected.
-     * Cache the touch to support 2-finger gestures only.
-     */
-    handleTouchStart(ev) {
-        ev.preventDefault();
-        if (this._touchCache.length < 2) {
-            const touch = ev.changedTouches.length > 0 ? ev.changedTouches[0] : null;
-            if (touch) {
-                this._touchCache.push(touch);
-                this._touchStartCache.push(touch);
-            };
-        };
-    };
-    
-    /**
-     * A touch moved while the resizableImage was selected.
-     *
-     * If this is a touch we are tracking already, then replace it in the touchCache.
-     *
-     * If we only have one finger down, the update the startCache for it, since we are
-     * moving a finger but haven't start pinching.
-     *
-     * Otherwise, we are pinching and need to resize.
-     */
-    handleTouchMove(ev) {
-        ev.preventDefault();
-        const touch = this.touchMatching(ev);
-        if (touch) {
-            // Replace the touch in the touchCache with this touch
-            this.replaceTouch(touch, this._touchCache)
-            if (this._touchCache.length < 2) {
-                // If we are only touching a single place, then replace it in the touchStartCache as it moves
-                this.replaceTouch(touch, this._touchStartCache);
-            } else {
-                // Otherwise, we are touching two places and are pinching
-                this.startPinch();   // A no-op if we have already started
-                this.pinch();
-            };
-        }
-    };
-    
-    /**
-     * A touch ended while the resizableImage was selected.
-     *
-     * Remove the touch from the caches, and end the pinch operation.
-     * We might still have a touch point down when one ends, but the pinch operation
-     * itself ends at that time.
-     */
-    handleTouchEnd(ev) {
-        const touch = this.touchMatching(ev);
-        if (touch) {
-            const touchIndex = this.indexOfTouch(touch, this._touchCache);
-            if (touchIndex !== null) {
-                this._touchCache.splice(touchIndex, 1);
-                this._touchStartCache.splice(touchIndex, 1);
-                this.endPinch();
-            };
-        };
-    };
-    
-    /**
-     * Return the touch in ev.changedTouches that matches what's in the touchCache, or null if it isn't there
-     */
-    touchMatching(ev) {
-        const changedTouches = ev.changedTouches;
-        const touchCache = this._touchCache;
-        for (let i = 0; i < touchCache.length; i++) {
-            for (let j = 0; j < changedTouches.length; j++) {
-                if (touchCache[i].identifier === changedTouches[j].identifier) {
-                    return changedTouches[j];
-                };
-            };
-        };
-        return null;
-    };
-    
-    /**
-     * Return the index into touchArray of touch based on identifier, or null if not found
-     *
-     * Note: Due to JavaScript idiocy, must always check return value against null, because
-     * indices of 1 and 0 are true and false, too. Fun!
-     */
-    indexOfTouch(touch, touchArray) {
-        for (let i = 0; i < touchArray.length; i++) {
-            if (touch.identifier === touchArray[i].identifier) {
-                return i;
-            };
-        };
-        return null;
-    };
-    
-    /**
-     * Replace the touch in touchArray if it has the same identifier, else do nothing
-     */
-    replaceTouch(touch, touchArray) {
-        const i = this.indexOfTouch(touch, touchArray);
-        if (i !== null) { touchArray[i] = touch }
-    };
-    
-    /**
-     * We received the touchmove event and need to initialize things for pinching.
-     *
-     * If the resizableImage._startDx is -1, then we need to initialize; otherwise,
-     * a call to startPinch is a no-op.
-     *
-     * The initialization captures a new startDx and startDy that track the distance
-     * between the two touch points when pinching starts. We also track the startDimensions,
-     * because scaling is done relative to it.
-     */
-    startPinch() {
-        if (this._startDx === -1) {
-            const touchStartCache = this._touchStartCache;
-            this._startDx = Math.abs(touchStartCache[0].pageX - touchStartCache[1].pageX);
-            this._startDy = Math.abs(touchStartCache[0].pageY - touchStartCache[1].pageY);
-            this._startDimensions = this.dimensionsFrom(this._imageElement);
-        };
-    };
-
-    /**
-     * Pinch the resizableImage based on the information in the touchCache and the startDx/startDy
-     * we captured when pinching started. The touchCache has the two touches that are active.
-     */
-    pinch() {
-        // Here currentDx and currentDx are the current distance between the two
-        // pointers, which have to be compared to the start distances to determine
-        // if we are zooming in or out
-        const touchCache = this._touchCache;
-        const x0 = touchCache[0].pageX
-        const y0 = touchCache[0].pageY
-        const x1 = touchCache[1].pageX
-        const y1 = touchCache[1].pageY
-        const currentDx = Math.abs(x1 - x0);
-        const currentDy = Math.abs(y1 - y0);
-        const dx = currentDx - this._startDx;
-        const dy = currentDy - this._startDy;
-        const scaleH = Math.abs(dy) > Math.abs(dx);
-        const w0 = this._startDimensions.width;
-        const h0 = this._startDimensions.height;
-        const ratio = w0 / h0;
-        let width, height;
-        if (scaleH) {
-            height = Math.max(h0 + dy, this._minImageSize);
-            width = Math.floor(height * ratio);
-        } else {
-            width = Math.max(w0 + dx, this._minImageSize);
-            height = Math.floor(width / ratio);
-        };
-        this._imageElement.setAttribute('width', width);
-        this._imageElement.setAttribute('height', height);
-    };
-    
-    /**
-     * The pinch operation has ended because we stopped touching one of the two touch points.
-     *
-     * If we are only touching one point, then endPinch is a no-op. For example, if the
-     * resizableImage is selected and you touch and release at a point, endPinch gets called
-     * but does nothing. Similarly for lifting the second touch point after releasing the first.
-     */
-    endPinch() {
-        if (this._touchCache.length === 1) {
-            this._startDx = -1;
-            this._startDy = -1;
-            this._startDimensions = this.currentDimensions;
-            this.imageResized();
-        };
-    };
-   
-    /**
-     * Callback with the resizableImage data that allows us to put an image
-     * in the clipboard without all the browser shenanigans.
-     */
-    copyToClipboard() {
-        const image = this._imageElement;
-        if (!image) { return };
-        const messageDict = {
-            'messageType' : 'copyImage',
-            'src' : image.src,
-            'alt' : image.alt,
-            'dimensions' : this._startDimensions
-        };
-        _callback(JSON.stringify(messageDict));
-    };
-    
-};
 
 /**
  * Define various arrays of tags used to represent MarkupEditor-specific concepts.
  *
  * For example, "Paragraph Style" is a MarkupEditor concept that doesn't map directly to HTML or CSS.
+ * @ignore
  */
-
-// Add STRONG and EM (leaving B and I) to support default ProseMirror output   
 const _formatTags = ['B', 'STRONG', 'I', 'EM', 'U', 'DEL', 'SUB', 'SUP', 'CODE'];       // All possible (nestable) formats
 
 const _minimalStyleTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE'];           // Convert to 'P' for pasteText
@@ -648,275 +41,12 @@ const _minimalStyleTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PR
 const _voidTags = ['BR', 'IMG', 'AREA', 'COL', 'EMBED', 'HR', 'INPUT', 'LINK', 'META', 'PARAM'] // Tags that are self-closing
 
 /**
- * `selectedID` is the id of the contentEditable DIV containing the currently selected element.
- */
-export let selectedID = null;
-
-/**
- * MUError captures internal errors and makes it easy to communicate them externally.
- *
- * Usage is generally via the statics defined here, altho supplementary info can
- * be provided to the MUError instance when useful.
- *
- * Alert is set to true when the user might want to know an error occurred. Because
- * this is generally the case, it's set to true by default and certain MUErrors that
- * are more informational in nature are set to false.
- *
- * Note that there is at least one instance of the Swift side notifying its MarkupDelegate
- * of an error using this same approach, but originating on the Swift side. That happens
- * in MarkupWKWebView.copyImage if anything goes wrong, because the copying to the
- * clipboard is handled on the Swift side.
- */
-//MARK: Error Reporting
-class MUError {
-
-    constructor(name, message, info, alert=true) {
-        this.name = name;
-        this.message = message;
-        this.info = info;
-        this.alert = alert;
-    };
-    
-    static NoDiv = new MUError('NoDiv', 'A div could not be found to return HTML from.');
-    static Style = new MUError('Style', 'Unable to apply style at selection.')
-    
-    setInfo(info) {
-        this.info = info
-    };
-    
-    messageDict() {
-        return {
-            'messageType' : 'error',
-            'code' : this.name,
-            'message' : this.message,
-            'info' : this.info,
-            'alert' : this.alert
-        };
-    };
-    
-    callback() {
-        _callback(JSON.stringify(this.messageDict()));
-    };
-};
-
-/**
- * The Searcher class lets us find text ranges that match a search string within the editor element.
- * 
- * The searcher uses the ProseMirror search plugin https://github.com/proseMirror/prosemirror-search to create 
- * and track ranges within the doc that match a given SearchQuery.
- * 
- * Note that `isActive` and intercepting Enter/Shift-Enter is only relevant in the Swift case, where the search 
- * bar is implemented in Swift.
- */
-class Searcher {
-    
-    constructor() {
-        this._searchString = null;      // what we are searching for
-        this._direction = 'forward';    // direction we are searching in
-        this._caseSensitive = false;    // whether the search is case sensitive
-        this._forceIndexing = true;     // true === rebuild foundRanges before use; false === use foundRanges\
-        this._searchQuery = null        // the SearchQuery we use
-        this._isActive = false;         // whether we are in "search mode", intercepting Enter/Shift-Enter
-        this._matchCount = null;        // the current number of matches, null when not active
-        this._matchIndex = null;        // the index into matches we are at in the current search, null when not active
-    };
-    
-    /**
-     * Select and return the selection.from and selection.to in the direction that matches text.
-     * 
-     * In Swift, the text is passed with smartquote nonsense removed and '&quot;'
-     * instead of quotes and '&apos;' instead of apostrophes, so that we can search on text
-     * that includes them and pass them from Swift to JavaScript consistently.
-     */
-    searchFor(text, direction='forward', searchOnEnter=false) {
-        let command = searchForCommand(text, direction, searchOnEnter);
-        return command(view.state, view.dispatch, view);
-    };
-
-    /**
-     * Return a command that will execute a search, typically assigned as a button action.
-     * @param {string}                  text            The text to search for.
-     * @param {'forward' | 'backward'}  direction       The direction to search in.
-     * @param {boolean}                 searchOnEnter   Whether to begin intercepting Enter in the view until cancelled.
-     * @returns {Command}                               A command that will execute a search for text given the state, dispatch, and view.
-     */
-    searchForCommand(text, direction='forward', searchOnEnter=false) {
-        const commandAdapter = (state, dispatch, view) => {
-            let result = {};
-            if (!text || (text.length === 0)) {
-                this.cancel()
-                return result;
-            }
-            // On the Swift side, we replace smart quotes and apostrophes with &quot; and &apos;
-            // before getting here, but when doing searches in markupeditor-base, they will come 
-            // in here unchanged. So replace them with the proper " or ' now.
-            text = text.replaceAll('’', "'")
-            text = text.replaceAll('‘', "'")
-            text = text.replaceAll('“', '"')
-            text = text.replaceAll('”', '"')
-            text = text.replaceAll('&quot;', '"')       // Fix the hack for quotes in the call
-            text = text.replaceAll('&apos;', "'")       // Fix the hack for apostrophes in the call
-
-            // Rebuild the query if forced or if the search string changed
-            if (this._forceIndexing || (text !== this._searchString)) {
-                this._searchString = text;
-                this._isActive = searchOnEnter
-                this._buildQuery();
-                const transaction = setSearchState(view.state.tr, this._searchQuery);
-                view.dispatch(transaction);             // Show all the matches
-                this._setMatchCount(view.state);
-                this._forceIndexing = false;
-            };
-
-            // Search for text and return the result containing from and to that was found
-            //
-            // TODO: Fix bug that occurs when searching for next or prev when the current selection 
-            //          is unique within the doc. The `nextMatch` in prosemirror-search when failing,  
-            //          should set the to value to `Math.min(curTo, range.to))` or it misses the 
-            //          existing selection. Similarly on `prevMatch`. This needs to be done in a 
-            //          patch of prosemirror-search. For example:
-            //
-            //  function nextMatch(search, state, wrap, curFrom, curTo) {
-            //      let range = search.range || { from: 0, to: state.doc.content.size };
-            //      let next = search.query.findNext(state, Math.max(curTo, range.from), range.to);
-            //      if (!next && wrap)
-            //          next = search.query.findNext(state, range.from, Math.min(curTo, range.to));
-            //      return next;
-            //  }
-
-            result = this._searchInDirection(direction, view.state, view.dispatch);
-            if (!result.from) {
-                this.deactivate(view);
-            } else {
-                let increment = (direction == 'forward') ? 1 : -1;
-                let index = this._matchIndex + increment;
-                let total = this._matchCount;
-                let zeroIndex = index % total;
-                this._matchIndex = (zeroIndex <= 0) ? total : zeroIndex;
-                this._direction = direction;
-                if (searchOnEnter) { this._activate(view) };    // Only intercept Enter if searchOnEnter is explicitly passed as true
-            }
-            return result;
-        };
-
-        return commandAdapter;
-    };
-
-    _setMatchCount(state) {
-        this._matchCount = getMatchHighlights(state).find().length;
-        this._matchIndex = 0;
-    }
-
-    get matchCount() {
-        return this._matchCount;
-    }
-
-    get matchIndex() {
-        return this._matchIndex;
-    }
-    
-    /**
-     * Reset the query by forcing it to be recomputed at find time.
-     */
-    _resetQuery() {
-        this._forceIndexing = true;
-    };
-    
-    /**
-     * Return whether search is active, and Enter should be interpreted as a search request
-     */
-    get isActive() {
-        return this._isActive;
-    };
-
-    get caseSensitive() {
-        return this._caseSensitive;
-    }
-
-    set caseSensitive(value) {
-        this._caseSensitive = value;
-    }
-    
-    /**
-     * Activate search mode where Enter is being intercepted
-     */
-    _activate(view) {
-        this._isActive = true;
-        view.dom.classList.add("searching");
-        _callback('activateSearch');
-    }
-    
-    /**
-     * Deactivate search mode where Enter is being intercepted
-     */
-    deactivate(view) {
-        if (this.isActive) _callback('deactivateSearch');
-        view.dom.classList.remove("searching");
-        this._isActive = false;
-        this._searchQuery = new SearchQuery({search: "", caseSensitive: this._caseSensitive});
-        const transaction = setSearchState(view.state.tr, this._searchQuery);
-        view.dispatch(transaction);
-        this._matchCount = null;
-        this._matchIndex = null;
-    }
-    
-    /**
-     * Stop searchForward()/searchBackward() from being executed on Enter. Force reindexing for next search.
-     */
-    cancel() {
-        this.deactivate(view)
-        this._resetQuery();
-    };
-    
-    /**
-     * Search forward (might be from Enter when isActive).
-     */
-    searchForward() {
-        return this._searchInDirection('forward', view.state, view.dispatch);
-    };
-    
-    /*
-     * Search backward (might be from Shift+Enter when isActive).
-     */
-    searchBackward() {
-        return this._searchInDirection('backward', view.state, view.dispatch);
-    }
-    
-    /*
-     * Search in the specified direction.
-     */
-    _searchInDirection(direction, state, dispatch) {
-        if (this._searchString && (this._searchString.length > 0)) {
-            if (direction == "forward") { findNext(state, dispatch)} else { findPrev(state, dispatch)};
-            _callback('searched')
-            // Return the selection from and to from the view, because that is what changed
-            return {from: view.state.tr.selection.from, to: view.state.tr.selection.to};
-        };
-        return {}
-    };
-
-    /**
-     * Create a new SearchQuery and highlight all the matches in the document.
-     */
-    _buildQuery() {
-        this._searchQuery = new SearchQuery({search: this._searchString, caseSensitive: this._caseSensitive});
-    }
-
-};
-
-/**
  * The searcher is the singleton that handles finding ranges that
  * contain a search string within editor.
+ * 
+ * @ignore
  */
-const searcher = new Searcher();
-export function searchIsActive() { return searcher.isActive }
-
-/** changed tracks whether the document has changed since `setHTML` */
-let changed = false;
-
-export function isChanged() {
-    return changed
-}
+export function searchIsActive() { return activeSearcher().isActive }
 
 /**
  * Handle pressing Enter.
@@ -926,15 +56,17 @@ export function isChanged() {
  * The logic for handling Enter is entirely MarkupEditor-specific, so is exported from here but imported in keymap.js.
  * We only need to report stateChanged when not in search mode.
  * 
- * @returns bool    Value is false if subsequent commands (like splitListItem) should execute;
+ * @ignore
+ * @returns {boolean}    Value is false if subsequent commands (like splitListItem) should execute;
  *                  else true if execution should stop here (like when search is active)
  */
 export function handleEnter() {
-    if (searcher.isActive) {
-        searcher.searchForward();
+    const view = activeView()
+    if (activeSearcher()?.isActive) {
+        activeSearcher()?.searchForward();
         return true;
     }
-    stateChanged()
+    stateChanged(view)
     return false;
 }
 
@@ -944,15 +76,17 @@ export function handleEnter() {
  * The logic for handling Shift-Enter is entirely MarkupEditor-specific, so is exported from here but imported in keymap.js.
  * We only need to report stateChanged when not in search mode.
  * 
- * @returns bool    Value is false if subsequent commands should execute;
+ * @ignore
+ * @returns {boolean}    Value is false if subsequent commands should execute;
  *                  else true if execution should stop here (like when search is active)
  */
 export function handleShiftEnter() {
-    if (searcher.isActive) {
-        searcher.searchBackward();
+    const view = activeView()
+    if (activeSearcher()?.isActive) {
+        activeSearcher()?.searchBackward();
         return true;
     }
-    stateChanged()
+    stateChanged(view)
     return false;
 }
 
@@ -961,14 +95,19 @@ export function handleShiftEnter() {
  * 
  * Notify about deleted images if one was selected, but always notify state changed and return false.
  * 
- *  * @returns bool    Value is false if subsequent commands should execute;
+ * @ignore
+ * @returns {boolean}    Value is false if subsequent commands should execute;
  *                      else true if execution should stop here.
  */
 export function handleDelete() {
-    const imageAttributes = _getImageAttributes();
-    if (imageAttributes.src) postMessage({ 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID ?? '') });
-    stateChanged();
-    return false;
+    const view = activeView()
+    const imageAttributes = _getImageAttributes()
+    if (imageAttributes.src) {
+        let messageDict = { 'messageType': 'deletedImage', 'src': imageAttributes.src, 'divId': (selectedID() ?? '') }
+        _callback(JSON.stringify(messageDict))
+    }
+    stateChanged(view)
+    return false
 }
 
 /**
@@ -978,27 +117,17 @@ export function handleDelete() {
  * included in the jsonString attributes. The same attributes
  * are used for contenteditable divs, and the attribute is 
  * relevant in that case.
+ * 
+ * @param {string}  jsonString  The stringified object containing the attributes to set for the editor
  */
 export function setTopLevelAttributes(jsonString) {
     const attributes = JSON.parse(jsonString);
-    const editor = document.getElementById('editor');
+    const editor = activeDocument().getElementById('editor');
     if (editor && attributes) {   
         for (const [key, value] of Object.entries(attributes)) {
             if (key !== 'contenteditable') editor.setAttribute(key, value);
         };
     };
-};
-
-/**
- * Set the receiver for postMessage().
- * 
- * By default, the receiver will be window.webkit.messageHandlers.markup. 
- * However, to allow embedding of MarkupEditor in other environments, such 
- * as VSCode, allow it to be set externally.
- */
-let messageHandler = (typeof window == 'undefined') ? null : window.webkit?.messageHandlers?.markup;
-export function setMessageHandler(handler) {
-    messageHandler = handler;
 };
 
 /**
@@ -1008,87 +137,99 @@ export function setMessageHandler(handler) {
  * callback only happening after their load events trigger. If neither scriptFile
  * nor cssFile are specified, then the 'loadedUserFiles' callback happens anyway,
  * since this ends up driving the loading process further.
+ * 
+ * @param   {string}    scriptFile  The filename for a script that should be loaded
+ * @param   {string}    cssFile     The filename for a CSS style that should be linked
+ * @param   {string}    target      The first element found with tag `target` will have the script or link added to it; default "body" for script, "head" for CSS
+ * @param   {string}    nonce       The "nonce" attribute to be applied
  */
-export function loadUserFiles(scriptFile, cssFile) {
+export function loadUserFiles(scriptFile, cssFile, target=null, nonce=null) {
     if (scriptFile) {
         if (cssFile) {
-            _loadUserScriptFile(scriptFile, function() { _loadUserCSSFile(cssFile) });
+            _loadUserScriptFile(scriptFile, nonce, function() { _loadUserCSSFile(cssFile, target) }, target);
         } else {
-            _loadUserScriptFile(scriptFile, function() { _loadedUserFiles() });
+            _loadUserScriptFile(scriptFile, nonce, function() { _loadedUserFiles(target) }, target);
         }
     } else if (cssFile) {
-        _loadUserCSSFile(cssFile);
+        _loadUserCSSFile(cssFile, target);
     } else {
-        _loadedUserFiles();
+        _loadedUserFiles(target);
     }
 };
 
 /**
- * Callback to the message handler.
- * In Swift, the message is handled by the WKScriptMessageHandler, 
- * but in other cases, it might have been reassigned.
- * In Swift, the WKScriptMessageHandler is the MarkupCoordinator,
- * and the userContentController(_ userContentController:didReceive:)
+ * Callback to the global `messageHandler` using `postMessage` or to the 
+ * `element` that is listening for a `muCallback`
+ * 
+ * The global messageHandler is only used here when *not* using MarkupEditorElements, 
+ * the Markup Editor web component. When using web components, callbacks are 
+ * invoked by dispatching an `muCallback` CustomEvent to the `element` provided.
+ * In this case, the `element` will end up invoking `postMessage` on the 
+ * `messageHandler` for most callbacks.
+ * 
+ * The `element` is commonly the `editor` div. 
+ * 
+ * When not using MarkupEditorElements, the `messageHandler` will be defined, 
+ * and callbacks are handled by invoking `postMessage` on it.
+ * 
+ * In Swift, the `messageHandler` is a WKScriptMessageHandler, 
+ * the MarkupCoordinator, and the userContentController(_ userContentController:didReceive:)
  * function receives message as a WKScriptMessage.
+ * 
+ * In VSCode, the `messageHandler` is `vscode`.
  *
- * @param {String} message     The message, which might be a JSONified string
+ * @ignore
+ * @param {string}      message     The message, which might be a JSONified string
+ * @param {HTMLElement} element     An element that should be listening for a `muMessage`.
  */
-function _callback(message) {
-    messageHandler?.postMessage(message);
+function _callback(message, element) {
+    _dispatchMuCallback(message, element ?? activeEditorElement())
 };
 
-/**
- * Callback to signal that input came-in, passing along the DIV ID
- * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
- * callback means the change happened in the 'editor' div.
- */
-export function callbackInput() {
-    changed = true;
-    _callback('input' + (selectedID ?? ''))
-};
-
-/**
- * Callback to signal that user-provided CSS and/or script files have
- * been loaded.
- */
-function _loadedUserFiles() {
-    _callback('loadedUserFiles');
-};
+function _dispatchMuCallback(message, element) {
+    const muCallback = new CustomEvent("muCallback")
+    muCallback.message = message
+    element.dispatchEvent(muCallback)
+}
 
 /**
  * Called to load user script before loading html.
+ * @ignore
  */
-function _loadUserScriptFile(file, callback) {
-    let body = document.getElementsByTagName('body')[0];
+function _loadUserScriptFile(file, nonce, callback, target) {
+    let scriptTarget = target ?? document.getElementsByTagName('body')[0];
     let script = document.createElement('script');
-    script.type = 'text/javascript';
+    script.type = 'module';
     script.addEventListener('load', callback);
+    if (nonce) script.setAttribute('nonce', nonce)
     script.setAttribute('src', file);
-    body.appendChild(script);
+    scriptTarget.appendChild(script);
 };
 
 /**
  * Called to load user CSS before loading html if userCSSFile has been defined for this MarkupWKWebView
+ * @ignore
  */
-function _loadUserCSSFile(file) {
-    let head = document.getElementsByTagName('head')[0];
+function _loadUserCSSFile(file, target) {
+    let cssTarget = target ?? document.getElementsByTagName('head')[0];
     let link = document.createElement('link');
     link.rel = 'stylesheet';
     link.type = 'text/css';
-    link.addEventListener('load', function() { _loadedUserFiles() });
+    link.addEventListener('load', function() { _loadedUserFiles(target) });
     link.href = file;
-    head.appendChild(link);
+    cssTarget.appendChild(link);
 };
 
 if (typeof window != 'undefined') {
-    /**
-     * The 'ready' callback indicated that the editor and this js is properly loaded.
-     *
-     * Note for history, replaced window.onload with this eventListener.
-     */
-    window.addEventListener('load', function () {
-        _callback('ready');
-    });
+
+    //
+    //For history, the 'ready' callback used to indicate that the editor and this js is properly
+    //loaded, which in turn triggered loading of user script and style, which in turn informed 
+    //the MarkupDelegate that things were really in a "ready" state. However when using a 
+    //web component and loading modules, the `connectedCallback` triggers loading of user 
+    //script and style. In summary, there we no longer use an event listener on load to 
+    //do a "ready" callback.
+    //
 
     /**
      * Capture all unexpected runtime errors in this script, report for debugging.
@@ -1098,16 +239,16 @@ if (typeof window != 'undefined') {
      * Please file issues for any errors captured by this function,
      * with the call stack and reproduction instructions if at all possible.
      */
-    window.addEventListener('error', function () {
-        const muError = new MUError('Internal', 'Break at MUError(\'Internal\'... in Safari Web Inspector to debug.');
-        muError.callback()
+    window.addEventListener('error', function (e) {
+        const muError = new MUError('Internal', e.message);
+        _callbackError(muError)
     });
 
     /**
      * If the window is resized, call back so that the holder can adjust its height tracking if needed.
      */
     window.addEventListener('resize', function () {
-        _callback('updateHeight');
+        _callback('updateHeight', activeDocument());
     });
 }
 
@@ -1127,9 +268,10 @@ if (typeof window != 'undefined') {
  * @param {string}              text        The string to search for in a case-insensitive manner.
  * @param {string}              direction   Search direction, either `forward ` or `backward`.
  * @param {"true" | "false"}    activate    Set to "true" to activate "search mode", where Enter/Shift-Enter = Search forward/backward.
- * @returns {Object}                        The {to: number, from: number} location of the match.
+ * @returns {object}                        The {to: number, from: number} location of the match.
  */
 export function searchFor(text, direction, activate) {
+    const view = activeView()
     const searchOnEnter = activate === 'true';
     let command = searchForCommand(text, direction, searchOnEnter);
     return command(view.state, view.dispatch, view);
@@ -1139,55 +281,62 @@ export function searchFor(text, direction, activate) {
  * Return the command that will execute search for `text` in `direction when provided with the 
  * view.state, view.dispatch, and view.
  *
+ * @ignore
  * @param {string}              text        The string to search for in a case-insensitive manner
  * @param {string}              direction   Search direction, either `forward ` or `backward`.
  * @param {"true" | "false"}    activate    Set to "true" to activate "search mode", where Enter/Shift-Enter = Search forward/backward.
  * @returns {Command}                       The command that can be executed to return the location of the match.
  */
 export function searchForCommand(text, direction, activate) {
-    return searcher.searchForCommand(text, direction, activate);
-}
-
-/**
- * Set whether searches will be case sensitive or not.
- * 
- * @param {boolean} caseSensitive 
- */
-export function matchCase(caseSensitive) {
-    searcher.caseSensitive = caseSensitive;
+    return activeSearcher()?.searchForCommand(text, direction, activate);
 }
 
 /**
  * Deactivate search mode, stop intercepting Enter to search.
+ * 
+ * @param   {EditorView | null}    view    The view whose activeSearcher should be deactivated.
  */
-export function deactivateSearch() {
-    searcher.deactivate(view);
+export function deactivateSearch(view=null) {
+    activeSearcher()?.deactivate(view);
 };
 
 /**
  * Cancel searching, resetting search state.
  */
 export function cancelSearch() {
-    searcher.cancel()
+    activeSearcher()?.cancel()
+}
+
+/**
+ * Set whether searches will be case sensitive or not.
+ * 
+ * @ignore
+ * @param {boolean} caseSensitive 
+ */
+export function matchCase(caseSensitive) {
+    let searcher = activeSearcher()
+    if (searcher) searcher.caseSensitive = caseSensitive;
 }
 
 /**
  * Return the number of matches in the current search or null if search has not yet been initiated.
  * 
- * @returns {number | null }
+ * @ignore
+ * @returns {number | null}
  */
 export function matchCount() {
-    return searcher.matchCount;
+    return activeSearcher()?.matchCount;
 }
 
 /**
  * Return the index of the match in the current search, starting at the first match which began 
  * at the selection point, or null if search has not yet been initiated.
  * 
- * @returns {number | null }
+ * @ignore
+ * @returns {number | null}
  */
 export function matchIndex() {
-    return searcher.matchIndex;
+    return activeSearcher()?.matchIndex;
 }
 
 /********************************************************************************
@@ -1198,11 +347,13 @@ export function matchIndex() {
 /**
  * Paste html at the selection, replacing the selection as-needed.
  * 
- * `event` is a mocked ClipboardEvent for testing purposes, else nil.
+ * @param   {string}                html    The HTML to be pasted
+ * @param   {ClipboardEvent | bull} event   A mocked ClipboardEvent for testing
  */
 export function pasteHTML(html, event) {
+    const view = activeView()
     view.pasteHTML(html, event);
-    stateChanged();
+    stateChanged(view);
 };
 
 /**
@@ -1212,12 +363,13 @@ export function pasteHTML(html, event) {
  * The trick here is that we want to use the same code to paste text as we do for
  * HTML, but we want to paste something that is the MarkupEditor-equivalent of
  * unformatted text.
- * 
- * `event` is a mocked ClipboardEvent for testing purposes, else nil.
+ *  
+ * @param   {string}                html    The HTML to be pasted
+ * @param   {ClipboardEvent | bull} event   A mocked ClipboardEvent for testing
  */
 export function pasteText(html, event) {
     const node = _nodeFromHTML(html);
-    const htmlFragment = _fragmentFromNode(node);
+    const htmlFragment = fragmentFromNode(node);
     const minimalHTML = _minimalHTML(htmlFragment); // Reduce to MarkupEditor-equivalent of "plain" text
     pasteHTML(minimalHTML, event);
 };
@@ -1228,6 +380,7 @@ export function pasteText(html, event) {
  * This equivalent is derived by making all top-level nodes into <P> and removing
  * formatting and links. However, we leave TABLE, UL, and OL alone, so they still
  * come in as tables and lists, but with formatting removed.
+ * @ignore
  */
 function _minimalHTML(fragment) {
     // Create a div to hold fragment so that we can getElementsByTagName on it
@@ -1242,6 +395,7 @@ function _minimalHTML(fragment) {
 
 /**
  * Replace all styles in the div with 'P'.
+ * @ignore
  */
 function _minimalStyle(div) {
     _minimalStyleTags.forEach(tag => {
@@ -1261,6 +415,7 @@ function _minimalStyle(div) {
 
 /**
  * Replace all formats in the div with unformatted text
+ * @ignore
  */
 function _minimalFormat(div) {
     _formatTags.forEach(tag => {
@@ -1281,6 +436,7 @@ function _minimalFormat(div) {
 
 /**
  * Replace all links with their text only
+ * @ignore
  */
 function _minimalLink(div) {
     // Reset elements using getElementsByTagName as we go along or the
@@ -1308,10 +464,13 @@ function _minimalLink(div) {
  * Clean out the document and replace it with an empty paragraph
  */
 export function emptyDocument() {
-    selectedID = null;
-    setHTML(emptyHTML());
-};
+    setSelectedID(null)
+    setHTML(emptyHTML())
+}
 
+/** Return the HTML that is contained in an empty document. 
+ * @returns {string} An empty paragraph
+ */
 export function emptyHTML() {
     return '<p></p>'
 }
@@ -1319,22 +478,24 @@ export function emptyHTML() {
 /**
  * Set the `selectedID` to `id`, a byproduct of clicking or otherwise iteractively
  * changing the selection, triggered by `createSelectionBetween`.
+ * 
+ * @ignore
  * @param {string} id 
  */
 export function resetSelectedID(id) { 
-    selectedID = id;
-};
+    setSelectedID(id)
+}
 
 /**
  * Return an array of `src` attributes for images that are encoded as data, empty if there are none.
  * 
- * @returns {[string]}
+ * @returns {Array<string>}
  */
 export function getDataImages() {
-    let images = document.getElementsByTagName('img');
+    let images = Array.from(activeEditorElement().getElementsByTagName('img'))
     let dataImages = []
-    for (let i = 0; i < images.length; i++) {
-        let src = images[i].getAttribute('src');
+    for (let img of images) {
+        let src = img.getAttribute('src');
         if (src && src.startsWith('data')) dataImages.push(src)
     }
     return dataImages
@@ -1348,9 +509,9 @@ export function getDataImages() {
  * @param {string} newSrc The src that should replace the old src
  */
 export function savedDataImage(oldSrc, newSrc) {
-    let images = document.getElementsByTagName('img');
-    for (let i = 0; i < images.length; i++) {
-        let img = images[i]
+    const view = activeView()
+    let images = Array.from(activeEditorElement().getElementsByTagName('img'));
+    for (let img of images) {
         let src = img.getAttribute('src');
         if (src && src.startsWith(oldSrc)) {
             let imgPos = view.posAtDOM(img, 0)
@@ -1363,9 +524,6 @@ export function savedDataImage(oldSrc, newSrc) {
 /**
  * Get the contents of the div with id `divID` or of the full doc.
  *
- * If pretty, then the text will be nicely formatted for reading.
- * If clean, the spans and empty text nodes will be removed first.
- *
  * Note: Clean is needed to avoid the selected ResizableImage from being
  * passed-back with spans around it, which is what are used internally to
  * represent the resizing handles and box around the selected image.
@@ -1373,18 +531,22 @@ export function savedDataImage(oldSrc, newSrc) {
  * MarkupEditor and should not be included with the HTML contents. It is
  * available here with clean !== true as an option in case it's needed 
  * for debugging.
- *
- * @return {string} The HTML for the div with id `divID` or of the full doc.
+ * 
+ * @param   {string}    pretty  Set to "true" to format nicely for reading.
+ * @param   {string}    clean   Set to "true" to remove spans and empty text nodes first.
+ * @param   {string}    divID   The ID for the DIV to return HTML from.
+ * @returns  {string}    The HTML for the div with id `divID` or of the full doc.
  */
 export function getHTML(pretty='true', clean='true', divID) {
+    const view = activeView()
     const prettyHTML = pretty === 'true';
     const cleanHTML = clean === 'true';
     const divNode = (divID) ? _getNode(divID)?.node : view.state.doc;
     if (!divNode) {
-        MUError.NoDiv.callback();
+        _callbackError(MUError.NoDiv)
         return "";
     }
-    const editor = DOMSerializer.fromSchema(view.state.schema).serializeFragment(divNode.content);
+    const editor = DOMSerializer.fromSchema(schema).serializeFragment(divNode.content);
     let text;
     if (cleanHTML) {
         _cleanUpDivsWithin(editor);
@@ -1406,9 +568,10 @@ export function getHTML(pretty='true', clean='true', divID) {
  * Insert a newline between each top-level element so they are distinct
  * visually and each top-level element is in a contiguous text block vertically.
  *
- * @return {String}     A string showing the raw HTML with tags, etc.
+ * @ignore
+ * @returns {string}     A string showing the raw HTML with tags, etc.
  */
-const _allPrettyHTML = function(fragment) {
+function _allPrettyHTML(fragment) {
     let text = '';
     const childNodes = fragment.childNodes;
     const childNodesLength = childNodes.length;
@@ -1426,8 +589,9 @@ const _allPrettyHTML = function(fragment) {
  * The inlined parameter forces whether to put a newline at the beginning
  * of the text. By passing it in rather than computing it from node, we
  * can avoid putting a newline in front of the first element in _allPrettyHTML.
+ * @ignore
  */
-const _prettyHTML = function(node, indent, text, inlined) {
+function _prettyHTML(node, indent, text, inlined) {
     const nodeName = node.nodeName.toLowerCase();
     const nodeIsText = _isTextNode(node);
     const nodeIsElement = _isElementNode(node);
@@ -1462,16 +626,18 @@ const _prettyHTML = function(node, indent, text, inlined) {
 
 /**
  * Return a new string that has all < replaced with &lt; and all > replaced with &gt;
+ * @ignore
  */
-const _replaceAngles = function(textContent) {
+function _replaceAngles(textContent) {
     return textContent.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 };
 
 /**
  * Return whether node should be inlined during the prettyHTML assembly. An inlined node
  * like <I> in a <P> ends up looking like <P>This is an <I>italic</I> node</P>.
+ * @ignore
  */
-const _isInlined = function(node) {
+function _isInlined(node) {
     return _isTextNode(node) || _isFormatElement(node) || _isLinkNode(node) || _isVoidNode(node)
 };
 
@@ -1480,8 +646,9 @@ const _isInlined = function(node) {
  * 
  * Used so relative hrefs and srcs work. 
  * If `string` is undefined, then the base element is removed if it exists.
+ * @ignore
  */
-function setBase(string) {
+function _setBase(string) {
     let base = document.getElementsByTagName('base')[0]
     if (string) {
         if (!base) {
@@ -1501,20 +668,21 @@ function setBase(string) {
  * 
  * The exported placeholderText is set after setting the contents.
  *
- * @param {string}  contents            The HTML for the editor
- * @param {boolean} selectAfterLoad     Whether we should focus after load
+ * @param {string}      contents            The HTML for the editor
+ * @param {boolean}     focusAfterLoad      Whether we should focus after load
+ * @param {string}      base                Value for base element for resolving relative src and hrefs
+ * @param {EditorView}  editorView          The EditorView to set HTML for, `activeView()` default
  */
-export function setHTML(contents, focusAfterLoad=true, base) {
+export function setHTML(contents, focusAfterLoad=true, base, editorView) {
     // If defined, set base; else remove base if it exists. This way, when setHTML is used to,
     // say, create a new empty document, base will be reset.
-    setBase(base);
-    const state = view.state;
+    _setBase(base)
+    const htmlView = (editorView) ? editorView : activeView()
+    const state = htmlView.state;
     const doc = state.doc;
     const tr = state.tr;
     const node = _nodeFromHTML(contents);
     const selection = new AllSelection(doc);
-    // To avoid flashing it, only set the placeholder early if contents is empty
-    if (_placeholderText && (contents == emptyHTML())) placeholderText = _placeholderText;
     let transaction = tr
         .setSelection(selection)
         .replaceSelectionWith(node, false)
@@ -1523,37 +691,8 @@ export function setHTML(contents, focusAfterLoad=true, base) {
     transaction
         .setSelection(TextSelection.near($pos))
         .scrollIntoView();
-    view.dispatch(transaction);
-    // But always set placeholder in the end so it will appear when the doc is empty
-    placeholderText = _placeholderText;
-    if (focusAfterLoad) view.focus();
-    // Reset change tracking
-    changed = false;
-};
-
-/**
- * Internal value of placeholder text
- */
-let _placeholderText;           // Hold onto the placeholder text so we can defer setting it until setHTML.
-
-/**
- * Externally visible value of placeholder text
- */
-export let placeholderText;     // What we tell ProseMirror to display as a decoration, set after setHTML.
-
-/**
- * Set the text to use as a placeholder when the document is empty.
- * 
- * This method does not affect an existing view being displayed. It only takes effect after the 
- * HTML contents is set via setHTML. We want to set the value held in _placeholderText early and 
- * hold onto it, but because we always start with a valid empty document before loading HTML contents, 
- * we need to defer setting the exported value until later, which displays using a ProseMirror 
- * plugin and decoration.
- * 
- * @param {string} text     The text to display as a placeholder when the document is empty.
- */
-export function setPlaceholder(text) {
-    _placeholderText = text;
+    htmlView.dispatch(transaction);
+    if (focusAfterLoad) htmlView.focus();
 };
 
 /**
@@ -1566,7 +705,7 @@ export function setPlaceholder(text) {
  * window.getComputedStyle(editor, null), and then asking that for the height. It does
  * not include padding. This kind of works, except that I found the height changed as
  * soon as I add a single character to the text. So, for example, it shows 21px when it
- * opens with just a single <p>Foo</p>, but once you add a character to the text, the
+ * opens with just a single `<p>Foo</p>`, but once you add a character to the text, the
  * height shows up as 36px. If you remove padding-block, then the behavior goes away.
  * To work around the problem, we set the padding block to 0 before getting height, and
  * then set it back afterward. With this change, both the touch-outside-of-text works
@@ -1574,28 +713,30 @@ export function setPlaceholder(text) {
  * auto-sizing of a WKWebView based on its contents.
  */
 export function getHeight() {
-   const editor = document.getElementById('editor');
+   const editor = activeDocument().getElementById('editor');
    const paddingBlockStart = editor.style.getPropertyValue('padding-block-start');
    const paddingBlockEnd = editor.style.getPropertyValue('padding-block-end');
    editor.style['padding-block-start'] = '0px';
    editor.style['padding-block-end'] = '0px';
    // TODO: Check this works on iOS or is even still needed
-   const height = view.dom.getBoundingClientRect().height;
+   const height = activeView().dom.getBoundingClientRect().height;
    editor.style['padding-block-start'] = paddingBlockStart;
    editor.style['padding-block-end'] = paddingBlockEnd;
    return height;
 };
 
-/*
+/**
  * Pad the bottom of the text in editor to fill fullHeight.
  *
  * Setting padBottom pads the editor all the way to the bottom, so that the
  * focus area occupies the entire view. This allows long-press on iOS to bring up the
  * context menu anywhere on the screen, even when text only occupies a small portion
  * of the screen.
+ * 
+ * @param   {string}    fullHeight  The full height of the screen to be padded-to
  */
 export function padBottom(fullHeight) {
-    const editor = document.getElementById('editor');
+    const editor = activeDocument().getElementById('editor');
     const padHeight = fullHeight - getHeight();
     if (padHeight > 0) {
         editor.style.setProperty('--padBottom', padHeight+'px');
@@ -1605,16 +746,17 @@ export function padBottom(fullHeight) {
 };
 
 /**
- * Focus immediately, leaving range alone
+ * Focus immediately, leaving range alone.
  */
 export function focus() {
-    view.focus()
+    activeView().focus()
 };
 
 /**
- * Reset the selection to the beginning of the document
+ * Reset the selection to the beginning of the document.
  */
 export function resetSelection() {
+    const view = activeView()
     const {node, pos} = _firstEditableTextNode();
     const doc = view.state.doc;
     const selection = (node) ? new TextSelection(doc.resolve(pos)) : new AllSelection(doc);
@@ -1625,9 +767,11 @@ export function resetSelection() {
 /**
  * Return the node and position of the first editable text; i.e., 
  * a text node inside of a contentEditable div.
+ * @ignore
  */
 function _firstEditableTextNode() {
-    const divNodeType = view.state.schema.nodes.div;
+    const view = activeView()
+    const divNodeType = schema.nodes.div;
     const fromPos = TextSelection.atStart(view.state.doc).from
     const toPos = TextSelection.atEnd(view.state.doc).to
     let nodePos = {};
@@ -1653,9 +797,17 @@ function _firstEditableTextNode() {
  * the buttonGroupJSON. However, button groups can also be added and removed dynamically.
  * In that case, a button group div is added to a parent div using this call, and the parent has to 
  * already exist so that we can find it.
+ * 
+ * @param   {string}    id          The id of the dive to add
+ * @param   {string}    parentId    The id of the parent for this div
+ * @param   {string}    cssClass    The class to assign to this div
+ * @param   {string}    attributesJSON  A stringified object containing the editable attributes
+ * @param   {string}    buttonGroupJSON A stringified object containing a group of buttons in this div
+ * @param   {string}    htmlContents    The inner HTML to place in this div
  */
 export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, htmlContents) {
-    const divNodeType = view.state.schema.nodes.div;
+    const view = activeView()
+    const divNodeType = schema.nodes.div;
     const editableAttributes = (attributesJSON && JSON.parse(attributesJSON)) ?? {};
     const editable = editableAttributes.contenteditable === true;
     const buttonGroupDiv = _buttonGroupDiv(buttonGroupJSON);
@@ -1685,7 +837,7 @@ export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, 
             // Now we have to update the htmlContent markup of the parent
             const $divPos = transaction.doc.resolve(divPos);
             const parent = $divPos.node();
-            const htmlContents = _htmlFromFragment(_fragmentFromNode(parent));
+            const htmlContents = htmlFromFragment(fragmentFromNode(parent));
             transaction.setNodeAttribute(pos, "htmlContents", htmlContents);
             view.dispatch(transaction);
         }
@@ -1707,9 +859,9 @@ export function addDiv(id, parentId, cssClass, attributesJSON, buttonGroupJSON, 
 };
 
 /**
- * 
+ * @ignore
  * @param {string} buttonGroupJSON A JSON string describing the button group
- * @returns HTMLDivElement
+ * @returns {HTMLDivElement}
  */
 function _buttonGroupDiv(buttonGroupJSON) {
     if (buttonGroupJSON) {
@@ -1740,7 +892,8 @@ function _buttonGroupDiv(buttonGroupJSON) {
  * @param {string} id   The id of the div to remove
  */
 export function removeDiv(id) {
-    const divNodeType = view.state.schema.nodes.div;
+    const view = activeView()
+    const divNodeType = schema.nodes.div;
     const {node, pos} = _getNode(id)
     if (divNodeType === node?.type) {
         const $pos = view.state.doc.resolve(pos);
@@ -1759,7 +912,7 @@ export function removeDiv(id) {
         if (isButtonGroup) {
             // Now we have to update the htmlContents attribute of the parent
             const parent = _getNode(node.attrs.parentId, transaction.doc);
-            const htmlContents = _htmlFromFragment(_fragmentFromNode(parent.node));
+            const htmlContents = htmlFromFragment(fragmentFromNode(parent.node));
             transaction.setNodeAttribute(parent.pos, "htmlContents", htmlContents);
         }
         view.dispatch(transaction);
@@ -1774,7 +927,8 @@ export function removeDiv(id) {
  * @param {string} label        The label for the button.
  */
 export function addButton(id, parentId, cssClass, label) {
-    const buttonNodeType = view.state.schema.nodes.button;
+    const view = activeView()
+    const buttonNodeType = schema.nodes.button;
     const button = document.createElement('button');
     button.setAttribute('id', id);
     button.setAttribute('parentId', parentId);
@@ -1794,7 +948,7 @@ export function addButton(id, parentId, cssClass, label) {
             // Now we have to update the htmlContent markup of the parent
             const $divPos = transaction.doc.resolve(divPos);
             const parent = $divPos.node();
-            const htmlContents = _htmlFromFragment(_fragmentFromNode(parent));
+            const htmlContents = htmlFromFragment(fragmentFromNode(parent));
             transaction.setNodeAttribute(pos, "htmlContents", htmlContents);
             view.dispatch(transaction);
         }
@@ -1802,12 +956,14 @@ export function addButton(id, parentId, cssClass, label) {
 };
 
 /**
+ * Remove the HTMLButton element with the given `id`.
  * 
  * @param {string} id   The ID of the button to be removed.
  */
 export function removeButton(id) {
+    const view = activeView()
     const {node, pos} = _getNode(id)
-    if (view.state.schema.nodes.button === node?.type) {
+    if (schema.nodes.button === node?.type) {
         const nodeSelection = new NodeSelection(view.state.doc.resolve(pos));
         const transaction = view.state.tr
             .setSelection(nodeSelection)
@@ -1817,12 +973,14 @@ export function removeButton(id) {
 };
 
 /**
+ * Focus on the DIV with `id`.
  * 
  * @param {string} id   The ID of the DIV to focus on.
  */
 export function focusOn(id) {
+    const view = activeView()
     const {node, pos} = _getNode(id);
-    if (node && (node.attrs.id !== selectedID)) {
+    if (node && (node.attrs.id !== selectedID())) {
         const selection = new TextSelection(view.state.doc.resolve(pos));
         const transaction = view.state.tr.setSelection(selection).scrollIntoView();
         view.dispatch(transaction);
@@ -1833,6 +991,7 @@ export function focusOn(id) {
  * Remove all divs in the document.
  */
 export function removeAllDivs() {
+    const view = activeView()
     const allSelection = new AllSelection(view.state.doc);
     const transaction = view.state.tr.delete(allSelection.from, allSelection.to);
     view.dispatch(transaction);
@@ -1843,12 +1002,14 @@ export function removeAllDivs() {
  * across the view.state.doc from position `from` to position `to`. 
  * If `from` or `to` are unspecified, they default to the beginning 
  * and end of view.state.doc.
+ * @ignore
  * @param {string} id           The attrs.id of the node we are looking for.
  * @param {number} from         The position in the document to search from.
  * @param {number} to           The position in the document to search to.
- * @returns {Object}            The node and position that matched the search.
+ * @returns {object}            The node and position that matched the search.
  */
 function _getNode(id, doc, from, to) {
+    const view = activeView()
     const source = doc ?? view.state.doc;
     const fromPos = from ?? TextSelection.atStart(source).from;
     const toPos = to ?? TextSelection.atEnd(source).to;
@@ -1874,49 +1035,49 @@ function _getNode(id, doc, from, to) {
 //MARK: Formatting
 
 /**
- * Toggle the selection to/from bold (<STRONG>)
+ * Toggle the selection to/from bold.
  */
 export function toggleBold() {
     _toggleFormat('B');
 };
 
 /**
- * Toggle the selection to/from italic (<EM>)
+ * Toggle the selection to/from italic.
  */
 export function toggleItalic() {
     _toggleFormat('I');
 };
 
 /**
- * Toggle the selection to/from underline (<U>)
+ * Toggle the selection to/from underline.
  */
 export function toggleUnderline() {
     _toggleFormat('U');
 };
 
 /**
- * Toggle the selection to/from strikethrough (<S>)
+ * Toggle the selection to/from strikethrough.
  */
 export function toggleStrike() {
     _toggleFormat('DEL');
 };
 
 /**
- * Toggle the selection to/from code (<CODE>)
+ * Toggle the selection to/from code.
  */
 export function toggleCode() {
     _toggleFormat('CODE');
 };
 
 /**
- * Toggle the selection to/from subscript (<SUB>)
+ * Toggle the selection to/from subscript.
  */
 export function toggleSubscript() {
     _toggleFormat('SUB');
 };
 
 /**
- * Toggle the selection to/from superscript (<SUP>)
+ * Toggle the selection to/from superscript.
  */
 export function toggleSuperscript() {
     _toggleFormat('SUP');
@@ -1928,9 +1089,11 @@ export function toggleSuperscript() {
  * Although the HTML will contain <STRONG>, <EM>, and <S>, the types
  * passed here are <B>, <I>, and <DEL> for compatibility reasons.
  *
+ * @ignore
  * @param {string} type     The *uppercase* type to be toggled at the selection.
  */
 function _toggleFormat(type) {
+    const view = activeView()
     let command = toggleFormatCommand(type)
     return command(view.state, view.dispatch, view)
 };
@@ -1964,7 +1127,7 @@ export function toggleFormatCommand(type) {
         };
         if (toggle && view) {
             toggle(state, view.dispatch);
-            stateChanged()
+            stateChanged(view)
         } else {
             return toggle
         }
@@ -1983,9 +1146,11 @@ export function toggleFormatCommand(type) {
 
 /**
  * Set the paragraph style at the selection to `style` 
- * @param {String}  style    One of the styles P or H1-H6 to set the selection to.
+ * 
+ * @param {string}  style    One of the styles P or H1-H6 to set the selection to.
  */
 export function setStyle(style) {
+    const view = activeView()
     let command = setStyleCommand(style)
     let result = command(view.state, view.dispatch, view)
     return result
@@ -1993,7 +1158,9 @@ export function setStyle(style) {
 
 /**
  * Return a Command that sets the paragraph style at the selection to `style` 
- * @param {String}  style    One of the styles P or H1-H6 to set the selection to.
+ * 
+ * @ignore
+ * @param {string}  style    One of the styles P or H1-H6 to set the selection to.
  */
 export function setStyleCommand(style) {
     let commandAdapter = (viewState, dispatch, view) => {
@@ -2025,13 +1192,13 @@ export function setStyleCommand(style) {
             return false;   // We only need top-level nodes within doc
         });
         if (error) {
-            //error.alert = true;
-            //error.callback();
-            return false;
+            //error.alert = true
+            //_callbackError(error)
+            return false
         } else if (view) {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
-            stateChanged();
+            stateChanged(view);
         } else {    // When checking if active based on state, return true only if different
             return paragraphStyle(state) != style;
         }
@@ -2040,17 +1207,8 @@ export function setStyleCommand(style) {
 }
 
 /**
- * Find/verify the oldStyle for the selection and replace it with newStyle.
- * @deprecated Use setStyle
- * @param {String}  oldStyle    One of the styles P or H1-H6 that exists at selection.
- * @param {String}  newStyle    One of the styles P or H1-H6 to replace oldStyle with.
- */
-export function replaceStyle(oldStyle, newStyle) {
-    setStyle(newStyle);
-};
-
-/**
  * Return a ProseMirror Node that corresponds to the MarkupEditor paragraph style.
+ * @ignore
  * @param {string} paragraphStyle   One of the paragraph styles supported by the MarkupEditor.
  * @returns {Node | null}           A ProseMirror Node of the specified type or null if unknown.
  */
@@ -2104,12 +1262,13 @@ function _nodeFor(paragraphStyle, schema) {
  * We use a single command returned by `multiWrapInList` because the command 
  * can be assigned to a single button in JavaScript.
  * 
- * @param {String}  listType     The kind of list we want the list item to be in if we are turning it on or changing it.
+ * @param {string}  listType     The kind of list we want the list item to be in if we are turning it on or changing it.
  */
 export function toggleListItem(listType) {
-    const targetListType = nodeTypeFor(listType, view.state.schema);
+    const view = activeView()
+    const targetListType = nodeTypeFor(listType, schema);
     if (targetListType !== null) {
-        const command = wrapInListCommand(view.state.schema, targetListType);
+        const command = wrapInListCommand(schema, targetListType);
         command(view.state, (transaction) => {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
@@ -2126,7 +1285,8 @@ export function toggleListItem(listType) {
  * no longer contains a list. Similarly, if the list returned here is null, then  
  * the selection can be set to a list.
  * 
- * @return { 'UL' | 'OL' | null }
+ * @ignore
+ * @returns { 'UL' | 'OL' | null }
  */
 export function getListType(state) {
     const selection = state.selection;
@@ -2148,12 +1308,15 @@ export function getListType(state) {
 }
 
 function _getListType() {
+    const view = activeView()
     return getListType(view.state);
 };
 
 /**
  * Return the NodeType corresponding to `listType`, else null.
- * @param {"UL" | "OL" | String} listType The String corresponding to the NodeType
+ * 
+ * @ignore
+ * @param {"UL" | "OL" | string} listType The String corresponding to the NodeType
  * @returns {NodeType | null}
  */
 export function nodeTypeFor(listType, schema) {
@@ -2168,6 +1331,8 @@ export function nodeTypeFor(listType, schema) {
 
 /**
  * Return the String corresponding to `nodeType`, else null.
+ * 
+ * @ignore
  * @param {NodeType} nodeType The NodeType corresponding to the String
  * @returns {'UL' | 'OL' | null}
  */
@@ -2198,6 +1363,7 @@ export function listTypeFor(nodeType, schema) {
  * 
  * Adapted from code in https://discuss.prosemirror.net/t/changing-the-node-type-of-a-list/4996.
  * 
+ * @ignore
  * @param {Schema}          schema              The schema holding the list and list item node types.
  * @param {NodeType}        targetNodeType      One of state.schema.nodes.bullet_list or ordered_list to change selection to.
  * @param {Attrs | null}    attrs               Attributes of the new list items.
@@ -2208,16 +1374,16 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
     const targetListItemType = schema.nodes.list_item;
     const listItemTypes = [targetListItemType];
 
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         const inTargetNodeType = getListType(state) === listTypeFor(targetNodeType, state.schema)
         const command = inTargetNodeType ? liftListItem(state.schema.nodes.list_item) : wrapInList(targetNodeType, attrs);
         if (command(state)) {
             let result = command(state, dispatch);
-            if (dispatch) stateChanged()
+            if (dispatch) stateChanged(view)
             return result;
         }
 
-        const commonListNode = findCommonListNode(state, listTypes);
+        const commonListNode = _findCommonListNode(state, listTypes);
         if (!commonListNode) return false;
 
         if (dispatch) {
@@ -2245,7 +1411,7 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
             );
 
             dispatch(tr);
-            stateChanged();
+            stateChanged(view);
         }
         return true;
     };
@@ -2255,11 +1421,13 @@ export function wrapInListCommand(schema, targetNodeType, attrs) {
 
 /**
  * Return the common list node in the selection that is one of the `listTypes` if one exists.
+ * 
+ * @ignore
  * @param {EditorState}     state       The EditorState containing the selection.
  * @param {Array<NodeType>} listTypes   The list types we're looking for.
- * @returns {node: Node, from: number, to: number}
+ * @returns {object}                    {node: Node, from: number, to: number}
  */
-function findCommonListNode(state, listTypes) {
+function _findCommonListNode(state, listTypes) {
 
     const range = state.selection.$from.blockRange(state.selection.$to);
     if (!range) return null;
@@ -2273,6 +1441,8 @@ function findCommonListNode(state, listTypes) {
 
 /**
  * Return a Fragment with its children replaced by ones that are of `targetListType` or `targetListItemType`.
+ * 
+ * @ignore
  * @param {Fragment}        content             The ProseMirror Fragment taken from the selection.
  * @param {NodeType}        targetListType      The bullet_list or ordered_list NodeType we are changing children to.
  * @param {NodeType}        targetListItemType  The list_item NodeType we are changing children to.
@@ -2301,6 +1471,8 @@ function updateContent(content, targetListType, targetListItemType, listTypes, l
 
 /**
  * Return the `target` node type if the type of `node` is one of the `options`.
+ * 
+ * @ignore
  * @param {Node}            node 
  * @param {NodeType}        target 
  * @param {Array<NodeType>} options 
@@ -2312,12 +1484,14 @@ function getReplacementType(node, target, options) {
 
 /**
  * Return a new Node with one of the target types.
+ * 
+ * @ignore
  * @param {Node}            node                The node to change to targetListType or targetListItemType.
  * @param {NodeType}        targetListType      The list type we want to change `node` to.
  * @param {NodeType}        targetListItemType  The list item types we want to change `node` to.
  * @param {Array<NodeType>} listTypes           The list types we're looking for.
  * @param {Array<NodeType>} listItemTypes       The list item types we're looking for.
- * @returns Node
+ * @returns {Node}
  */
 function updateNode(node, targetListType, targetListItemType, listTypes, listItemTypes) {
     const newContent = updateContent(
@@ -2353,6 +1527,7 @@ function updateNode(node, targetListType, targetListItemType, listTypes, listIte
  *
  */
 export function indent() {
+    const view = activeView()
     let command = indentCommand();
     return command(view.state, view.dispatch, view)
 };
@@ -2465,6 +1640,7 @@ export function indentCommand() {
  *
  */
 export function outdent() {
+    const view = activeView()
     let command = outdentCommand()
     return command(view.state, view.dispatch, view)
 };
@@ -2545,37 +1721,14 @@ function parents($pos, start, end) {
 }
 
 /********************************************************************************
- * Deal with modal input from the Swift side
- */
-//MARK: Modal Input
-
-/**
- * Called before beginning a modal popover on the Swift side, to enable the selection
- * to be restored by endModalInput.
- * 
- * @deprecated No longer needed.
- */
-export function startModalInput() {
-}
-
-/**
- * Called typically after cancelling a modal popover on the Swift side, since
- * normally the result of using the popover is to modify the DOM and reset the
- * selection.
- * 
- * @deprecated No longer needed.
- */
-export function endModalInput() {
-}
-
-/********************************************************************************
  * Clean up to avoid ugly HTML
  */
 //MARK: Clean Up
 
 /**
  * Remove all children with names in node.
- * @param {[string]} names 
+ * @ignore
+ * @param {string[]} names 
  * @param {HTMLElement} node 
  */
 function _cleanUpTypesWithin(names, node) {
@@ -2594,8 +1747,9 @@ function _cleanUpTypesWithin(names, node) {
 
 /**
  * Do a depth-first traversal from node, removing spans starting at the leaf nodes.
- *
- * @return {Int}    The number of spans removed
+ * 
+ * @ignore
+ * @returns {number}    The number of spans removed
  */
 function _cleanUpSpansWithin(node, spansRemoved) {
     return _cleanUpSpansDivsWithin(node, 'SPAN', spansRemoved);
@@ -2603,8 +1757,9 @@ function _cleanUpSpansWithin(node, spansRemoved) {
 
 /**
  * Do a depth-first traversal from node, removing divs starting at the leaf nodes.
- *
- * @return {Int}    The number of divs removed
+ * 
+ * @ignore
+ * @returns {number}    The number of divs removed
  */
 function _cleanUpDivsWithin(node, divsRemoved) {
     return _cleanUpSpansDivsWithin(node, 'DIV', divsRemoved);
@@ -2612,8 +1767,9 @@ function _cleanUpDivsWithin(node, divsRemoved) {
 
 /**
  * Do a depth-first traversal from node, removing divs/spans starting at the leaf nodes.
- *
- * @return {Int}    The number of divs/spans removed
+ * 
+ * @ignore
+ * @returns {number}    The number of divs/spans removed
  */
 function _cleanUpSpansDivsWithin(node, type, removed) {
     removed = removed ?? 0;
@@ -2650,7 +1806,7 @@ function _cleanUpSpansDivsWithin(node, type, removed) {
  * find out what the selection is in the document, so we
  * can tell if the selection is in a bolded word or a list or a table, etc.
  *
- * @return {String}      The stringified dictionary of selectionState.
+ * @returns {string}      The stringified dictionary of selectionState.
  */
 export function getSelectionState() {
     const state = _getSelectionState();
@@ -2659,10 +1815,11 @@ export function getSelectionState() {
 
 /**
  * Populate a dictionary of properties about the current selection and return it.
- *
- * @return {String: String}     The dictionary of properties describing the selection
+ * 
+ * @ignore
+ * @returns {object}     The string-keyed dictionary of properties describing the selection
  */
-const _getSelectionState = function() {
+function _getSelectionState() {
     const state = {};
     // When we have multiple contentEditable elements within editor, we need to
     // make sure we selected something that is editable. If we didn't
@@ -2718,7 +1875,6 @@ const _getSelectionState = function() {
     state['quote'] = isIndented();
     // Format
     const markTypes = _getMarkTypes();
-    const schema = view.state.schema;
     state['bold'] = markTypes.has(schema.marks.strong);
     state['italic'] = markTypes.has(schema.marks.em);
     state['underline'] = markTypes.has(schema.marks.u);
@@ -2738,11 +1894,13 @@ const _getSelectionState = function() {
  * should not happen), then the return might be unexpected (haha, which 
  * should not happen, of course!).
  * 
- * @returns {Object} The id and editable state that is selected.
+ * @ignore
+ * @returns {object} The id and editable state that is selected.
  */
 function _getContentEditable() {
+    const view = activeView()
     const anchor = view.state.selection.$anchor;
-    const divNode = outermostOfTypeAt(view.state.schema.nodes.div, anchor);
+    const divNode = outermostOfTypeAt(schema.nodes.div, anchor);
     if (divNode) {
         return {id: divNode.attrs.id, editable: divNode.attrs.editable ?? false};
     } else {
@@ -2752,9 +1910,12 @@ function _getContentEditable() {
 
 /**
  * Return the text at the selection.
- * @returns {String | null} The text that is selected.
+ * 
+ * @ignore
+ * @returns {string | null} The text that is selected.
  */
 function _getSelectionText() {
+    const view = activeView()
     const doc = view.state.doc;
     const selection = view.state.selection;
     if (selection.empty) return '';
@@ -2772,9 +1933,12 @@ function _getSelectionText() {
 
 /**
  * Return the rectangle that encloses the selection.
- * @returns {Object} The selection rectangle's top, bottom, left, right.
+ * 
+ * @ignore
+ * @returns {object} The selection rectangle's top, bottom, left, right.
  */
 export function getSelectionRect() {
+    const view = activeView()
     const selection = view.state.selection;
     const fromCoords = view.coordsAtPos(selection.from);
     if (selection.empty) return fromCoords;
@@ -2789,9 +1953,12 @@ export function getSelectionRect() {
 
 /**
  * Return the MarkTypes that exist at the selection.
+ * 
+ * @ignore
  * @returns {Set<MarkType>}   The set of MarkTypes at the selection.
  */
 function _getMarkTypes() {
+    const view = activeView()
     const state = view.state;
     const {from, $from, to, empty} = state.selection;
     if (empty) {
@@ -2809,9 +1976,11 @@ function _getMarkTypes() {
 
 /**
  * Return the link attributes at the selection.
- * @returns {Object}   An Object whose properties are <a> attributes (like href, link) at the selection.
+ * 
+ * @returns {object}   An Object whose properties are the link attributes (like href, link) at the selection.
  */
 export function getLinkAttributes() {
+    const view = activeView()
     const selection = view.state.selection;
     const selectedNodes = [];
     view.state.doc.nodesBetween(selection.from, selection.to, node => {
@@ -2819,7 +1988,7 @@ export function getLinkAttributes() {
     });
     const selectedNode = (selectedNodes.length === 1) && selectedNodes[0];
     if (selectedNode) {
-        const linkMarks = selectedNode.marks.filter(mark => mark.type === view.state.schema.marks.link)
+        const linkMarks = selectedNode.marks.filter(mark => mark.type === schema.marks.link)
         if (linkMarks.length === 1) {
             return {href: linkMarks[0].attrs.href, link: selectedNode.text};
         };
@@ -2828,12 +1997,13 @@ export function getLinkAttributes() {
 };
 
 function _getImageAttributes() {
+    const view = activeView()
     return getImageAttributes(view.state)
 }
 
 /**
  * Return the image attributes at the selection
- * @returns {Object}   An Object whose properties are <img> attributes (like src, alt, width, height, scale) at the selection.
+ * @returns {object}   An Object whose properties are the image attributes (like src, alt, width, height, scale) at the selection.
  */
 export function getImageAttributes(state) {
     const selection = state.selection;
@@ -2856,9 +2026,11 @@ export function getImageAttributes(state) {
  * In the MarkupEditor, if there is a header, it is always colspanned across the number 
  * of columns, and normal rows are never colspanned.
  *
- * @returns {Object}   An object with properties populated.
+ * @ignore
+ * @returns {object}   An object with properties populated.
  */
 function _getTableAttributes(state) {
+    const view = activeView()
     const viewState = state ?? view.state;
     const selection = viewState.selection;
     const nodeTypes = viewState.schema.nodes;
@@ -2918,10 +2090,12 @@ function _getTableAttributes(state) {
 
 /**
  * Return the paragraph style at the selection.
- *
- * @return {String}   {Tag name | 'Multiple'} that represents the selected paragraph style.
+ * 
+ * @ignore
+ * @returns {string}   {Tag name | 'Multiple'} that represents the selected paragraph style.
  */
 function _getParagraphStyle() {
+    const view = activeView()
     return paragraphStyle(view.state)
 };
 
@@ -2938,9 +2112,11 @@ export function paragraphStyle(state) {
 }
 
 /**
+ * Given a ProseMirror Node, return the HTML tag it corresponds to in the MarkupEditor.
  * 
+ * @ignore
  * @param {Node} node The node we want the paragraph style for
- * @returns {String}    { "P" | "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | null }
+ * @returns { "P" | "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | "PRE" | null }
  */
 function _paragraphStyleFor(node) {
     var style;
@@ -2959,14 +2135,16 @@ function _paragraphStyleFor(node) {
 };
 
 export function isIndented(activeState) {
+    const view = activeView()
     let state = activeState ? activeState : view.state;
     return _getIndented(state); 
 }
 
 /**
  * Return whether the selection is indented.
- *
- * @return {Boolean}   Whether the selection is in a blockquote.
+ * 
+ * @ignore
+ * @returns {boolean}   Whether the selection is in a blockquote.
  */
 function _getIndented(state) {
     const selection = state.selection;
@@ -2980,33 +2158,99 @@ function _getIndented(state) {
     return indented;
 };
 
+//MARK: Callbacks
+
+/**
+ * Callback to signal that input came-in, passing along the DIV ID
+ * that the input occurred-in if known. If DIV ID is not known, the raw 'input'
+ * callback means the change happened in the 'editor' div.
+ * 
+ * @ignore
+ */
+export function callbackInput(element) {
+    _callback('input' + (selectedID() ?? ''), element)
+};
+
+/**
+ * Callback to signal that user-provided CSS and/or script files have
+ * been loaded.
+ * 
+ * @ignore
+ */
+function _loadedUserFiles(target) {
+    _callback('loadedUserFiles', target ?? activeDocument());
+};
+
+/**
+ * Callback to signal that an error occurred.
+ * 
+ * @ignore
+ * @param {MUError} error 
+ */
+function _callbackError(error) {
+    _callback(error.messageDict())
+}
+
 /**
  * Report a selection change.
+ * 
+ * @ignore
  */
-export function selectionChanged() {
-    _callback('selectionChanged')
+export function selectionChanged(element) {
+    _callback('selectionChanged', element)
 }
 
 /**
  * Report a click.
+ * 
+ * @ignore
  */
-export function clicked() {
-    deactivateSearch()
-    _callback('clicked')
+export function clicked(view, element) {
+    deactivateSearch(view)
+    _callback('clicked', element)
 }
 
 /**
- * Report focus.
+ * Report a button click.
+ * 
+ * @ignore
  */
-export function focused() {
-    _callback('focus')
+export function buttonClicked(message, element) {
+    _callback(message, element)
+}
+
+/// Search-related callbacks
+
+export function searchedCallback(element) {
+    _callback('searched', element)
+}
+
+export function activateSearchCallback(element) {
+    _callback('activateSearch', element)
+}
+
+export function deactivateSearchCallback(element) {
+    _callback('deactivateSearch', element)
 }
 
 /**
- * Report blur.
+ * Set the active document and report focus.
+ * 
+ * @param {HTMLElement} element The HTML element whose root node should become active
  */
-export function blurred() {
-    _callback('blur')
+export function focused(element) {
+    setActiveDocument(element.getRootNode())
+    _callback('focus', element)
+}
+
+/**
+ * Report blur. Note we don't reset active `muId` because elements 
+ * lose focus (e.g., during user interaction like search) and we 
+ * still want to use the same root node `muId`.
+ * @ignore
+ */
+export function blurred(element) {
+    _callback('blur', element)
 }
 
 /**
@@ -3014,20 +2258,28 @@ export function blurred() {
  * change might be from typing or formatting or styling, etc.
  * and triggers both a `selectionChanged` and `input` callback.
  * 
- * @returns Bool    Return false so we can use in chainCommands directly
+ * @ignore
+ * @returns {boolean}    Return false so we can use in chainCommands directly
  */
-export function stateChanged() {
-    deactivateSearch()
-    selectionChanged()
-    callbackInput()
+export function stateChanged(view) {
+    if (!view) return
+    deactivateSearch(view)
+    selectionChanged(_editor(view))
+    callbackInput(_editor(view))
     return false;
+}
+
+function _editor(view) {
+    return view.dom.getRootNode().firstChild
 }
 
 /**
  * Post a message to the message handler.
  * 
- * Refer to MarkupCoordinate.swift source for message types and contents that are supported in Swift.
- * @param {string | Object} message  A JSON-serializable JavaScript object.
+ * Refer to MarkupCoordinator.swift source for message types and contents that are supported in Swift.
+ * 
+ * @ignore
+ * @param {string | object} message  A JSON-serializable JavaScript object.
  */
 export function postMessage(message) {
     _callback(JSON.stringify(message))
@@ -3047,12 +2299,13 @@ export function postMessage(message) {
  * the history can be left in a state where an undo will work because the previous test
  * executed redo.
  * 
- * @param {*} contents  The HTML for the editor
- * @param {*} sel       An embedded character in contents marking selection point(s)
+ * @param {string} contents  The HTML for the editor
+ * @param {string} sel       An embedded character in contents marking selection point(s)
  */
 export function setTestHTML(contents, sel) {
+    const view = activeView()
     // Start by resetting the view state.
-    let state = EditorState.create({schema: view.state.schema, doc: view.state.doc, plugins: view.state.plugins});
+    let state = EditorState.create({schema: schema, doc: view.state.doc, plugins: view.state.plugins});
     view.updateState(state);
 
     // Then set the HTML, which won't contain any sel markers.
@@ -3060,11 +2313,11 @@ export function setTestHTML(contents, sel) {
     if (!sel) return;           // Don't do any selection if we don't know what marks it
 
     // We need to clear the search state because we use it to find sel markers.
-    searcher.cancel();
+    activeSearcher()?.cancel();
 
     // It's important that deleting the sel markers is not part of history, because 
     // otherwise undoing later will put them back.
-    const selFrom = searcher.searchFor(sel).from;   // Find the first marker
+    const selFrom = activeSearcher()?.searchFor(sel).from;   // Find the first marker
     if (selFrom) {              // Delete the 1st sel
         const transaction = view.state.tr
             .deleteSelection()
@@ -3074,7 +2327,7 @@ export function setTestHTML(contents, sel) {
         return;                 // There was no marker to find
     }
 
-    let selTo = searcher.searchFor(sel).to;         // May be the same if only one marker
+    let selTo = activeSearcher()?.searchFor(sel).to;         // May be the same if only one marker
     if (selTo != selFrom) {     // Delete the 2nd sel if there is one; if not, they are the same
         const transaction = view.state.tr
             .deleteSelection()
@@ -3093,10 +2346,12 @@ export function setTestHTML(contents, sel) {
 
 /**
  * Get the HTML contents and mark the selection from/to using the text identified by `sel`.
- * @param {*} sel       An embedded character in contents indicating selection point(s)
+ * 
+ * @param {string} sel       An embedded character in contents indicating selection point(s)
  */
 export function getTestHTML(sel) {
     if (!sel) return getHTML(false);   // Return the compressed/unformatted HTML if no sel
+    const view = activeView()
     let state = view.state;
     const selection = state.selection;
     const selFrom = selection.from;
@@ -3111,7 +2366,9 @@ export function getTestHTML(sel) {
     return div.innerHTML;
 };
 
+/** Undo the previous action. */
 export function doUndo() {
+    const view = activeView()
     let command = undoCommand();
     let result = command(view.state, view.dispatch, view);
     return result
@@ -3119,19 +2376,23 @@ export function doUndo() {
 
 /**
  * Return a command to undo and do the proper callbacks.
+ * 
+ * @ignore
  */
 export function undoCommand() {
-    let commandAdapter = (state, dispatch) => {
+    let commandAdapter = (state, dispatch, view) => {
         let result = undo(state, dispatch);
         if (result && dispatch) {
-            stateChanged()
+            stateChanged(view)
         }
         return result
     }
     return commandAdapter
 };
 
+/** Redo the previously undone action. */
 export function doRedo() {
+    const view = activeView()
     let command = redoCommand();
     let result = command(view.state, view.dispatch, view);
     return result
@@ -3139,12 +2400,14 @@ export function doRedo() {
 
 /**
  * Return a command to redo and do the proper callbacks.
+ * 
+ * @ignore
  */
 export function redoCommand() {
-    let commandAdapter = (state, dispatch) => {
-        let result = redo(state, dispatch);
+    let commandAdapter = (state, dispatch, view) => {
+        let result = redo(state, dispatch, view);
         if (result && dispatch) {
-            stateChanged()
+            stateChanged(view)
         }
         return result
     }
@@ -3153,21 +2416,26 @@ export function redoCommand() {
 
 /**
  * For testing purposes, invoke _doBlockquoteEnter programmatically.
+ * 
+ * TODO: Implement
  */
 export function testBlockquoteEnter() {
 };
 
 /**
- * For testing purposes, invoke _doListEnter programmatically.
+ * For testing purposes, invoke the splitCommand programmatically.
  */
 export function testListEnter() {
-    const splitCommand = splitListItem(view.state.schema.nodes.list_item);
+    const view = activeView()
+    const splitCommand = splitListItem(schema.nodes.list_item);
     splitCommand(view.state, view.dispatch);
 };
 
 /**
  * For testing purposes, invoke extractContents() on the selected range
  * to make sure the selection is as expected.
+ * 
+ * TODO: Implement
  */
 export function testExtractContents() {
 };
@@ -3179,20 +2447,24 @@ export function testExtractContents() {
  * clean HTML and test the effect of schema-conformance on HTML contents
  * separately. The html passed here is (typically) obtained from the paste 
  * buffer.
+ * 
+ * @param {string}  html    The HTML to paste
  */
 export function testPasteHTMLPreprocessing(html) {
     const node = _nodeFromHTML(html);
-    const fragment = _fragmentFromNode(node);
-    return _htmlFromFragment(fragment);
+    const fragment = fragmentFromNode(node);
+    return htmlFromFragment(fragment);
 };
 
 /**
  * Use the same approach as testPasteHTMLPreprocessing, but augment with 
  * _minimalHTML to get a MarkupEditor-equivalent of unformatted text.
+ * 
+ * @param {string}  html    The HTML to paste
  */
 export function testPasteTextPreprocessing(html) {
     const node = _nodeFromHTML(html);
-    const fragment = _fragmentFromNode(node);
+    const fragment = fragmentFromNode(node);
     const minimalHTML = _minimalHTML(fragment);
     return minimalHTML;
 };
@@ -3208,16 +2480,17 @@ export function testPasteTextPreprocessing(html) {
  *
  * When done, leave the link selected.
  *
- * @param {String}  url             The url/href to use for the link
+ * @param {string}  url             The url/href to use for the link
  */
 export function insertLink(url) {
+    const view = activeView()
     let command = insertLinkCommand(url);
     let result = command(view.state, view.dispatch, view);
     return result
 };
 
 export function insertLinkCommand(url) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         const selection = state.selection;
         const linkMark = state.schema.marks.link.create({ href: url });
         if (selection.empty) {
@@ -3226,12 +2499,12 @@ export function insertLinkCommand(url) {
             const linkSelection = TextSelection.create(transaction.doc, selection.from, selection.from + textNode.nodeSize);
             transaction.setSelection(linkSelection);
             dispatch(transaction);
-            stateChanged();
+            stateChanged(view);
         } else {
             const toggle = toggleMark(linkMark.type, linkMark.attrs);
             if (toggle) {
                 toggle(state, dispatch);
-                stateChanged();
+                stateChanged(view);
             }
         };
 
@@ -3241,7 +2514,7 @@ export function insertLinkCommand(url) {
 }
 
 export function insertInternalLinkCommand(hTag, index) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         // Find the node matching hTag that is index into the nodes matching hTag
         let {node} = headerMatching(hTag, index, state)
         if (!node) return false
@@ -3260,13 +2533,13 @@ export function insertInternalLinkCommand(hTag, index) {
             const textNode = state.schema.text(node.textContent, [linkMark]);
             let transaction = state.tr.replaceSelectionWith(textNode, false);
             dispatch(transaction);
-            stateChanged();
+            stateChanged(view);
             return true;
         } else {
             const toggle = toggleMark(linkMark.type, linkMark.attrs);
             if (toggle) {
                 toggle(state, dispatch)
-                stateChanged();
+                stateChanged(view);
                 return true;
             } else {
                 return false;
@@ -3279,9 +2552,11 @@ export function insertInternalLinkCommand(hTag, index) {
 /**
  * Unlike other commands, this one returns an object identifying the id for the header with hTag. 
  * Other commands return true or false. This command also never does anything with the view or state.
- * @param {string} hTag One of the strings `H1`-`H6`
- * @param {*} index     Within existing elements with tag `hTag`, this is the index into them that is identified
- * @returns 
+ * 
+ * @ignore
+ * @param {string} hTag     One of the strings `H1`-`H6`
+ * @param {number} index    Within existing elements with tag `hTag`, this is the index into them that is identified
+ * @returns {Function(EditorState): object} A function that contains hTag, index, id, and whether the if already exists
  */
 export function idForInternalLinkCommand(hTag, index) {
     const commandAdapter = (state) => {
@@ -3300,6 +2575,7 @@ export function idForInternalLinkCommand(hTag, index) {
  * Since the `node.textContent` can be arbitrarily large, we limit the id to 40 characters 
  * just to avoid unwieldy IDs.
  * 
+ * @ignore
  * @param {Node}        node    A ProseMirror Node that is of heading type
  * @param {EditorState} state     
  * @returns {string}            A unique ID that is used by `node` or that can be assigned to `node`
@@ -3320,10 +2596,12 @@ function idForHeader(node, state) {
 }
 
 /**
- * Return the node and its position that has an attrs.id matching `id`
- * @param {string} id The id attr of a Node we are trying to match
- * @param {*} state 
- * @returns {object}    The `node` and its `pos` in the `state.doc`
+ * Return the node and its position that has an attrs.id matching `id`.
+ * 
+ * @ignore
+ * @param {string} id           The id attr of a Node we are trying to match
+ * @param {EditorState} state   The state of the ProseMirror editor
+ * @returns {object}            The `node` and its `pos` in the `state.doc`
  */
 export function nodeWithId(id, state) {
     let idNode, idPos
@@ -3349,7 +2627,12 @@ function headerMatching(hTag, index, state) {
     }
 }
 
-// Return all the headers that exist in `state.doc` as arrays keyed by level
+/**
+ * Return all the headers that exist in `state.doc` as arrays keyed by level.
+ * 
+ * @ignore
+ * @param {EditorState} state   The state of the ProseMirror editor
+ */ 
 export function headers(state) {
     let headers = {}
     let hType = state.schema.nodes.heading
@@ -3380,6 +2663,7 @@ export function headers(state) {
  * areas outside of the link.
  */
 export function deleteLink() {
+    const view = activeView()
     // Make sure the selection is in a single text node with a linkType Mark and 
     // that the full link is selected in the view.
     selectFullLink(view)
@@ -3401,7 +2685,7 @@ export function deleteLinkCommand() {
                 const textSelection = TextSelection.create(newState.doc, selection.from, selection.to);
                 tr.setSelection(textSelection);
                 view.dispatch(tr);
-                stateChanged();
+                stateChanged(view);
             });
         } else {
             return false;
@@ -3446,20 +2730,21 @@ export function selectFullLink(view) {
  * Insert the image at src with alt text, signaling state changed when done loading.
  * We leave the selection after the inserted image.
  *
- * @param {String}              src         The url of the image.
- * @param {String}              alt         The alt text describing the image.
+ * @param {string}              src         The url of the image.
+ * @param {string}              alt         The alt text describing the image.
  */
 export function insertImage(src, alt) {
-    let command = insertImageCommand(src, alt);
+    const view = activeView()
+    let command = insertImageCommand(src, alt)
     return command(view.state, view.dispatch, view)
 };
 
 export function insertImageCommand(src, alt) {
     const commandAdapter = (state, dispatch, view) => {
         const imageNode = view.state.schema.nodes.image.create({src: src, alt: alt})
-        const transaction = view.state.tr.replaceSelectionWith(imageNode, true);
+        const transaction = view.state.tr.replaceSelectionWith(imageNode, true)
         view.dispatch(transaction);
-        stateChanged();
+        stateChanged(view);
         return true;
     }
 
@@ -3469,10 +2754,11 @@ export function insertImageCommand(src, alt) {
 /**
  * Modify the attributes of the image at selection.
  *
- * @param {String}              src         The url of the image.
- * @param {String}              alt         The alt text describing the image.
+ * @param {string}              src         The url of the image.
+ * @param {string}              alt         The alt text describing the image.
  */
 export function modifyImage(src, alt) {
+    const view = activeView()
     let command = modifyImageCommand(src, alt);
     return command(view.state, view.dispatch, view)
 };
@@ -3512,22 +2798,24 @@ export function modifyImageCommand(src, alt) {
  * by the side holding the copy buffer, not via JavaScript.
  */
 export function cutImage() {
+    const view = activeView()
     const selection = view.state.selection
     const imageNode = selection.node;
-    if (imageNode?.type === view.state.schema.nodes.image) {
-        copyImage(imageNode);
+    if (imageNode?.type === schema.nodes.image) {
+        _copyImage(imageNode);
         const transaction = view.state.tr.deleteSelection();
         view.dispatch(transaction);
-        stateChanged();
+        stateChanged(view);
     };
 };
 
 /**
  * Post a message with src, alt, and dimensions, so the image contents can be put into the clipboard.
  * 
+ * @ignore
  * @param {Node} node   A ProseMirror image node
  */
-function copyImage(node) {
+function _copyImage(node) {
     const messageDict = {
         'messageType' : 'copyImage',
         'src' : node.attrs.src,
@@ -3545,10 +2833,11 @@ function copyImage(node) {
 /**
  * Insert an empty table with the specified number of rows and cols.
  *
- * @param   {Int}                 rows        The number of rows in the table to be created.
- * @param   {Int}                 cols        The number of columns in the table to be created.
+ * @param   {number}                 rows        The number of rows in the table to be created.
+ * @param   {number}                 cols        The number of columns in the table to be created.
  */
 export function insertTable(rows, cols) {
+    const view = activeView()
     if ((rows < 1) || (cols < 1)) return;
     let command = insertTableCommand(rows, cols);
     let result = command(view.state, view.dispatch, view);
@@ -3612,7 +2901,7 @@ export function insertTableCommand(rows, cols) {
             state = state.apply(transaction);
             view.updateState(state);
             view.focus();
-            stateChanged();
+            stateChanged(view);
         }
         
         return true;
@@ -3625,23 +2914,24 @@ export function insertTableCommand(rows, cols) {
  * Add a row before or after the current selection, whether it's in the header or body.
  * For rows, AFTER = below; otherwise above.
  *
- * @param {String}  direction   Either 'BEFORE' or 'AFTER' to identify where the new row goes relative to the selection.
+ * @param {string}  direction   Either 'BEFORE' or 'AFTER' to identify where the new row goes relative to the selection.
  */
 export function addRow(direction) {
+    const view = activeView()
     if (!_tableSelected()) return;
     let command = addRowCommand(direction);
-    let result = command(view.state, view.dispatch)
+    let result = command(view.state, view.dispatch, view)
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
 export function addRowCommand(direction) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         if (direction === 'BEFORE') {
-            return addRowBefore(state, dispatch);
+            return addRowBefore(state, dispatch, view);
         } else {
-            return addRowAfter(state, dispatch);
+            return addRowAfter(state, dispatch, view);
         };
     };
 
@@ -3654,14 +2944,15 @@ export function addRowCommand(direction) {
  * In MarkupEditor, the header is always colspanned fully, so we need to merge the headers if adding 
  * a column in created a new element in the header row.
  *
- * @param {String}  direction   Either 'BEFORE' or 'AFTER' to identify where the new column goes relative to the selection.
+ * @param {string}  direction   Either 'BEFORE' or 'AFTER' to identify where the new column goes relative to the selection.
  */
 export function addCol(direction) {
+    const view = activeView()
     if (!_tableSelected()) return;
     let command = addColCommand(direction);
     let result = command(view.state, view.dispatch, view);
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
@@ -3700,12 +2991,13 @@ export function addColCommand(direction) {
  * @param {boolean} colspan     Whether the header should span all columns of the table or not.
  */
 export function addHeader(colspan=true) {
+    const view = activeView()
     let tableAttributes = _getTableAttributes();
     if (!tableAttributes.table || tableAttributes.header) return;   // We're not in a table or we are but it has a header already
     let command = addHeaderCommand(colspan);
     let result = command(view.state, view.dispatch, view);
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
@@ -3756,22 +3048,23 @@ export function addHeaderCommand(colspan = true) {
  */
 export function deleteTableArea(area) {
     if (!_tableSelected()) return;
+    const view = activeView()
     let command = deleteTableAreaCommand(area);
-    let result = command(view.state, view.dispatch);
+    let result = command(view.state, view.dispatch, view);
     view.focus();
-    stateChanged();
+    stateChanged(view);
     return result;
 };
 
 export function deleteTableAreaCommand(area) {
-    const commandAdapter = (state, dispatch) => {
+    const commandAdapter = (state, dispatch, view) => {
         switch (area) {
             case 'ROW':
-                return deleteRow(state, dispatch);
+                return deleteRow(state, dispatch, view);
             case 'COL':
-                return deleteColumn(state, dispatch);
+                return deleteColumn(state, dispatch, view);
             case 'TABLE':
-                return deleteTable(state, dispatch);
+                return deleteTable(state, dispatch, view);
         };
         return false;
     };
@@ -3787,9 +3080,10 @@ export function deleteTableAreaCommand(area) {
  */
 export function borderTable(border) {
     if (_tableSelected()) {
+        const view = activeView()
         let command = setBorderCommand(border);
         let result = command(view.state, view.dispatch, view);
-        stateChanged();
+        stateChanged(view);
         view.focus();
         return result;
     }
@@ -3797,6 +3091,8 @@ export function borderTable(border) {
 
 /**
  * Return whether the selection is within a table.
+ * 
+ * @ignore
  * @returns {boolean} True if the selection is within a table
  */
 function _tableSelected() {
@@ -3837,6 +3133,8 @@ function _selectInFirstCell(state, dispatch) {
  * the MarkupEditor, the row is always colspanned across all columns, we need to 
  * merge the cells together when this happens. The operations that insert internal 
  * columns don't cause the header row to have a new cell.
+ * 
+ * @ignore
  */
 function _mergeHeaders(state, dispatch) {
     const nodeTypes = state.schema.nodes;
@@ -3926,6 +3224,8 @@ export function setBorderCommand(border) {
 
 /**
  * Get the border around and within the cell.
+ * 
+ * @ignore
  * @returns {'outer' | 'header' | 'cell' | 'none'} The type of table border known on the view holder's side.
  */
 function _getBorder(table) {
@@ -3952,9 +3252,11 @@ function _getBorder(table) {
 
 /**
  * Return the first node starting at depth 0 (the top) that is of type `type`.
+ * 
+ * @ignore
  * @param {NodeType}    type The NodeType we are looking for that contains $pos.
  * @param {ResolvedPos} $pos A resolved position within a document node.
- * @returns Node | null
+ * @returns {Node | null}
  */
 export function outermostOfTypeAt(type, $pos) {
     const depth = $pos.depth;
@@ -3975,8 +3277,10 @@ export function outermostOfTypeAt(type, $pos) {
  * Since the schema for the MarkupEditor accepts div and buttons, clean them from the 
  * html before deriving a Node. Cleaning up means retaining the div contents while removing
  * the divs, and removing buttons.
+ * 
+ * @ignore
  * @param {string} html 
- * @returns Node
+ * @returns {Node}
  */
 function _nodeFromHTML(html) {
     const fragment = _fragmentFromHTML(html);
@@ -3988,26 +3292,45 @@ function _nodeFromHTML(html) {
 
 /**
  * Return a ProseMirror Node derived from an HTMLElement.
+ * 
+ * @ignore
  * @param {HTMLElement} htmlElement 
- * @returns Node
+ * @returns {Node}
  */
 function _nodeFromElement(htmlElement) {
-    return DOMParser.fromSchema(view.state.schema).parse(htmlElement, { preserveWhiteSpace: true });
+    return DOMParser.fromSchema(schema).parse(htmlElement, { preserveWhiteSpace: true });
 }
 
 /**
  * Return an HTML DocumentFragment derived from a ProseMirror node.
+ * 
+ * @ignore
  * @param {Node} node 
- * @returns DocumentFragment
+ * @returns {DocumentFragment}
  */
-function _fragmentFromNode(node) {
-    return DOMSerializer.fromSchema(view.state.schema).serializeFragment(node.content);
+export function fragmentFromNode(node) {
+    return DOMSerializer.fromSchema(schema).serializeFragment(node.content);
+};
+
+/**
+ * Return the innerHTML string contained in a DocumentFragment.
+ * 
+ * @ignore
+ * @param {DocumentFragment} fragment 
+ * @returns {string}
+ */
+export function htmlFromFragment(fragment) {
+    const div = document.createElement('div');
+    div.appendChild(fragment);
+    return div.innerHTML;
 };
 
 /**
  * Return an HTML DocumentFragment derived from HTML text.
+ * 
+ * @ignore
  * @param {string} html 
- * @returns DocumentFragment
+ * @returns {DocumentFragment}
  */
 function _fragmentFromHTML(html) {
     const template = document.createElement('template');
@@ -4017,8 +3340,10 @@ function _fragmentFromHTML(html) {
 
 /**
  * Return a ProseMirror Slice derived from HTML text.
+ * 
+ * @ignore
  * @param {string} html 
- * @returns Slice
+ * @returns {Slice}
  */
 function _sliceFromHTML(html) {
     const div = document.createElement('div');
@@ -4028,26 +3353,19 @@ function _sliceFromHTML(html) {
 
 /**
  * Return a ProseMirror Slice derived from an HTMLElement.
+ * 
+ * @ignore
  * @param {HTMLElement} htmlElement 
- * @returns Slice
+ * @returns {Slice}
  */
 function _sliceFromElement(htmlElement) {
-    return DOMParser.fromSchema(view.state.schema).parseSlice(htmlElement, { preserveWhiteSpace: true });
+    return DOMParser.fromSchema(schema).parseSlice(htmlElement, { preserveWhiteSpace: true });
 }
 
 /**
- * Return the innerHTML string contained in a DocumentFragment.
- * @param {DocumentFragment} fragment 
- * @returns string
- */
-function _htmlFromFragment(fragment) {
-    const div = document.createElement('div');
-    div.appendChild(fragment);
-    return div.innerHTML;
-};
-
-/**
  * Return whether node is a textNode or not
+ * 
+ * @ignore
  */
 function _isTextNode(node) {
     return node && (node.nodeType === Node.TEXT_NODE);
@@ -4055,6 +3373,8 @@ function _isTextNode(node) {
 
 /**
  * Return whether node is an ELEMENT_NODE or not
+ * 
+ * @ignore
  */
 function _isElementNode(node) {
     return node && (node.nodeType === Node.ELEMENT_NODE);
@@ -4062,6 +3382,8 @@ function _isElementNode(node) {
 
 /**
  * Return whether node is a format element; i.e., its nodeName is in _formatTags
+ * 
+ * @ignore
  */
 function _isFormatElement(node) {
     return _isElementNode(node) && _formatTags.includes(node.nodeName);
@@ -4069,6 +3391,8 @@ function _isFormatElement(node) {
 
 /**
  * Return whether node has a void tag (i.e., does not need a terminator)
+ * 
+ * @ignore
  */
 function _isVoidNode(node) {
     return node && (_voidTags.includes(node.nodeName));
@@ -4076,6 +3400,8 @@ function _isVoidNode(node) {
 
 /**
  * Return whether node is a link
+ * 
+ * @ignore
  */
 function _isLinkNode(node) {
     return node && (node.nodeName === 'A');
@@ -4083,9 +3409,10 @@ function _isLinkNode(node) {
 
 /**
  * Callback to show a string in the console, like console.log(), but for environments like Xcode.
+ * 
+ * @param {string}  string  The string to package up as a console log message in a callback
  */
-// eslint-disable-next-line no-unused-vars
-function _consoleLog(string) {
+export function consoleLog(string) {
     let messageDict = {
         'messageType' : 'log',
         'log' : string

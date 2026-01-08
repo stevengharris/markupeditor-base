@@ -1,10 +1,6 @@
-/* global view */
 import crel from "crelt";
-import { icons, getIcon } from "./icons";
 import { 
     prefix, 
-    setClass, 
-    translate, 
     getToolbar, 
     getWrapper, 
     getToolbarMore, 
@@ -13,7 +9,11 @@ import {
     removePromptShowing,
     searchbarShowing, 
     searchbarHidden 
-} from "./utilities";
+} from "../domaccess";
+import {
+    setClass, 
+    translate, 
+} from "../utilities"
 import {
     setStyleCommand,
     insertTableCommand,
@@ -32,18 +32,70 @@ import {
     matchCase,
     matchCount,
     matchIndex,
-    headers
+    headers,
 } from "../markup"
+import { activeView, setActiveView } from "../registry"
+import { ToolbarConfig } from "../config/toolbarconfig";
+
+function getIcon(root, icon) {
+    let doc = (root.nodeType == 9 ? root : root.ownerDocument) || document;
+    let node = doc.createElement("span");
+    node.className = prefix + "-icon";
+    node.innerHTML = icon;
+    return node;
+}
 
 /**
-An icon or label that, when clicked, executes a command.
-*/
+ * An icon or label that, when clicked, executes a command.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
+ */
 export class MenuItem {
 
   /**
-   * Create a menu item.
+   * Create a menu item. The following items are supported in the MenuItem spec:
    * 
-   * @param {*} spec The spec used to create this item.
+   * * The function to execute when the menu item is activated.
+   * 
+   *    ```run: (state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView, event: Event) => void```
+   * 
+   * * Optional function that is used to determine whether the item is appropriate at the moment. Deselected items will be hidden.
+   * 
+   *    ```select?: (state: EditorState) => boolean```
+   * 
+   * * Function that is used to determine if the item is enabled. If given and returning false, the item will be given a disabled styling.
+   * 
+   *    ```enable?: (state: EditorState) => boolean```
+   * 
+   * * A predicate function to determine whether the item is 'active' (for example, the item for toggling the strong mark might be active then the cursor is in strong text).
+   * 
+   *    ```active?: (state: EditorState) => boolean```
+   * 
+   * * A function that renders the item. You must provide either this, [`icon`](#menu.MenuItemSpec.icon), or [`label`](#MenuItemSpec.label).
+   * 
+   *    ```render?: (view: EditorView) => HTMLElement```
+   * 
+   * * Describes an icon to show for this item using SVG.
+   * 
+   *    ```icon?: string```
+   * 
+   * * Makes the item show up as a text label. Mostly useful for items wrapped in a [drop-down](#menu.Dropdown) or similar menu. The object should have a `label` property providing the text to display.
+   * 
+   *    ```label?: string```
+   * 
+   * * Defines DOM title (mouseover) text for the item.
+   * 
+   *    ```title?: string | ((state: EditorState) => string)```
+   * 
+   * * Optionally adds a CSS class to the item's DOM representation.
+   * 
+   *    ```class?: string```
+   * 
+   * * Optionally adds a string of inline CSS to the item's DOM representation.
+   * 
+   *    ```css?: string```
+   * 
+   * @param {object} spec The spec used to create this item. See list above.
   */
   constructor(spec) {
     this.prefix = prefix + "-menuitem"
@@ -51,10 +103,11 @@ export class MenuItem {
   }
 
   /**
-  Renders the icon according to its [display
-  spec](https://prosemirror.net/docs/ref/#menu.MenuItemSpec.display), and adds an event handler which
-  executes the command when the representation is clicked.
-  */
+   * Renders the item according to the `spec`, and adds an event handler which 
+   * executes the command when the representation is clicked.
+   * 
+   * @param {EditorView}  view  The view to render this MenuItem in.
+   */
   render(view) {
     let spec = this.spec;
     let prefix = this.prefix;
@@ -77,7 +130,7 @@ export class MenuItem {
       if (!dom.classList.contains(prefix + "-disabled")) {
         let result = spec.run(view.state, view.dispatch, view, e);
         if (spec.callback) {
-          spec.callback(result)
+          spec.callback(result, dom)
         }
       }
     });
@@ -105,23 +158,39 @@ export class MenuItem {
 }
 
 /**
-A drop-down menu, displayed as a label with a downwards-pointing
-triangle to the right of it.
-*/
+ * A drop-down menu, displayed as a label with a downwards-pointing triangle to the right of it.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
+ */
 export class Dropdown {
 
   /**
-  Create a dropdown wrapping the elements.
-  */
+   * Create a dropdown wrapping the elements.
+   * The following options are available:
+   * 
+   * | Type                               | Property      | Description |
+   * |:--                                 |:--            |:-- |
+   * | `boolean`                        | `indicator`   | Whether an indicator triangle should be shown, default `true`. |
+   * | `Function(EditorState): string`  | `titleUpdate` | Function to execute that returns a label based on `state`. |
+   * | `Function(): boolean`            | `enable`      | Function to return true if MenuItem is enabled, else false |
+   * | `string`                         | `label`       | The string to show in the MenuItem |
+   * | `KeymapConfig`                   | `keymap`      | The KeymapConfig to use for the MenuItem |
+   * | `Command`                        | `run`         | The Command to run when the item is pressed |
+   * | `Function(): boolean`            | `active`      | Function to return true if MenuItem is active, else false. |
+   * | `object`                         | `attrs`       | Node attrs that can be used within the `enable` or `active` functions. |
+   */
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu";
     this.options = options;
     if (this.options.indicator == undefined) this.options.indicator = true;
     this.content = Array.isArray(content) ? content : [content];
   }
-  /**
-  Render the dropdown menu and sub-items.
-  */
+
+  /** 
+   * Render the dropdown menu and sub-items.
+   * 
+   * @param {EditorView} view The EditorView to render this DropDown in.
+   */
   render(view) {
     let options = this.options;
     let content = renderDropdownItems(this.content, view);
@@ -203,15 +272,28 @@ export class Dropdown {
 }
 
 /**
-Represents a submenu wrapping a group of elements that start
-hidden and expand to the right when hovered over or tapped.
-*/
+ * Represents a submenu wrapping a group of elements that start
+ * hidden and expand to the right when hovered over or tapped.
+ * 
+ * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
+ */
 export class DropdownSubmenu {
 
-  /**
-  Creates a submenu for the given group of menu elements. The
-  following options are recognized:
-  */
+  /** 
+   * Creates a submenu for the given group of menu elements. The following options are available:
+   * 
+   * | Type                   | Property  | Description |
+   * |:--                     |:--        |:-- |
+   * | `Function(): boolean`  | `enable`  | Function to return true if MenuItem is enabled, else false.
+   * | `string`               | `label`   | The string to show in the MenuItem
+   * | `KeymapConfig`         | `keymap`  | The KeymapConfig to use for the MenuItem
+   * | `Command`              | `run`     | The Command to run when the item is pressed
+   * | `Function(): boolean`  | `active`  | Function to return true if MenuItem is active, else false.
+   * | `object`               | `attrs`   | Node attrs that can be used within the `enable` or `active` functions.
+   * 
+   * @param {Array<MenuItem | Array<MenuItem>>} content The submenu's contents in the form of MenuItems.
+   * @param {object}                            options See list above.
+   */
   constructor(content, options = {}) {
     this.prefix = prefix + "-menu"
     this.options = options;
@@ -255,6 +337,7 @@ export class DropdownSubmenu {
   }
 }
 
+/** @private */
 export class ParagraphStyleItem {
 
   constructor(nodeType, style, options) {
@@ -297,6 +380,8 @@ export class ParagraphStyleItem {
  * with opening, closing, and positioning the dialog so it stays in view as much as possible.
  * Each of the subclasses defines its `dialogWidth` and `dialogHeight` and deals with its 
  * own content/layout.
+ * 
+ * @private
  */
 class DialogItem {
 
@@ -311,10 +396,11 @@ class DialogItem {
      * Command to open the link dialog and show it modally.
      *
      * @param {EditorState} state 
-     * @param {fn(tr: Transaction)} dispatch 
+     * @param {Function(Transaction)} dispatch 
      * @param {EditorView} view 
      */
     openDialog(state, dispatch, view) {
+      setActiveView(view)
         this.createDialog(view)
         this.dialog.show();
     }
@@ -328,7 +414,7 @@ class DialogItem {
         this.selectionDiv.style.left = this.selectionDivRect.left + 'px'
         this.selectionDiv.style.width = this.selectionDivRect.width + 'px'
         this.selectionDiv.style.height = this.selectionDivRect.height + 'px'
-        getWrapper().appendChild(this.selectionDiv)
+        getWrapper(activeView()).appendChild(this.selectionDiv)
     }
 
     /**
@@ -336,7 +422,7 @@ class DialogItem {
      * @returns {Object}  The {top, left, right, width, height, bottom} of the selection.
      */
     getSelectionDivRect() {
-        let wrapper = view.dom.parentElement;
+        let wrapper = activeView().dom.parentElement;
         let originY = wrapper.getBoundingClientRect().top;
         let originX = wrapper.getBoundingClientRect().left;
         let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
@@ -355,6 +441,7 @@ class DialogItem {
      * Set the `dialog` location on the screen so it is adjacent to the selection.
      */
     setDialogLocation() {
+        let view = activeView()
         let dialogHeight = this.dialogHeight;
         let dialogWidth = this.dialogWidth
 
@@ -373,7 +460,7 @@ class DialogItem {
         let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
         let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
         let style = this.dialog.style;
-        let toolbarHeight = getToolbar().getBoundingClientRect().height;
+        let toolbarHeight = getToolbar(view).getBoundingClientRect().height;
         let minTop = toolbarHeight + scrollY + 4;
         let maxTop = scrollY + innerHeight - dialogHeight - 4;
         let minLeft = scrollX + 4;
@@ -400,7 +487,7 @@ class DialogItem {
      * Close the dialog, deleting the dialog and selectionDiv and clearing out state.
      */
     closeDialog() {
-        removePromptShowing()
+        removePromptShowing(activeView())
         this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
         this.overlay?.parentElement?.removeChild(this.overlay)
         this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)
@@ -425,12 +512,15 @@ class DialogItem {
 
 /**
  * Represents the link MenuItem in the toolbar, which opens the link dialog and maintains its state.
+ * 
+ * @private
  */
 export class LinkItem extends DialogItem {
 
   constructor(config) {
     super(config);
     let keymap = this.config.keymap
+    let icons = config.toolbar.icons
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
@@ -484,8 +574,8 @@ export class LinkItem extends DialogItem {
     this.okUpdate(view.state);
     this.cancelUpdate(view.state);
     
-    let wrapper = getWrapper();
-    addPromptShowing();
+    let wrapper = getWrapper(view);
+    addPromptShowing(view);
     wrapper.appendChild(this.dialog);
 
     // Add an overlay so we can get a modal effect without using showModal
@@ -500,7 +590,7 @@ export class LinkItem extends DialogItem {
     wrapper.appendChild(this.overlay);
 
     this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
-    if (getSearchbar()) {
+    if (getSearchbar(view)) {
       setClass(this.toolbarOverlay, searchbarShowing(), true);
     } else {
       setClass(this.toolbarOverlay, searchbarHidden(), true);
@@ -627,7 +717,7 @@ export class LinkItem extends DialogItem {
 
   getLocalRefItems() {
     let submenuItems = []
-    let headersByLevel = headers(view.state)
+    let headersByLevel = headers(activeView().state)
     for (let i = 1; i < 7; i++) {
       let hTag = 'H' + i.toString()
       let menuItems = []
@@ -653,6 +743,7 @@ export class LinkItem extends DialogItem {
   // The `insertInternalLinkCommand` executes the callback providing a unique id for the header based on its 
   // contents, along with the tag and index into headers with that tag in the document being edited.
   refMenuItem(hTag, index, label) {
+    let view = activeView()
     return cmdItem(
       idForInternalLinkCommand(hTag, index), 
       { 
@@ -691,7 +782,7 @@ export class LinkItem extends DialogItem {
    * Insert the link provided in the hrefArea if it's valid, deleting any existing link first. Close if it worked.
    * 
    * @param {EditorState} state 
-   * @param {fn(tr: Transaction)} dispatch 
+   * @param {Function(Transaction)} dispatch 
    * @param {EditorView} view 
    */
   insertLink(state, dispatch, view) {
@@ -723,7 +814,7 @@ export class LinkItem extends DialogItem {
    * Delete the link at the selection. Close if it worked.
    * 
    * @param {EditorState} state 
-   * @param {fn(tr: Transaction)} dispatch 
+   * @param {Function(Transaction)} dispatch 
    * @param {EditorView} view 
    */
   deleteLink(state, dispatch, view) {
@@ -737,11 +828,14 @@ export class LinkItem extends DialogItem {
 /**
  * Represents the image MenuItem in the toolbar, which opens the image dialog and maintains its state.
  * Requires commands={getImageAttributes, insertImageCommand, modifyImageCommand, getSelectionRect}
+ * 
+ * @private
  */
 export class ImageItem extends DialogItem {
 
   constructor(config) {
     super(config)
+    let icons = config.toolbar.icons
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return getImageAttributes(state).src  },
@@ -798,8 +892,8 @@ export class ImageItem extends DialogItem {
     this.setButtons(view)
     this.updatePreview()
 
-    let wrapper = getWrapper();
-    addPromptShowing()
+    let wrapper = getWrapper(view);
+    addPromptShowing(view)
     wrapper.appendChild(this.dialog);
 
     // Add an overlay so we can get a modal effect without using showModal
@@ -813,7 +907,7 @@ export class ImageItem extends DialogItem {
     });
     wrapper.appendChild(this.overlay);
     this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
-    if (getSearchbar()) {
+    if (getSearchbar(view)) {
       setClass(this.toolbarOverlay, searchbarShowing(), true);
     } else {
       setClass(this.toolbarOverlay, searchbarHidden(), true);
@@ -948,6 +1042,7 @@ export class ImageItem extends DialogItem {
   }
 
   getPreview() {
+    let view = activeView()
     let preview = crel('img')
     preview.style.visibility = 'hidden';
     preview.addEventListener('load', () => {
@@ -1000,7 +1095,7 @@ export class ImageItem extends DialogItem {
    * Note that the image that is saved might be not exist or be properly formed.
    * 
    * @param {EditorState} state 
-   * @param {fn(tr: Transaction)} dispatch 
+   * @param {Function(Transaction)} dispatch 
    * @param {EditorView} view 
    */
   insertImage(state, dispatch, view) {
@@ -1016,6 +1111,8 @@ export class ImageItem extends DialogItem {
 /**
  * A MenuItem that inserts a table of size rows/cols and invokes `onMouseover` when 
  * the mouse is over it to communicate the size of table it will create when selected.
+ * 
+ * @private
  */
 export class TableInsertItem {
 
@@ -1053,6 +1150,8 @@ export class TableInsertItem {
   will insert a table of a specific size. The items are bounded divs in a css grid 
   layout that highlight to show the size of the table being created, so we end up with 
   a compact way to display 24 TableInsertItems.
+
+  @private
   */
 export class TableCreateSubmenu {
   constructor(options = {}) {
@@ -1087,7 +1186,7 @@ export class TableCreateSubmenu {
   onMouseover(rows, cols) {
     this.rowSize = rows
     this.colSize = cols
-    this.itemsUpdate(view.state)
+    this.itemsUpdate(activeView().state)
   }
 
   resetSize() {
@@ -1143,16 +1242,19 @@ export class TableCreateSubmenu {
 
 /**
  * Represents the search MenuItem in the toolbar, which hides/shows the search bar and maintains its state.
+ * 
+ * @private
  */
 export class SearchItem {
 
   constructor(config) {
     let keymap = config.keymap
+    this.icons = config.toolbar.icons
     let options = {
       enable: () => { return true },
       active: () => { return this.showing() },
       title: 'Toggle search' + keyString('search', keymap),
-      icon: icons.search,
+      icon: this.icons.search,
       id: prefix + '-searchitem'
     };
     this.command = this.toggleSearch.bind(this);
@@ -1162,10 +1264,22 @@ export class SearchItem {
   }
 
   showing() {
-    return getSearchbar() != null;
+    let view = activeView()
+    return (typeof view != 'undefined') ? getSearchbar(view) != null : false
   }
 
+  /**
+   * Toggle the search bar on/off.
+   * 
+   * Note that this happens when pressing the search button in `view`, so we set the 
+   * active `muId` rather than depend on it having been set from a focus event.
+   * 
+   * @param {EditorState} state 
+   * @param {Function(Transaction)} dispatch 
+   * @param {EditorView} view 
+   */
   toggleSearch(state, dispatch, view) {
+    setActiveView(view)
     if (this.showing()) {
       this.hideSearchbar()
     } else {
@@ -1175,21 +1289,24 @@ export class SearchItem {
   }
 
   hideSearchbar() {
-    let searchbar = getSearchbar();
-    searchbar.parentElement.removeChild(searchbar);
-    this.matchCaseDom = null;
-    this.matchCaseItem = null;
-    this.stopSearching();
+    let view = activeView()
+    if (view) {
+      let searchbar = getSearchbar(view);
+      searchbar.parentElement.removeChild(searchbar);
+      this.matchCaseDom = null;
+      this.matchCaseItem = null;
+      this.stopSearching();
+    }
   }
 
   stopSearching(focus=true) {
     cancelSearch();
     this.setStatus();
-    if (focus) view.focus();
+    if (focus) activeView()?.focus();
   }
 
   showSearchbar(state, dispatch, view) {
-    let toolbar = getToolbar();
+    let toolbar = getToolbar(view);
     if (!toolbar) return;
     let input = crel('input', { type: 'search', placeholder: 'Search document...' });
     input.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
@@ -1209,7 +1326,7 @@ export class SearchItem {
     let idClass = prefix + "-searchbar";
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
     this.addSearchButtons(view, searchbar);
-    let beforeTarget = getToolbarMore() ? getToolbarMore().nextSibling : toolbar.nextSibling;
+    let beforeTarget = getToolbarMore(view) ? getToolbarMore(view).nextSibling : toolbar.nextSibling;
     toolbar.parentElement.insertBefore(searchbar, beforeTarget);
   }
 
@@ -1235,11 +1352,11 @@ export class SearchItem {
 
     // The searchBackward and searchForward buttons don't need updating
     let searchBackward = this.searchBackwardCommand.bind(this);
-    let searchBackwardItem = cmdItem(searchBackward, {title: "Search backward", icon: icons.searchBackward});
+    let searchBackwardItem = cmdItem(searchBackward, {title: "Search backward", icon: this.icons.searchBackward});
     let searchBackwardDom = searchBackwardItem.render(view).dom;
     let searchBackwardSpan = crel("span", {class: prefix + "-menuitem"}, searchBackwardDom);
     let searchForward = this.searchForwardCommand.bind(this);
-    let searchForwardItem = cmdItem(searchForward, {title: "Search forward", icon: icons.searchForward});
+    let searchForwardItem = cmdItem(searchForward, {title: "Search forward", icon: this.icons.searchForward});
     let searchForwardDom = searchForwardItem.render(view).dom;
     let searchForwardSpan = crel("span", {class: prefix + "-menuitem"}, searchForwardDom);
     let separator = crel("span", {class: prefix + "-menuseparator"})
@@ -1252,7 +1369,7 @@ export class SearchItem {
     this.matchCaseItem = cmdItem(
       toggleMatchCase, {
         title: "Match case", 
-        icon: icons.matchCase,
+        icon: this.icons.matchCase,
         enable: () => {return true},
         active: () => {return this.caseSensitive}
       }
@@ -1326,7 +1443,11 @@ export class SearchItem {
 
 }
 
-/** A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar */
+/** 
+ * A special item for showing a "more" button in the toolbar, which shows its `items` as a sub-toolbar.
+ * 
+ * @private
+ */
 export class MoreItem {
 
   constructor(items) {
@@ -1334,7 +1455,7 @@ export class MoreItem {
       enable: () => { return true },
       active: () => { return this.showing() },
       title: 'Show more',
-      icon: icons.more
+      icon: ToolbarConfig.iconFor('more')
     };
     this.command = this.toggleMore.bind(this);
     this.item = cmdItem(this.command, options);
@@ -1342,7 +1463,7 @@ export class MoreItem {
   }
 
   showing() {
-    return getToolbarMore() != null;
+    return getToolbarMore(activeView()) != null;
   }
 
   toggleMore(state, dispatch, view) {
@@ -1355,12 +1476,12 @@ export class MoreItem {
   }
 
   hideMore() {
-    let toolbarMore = getToolbarMore();
+    let toolbarMore = getToolbarMore(activeView());
     toolbarMore.parentElement.removeChild(toolbarMore);
   }
 
   showMore(state, dispatch, view) {
-    let toolbar = getToolbar();
+    let toolbar = getToolbar(view);
     if (!toolbar) return;
     let idClass = prefix + "-toolbar-more";
     let toolbarMore = crel('div', { class: idClass, id: idClass } )
@@ -1384,9 +1505,9 @@ export class MoreItem {
  * 
  * The label is the same as the title, and the MenuItem will be enabled/disabled based on 
  * what `cmd(state)` returns unless otherwise specified in `options`.
- * @param {Command}     cmd 
- * @param {*} options   The spec for the MenuItem
- * @returns {MenuItem}
+ * @param {Command}     cmd   A ProseMirror [Command](https://prosemirror.net/docs/ref/#state.Command)
+ * @param {object} options   The spec for the MenuItem
+ * @returns {MenuItem}        Similar to prosemirror-menu, but [MarkupEditor-modified](MenuItem.html)
  */
 export function cmdItem(cmd, options) {
   let passedOptions = {
@@ -1400,13 +1521,19 @@ export function cmdItem(cmd, options) {
   return new MenuItem(passedOptions)
 }
 
-/** Return a span for a separator between groups of MenuItems */
+/** 
+ * Return a span for a separator between groups of MenuItems
+ * 
+ * @private
+ *  
+ */
 export function separator() {
     return crel("span", { class: prefix + "-menuseparator" });
 }
 
 /**
  * Return whether the selection in state is within a mark of type `markType`.
+ * @private
  * @param {EditorState} state 
  * @param {MarkType} type 
  * @returns {boolean} True if the selection is within a mark of type `markType`
@@ -1419,8 +1546,9 @@ export function markActive(state, type) {
 
 /**
  * Return a string intended for the user to see showing the first key mapping for `itemName`.
+ * @private
  * @param {string} itemName           The name of the item in the keymap
- * @param {[string : string]} keymap  The mapping between item names and hotkeys
+ * @param {object} keymap             The mapping between string item names and string hotkeys
  * @returns string
  */
 export function keyString(itemName, keymap) {
@@ -1441,6 +1569,13 @@ export function baseKeyString(itemName, keymap) {
   return keyString
 }
 
+/**
+ * Render the content in view as a group of MenuItems.
+ * 
+ * @param {EditorView} view The view to render content in
+ * @param {Array<MenuItem>} content The menuitems to be rendered
+ * @returns {object}  Object with the DOM containing content and an update method to display it.
+ */
 export function renderGrouped(view, content) {
     let result = document.createDocumentFragment();
     let updates = [], separators = [];
@@ -1481,10 +1616,11 @@ export function renderGrouped(view, content) {
  * face it, if you need to wrap a toolbar into more than two lines, you need to think
  * through your life choices.
  * 
+ * @private
  * @param {EditorView} view 
- * @param {[MenuItem | [MenuItem]]} content 
+ * @param {Array<MenuItem> | Array<Array<MenuItem>>} content 
  * @param {number}  wrapAtIndex             The index in  content` to wrap in another toolbar
- * @returns 
+ * @returns {object}  An object containing the DOM for the content and an update function to display it
  */
 export function renderGroupedFit(view, content, wrapAtIndex) {
   let result = document.createDocumentFragment();
@@ -1534,6 +1670,13 @@ export function renderGroupedFit(view, content, wrapAtIndex) {
   return { dom: result, update };
 }
 
+/**
+ * Render the items in a Dropdown in the view.
+ * 
+ * @param {Array<MenuItem>} items The content to be rendered in a Dropdown
+ * @param {EditorView} view       The EditorView to render the items in 
+ * @returns {object}  An object containing the DOM for the Dropdown and an update function to display it
+ */
 export function renderDropdownItems(items, view) {
     let rendered = [], updates = [];
     for (let i = 0; i < items.length; i++) {

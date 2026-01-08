@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: BehaviorConfig</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link type="text/css" rel="stylesheet" href="styles/base.min.css">
+</head>
+
+<body class="body">
+
+    <div class="container">
+
+        <nav class="sidenav">
+            <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BehaviorConfig.html">BehaviorConfig</a></li><li><a href="Dropdown.html">Dropdown</a></li><li><a href="DropdownSubmenu.html">DropdownSubmenu</a></li><li><a href="KeymapConfig.html">KeymapConfig</a></li><li><a href="MarkupEditorElement.html">MarkupEditorElement</a></li><li><a href="MenuItem.html">MenuItem</a></li><li><a href="ToolbarConfig.html">ToolbarConfig</a></li></ul><h3>Global</h3><ul><li><a href="global.html#MU">MU</a></li><li><a href="global.html#activeView">activeView</a></li><li><a href="global.html#addButton">addButton</a></li><li><a href="global.html#addCol">addCol</a></li><li><a href="global.html#addDiv">addDiv</a></li><li><a href="global.html#addHeader">addHeader</a></li><li><a href="global.html#addRow">addRow</a></li><li><a href="global.html#borderTable">borderTable</a></li><li><a href="global.html#cancelSearch">cancelSearch</a></li><li><a href="global.html#cmdItem">cmdItem</a></li><li><a href="global.html#consoleLog">consoleLog</a></li><li><a href="global.html#cutImage">cutImage</a></li><li><a href="global.html#deactivateSearch">deactivateSearch</a></li><li><a href="global.html#deleteLink">deleteLink</a></li><li><a href="global.html#deleteTableArea">deleteTableArea</a></li><li><a href="global.html#doRedo">doRedo</a></li><li><a href="global.html#doUndo">doUndo</a></li><li><a href="global.html#emptyDocument">emptyDocument</a></li><li><a href="global.html#emptyHTML">emptyHTML</a></li><li><a href="global.html#focus">focus</a></li><li><a href="global.html#focusOn">focusOn</a></li><li><a href="global.html#focused">focused</a></li><li><a href="global.html#getDataImages">getDataImages</a></li><li><a href="global.html#getHTML">getHTML</a></li><li><a href="global.html#getHeight">getHeight</a></li><li><a href="global.html#getImageAttributes">getImageAttributes</a></li><li><a href="global.html#getLinkAttributes">getLinkAttributes</a></li><li><a href="global.html#getSelectionState">getSelectionState</a></li><li><a href="global.html#getTestHTML">getTestHTML</a></li><li><a href="global.html#indent">indent</a></li><li><a href="global.html#insertImage">insertImage</a></li><li><a href="global.html#insertLink">insertLink</a></li><li><a href="global.html#insertTable">insertTable</a></li><li><a href="global.html#loadUserFiles">loadUserFiles</a></li><li><a href="global.html#modifyImage">modifyImage</a></li><li><a href="global.html#openImageDialog">openImageDialog</a></li><li><a href="global.html#openLinkDialog">openLinkDialog</a></li><li><a href="global.html#outdent">outdent</a></li><li><a href="global.html#padBottom">padBottom</a></li><li><a href="global.html#pasteHTML">pasteHTML</a></li><li><a href="global.html#pasteText">pasteText</a></li><li><a href="global.html#registerAugmentation">registerAugmentation</a></li><li><a href="global.html#registerConfig">registerConfig</a></li><li><a href="global.html#registerDelegate">registerDelegate</a></li><li><a href="global.html#registerMessageHandler">registerMessageHandler</a></li><li><a href="global.html#removeAllDivs">removeAllDivs</a></li><li><a href="global.html#removeButton">removeButton</a></li><li><a href="global.html#removeDiv">removeDiv</a></li><li><a href="global.html#renderDropdownItems">renderDropdownItems</a></li><li><a href="global.html#renderGrouped">renderGrouped</a></li><li><a href="global.html#resetSelection">resetSelection</a></li><li><a href="global.html#savedDataImage">savedDataImage</a></li><li><a href="global.html#searchFor">searchFor</a></li><li><a href="global.html#setHTML">setHTML</a></li><li><a href="global.html#setStyle">setStyle</a></li><li><a href="global.html#setTestHTML">setTestHTML</a></li><li><a href="global.html#setTopLevelAttributes">setTopLevelAttributes</a></li><li><a href="global.html#testBlockquoteEnter">testBlockquoteEnter</a></li><li><a href="global.html#testExtractContents">testExtractContents</a></li><li><a href="global.html#testListEnter">testListEnter</a></li><li><a href="global.html#testPasteHTMLPreprocessing">testPasteHTMLPreprocessing</a></li><li><a href="global.html#testPasteTextPreprocessing">testPasteTextPreprocessing</a></li><li><a href="global.html#toggleBold">toggleBold</a></li><li><a href="global.html#toggleCode">toggleCode</a></li><li><a href="global.html#toggleItalic">toggleItalic</a></li><li><a href="global.html#toggleListItem">toggleListItem</a></li><li><a href="global.html#toggleSearch">toggleSearch</a></li><li><a href="global.html#toggleStrike">toggleStrike</a></li><li><a href="global.html#toggleSubscript">toggleSubscript</a></li><li><a href="global.html#toggleSuperscript">toggleSuperscript</a></li><li><a href="global.html#toggleUnderline">toggleUnderline</a></li></ul>
+        </nav>
+
+        <main id="main" class="main">
+
+            <div id="content" class="content">
+                <p align="center">
+                    <img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" >
+                </p>
+                <h1 class="page-title">Class: BehaviorConfig</h1>
+                
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>BehaviorConfig<span class="signature">()</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description"><p>BehaviorConfig contains static utility methods to obtain a JavaScript object with properties
+that define the behavior configuration of the MarkupEditor. The class makes it convenient
+to write and use the utility methods, but an instance of BehaviorConfig itself is not meaningful.</p>
+<p><code>BehaviorConfig.standard()</code> is the default for the MarkupEditor. It can be overridden by
+passing a new BehaviorConfig by name using the <code>behavior</code> attribute of the <code>&lt;markup-editor&gt; </code>
+element. You can use the pre-defined static methods like <code>standard()</code> and customize what
+it returns, or you can use your own BehaviorConfig.</p>
+<p>To customize the behavior config, for example, in a <code>userscript</code> named <code>mybehavior.js</code>:</p>
+<pre class="prettyprint source"><code>import {MU} from &quot;src/markup-editor.js&quot;
+let behaviorConfig = MU.BehaviorConfig.desktop()        // Use the desktop config as a baseline
+MU.registerConfig(behaviorConfig, &quot;MyBehaviorConfig&quot;)   // Register the instance by name so we can reference it
+</code></pre>
+<p>Then, where you insert the <code>&lt;markup-editor&gt;</code> element, set the BehaviorConfig by name:</p>
+<pre class="prettyprint source"><code>&lt;markup-editor userscript=&quot;mybehavior.js&quot; behavior=&quot;MyBehaviorConfig&quot;>
+</code></pre>
+<p>BehaviorConfig lets you control whether the editor takes focus immediately or not, and
+allows you to defer to the MarkupDelegate for insert options, so you can use your own
+(perhaps &quot;native&quot;) dialogs for file selection, link insertion, and image insertion.</p>
+<p>The following properties are supported:</p>
+<pre class="prettyprint source"><code>{
+   &quot;focusAfterLoad&quot;: true,     // Whether the editor should take focus after loading
+   &quot;selectImage&quot;: false,       // Whether to show a &quot;Select...&quot; button in the Insert Image dialog
+   &quot;insertLink&quot;: false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
+   &quot;insertImage&quot;: false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
+}
+</code></pre></div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="BehaviorConfig" data-heading-label="BehaviorConfig" ><span class="type-signature"></span>new BehaviorConfig<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".desktop" data-heading-label=".desktop" ><span class="type-signature">(static) </span>desktop<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return the desktop behavior configuration object. This is the same as <code>full()</code> but with <code>selectImage</code> enabled.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A JavaScript object with settings for desktop-style usage.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".fromJSON" data-heading-label=".fromJSON" ><span class="type-signature">(static) </span>fromJSON<span class="signature">(string)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return a behavior configuration object, but defined from a stringified JSON object.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>string</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A stringified object, perhaps used as an external definition of a behavior configuration</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>An object parsed from the JSON in <code>string</code>, should contain data for all properties</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".full" data-heading-label=".full" ><span class="type-signature">(static) </span>full<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return a behavior configuration object with all options enabled.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A JavaScript object with all options enabled.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".standard" data-heading-label=".standard" ><span class="type-signature">(static) </span>standard<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return a default behavior configuration object.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A JavaScript object with all settings.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+            </div>
+
+            <div class="toc">
+                <h2>Table of contents</h2>
+                <div class="toc-nav"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+    <script >
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('.prettyprint.linenums code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+                hljs.lineNumbersBlock(el);
+            });
+            document.querySelectorAll('pre code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+            });
+        })
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.18.2/tocbot.min.js"></script>
+    <script>
+        tocbot.init({
+        // Where to render the table of contents.
+        tocSelector: '.toc-nav',
+        // Where to grab the headings to build the table of contents.
+        contentSelector: '.main article',
+        // Which headings to grab inside of the contentSelector element.
+        headingSelector: 'h1.name, h2.name, h3.name, h4.name',
+        headingLabelCallback: (string) => string
+    });
+    </script>
+</body>
+</html>

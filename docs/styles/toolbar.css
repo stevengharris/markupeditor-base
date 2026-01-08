@@ -634,3 +634,18 @@
     border: 1px solid lightblue;
   }
 }
+
+.Markup-menu-tablesizer .Markup-menuitem-active {
+    height: 13px;
+    padding-top: 3px;
+    fill: black;
+    color: black;
+    background: blue;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-menu-tablesizer .Markup-menuitem-active {
+      fill: black;
+      color: black;
+      background: lightblue;
+  }
+}

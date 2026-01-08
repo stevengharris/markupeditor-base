@@ -1,5 +1,5 @@
-/* global describe, test, beforeAll */
-const {setDocument, HtmlTestSuite, runHtmlTest} = require('./setup.js')
+import { describe, test, beforeAll } from 'vitest'
+import { setDocument, HtmlTestSuite, runHtmlTest } from './setup.js'
 
 /**
  * Set up the document and MarkupEditor instance once. Precede with a 

@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: ToolbarConfig</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link type="text/css" rel="stylesheet" href="styles/base.min.css">
+</head>
+
+<body class="body">
+
+    <div class="container">
+
+        <nav class="sidenav">
+            <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BehaviorConfig.html">BehaviorConfig</a></li><li><a href="Dropdown.html">Dropdown</a></li><li><a href="DropdownSubmenu.html">DropdownSubmenu</a></li><li><a href="KeymapConfig.html">KeymapConfig</a></li><li><a href="MarkupEditorElement.html">MarkupEditorElement</a></li><li><a href="MenuItem.html">MenuItem</a></li><li><a href="ToolbarConfig.html">ToolbarConfig</a></li></ul><h3>Global</h3><ul><li><a href="global.html#MU">MU</a></li><li><a href="global.html#activeView">activeView</a></li><li><a href="global.html#addButton">addButton</a></li><li><a href="global.html#addCol">addCol</a></li><li><a href="global.html#addDiv">addDiv</a></li><li><a href="global.html#addHeader">addHeader</a></li><li><a href="global.html#addRow">addRow</a></li><li><a href="global.html#borderTable">borderTable</a></li><li><a href="global.html#cancelSearch">cancelSearch</a></li><li><a href="global.html#cmdItem">cmdItem</a></li><li><a href="global.html#consoleLog">consoleLog</a></li><li><a href="global.html#cutImage">cutImage</a></li><li><a href="global.html#deactivateSearch">deactivateSearch</a></li><li><a href="global.html#deleteLink">deleteLink</a></li><li><a href="global.html#deleteTableArea">deleteTableArea</a></li><li><a href="global.html#doRedo">doRedo</a></li><li><a href="global.html#doUndo">doUndo</a></li><li><a href="global.html#emptyDocument">emptyDocument</a></li><li><a href="global.html#emptyHTML">emptyHTML</a></li><li><a href="global.html#focus">focus</a></li><li><a href="global.html#focusOn">focusOn</a></li><li><a href="global.html#focused">focused</a></li><li><a href="global.html#getDataImages">getDataImages</a></li><li><a href="global.html#getHTML">getHTML</a></li><li><a href="global.html#getHeight">getHeight</a></li><li><a href="global.html#getImageAttributes">getImageAttributes</a></li><li><a href="global.html#getLinkAttributes">getLinkAttributes</a></li><li><a href="global.html#getSelectionState">getSelectionState</a></li><li><a href="global.html#getTestHTML">getTestHTML</a></li><li><a href="global.html#indent">indent</a></li><li><a href="global.html#insertImage">insertImage</a></li><li><a href="global.html#insertLink">insertLink</a></li><li><a href="global.html#insertTable">insertTable</a></li><li><a href="global.html#loadUserFiles">loadUserFiles</a></li><li><a href="global.html#modifyImage">modifyImage</a></li><li><a href="global.html#openImageDialog">openImageDialog</a></li><li><a href="global.html#openLinkDialog">openLinkDialog</a></li><li><a href="global.html#outdent">outdent</a></li><li><a href="global.html#padBottom">padBottom</a></li><li><a href="global.html#pasteHTML">pasteHTML</a></li><li><a href="global.html#pasteText">pasteText</a></li><li><a href="global.html#registerAugmentation">registerAugmentation</a></li><li><a href="global.html#registerConfig">registerConfig</a></li><li><a href="global.html#registerDelegate">registerDelegate</a></li><li><a href="global.html#registerMessageHandler">registerMessageHandler</a></li><li><a href="global.html#removeAllDivs">removeAllDivs</a></li><li><a href="global.html#removeButton">removeButton</a></li><li><a href="global.html#removeDiv">removeDiv</a></li><li><a href="global.html#renderDropdownItems">renderDropdownItems</a></li><li><a href="global.html#renderGrouped">renderGrouped</a></li><li><a href="global.html#resetSelection">resetSelection</a></li><li><a href="global.html#savedDataImage">savedDataImage</a></li><li><a href="global.html#searchFor">searchFor</a></li><li><a href="global.html#setHTML">setHTML</a></li><li><a href="global.html#setStyle">setStyle</a></li><li><a href="global.html#setTestHTML">setTestHTML</a></li><li><a href="global.html#setTopLevelAttributes">setTopLevelAttributes</a></li><li><a href="global.html#testBlockquoteEnter">testBlockquoteEnter</a></li><li><a href="global.html#testExtractContents">testExtractContents</a></li><li><a href="global.html#testListEnter">testListEnter</a></li><li><a href="global.html#testPasteHTMLPreprocessing">testPasteHTMLPreprocessing</a></li><li><a href="global.html#testPasteTextPreprocessing">testPasteTextPreprocessing</a></li><li><a href="global.html#toggleBold">toggleBold</a></li><li><a href="global.html#toggleCode">toggleCode</a></li><li><a href="global.html#toggleItalic">toggleItalic</a></li><li><a href="global.html#toggleListItem">toggleListItem</a></li><li><a href="global.html#toggleSearch">toggleSearch</a></li><li><a href="global.html#toggleStrike">toggleStrike</a></li><li><a href="global.html#toggleSubscript">toggleSubscript</a></li><li><a href="global.html#toggleSuperscript">toggleSuperscript</a></li><li><a href="global.html#toggleUnderline">toggleUnderline</a></li></ul>
+        </nav>
+
+        <main id="main" class="main">
+
+            <div id="content" class="content">
+                <p align="center">
+                    <img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" >
+                </p>
+                <h1 class="page-title">Class: ToolbarConfig</h1>
+                
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>ToolbarConfig<span class="signature">()</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description"><p>ToolbarConfig contains static utility methods to obtain a JavaScript object with properties
+that define the configuration of the MarkupEditor toolbar. The class makes it convenient
+to write and use the utility methods, but an instance of ToolbarConfig itself is not meaningful.</p>
+<p><code>ToolbarConfig.standard()</code> is the default for the MarkupEditor. It can be overridden by
+passing a new ToolbarConfig by name using the <code>toolbar</code> attribute of the <code>&lt;markup-editor&gt;</code>
+element. You can use the pre-defined static methods like <code>standard()</code> and customize what
+it returns, or you can use your own ToolbarConfig.</p>
+<p>To customize the toolbar, for example, in a <code>userscript</code> named <code>mytoolbar.js</code>:</p>
+<pre class="prettyprint source"><code>import {MU} from &quot;src/markup-editor.js&quot;
+let toolbarConfig = MU.ToolbarConfig.full(true);    // Grab the full toolbar, including correction, as a baseline
+toolbarConfig.insertBar.tableMenu = false;          // Turn off table insert menu
+MU.registerConfig(toolbarConfig, &quot;MyToolbarConfig&quot;) // Register the instance by name so we can reference it
+</code></pre>
+<p>Then, where you insert the <code>&lt;markup-editor&gt;</code> element, set the ToolbarConfig by name:</p>
+<pre class="prettyprint source"><code>&lt;markup-editor userscript=&quot;mytoolbar.js&quot; toolbar=&quot;MyToolbarConfig&quot;>
+</code></pre>
+<p>Turn off entire toolbars and menus using the &quot;visibility&quot; settings. Turn off specific items
+within a toolbar or menu using the settings specific to that toolbar or menu. Customize
+left-to-right ordering using the &quot;ordering&quot; settings. Specify icon SVG in the &quot;icon&quot; settings.
+Use &quot;augmentation&quot; to prepend and/or append a toolbar you define yourself.</p>
+<p>The following properties are supported:</p>
+<pre class="prettyprint source"><code>{
+  &quot;visibility&quot;: {             // Control the visibility of toolbars, etc
+    &quot;toolbar&quot;: true,          // Whether the toolbar is visible at all
+    &quot;correctionBar&quot;: true,    // Whether the correction bar (undo/redo) is visible
+    &quot;insertBar&quot;: true,        // Whether the insert bar (link, image, table) is visible
+    &quot;styleMenu&quot;: true,        // Whether the style menu (p, h1-h6, code) is visible
+    &quot;styleBar&quot;: true,         // Whether the style bar (bullet/numbered lists) is visible
+    &quot;formatBar&quot;: true,        // Whether the format bar (b, i, u, etc) is visible
+    &quot;search&quot;: true,           // Whether the search item (hide/show search bar) is visible
+  },
+  &quot;ordering&quot;: {               // Control the ordering of toolbars, etc, ascending left-to-right
+    &quot;correctionBar&quot;: 10,      // Correction bar order if it is visible
+    &quot;insertBar&quot;: 20,          // Insert bar (link, image, table) order if it is visible
+    &quot;styleMenu&quot;: 30,          // Style menu (p, h1-h6, code) order if it is visible
+    &quot;styleBar&quot;: 40,           // Style bar (bullet/numbered lists) order if it is visible
+    &quot;formatBar&quot;: 50,          // Format bar (b, i, u, etc) order if it is visible
+    &quot;search&quot;: 60,             // Search item (hide/show search bar) order if it is visible
+  },
+  &quot;insertBar&quot;: {
+    &quot;link&quot;: true,             // Whether the link menu item is visible
+    &quot;image&quot;: true,            // Whether the image menu item is visible
+    &quot;tableMenu&quot;: true,        // Whether the table menu is visible
+  },
+  &quot;formatBar&quot;: {
+    &quot;bold&quot;: true,             // Whether the bold menu item is visible
+    &quot;italic&quot;: true,           // Whether the italic menu item is visible
+    &quot;underline&quot;: true,        // Whether the underline menu item is visible
+    &quot;code&quot;: true,             // Whether the code menu item is visible
+    &quot;strikethrough&quot;: true,    // Whether the strikethrough menu item is visible
+    &quot;subscript&quot;: true,        // Whether the subscript menu item is visible
+    &quot;superscript&quot;: true,      // Whether the superscript menu item is visible
+  },
+  &quot;styleMenu&quot;: {
+    &quot;p&quot;: &quot;Body&quot;,              // The label in the menu for &quot;P&quot; style
+    &quot;h1&quot;: &quot;H1&quot;,               // The label in the menu for &quot;H1&quot; style
+    &quot;h2&quot;: &quot;H2&quot;,               // The label in the menu for &quot;H2&quot; style
+    &quot;h3&quot;: &quot;H3&quot;,               // The label in the menu for &quot;H3&quot; style
+    &quot;h4&quot;: &quot;H4&quot;,               // The label in the menu for &quot;H4&quot; style
+    &quot;h5&quot;: &quot;H5&quot;,               // The label in the menu for &quot;H5&quot; style
+    &quot;h6&quot;: &quot;H6&quot;,               // The label in the menu for &quot;H6&quot; style
+    &quot;pre&quot;: &quot;Code&quot;,            // The label in the menu for &quot;PRE&quot; aka code_block style
+  },
+  &quot;styleBar&quot;: {
+    &quot;list&quot;: true,             // Whether bullet and numbered list items are visible
+    &quot;dent&quot;: true,             // Whether indent and outdent items are visible
+  },
+  &quot;tableMenu&quot;: {
+    &quot;header&quot;: true,           // Whether the &quot;Header&quot; item is visible in the &quot;Table->Add&quot; menu
+    &quot;border&quot;: true,           // Whether the &quot;Border&quot; item is visible in the &quot;Table&quot; menu
+  },
+  &quot;augmentation&quot;: {
+    &quot;prepend&quot;: null,          // Name of a registered array of cmdItems to prepend
+    &quot;append&quot;: null            // Name of a registered array of cmdItems to append
+  },
+  &quot;icons&quot;: {
+    // &lt;span class=&quot;material-icons-outlined&quot;>undo&lt;/span>
+    &quot;undo&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;24px&quot;>&lt;path d=&quot;M0 0h24v24H0V0z&quot; fill=&quot;none&quot;/>&lt;path d=&quot;M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>redo&lt;/span>
+    &quot;redo&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;24px&quot;>&lt;path d=&quot;M0 0h24v24H0V0z&quot; fill=&quot;none&quot;/>&lt;path d=&quot;M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>format_bold&lt;/span>
+    &quot;strong&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;24px&quot;>&lt;path d=&quot;M0 0h24v24H0V0z&quot; fill=&quot;none&quot;/>&lt;path d=&quot;M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>format_italic&lt;/span>
+    &quot;em&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M200-200v-100h160l120-360H320v-100h400v100H580L460-300h140v100H200Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>format_underlined&lt;/span>
+    &quot;u&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M200-120v-80h560v80H200Zm280-160q-101 0-157-63t-56-167v-330h103v336q0 56 28 91t82 35q54 0 82-35t28-91v-336h103v330q0 104-56 167t-157 63Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>strikethrough_s&lt;/span>
+    &quot;s&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M486-160q-76 0-135-45t-85-123l88-38q14 48 48.5 79t85.5 31q42 0 76-20t34-64q0-18-7-33t-19-27h112q5 14 7.5 28.5T694-340q0 86-61.5 133T486-160ZM80-480v-80h800v80H80Zm402-326q66 0 115.5 32.5T674-674l-88 39q-9-29-33.5-52T484-710q-41 0-68 18.5T386-640h-96q2-69 54.5-117.5T482-806Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>data_object&lt;/span>
+    &quot;code&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M560-160v-80h120q17 0 28.5-11.5T720-280v-80q0-38 22-69t58-44v-14q-36-13-58-44t-22-69v-80q0-17-11.5-28.5T680-720H560v-80h120q50 0 85 35t35 85v80q0 17 11.5 28.5T840-560h40v160h-40q-17 0-28.5 11.5T800-360v80q0 50-35 85t-85 35H560Zm-280 0q-50 0-85-35t-35-85v-80q0-17-11.5-28.5T120-400H80v-160h40q17 0 28.5-11.5T160-600v-80q0-50 35-85t85-35h120v80H280q-17 0-28.5 11.5T240-680v80q0 38-22 69t-58 44v14q36 13 58 44t22 69v80q0 17 11.5 28.5T280-240h120v80H280Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>subscript&lt;/span>
+    &quot;sub&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M760-160v-80q0-17 11.5-28.5T800-280h80v-40H760v-40h120q17 0 28.5 11.5T920-320v40q0 17-11.5 28.5T880-240h-80v40h120v40H760Zm-525-80 185-291-172-269h106l124 200h4l123-200h107L539-531l186 291H618L482-457h-4L342-240H235Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>superscript&lt;/span>
+    &quot;sup&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M760-600v-80q0-17 11.5-28.5T800-720h80v-40H760v-40h120q17 0 28.5 11.5T920-760v40q0 17-11.5 28.5T880-680h-80v40h120v40H760ZM235-160l185-291-172-269h106l124 200h4l123-200h107L539-451l186 291H618L482-377h-4L342-160H235Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>link&lt;/span>
+    &quot;link&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;24px&quot;>&lt;path d=&quot;M0 0h24v24H0V0z&quot; fill=&quot;none&quot;/>&lt;path d=&quot;M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>image&lt;/span>
+    &quot;image&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>table&lt;/span>
+    &quot;table&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm240-240H200v160h240v-160Zm80 0v160h240v-160H520Zm-80-80v-160H200v160h240Zm80 0h240v-160H520v160ZM200-680h560v-80H200v80Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>format_list_bulleted&lt;/span>
+    &quot;bulletList&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M360-200v-80h480v80H360Zm0-240v-80h480v80H360Zm0-240v-80h480v80H360ZM200-160q-33 0-56.5-23.5T120-240q0-33 23.5-56.5T200-320q33 0 56.5 23.5T280-240q0 33-23.5 56.5T200-160Zm0-240q-33 0-56.5-23.5T120-480q0-33 23.5-56.5T200-560q33 0 56.5 23.5T280-480q0 33-23.5 56.5T200-400Zm0-240q-33 0-56.5-23.5T120-720q0-33 23.5-56.5T200-800q33 0 56.5 23.5T280-720q0 33-23.5 56.5T200-640Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>format_list_numbered&lt;/span>
+    &quot;orderedList&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M120-80v-60h100v-30h-60v-60h60v-30H120v-60h120q17 0 28.5 11.5T280-280v40q0 17-11.5 28.5T240-200q17 0 28.5 11.5T280-160v40q0 17-11.5 28.5T240-80H120Zm0-280v-110q0-17 11.5-28.5T160-510h60v-30H120v-60h120q17 0 28.5 11.5T280-560v70q0 17-11.5 28.5T240-450h-60v30h100v60H120Zm60-280v-180h-60v-60h120v240h-60Zm180 440v-80h480v80H360Zm0-240v-80h480v80H360Zm0-240v-80h480v80H360Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>format_indent_increase&lt;/span>
+    &quot;blockquote&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M120-120v-80h720v80H120Zm320-160v-80h400v80H440Zm0-160v-80h400v80H440Zm0-160v-80h400v80H440ZM120-760v-80h720v80H120Zm0 440v-320l160 160-160 160Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-icons-outlined&quot;>format_indent_decrease&lt;/span>
+    &quot;lift&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot;>&lt;path d=&quot;M120-120v-80h720v80H120Zm320-160v-80h400v80H440Zm0-160v-80h400v80H440Zm0-160v-80h400v80H440ZM120-760v-80h720v80H120Zm160 440L120-480l160-160v320Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-symbols-outlined&quot;>search&lt;/span>
+    &quot;search&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot; fill=&quot;#1f1f1f&quot;>&lt;path d=&quot;M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-symbols-outlined&quot;>chevron_forward&lt;/span>
+    &quot;searchForward&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot; fill=&quot;#1f1f1f&quot;>&lt;path d=&quot;M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-symbols-outlined&quot;>chevron_backward&lt;/span>
+    &quot;searchBackward&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot; fill=&quot;#1f1f1f&quot;>&lt;path d=&quot;M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-symbols-outlined&quot;>match_case&lt;/span>
+    &quot;matchCase&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot; fill=&quot;#1f1f1f&quot;>&lt;path d=&quot;m131-252 165-440h79l165 440h-76l-39-112H247l-40 112h-76Zm139-176h131l-64-182h-4l-63 182Zm395 186q-51 0-81-27.5T554-342q0-44 34.5-72.5T677-443q23 0 45 4t38 11v-12q0-29-20.5-47T685-505q-23 0-42 9.5T610-468l-47-35q24-29 54.5-43t68.5-14q69 0 103 32.5t34 97.5v178h-63v-37h-4q-14 23-38 35t-53 12Zm12-54q35 0 59.5-24t24.5-56q-14-8-33.5-12.5T689-393q-32 0-50 14t-18 37q0 20 16 33t40 13Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-symbols-outlined&quot;>format_paragraph&lt;/span>
+    &quot;paragraphStyle&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot; fill=&quot;#1f1f1f&quot;>&lt;path d=&quot;M360-160v-240q-83 0-141.5-58.5T160-600q0-83 58.5-141.5T360-800h360v80h-80v560h-80v-560H440v560h-80Z&quot;/>&lt;/svg>',
+    // &lt;span class=&quot;material-symbols-outlined&quot;>more_horiz&lt;/span>
+    &quot;more&quot;: '&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; height=&quot;24px&quot; viewBox=&quot;0 -960 960 960&quot; width=&quot;24px&quot; fill=&quot;#1f1f1f&quot;>&lt;path d=&quot;M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z&quot;/>&lt;/svg>'
+  }
+}
+</code></pre></div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="ToolbarConfig" data-heading-label="ToolbarConfig" ><span class="type-signature"></span>new ToolbarConfig<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".desktop" data-heading-label=".desktop" ><span class="type-signature">(static) </span>desktop<span class="signature">(correction)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return the desktop toolbar configuration object, including undo/redo depending on <code>correction</code>. This is the same as <code>full()</code>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>correction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>True if the correction (undo/redo) bar should be included, else false</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A JavaScript object with options enabled for desktop-style usage.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".fromJSON" data-heading-label=".fromJSON" ><span class="type-signature">(static) </span>fromJSON<span class="signature">(string)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return a toolbar configuration object, but defined from a stringified JSON object.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>string</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A stringified object, perhaps used as an external definition of a toolbar configuration</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>An object parsed from the JSON in <code>string</code>, should contain data for all properties</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".full" data-heading-label=".full" ><span class="type-signature">(static) </span>full<span class="signature">(correction)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return a toolbar configuration object with all options enabled, including undo/redo depending on <code>correction</code>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>correction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>True if the correction (undo/redo) bar should be included, else false</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A JavaScript object with all options enabled.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".iconFor" data-heading-label=".iconFor" ><span class="type-signature">(static) </span>iconFor<span class="signature">(string)</span><span class="type-signature"> &rarr; {string|null}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return the SVG for an icon with the given name.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>string</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The name of the icon to look up</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The SVG definition of the icon if found</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+|
+
+<span class="param-type">null</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".markdown" data-heading-label=".markdown" ><span class="type-signature">(static) </span>markdown<span class="signature">(correction)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return the Markdown-oriented toolbar configuration object, including undo/redo depending on <code>correction</code>.
+This toolbar excludes underline, and subscript/superscript.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>correction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>True if the correction (undo/redo) bar should be included, else false</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>An toolbar configuration object with Markdown-oriented settings</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".none" data-heading-label=".none" ><span class="type-signature">(static) </span>none<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return a toolbar configuration object that prevents the toolbar from showing.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A toolbar configuration object with <code>visibility.toolbar</code> set to <code>false</code></p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".standard" data-heading-label=".standard" ><span class="type-signature">(static) </span>standard<span class="signature">(correction)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Return a default toolbar configuration object, including undo/redo depending on <code>correction</code>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>correction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>True if the correction (undo/redo) bar should be included, else false</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A JavaScript object with all options enabled.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+            </div>
+
+            <div class="toc">
+                <h2>Table of contents</h2>
+                <div class="toc-nav"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+    <script >
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('.prettyprint.linenums code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+                hljs.lineNumbersBlock(el);
+            });
+            document.querySelectorAll('pre code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+            });
+        })
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.18.2/tocbot.min.js"></script>
+    <script>
+        tocbot.init({
+        // Where to render the table of contents.
+        tocSelector: '.toc-nav',
+        // Where to grab the headings to build the table of contents.
+        contentSelector: '.main article',
+        // Which headings to grab inside of the contentSelector element.
+        headingSelector: 'h1.name, h2.name, h3.name, h4.name',
+        headingLabelCallback: (string) => string
+    });
+    </script>
+</body>
+</html>

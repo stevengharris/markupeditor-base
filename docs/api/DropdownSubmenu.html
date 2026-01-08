@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: DropdownSubmenu</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link type="text/css" rel="stylesheet" href="styles/base.min.css">
+</head>
+
+<body class="body">
+
+    <div class="container">
+
+        <nav class="sidenav">
+            <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BehaviorConfig.html">BehaviorConfig</a></li><li><a href="Dropdown.html">Dropdown</a></li><li><a href="DropdownSubmenu.html">DropdownSubmenu</a></li><li><a href="KeymapConfig.html">KeymapConfig</a></li><li><a href="MarkupEditorElement.html">MarkupEditorElement</a></li><li><a href="MenuItem.html">MenuItem</a></li><li><a href="ToolbarConfig.html">ToolbarConfig</a></li></ul><h3>Global</h3><ul><li><a href="global.html#MU">MU</a></li><li><a href="global.html#activeView">activeView</a></li><li><a href="global.html#addButton">addButton</a></li><li><a href="global.html#addCol">addCol</a></li><li><a href="global.html#addDiv">addDiv</a></li><li><a href="global.html#addHeader">addHeader</a></li><li><a href="global.html#addRow">addRow</a></li><li><a href="global.html#borderTable">borderTable</a></li><li><a href="global.html#cancelSearch">cancelSearch</a></li><li><a href="global.html#cmdItem">cmdItem</a></li><li><a href="global.html#consoleLog">consoleLog</a></li><li><a href="global.html#cutImage">cutImage</a></li><li><a href="global.html#deactivateSearch">deactivateSearch</a></li><li><a href="global.html#deleteLink">deleteLink</a></li><li><a href="global.html#deleteTableArea">deleteTableArea</a></li><li><a href="global.html#doRedo">doRedo</a></li><li><a href="global.html#doUndo">doUndo</a></li><li><a href="global.html#emptyDocument">emptyDocument</a></li><li><a href="global.html#emptyHTML">emptyHTML</a></li><li><a href="global.html#focus">focus</a></li><li><a href="global.html#focusOn">focusOn</a></li><li><a href="global.html#focused">focused</a></li><li><a href="global.html#getDataImages">getDataImages</a></li><li><a href="global.html#getHTML">getHTML</a></li><li><a href="global.html#getHeight">getHeight</a></li><li><a href="global.html#getImageAttributes">getImageAttributes</a></li><li><a href="global.html#getLinkAttributes">getLinkAttributes</a></li><li><a href="global.html#getSelectionState">getSelectionState</a></li><li><a href="global.html#getTestHTML">getTestHTML</a></li><li><a href="global.html#indent">indent</a></li><li><a href="global.html#insertImage">insertImage</a></li><li><a href="global.html#insertLink">insertLink</a></li><li><a href="global.html#insertTable">insertTable</a></li><li><a href="global.html#loadUserFiles">loadUserFiles</a></li><li><a href="global.html#modifyImage">modifyImage</a></li><li><a href="global.html#openImageDialog">openImageDialog</a></li><li><a href="global.html#openLinkDialog">openLinkDialog</a></li><li><a href="global.html#outdent">outdent</a></li><li><a href="global.html#padBottom">padBottom</a></li><li><a href="global.html#pasteHTML">pasteHTML</a></li><li><a href="global.html#pasteText">pasteText</a></li><li><a href="global.html#registerAugmentation">registerAugmentation</a></li><li><a href="global.html#registerConfig">registerConfig</a></li><li><a href="global.html#registerDelegate">registerDelegate</a></li><li><a href="global.html#registerMessageHandler">registerMessageHandler</a></li><li><a href="global.html#removeAllDivs">removeAllDivs</a></li><li><a href="global.html#removeButton">removeButton</a></li><li><a href="global.html#removeDiv">removeDiv</a></li><li><a href="global.html#renderDropdownItems">renderDropdownItems</a></li><li><a href="global.html#renderGrouped">renderGrouped</a></li><li><a href="global.html#resetSelection">resetSelection</a></li><li><a href="global.html#savedDataImage">savedDataImage</a></li><li><a href="global.html#searchFor">searchFor</a></li><li><a href="global.html#setHTML">setHTML</a></li><li><a href="global.html#setStyle">setStyle</a></li><li><a href="global.html#setTestHTML">setTestHTML</a></li><li><a href="global.html#setTopLevelAttributes">setTopLevelAttributes</a></li><li><a href="global.html#testBlockquoteEnter">testBlockquoteEnter</a></li><li><a href="global.html#testExtractContents">testExtractContents</a></li><li><a href="global.html#testListEnter">testListEnter</a></li><li><a href="global.html#testPasteHTMLPreprocessing">testPasteHTMLPreprocessing</a></li><li><a href="global.html#testPasteTextPreprocessing">testPasteTextPreprocessing</a></li><li><a href="global.html#toggleBold">toggleBold</a></li><li><a href="global.html#toggleCode">toggleCode</a></li><li><a href="global.html#toggleItalic">toggleItalic</a></li><li><a href="global.html#toggleListItem">toggleListItem</a></li><li><a href="global.html#toggleSearch">toggleSearch</a></li><li><a href="global.html#toggleStrike">toggleStrike</a></li><li><a href="global.html#toggleSubscript">toggleSubscript</a></li><li><a href="global.html#toggleSuperscript">toggleSuperscript</a></li><li><a href="global.html#toggleUnderline">toggleUnderline</a></li></ul>
+        </nav>
+
+        <main id="main" class="main">
+
+            <div id="content" class="content">
+                <p align="center">
+                    <img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" >
+                </p>
+                <h1 class="page-title">Class: DropdownSubmenu</h1>
+                
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>DropdownSubmenu<span class="signature">(content, options)</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description"><p>Represents a submenu wrapping a group of elements that start
+hidden and expand to the right when hovered over or tapped.</p>
+<p>Modified from: <a href="https://github.com/ProseMirror/prosemirror-menu">prosemirror-menu</a></p></div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="DropdownSubmenu" data-heading-label="DropdownSubmenu" ><span class="type-signature"></span>new DropdownSubmenu<span class="signature">(content, options)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Creates a submenu for the given group of menu elements. The following options are available:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Type</th>
+<th style="text-align:left">Property</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>Function(): boolean</code></td>
+<td style="text-align:left"><code>enable</code></td>
+<td style="text-align:left">Function to return true if MenuItem is enabled, else false.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>string</code></td>
+<td style="text-align:left"><code>label</code></td>
+<td style="text-align:left">The string to show in the MenuItem</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>KeymapConfig</code></td>
+<td style="text-align:left"><code>keymap</code></td>
+<td style="text-align:left">The KeymapConfig to use for the MenuItem</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Command</code></td>
+<td style="text-align:left"><code>run</code></td>
+<td style="text-align:left">The Command to run when the item is pressed</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Function(): boolean</code></td>
+<td style="text-align:left"><code>active</code></td>
+<td style="text-align:left">Function to return true if MenuItem is active, else false.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>object</code></td>
+<td style="text-align:left"><code>attrs</code></td>
+<td style="text-align:left">Node attrs that can be used within the <code>enable</code> or <code>active</code> functions.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>content</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;(<a href="MenuItem.html">MenuItem</a>|Array.&lt;<a href="MenuItem.html">MenuItem</a>>)></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The submenu's contents in the form of MenuItems.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>See list above.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="DropdownSubmenu.html">DropdownSubmenu</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="render" data-heading-label="render" ><span class="type-signature"></span>render<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Renders the submenu.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+            </div>
+
+            <div class="toc">
+                <h2>Table of contents</h2>
+                <div class="toc-nav"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+    <script >
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('.prettyprint.linenums code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+                hljs.lineNumbersBlock(el);
+            });
+            document.querySelectorAll('pre code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+            });
+        })
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.18.2/tocbot.min.js"></script>
+    <script>
+        tocbot.init({
+        // Where to render the table of contents.
+        tocSelector: '.toc-nav',
+        // Where to grab the headings to build the table of contents.
+        contentSelector: '.main article',
+        // Which headings to grab inside of the contentSelector element.
+        headingSelector: 'h1.name, h2.name, h3.name, h4.name',
+        headingLabelCallback: (string) => string
+    });
+    </script>
+</body>
+</html>

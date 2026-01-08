@@ -3,13 +3,9 @@
     <head>
         <title>Hello MarkupEditor</title>
         <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-        <link href="../styles/markupeditor.css" rel="stylesheet">
     </head>
     <body>
-        <div id="editor"></div>
-        <script src="../src/markupeditor.umd.js"></script>
-        <script>
-            new MU.MarkupEditor(document.querySelector('#editor'), {html: '<h1>Hello, world!</h1>'})
-        </script>
+        <markup-editor><h1>Hello, world!</h1></markup-editor>
+        <script src="../src/markup-editor.js" type="module"></script>
     </body>
 </html>

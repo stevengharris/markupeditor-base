@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: MenuItem</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link type="text/css" rel="stylesheet" href="styles/base.min.css">
+</head>
+
+<body class="body">
+
+    <div class="container">
+
+        <nav class="sidenav">
+            <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BehaviorConfig.html">BehaviorConfig</a></li><li><a href="Dropdown.html">Dropdown</a></li><li><a href="DropdownSubmenu.html">DropdownSubmenu</a></li><li><a href="KeymapConfig.html">KeymapConfig</a></li><li><a href="MarkupEditorElement.html">MarkupEditorElement</a></li><li><a href="MenuItem.html">MenuItem</a></li><li><a href="ToolbarConfig.html">ToolbarConfig</a></li></ul><h3>Global</h3><ul><li><a href="global.html#MU">MU</a></li><li><a href="global.html#activeView">activeView</a></li><li><a href="global.html#addButton">addButton</a></li><li><a href="global.html#addCol">addCol</a></li><li><a href="global.html#addDiv">addDiv</a></li><li><a href="global.html#addHeader">addHeader</a></li><li><a href="global.html#addRow">addRow</a></li><li><a href="global.html#borderTable">borderTable</a></li><li><a href="global.html#cancelSearch">cancelSearch</a></li><li><a href="global.html#cmdItem">cmdItem</a></li><li><a href="global.html#consoleLog">consoleLog</a></li><li><a href="global.html#cutImage">cutImage</a></li><li><a href="global.html#deactivateSearch">deactivateSearch</a></li><li><a href="global.html#deleteLink">deleteLink</a></li><li><a href="global.html#deleteTableArea">deleteTableArea</a></li><li><a href="global.html#doRedo">doRedo</a></li><li><a href="global.html#doUndo">doUndo</a></li><li><a href="global.html#emptyDocument">emptyDocument</a></li><li><a href="global.html#emptyHTML">emptyHTML</a></li><li><a href="global.html#focus">focus</a></li><li><a href="global.html#focusOn">focusOn</a></li><li><a href="global.html#focused">focused</a></li><li><a href="global.html#getDataImages">getDataImages</a></li><li><a href="global.html#getHTML">getHTML</a></li><li><a href="global.html#getHeight">getHeight</a></li><li><a href="global.html#getImageAttributes">getImageAttributes</a></li><li><a href="global.html#getLinkAttributes">getLinkAttributes</a></li><li><a href="global.html#getSelectionState">getSelectionState</a></li><li><a href="global.html#getTestHTML">getTestHTML</a></li><li><a href="global.html#indent">indent</a></li><li><a href="global.html#insertImage">insertImage</a></li><li><a href="global.html#insertLink">insertLink</a></li><li><a href="global.html#insertTable">insertTable</a></li><li><a href="global.html#loadUserFiles">loadUserFiles</a></li><li><a href="global.html#modifyImage">modifyImage</a></li><li><a href="global.html#openImageDialog">openImageDialog</a></li><li><a href="global.html#openLinkDialog">openLinkDialog</a></li><li><a href="global.html#outdent">outdent</a></li><li><a href="global.html#padBottom">padBottom</a></li><li><a href="global.html#pasteHTML">pasteHTML</a></li><li><a href="global.html#pasteText">pasteText</a></li><li><a href="global.html#registerAugmentation">registerAugmentation</a></li><li><a href="global.html#registerConfig">registerConfig</a></li><li><a href="global.html#registerDelegate">registerDelegate</a></li><li><a href="global.html#registerMessageHandler">registerMessageHandler</a></li><li><a href="global.html#removeAllDivs">removeAllDivs</a></li><li><a href="global.html#removeButton">removeButton</a></li><li><a href="global.html#removeDiv">removeDiv</a></li><li><a href="global.html#renderDropdownItems">renderDropdownItems</a></li><li><a href="global.html#renderGrouped">renderGrouped</a></li><li><a href="global.html#resetSelection">resetSelection</a></li><li><a href="global.html#savedDataImage">savedDataImage</a></li><li><a href="global.html#searchFor">searchFor</a></li><li><a href="global.html#setHTML">setHTML</a></li><li><a href="global.html#setStyle">setStyle</a></li><li><a href="global.html#setTestHTML">setTestHTML</a></li><li><a href="global.html#setTopLevelAttributes">setTopLevelAttributes</a></li><li><a href="global.html#testBlockquoteEnter">testBlockquoteEnter</a></li><li><a href="global.html#testExtractContents">testExtractContents</a></li><li><a href="global.html#testListEnter">testListEnter</a></li><li><a href="global.html#testPasteHTMLPreprocessing">testPasteHTMLPreprocessing</a></li><li><a href="global.html#testPasteTextPreprocessing">testPasteTextPreprocessing</a></li><li><a href="global.html#toggleBold">toggleBold</a></li><li><a href="global.html#toggleCode">toggleCode</a></li><li><a href="global.html#toggleItalic">toggleItalic</a></li><li><a href="global.html#toggleListItem">toggleListItem</a></li><li><a href="global.html#toggleSearch">toggleSearch</a></li><li><a href="global.html#toggleStrike">toggleStrike</a></li><li><a href="global.html#toggleSubscript">toggleSubscript</a></li><li><a href="global.html#toggleSuperscript">toggleSuperscript</a></li><li><a href="global.html#toggleUnderline">toggleUnderline</a></li></ul>
+        </nav>
+
+        <main id="main" class="main">
+
+            <div id="content" class="content">
+                <p align="center">
+                    <img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" >
+                </p>
+                <h1 class="page-title">Class: MenuItem</h1>
+                
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>MenuItem<span class="signature">(spec)</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description"><p>An icon or label that, when clicked, executes a command.</p>
+<p>Modified from: <a href="https://github.com/ProseMirror/prosemirror-menu">prosemirror-menu</a></p></div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="MenuItem" data-heading-label="MenuItem" ><span class="type-signature"></span>new MenuItem<span class="signature">(spec)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Create a menu item. The following items are supported in the MenuItem spec:</p>
+<ul>
+<li>
+<p>The function to execute when the menu item is activated.</p>
+<p><code>run: (state: EditorState, dispatch: (tr: Transaction) =&gt; void, view: EditorView, event: Event) =&gt; void</code></p>
+</li>
+<li>
+<p>Optional function that is used to determine whether the item is appropriate at the moment. Deselected items will be hidden.</p>
+<p><code>select?: (state: EditorState) =&gt; boolean</code></p>
+</li>
+<li>
+<p>Function that is used to determine if the item is enabled. If given and returning false, the item will be given a disabled styling.</p>
+<p><code>enable?: (state: EditorState) =&gt; boolean</code></p>
+</li>
+<li>
+<p>A predicate function to determine whether the item is 'active' (for example, the item for toggling the strong mark might be active then the cursor is in strong text).</p>
+<p><code>active?: (state: EditorState) =&gt; boolean</code></p>
+</li>
+<li>
+<p>A function that renders the item. You must provide either this, <a href="#menu.MenuItemSpec.icon"><code>icon</code></a>, or <a href="#MenuItemSpec.label"><code>label</code></a>.</p>
+<p><code>render?: (view: EditorView) =&gt; HTMLElement</code></p>
+</li>
+<li>
+<p>Describes an icon to show for this item using SVG.</p>
+<p><code>icon?: string</code></p>
+</li>
+<li>
+<p>Makes the item show up as a text label. Mostly useful for items wrapped in a <a href="#menu.Dropdown">drop-down</a> or similar menu. The object should have a <code>label</code> property providing the text to display.</p>
+<p><code>label?: string</code></p>
+</li>
+<li>
+<p>Defines DOM title (mouseover) text for the item.</p>
+<p><code>title?: string | ((state: EditorState) =&gt; string)</code></p>
+</li>
+<li>
+<p>Optionally adds a CSS class to the item's DOM representation.</p>
+<p><code>class?: string</code></p>
+</li>
+<li>
+<p>Optionally adds a string of inline CSS to the item's DOM representation.</p>
+<p><code>css?: string</code></p>
+</li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>spec</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The spec used to create this item. See list above.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="MenuItem.html">MenuItem</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="render" data-heading-label="render" ><span class="type-signature"></span>render<span class="signature">(view)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Renders the item according to the <code>spec</code>, and adds an event handler which
+executes the command when the representation is clicked.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<div class="responsive-table">
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>view</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">EditorView</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The view to render this MenuItem in.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+            </div>
+
+            <div class="toc">
+                <h2>Table of contents</h2>
+                <div class="toc-nav"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+    <script >
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('.prettyprint.linenums code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+                hljs.lineNumbersBlock(el);
+            });
+            document.querySelectorAll('pre code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+            });
+        })
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.18.2/tocbot.min.js"></script>
+    <script>
+        tocbot.init({
+        // Where to render the table of contents.
+        tocSelector: '.toc-nav',
+        // Where to grab the headings to build the table of contents.
+        contentSelector: '.main article',
+        // Which headings to grab inside of the contentSelector element.
+        headingSelector: 'h1.name, h2.name, h3.name, h4.name',
+        headingLabelCallback: (string) => string
+    });
+    </script>
+</body>
+</html>

@@ -1,8 +1,10 @@
-/* global expect */
-const MU = require('../dist/markupeditor.umd.js')
-const HtmlTestSuite = require('./htmltest.js').HtmlTestSuite
+import {expect} from 'vitest';
+import {HtmlTestSuite} from './htmltest.js'
+import {MU} from '../dist/markup-editor.js'
 
-async function setDocument() {
+export {MU, HtmlTestSuite}
+
+export async function setDocument() {
 
     // When testing using JSDOM, we see 
     //      TypeError: target.getClientRects is not a function
@@ -17,8 +19,14 @@ async function setDocument() {
     Range.prototype.getBoundingClientRect = getBoundingClientRect;
     Range.prototype.getClientRects = () => new FakeDOMRectList();
 
-    document.body.innerHTML = `<!DOCTYPE html><html><body><div id="editor"></div></body></html>`
-    new MU.MarkupEditor(document.querySelector('#editor'))
+    document.body.innerHTML = `
+    <!DOCTYPE html>
+    <html>
+        <body>
+            <markup-editor behavior='{"focusAfterLoad": false, "selectImage": false, "insertLink": false, "insertImage": false}'></markup-editor>
+            <script type="module" src="../dist/markup-editor.js"></script>
+        </body>
+    </html>`
 }
 
 // See comments in beforeAll()
@@ -43,7 +51,7 @@ class FakeDOMRectList extends Array {
     }
 }
 
-function runHtmlTest(htmlTest) {
+export function runHtmlTest(htmlTest) {
     let { skipTest, skipSet, skipUndoRedo, sel, startHtml, endHtml, undoHtml, pasteString, action, arg } = htmlTest
     // For some reason, there is no Jest facility to skip tests within .each, 
     // so we modify the titles for tests marked `skip` and show success.
@@ -85,8 +93,8 @@ function runHtmlTest(htmlTest) {
                 expect(html).toBe(endHtml)
             }
         } else {
-            let f = new Function("MU", action)
-            f(MU)
+            let f = new Function("MU", "expect", action)
+            f(MU, expect)
             let result = MU.getTestHTML(sel)
             expect(result).toBe(endHtml)
         }
@@ -102,8 +110,3 @@ function runHtmlTest(htmlTest) {
         expect(redoResult).toBe(endHtml)
     }
 }
-
-exports.setDocument = setDocument
-exports.MU = MU
-exports.HtmlTestSuite = HtmlTestSuite
-exports.runHtmlTest = runHtmlTest

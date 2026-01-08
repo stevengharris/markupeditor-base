@@ -1,0 +1,26 @@
+<p>The initial HTML contents of this editor are fetched from <code>filename</code>, editor2.html.</p>
+
+<pre><code>
+&lt;markup-editor 
+    filename="editor2.html" 
+    userscript="editor2.js" 
+    userstyle="editor2.css" 
+    delegate="MyDelegate" 
+    toolbar="MyToolbarConfig" 
+    behavior="MyBehaviorConfig"
+&lt;/markup-editor&gt;
+</code></pre>
+
+<p>The <code>userscript</code> file, editor2.js, defines the classes for MyToolbarConfig, MyBehaviorConfig, and MyDelegate, and registers instances of them so they can be looked up using the names passed in <code>delegate</code>, <code>toolbar</code>, and <code>behavior</code>.</p>
+
+<ul>
+    <li>
+        <p>MyToolbarConfig removes the image and table items from the "insert bar", leaving only the ability to insert links. It adds underline as a formatting option. It drops the "search" item and adds in undo/redo (the "correction bar"), which is handy on mobile devices.</p>
+    </li>
+    <li>
+        <p>MyBehaviorConfig stops this editor from taking focus when the page is loaded, leaving the editor above with focus.</p>
+    </li>
+    <li>
+        <p>MyDelegate in this case doesn't do much, other than log to the console as you type into this editor. The MarkupDelegate will receive callbacks as the document you're editing changes and is the simplest way to "hook into" the editor to react to those changes.</p>
+    </li>
+</ul>

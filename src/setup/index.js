@@ -10,19 +10,16 @@ import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
-import {setPrefix, getMarkupEditorConfig} from "./utilities.js"
+import {setPrefix} from "../domaccess.js"
 import {LinkItem, ImageItem, SearchItem} from "./menuitems.js"
-import {
-  placeholderText, 
-  postMessage, 
-  selectedID, 
-  searchIsActive, 
-  setPlaceholder,
-} from "../markup"
+import {postMessage, searchIsActive} from "../markup"
+import {activeConfig, selectedID} from "../registry.js"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 
  * for table borders.
+ * 
+ * @ignore
  */
 const tablePlugin = new Plugin({
   state: {
@@ -89,6 +86,8 @@ const searchModePlugin  = new Plugin({
  * 
  * The Map is keyed by the src for the image. If the src is duplicated in the document, we only 
  * get one 'addedImage' notification.
+ * 
+ * @ignore
  */
 const imagePlugin = new Plugin({
   state: {
@@ -116,32 +115,10 @@ const imagePlugin = new Plugin({
 })
 
 /**
- * A simple plugin to show placeholder text when the document is empty.
+ * Insert an array of MenuItems or a single MenuItem at the front of the toolbar.
  * 
- * The placeholder text is imported from markup.js and is set there via setPlaceholder.
- * 
- * Adapted from https://discuss.prosemirror.net/t/how-to-input-like-placeholder-behavior/705/3
- * 
- * @returns {Plugin}
- */
-const placeholderPlugin = new Plugin({
-  props: {
-    decorations(state) {
-      if (!placeholderText) return;   // No need to mess around if we have no placeholder
-      const doc = state.doc
-      if (doc.childCount == 1 && doc.firstChild.isTextblock && doc.firstChild.content.size == 0) {
-        const allSelection = new AllSelection(doc);
-        // The attributes are applied to the empty paragraph and styled based on editor.css
-        const decoration = Decoration.node(allSelection.from, allSelection.to, {class: 'placeholder', placeholder: placeholderText});
-        return DecorationSet.create(doc, [decoration])
-      }
-    }
-  }
-})
-
-/**
- * Insert an array of MenuItems or a single MenuItem at the front of the toolbar
- * @param {[MenuItem] | MenuItem} menuItems 
+ * @ignore
+ * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function prependToolbar(menuItems) {
   let items = Array.isArray(menuItems) ? menuItems : [menuItems];
@@ -150,36 +127,48 @@ export function prependToolbar(menuItems) {
 
 /**
  * Append an array of MenuItems or a single MenuItem at the end of the toolbar
- * @param {[MenuItem] | MenuItem} menuItems 
+ * 
+ * @ignore
+ * @param {Array<MenuItem> | MenuItem} menuItems 
  */
 export function appendToolbar(menuItems) {
   let items = Array.isArray(menuItems) ? menuItems : [menuItems];
   toolbarView.append(items)
 }
 
+/**
+ * Toggle the search bar off and on.
+ */
 export function toggleSearch() {
-  let searchItem = new SearchItem(getMarkupEditorConfig())
+  let searchItem = new SearchItem(activeConfig())
   // TODO: How to not rely on toolbarView being present
   let view = toolbarView.editorView
   searchItem.toggleSearch(view.state, view.dispatch, view)
 }
 
+/**
+ * Open the default dialog to insert/edit links.
+ */
 export function openLinkDialog() {
-  let linkItem = new LinkItem(getMarkupEditorConfig())
+  let linkItem = new LinkItem(activeConfig())
   let view = toolbarView.editorView
   linkItem.openDialog(view.state, view.dispatch, view)
 }
 
+/**
+ * Open the default dialog to insert/edit images.
+ */
 export function openImageDialog() {
-  let imageItem = new ImageItem(getMarkupEditorConfig())
+  let imageItem = new ImageItem(activeConfig())
   let view = toolbarView.editorView
   imageItem.openDialog(view.state, view.dispatch, view)
 }
 
 /**
  * Return an array of Plugins used for the MarkupEditor
+ * @ignore
  * @param {Schema} schema The schema used for the MarkupEditor
- * @returns 
+ * @returns {Array<Plugin>}
  */
 export function markupSetup(config, schema) {
   setPrefix('Markup')
@@ -202,8 +191,22 @@ export function markupSetup(config, schema) {
   // Add the plugin that handles table borders
   plugins.push(tablePlugin);
 
-  // Add the plugin that handles placeholder display for an empty document
-  if (config?.placeholder) setPlaceholder(config.placeholder)
+  // Add the plugin that handles placeholder display for an empty document, as passed in config
+  // Adapted from https://discuss.prosemirror.net/t/how-to-input-like-placeholder-behavior/705/3
+  const placeholderPlugin = new Plugin({
+    props: {
+      decorations(state) {
+        const doc = state.doc
+        if (doc.childCount == 1 && doc.firstChild.isTextblock && doc.firstChild.content.size == 0) {
+          const allSelection = new AllSelection(doc);
+          // The attributes are applied to the empty paragraph and styled based on editor.css
+          const decoration = Decoration.node(allSelection.from, allSelection.to, { class: 'placeholder', placeholder: this.spec.props.placeholder });
+          return DecorationSet.create(doc, [decoration])
+        }
+      },
+      placeholder: config.placeholder
+    }
+  })
   plugins.push(placeholderPlugin)
 
   // Add the plugin to handle notifying the Swift side of images loading

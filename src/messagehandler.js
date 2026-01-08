@@ -1,10 +1,10 @@
-/* global MU */
-import { loadUserFiles, getHeight } from "./markup";
+import { getHeight, setHTML } from "./markup.js";
 
 /**
  * The MessageHandler receives `postMessage` from the MarkupEditor as the document state changes.
  * 
- * You can set the MessageHandler used by the MarkupEditor using `MU.setMessageHandler`. This is how 
+ * You can set the MessageHandler used by the MarkupEditor using `registerMessageHandler` and
+ * then identifying it by name as a <markup-editor> element attribute. This is how 
  * the MarkupEditor is embedded in Swift and VSCode. If you don't set your own MessageHandler, then 
  * this is the default version that will be used. These other MessageHandlers will typically use the 
  * same MarkupDelegate pattern to route document state notifications to an app-specific delegate.
@@ -20,8 +20,11 @@ import { loadUserFiles, getHeight } from "./markup";
  * of auto-save method within your app, for example.
  */
 export class MessageHandler {
-    constructor(markupEditor) {
-        this.markupEditor = markupEditor;
+
+    static swift = window.webkit?.messageHandlers?.markup
+
+    constructor(editor) {
+        this.editor = editor
     }
 
     /**
@@ -29,35 +32,41 @@ export class MessageHandler {
      * @param {string | JSON} message   The message passed from the MarkupEditor as the state changes. 
      */
     postMessage(message) {
-        let config = this.markupEditor.config
+        let config = this.editor.config
         let delegate = config.delegate
-
         if (message.startsWith('input')) {
             // Some input or change happened in the document, so let the delegate know immediately 
             // if it exists, and return. Input happens with every keystroke and editing operation, 
             // so generally delegate should be doing very little, except perhaps noting that the 
             // document has changed. However, what your delegate does is very application-specific.
-            delegate?.markupInput && delegate?.markupInput(message, this.markupEditor)
+            delegate?.markupInput && delegate?.markupInput(this.editor)
             return
         }
         switch (message) {
-            // The editor posts `ready` when all scripts are loaded, so we can set the HTML. If HTML
-            // is an empty document, then the config.placeholder will be shown.
-            case 'ready':
-                this.loadContents(config)
-                delegate?.markupReady && delegate?.markupReady(this.markupEditor)
+            // The editor posts `loadedUserFiles` when the markup-editor.js script and `userscript` 
+            // (if any) are loaded, so we can set the HTML. After loading the contents into the 
+            // editor, we let the `delegate`, if specified, know we are ready for editing.
+            case 'loadedUserFiles':
+                this.loadContents()
+                delegate?.markupReady && delegate?.markupReady()
+                return
+            case 'focus':
+                delegate?.markupDidFocus && delegate?.markupDidFocus()
+                return
+            case 'blur':
+                delegate?.markupDidFocus && delegate?.markupDidBlur()
                 return
             case "updateHeight":
-                delegate?.markupUpdateHeight && delegate?.markupUpdateHeight(getHeight(), this.markupEditor)
+                delegate?.markupUpdateHeight && delegate?.markupUpdateHeight(getHeight())
                 return
             case "selectionChanged":
-                delegate?.markupSelectionChanged && delegate?.markupSelectionChanged(this.markupEditor)
+                delegate?.markupSelectionChanged && delegate?.markupSelectionChanged()
                 return
             case "clicked":
-                delegate?.markupClicked && delegate?.markupClicked(this.markupEditor)
+                delegate?.markupClicked && delegate?.markupClicked()
                 return
             case "searched":
-                delegate?.markupSearched && delegate?.markupSearched(this.markupEditor)
+                delegate?.markupSearched && delegate?.markupSearched()
                 return
             default:
                 // By default, try to process the message as a JSON object, and if it's not parseable, 
@@ -82,7 +91,8 @@ export class MessageHandler {
      * @param {Object} messageData The object obtained by parsing the JSON of a message.
      */
     receivedMessageData(messageData) {
-        let delegate = this.markupEditor.config.delegate
+        let config = this.editor.config
+        let delegate = config.delegate
         let messageType = messageData.messageType
         switch (messageType) {
             case "log":
@@ -110,9 +120,9 @@ export class MessageHandler {
                 // use the old call without divid to maintain compatibility with earlier versions
                 // that did not support multi-contenteditable divs.
                 if ((divId.length == 0) || (divId == "editor")) {
-                    delegate.markupImageAdded(this.markupEditor, messageData.src)
+                    delegate.markupImageAdded(messageData.src)
                 } else if (!divId.length == 0) {
-                    delegate?.markupImageAdded(this.markupEditor, messageData.src, divId)
+                    delegate.markupImageAdded(messageData.src, divId)
                 } else {
                     console.log("Error: The div id for the image could not be decoded.")
                 }
@@ -129,32 +139,26 @@ export class MessageHandler {
         }
     }
 
-    /** This really doesn't do anything for now, but it a placeholder */
-    loadUserFiles(config) {
-        let scriptFiles = config.userScriptFiles
-        let cssFiles = config.userCssFiles
-        loadUserFiles(scriptFiles, cssFiles)
-    }
-
     /** Load the contents from `filename`, or if not specified, from `html` */
-    loadContents(config) {
-        let filename = config.filename;
-        let base = config.base;
-        let focusAfterLoad = config.behavior.focusAfterLoad;
+    loadContents() {
+        let config = this.editor.config
+        let filename = config.filename
+        let base = config.base
+        let focusAfterLoad = config.behavior.focusAfterLoad
         if (filename) {
             fetch(filename)
                 .then((response) => response.text())
                 .then((text) => {
                     // A fetch failure returns 'Cannot GET <filename with path>'
-                    MU.setHTML(text, focusAfterLoad, base)
+                    setHTML(text, focusAfterLoad, base)
                 })
                 .catch(() => {
                     // But just in case, report a failure if needed.
-                    MU.setHTML(`<p>Failed to load ${filename}.</p>`, focusAfterLoad)
-                });
+                    setHTML(`<p>Failed to load ${filename}.</p>`, focusAfterLoad)
+                })
         } else {
             let html = config.html ?? '<p></p>'
-            MU.setHTML(html, focusAfterLoad)
+            setHTML(html, focusAfterLoad, base, this.editor.view)
         }
     }
 }

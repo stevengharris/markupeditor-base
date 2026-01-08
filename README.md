@@ -4,9 +4,18 @@
 
 # MarkupEditor
 
-The MarkupEditor supports WYSIWYG editing in a web view. The "source of truth" for the MarkupEditor is standard HTML, styled using standard CSS.
-The MarkupEditor comes with a toolbar and hot key bindings to access its editing functionality. The toolbar visibility and contents, 
-as well as the key bindings, are configurable and extensible.
+The MarkupEditor consists of a web component and API for WYSIWYG HTML editing. The "source of truth" for the MarkupEditor is standard HTML, 
+styled using standard CSS. The MarkupEditor comes with a toolbar and hot key bindings to access its editing functionality. The toolbar 
+visibility and contents, as well as the key bindings, are configurable and extensible.
+
+![Hello, MarkupEditor!](resources/hellomarkupeditor.png)
+
+The web component makes embedding WYSIWYG editing as simple as:
+
+```
+<markup-editor><h1>Hello, MarkupEditor!</h1></markup-editor>
+<script src="markup-editor.js" type="module"></script>
+```
 
 ### Why
 
@@ -29,6 +38,8 @@ even non-developers expect when they edit a document, like image resizing and se
 
 * Customizable and extensible toolbar providing access to all editing features, auto-sized to width.
 * Customizable key mappings for hot-key access to editing features.
+* Customizable ordering of toolbar contents.
+* Customizable icons for toolbar.
 * Paragraph styles corresponding to P, H1-H6, and `CODE`.
 * Bold, italic, underline, strikethrough, subscript, superscript, and code text formatting.
 * Insert and edit links, images (local and https src), and tables.
@@ -38,6 +49,14 @@ even non-developers expect when they edit a document, like image resizing and se
 * Search.
 * Image resizing using gestures.
 * Table editing: visually select table size, add/remove row/column/header, border options.
+
+The API provides hooks for callbacks as your document changes, as well as access to the edited HTML 
+so that you can save contents in a way that makes sense in your own context.
+
+The web component and customization capabilities allow the MarkupEditor to be embedded in different 
+environments, such as an Electron-based [desktop editing app](https://github.com/stevengharris/markupeditor-desktop), 
+a [Swift library for WYSIWYG editing](https://github.com/stevengharris/MarkupEditor), and 
+a [VSCode extension](https://github.com/stevengharris/markupeditor-vs).
 
 ## Try
 
@@ -58,9 +77,9 @@ You need node/npm installed. Install the dependencies.
 $ cd markupeditor-base/
 $ npm install
 
-added 126 packages, and audited 127 packages in 5s
+added 265 packages, and audited 266 packages in 9s
 
-18 packages are looking for funding
+70 packages are looking for funding
   run `npm fund` for details
 
 found 0 vulnerabilities
@@ -72,49 +91,57 @@ Build the project.
 ```
 $ npm run build
 
-> markupeditor-base@0.8.0 build
+> markupeditor@0.9.0 build
 > rollup -c
 
 
-src/main.js → dist/markupeditor.umd.js...
-created dist/markupeditor.umd.js in 321ms
-
-src/main.js → dist/markupeditor.cjs.js, dist/markupeditor.esm.js...
-created dist/markupeditor.cjs.js, dist/markupeditor.esm.js in 60ms
-$ 
+src/main.js → dist/markup-editor.js...
+created dist/markup-editor.js in 300ms
 ```
 
-Open the editor on a doc using node.js. You can use the demo.html file that is part of the docs:
+The installation identifies `muedit` in the package.json `bin` property. You can open the editor on a doc using node.js with 
+the `muedit` command, providing a filename to edit (and optionally a port for node.js). You can use the demo.html file that 
+is part of the docs:
 
 ```
-$ node markupeditor.js docs/demo/demo.html 
+$ muedit docs/demo/demo.html 
 Server listening at http://localhost:3000
 ```
 
-Then open http://localhost:3000 in your browser. The port can be passed to node as `--port <number>`.
+Then open http://localhost:3000 in your browser. The port can be passed to node as `--port <number>`. Alternatively, you 
+can run node directly as `node ./bin/muedit.js docs/demo/demo.html`.
 
-You can also use the web site docs to test:
+## Local Documentation
+
+You can also set up the web site docs to test and view locally. The `npm run docs` command copies the `markup-editor.js` 
+file and css (which may have changed locally as you develop) to the proper position in the `docs` directory and then runs
+`jsdoc` to produce the API documentation. The API documentation contents and options are defined in `jsdoc.json` and
+use a customized template, `apilayout.tmpl`. The `apireadme.md` in the `docs/resources` directory is displayed as the 
+contents of the "home" page. 
 
 ```
 $ npm run docs
 
-> markupeditor-base@0.8.0 predocs
-> sh predocs.sh
+> markupeditor@0.9.0 predocs
+> sh predocs.sh && jsdoc -c jsdoc.json
 
 Updating ./docs dependencies...
-cp -f ./dist/markupeditor.umd.js ./docs/src/markupeditor.umd.js
+cp -f ./dist/markup-editor.js ./docs/src/markup-editor.js
 cp -f ./styles/markupeditor.css ./docs/styles/markupeditor.css
 cp -f ./styles/markup.css ./docs/styles/markup.css
 cp -f ./styles/mirror.css ./docs/styles/mirror.css
 cp -f ./styles/toolbar.css ./docs/styles/toolbar.css
 
-> markupeditor-base@0.8.0 docs
+> markupeditor@0.9.0 docs
 > node ./docs/index.js
 
 Server listening at http://localhost:3000
 ```
 
 What http://localhost:3000 shows now is the contents hosted at https://stevengharris.github.io/markupeditor-base.
+
+Since the project web site is hosted on GitHub Pages, this process makes it simple to keep the docs up-to-date and 
+test the web site locally.
 
 ## Resources
 

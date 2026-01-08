@@ -1,30 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>MarkupEditor API</title>
-        <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0">
-        <link href="../styles/markup.css" rel="stylesheet">
-    </head>
-    <body>
-        <p align="center">
-            <img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" >
-        </p>
-        </p>
-        <div id="content"></div>
-        <script>
-            let filename = 'api.html';
-            fetch(filename)
-            .then((response) => response.text())
-            .then((text) => {
-                document.getElementById('content').innerHTML = text
-            })
-            .catch(error => {
-                document.getElementById('content').innerHTML = 
-                    `<p>
-                        Failed to load ${filename}. 
-                        You may be trying to load HTML from a local file in a browser.
-                    </p>`
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link type="text/css" rel="stylesheet" href="styles/base.min.css">
+</head>
+
+<body class="body">
+
+    <div class="container">
+
+        <nav class="sidenav">
+            <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BehaviorConfig.html">BehaviorConfig</a></li><li><a href="Dropdown.html">Dropdown</a></li><li><a href="DropdownSubmenu.html">DropdownSubmenu</a></li><li><a href="KeymapConfig.html">KeymapConfig</a></li><li><a href="MarkupEditorElement.html">MarkupEditorElement</a></li><li><a href="MenuItem.html">MenuItem</a></li><li><a href="ToolbarConfig.html">ToolbarConfig</a></li></ul><h3>Global</h3><ul><li><a href="global.html#MU">MU</a></li><li><a href="global.html#activeView">activeView</a></li><li><a href="global.html#addButton">addButton</a></li><li><a href="global.html#addCol">addCol</a></li><li><a href="global.html#addDiv">addDiv</a></li><li><a href="global.html#addHeader">addHeader</a></li><li><a href="global.html#addRow">addRow</a></li><li><a href="global.html#borderTable">borderTable</a></li><li><a href="global.html#cancelSearch">cancelSearch</a></li><li><a href="global.html#cmdItem">cmdItem</a></li><li><a href="global.html#consoleLog">consoleLog</a></li><li><a href="global.html#cutImage">cutImage</a></li><li><a href="global.html#deactivateSearch">deactivateSearch</a></li><li><a href="global.html#deleteLink">deleteLink</a></li><li><a href="global.html#deleteTableArea">deleteTableArea</a></li><li><a href="global.html#doRedo">doRedo</a></li><li><a href="global.html#doUndo">doUndo</a></li><li><a href="global.html#emptyDocument">emptyDocument</a></li><li><a href="global.html#emptyHTML">emptyHTML</a></li><li><a href="global.html#focus">focus</a></li><li><a href="global.html#focusOn">focusOn</a></li><li><a href="global.html#focused">focused</a></li><li><a href="global.html#getDataImages">getDataImages</a></li><li><a href="global.html#getHTML">getHTML</a></li><li><a href="global.html#getHeight">getHeight</a></li><li><a href="global.html#getImageAttributes">getImageAttributes</a></li><li><a href="global.html#getLinkAttributes">getLinkAttributes</a></li><li><a href="global.html#getSelectionState">getSelectionState</a></li><li><a href="global.html#getTestHTML">getTestHTML</a></li><li><a href="global.html#indent">indent</a></li><li><a href="global.html#insertImage">insertImage</a></li><li><a href="global.html#insertLink">insertLink</a></li><li><a href="global.html#insertTable">insertTable</a></li><li><a href="global.html#loadUserFiles">loadUserFiles</a></li><li><a href="global.html#modifyImage">modifyImage</a></li><li><a href="global.html#openImageDialog">openImageDialog</a></li><li><a href="global.html#openLinkDialog">openLinkDialog</a></li><li><a href="global.html#outdent">outdent</a></li><li><a href="global.html#padBottom">padBottom</a></li><li><a href="global.html#pasteHTML">pasteHTML</a></li><li><a href="global.html#pasteText">pasteText</a></li><li><a href="global.html#registerAugmentation">registerAugmentation</a></li><li><a href="global.html#registerConfig">registerConfig</a></li><li><a href="global.html#registerDelegate">registerDelegate</a></li><li><a href="global.html#registerMessageHandler">registerMessageHandler</a></li><li><a href="global.html#removeAllDivs">removeAllDivs</a></li><li><a href="global.html#removeButton">removeButton</a></li><li><a href="global.html#removeDiv">removeDiv</a></li><li><a href="global.html#renderDropdownItems">renderDropdownItems</a></li><li><a href="global.html#renderGrouped">renderGrouped</a></li><li><a href="global.html#resetSelection">resetSelection</a></li><li><a href="global.html#savedDataImage">savedDataImage</a></li><li><a href="global.html#searchFor">searchFor</a></li><li><a href="global.html#setHTML">setHTML</a></li><li><a href="global.html#setStyle">setStyle</a></li><li><a href="global.html#setTestHTML">setTestHTML</a></li><li><a href="global.html#setTopLevelAttributes">setTopLevelAttributes</a></li><li><a href="global.html#testBlockquoteEnter">testBlockquoteEnter</a></li><li><a href="global.html#testExtractContents">testExtractContents</a></li><li><a href="global.html#testListEnter">testListEnter</a></li><li><a href="global.html#testPasteHTMLPreprocessing">testPasteHTMLPreprocessing</a></li><li><a href="global.html#testPasteTextPreprocessing">testPasteTextPreprocessing</a></li><li><a href="global.html#toggleBold">toggleBold</a></li><li><a href="global.html#toggleCode">toggleCode</a></li><li><a href="global.html#toggleItalic">toggleItalic</a></li><li><a href="global.html#toggleListItem">toggleListItem</a></li><li><a href="global.html#toggleSearch">toggleSearch</a></li><li><a href="global.html#toggleStrike">toggleStrike</a></li><li><a href="global.html#toggleSubscript">toggleSubscript</a></li><li><a href="global.html#toggleSuperscript">toggleSuperscript</a></li><li><a href="global.html#toggleUnderline">toggleUnderline</a></li></ul>
+        </nav>
+
+        <main id="main" class="main">
+
+            <div id="content" class="content">
+                <p align="center">
+                    <img alt="The MarkupEditor logo" src="../resources/markupeditor.svg" width="96px" height="96px" >
+                </p>
+                <h1 class="page-title">MarkupEditor API</h1>
+                
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section class="readme">
+        <article><!-- This Markdown is displayed as the "home" page contents in the MarkupEditor API documentation. -->
+<h2>API Access</h2>
+<p>The MarkupEditor API is available from the JavaScript object <code>MU</code>. There are two ways to gain access to <code>MU</code>:</p>
+<ol>
+<li>
+<p>Write and register a <code>userscript</code> passed as an attribute of your <code>&lt;markup-editor&gt;</code> element. Your script module will run in the client and have access to <code>MU</code> by importing it from the web component definition script, <code>markup-editor.js</code>.</p>
+</li>
+<li>
+<p>Write and load a script outside of the <code>&lt;markup-editor&gt;</code> element. It will have access to <code>MU</code> as a property of a <code>&lt;markup-editor&gt;</code> element.</p>
+</li>
+</ol>
+<p>In the first case, you will typically be using a <code>userscript</code> to customize the MarkupEditor. In the second case, you sometimes need to interact with the MarkupEditor from within the page that uses the <code>&lt;markup-editor&gt;</code> element. For example, you might have a “Save” button on your HTML page that needs to get the HTML contents from the editor before saving.</p>
+<p>You can use <code>MU</code> to get and set the configuration of the MarkupEditor and to specify how the editor communicates with your application environment. MU also provides programmatic access to all of the editing functionality that is made visible in the toolbar.</p>
+<p>See the information in the <a href="https://stevengharris.github.io/markupeditor-base/guide/index.html">MarkupEditor Developer's Guide</a> for guidance on using the API. Once you have access to <code>MU</code>, you can, for example, get the MarkupEditor contents:</p>
+<pre class="prettyprint source"><code>let contents = MU.getHTML()
+</code></pre>
+<p>or set the contents to an HTML string called <code>htmlString</code>:</p>
+<pre class="prettyprint source"><code>MU.setHTML(htmlString)
+</code></pre></article>
+    </section>
+
+
+
+
+
+
+            </div>
+
+            <div class="toc">
+                <h2>Table of contents</h2>
+                <div class="toc-nav"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+    <script >
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('.prettyprint.linenums code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+                hljs.lineNumbersBlock(el);
             });
-        </script>
-    </body>
+            document.querySelectorAll('pre code').forEach((el) => {
+                hljs.configure({
+                    languages: ['javascript'],
+                });
+                hljs.highlightElement(el);
+            });
+        })
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.18.2/tocbot.min.js"></script>
+    <script>
+        tocbot.init({
+        // Where to render the table of contents.
+        tocSelector: '.toc-nav',
+        // Where to grab the headings to build the table of contents.
+        contentSelector: '.main article',
+        // Which headings to grab inside of the contentSelector element.
+        headingSelector: 'h1.name, h2.name, h3.name, h4.name',
+        headingLabelCallback: (string) => string
+    });
+    </script>
+</body>
 </html>
