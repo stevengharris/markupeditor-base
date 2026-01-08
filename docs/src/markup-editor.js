@@ -242,7 +242,7 @@ const _registry = new Registry();
  * 
  * @returns {object | null}    Object containing {"toolbar": ToolbarConfig, "keymap": KeymapConfig, "behavior": BehaviorConfig}.
  */
-function activeConfig() {_registry.activeConfig.bind(_registry)();}
+function activeConfig() {return _registry.activeConfig.bind(_registry)()}
 
 /** 
  * Return the active editor's `view`. 
