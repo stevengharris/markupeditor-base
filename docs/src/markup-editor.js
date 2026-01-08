@@ -238,9 +238,16 @@ class Registry {
 const _registry = new Registry();
 
 /** 
+ * Return the active editor's configurations as one object keyed to the config type. 
+ * 
+ * @returns {object | null}    Object containing {"toolbar": ToolbarConfig, "keymap": KeymapConfig, "behavior": BehaviorConfig}.
+ */
+function activeConfig() {_registry.activeConfig.bind(_registry)();}
+
+/** 
  * Return the active editor's `view`. 
  * 
- * @returns {EditorView | null}    The ProseMirror Editor view that is currently active
+ * @returns {EditorView | null}    The ProseMirror EditorView that is currently active.
  */
 function activeView() {return _registry.activeView.bind(_registry)()}
 
@@ -309,7 +316,6 @@ const setActiveDocument = _registry.setActiveDocument.bind(_registry);
 const activeEditorElement = _registry.activeEditorElement.bind(_registry);
 _registry.activeMessageHandler.bind(_registry);
 const activeSearcher = _registry.activeSearcher.bind(_registry);
-const activeConfig = _registry.activeConfig.bind(_registry);
 const selectedID = _registry.selectedID.bind(_registry);
 const setSelectedID = _registry.setSelectedID.bind(_registry);
 
@@ -24705,6 +24711,7 @@ class MarkupEditor {
  * The object whose methods comprise the MarkupEditor API.
  */
 const MU = {
+    activeConfig,
     activeView,
     addButton,
     addCol,

@@ -232,9 +232,16 @@ class Registry {
 const _registry = new Registry()
 
 /** 
+ * Return the active editor's configurations as one object keyed to the config type. 
+ * 
+ * @returns {object | null}    Object containing {"toolbar": ToolbarConfig, "keymap": KeymapConfig, "behavior": BehaviorConfig}.
+ */
+export function activeConfig() {_registry.activeConfig.bind(_registry)()}
+
+/** 
  * Return the active editor's `view`. 
  * 
- * @returns {EditorView | null}    The ProseMirror Editor view that is currently active
+ * @returns {EditorView | null}    The ProseMirror EditorView that is currently active.
  */
 export function activeView() {return _registry.activeView.bind(_registry)()}
 
@@ -303,6 +310,5 @@ export const setActiveDocument = _registry.setActiveDocument.bind(_registry)
 export const activeEditorElement = _registry.activeEditorElement.bind(_registry)
 export const activeMessageHandler = _registry.activeMessageHandler.bind(_registry)
 export const activeSearcher = _registry.activeSearcher.bind(_registry)
-export const activeConfig = _registry.activeConfig.bind(_registry)
 export const selectedID = _registry.selectedID.bind(_registry)
 export const setSelectedID = _registry.setSelectedID.bind(_registry)

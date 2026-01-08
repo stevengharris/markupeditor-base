@@ -1,6 +1,6 @@
 {
   "name": "markupeditor",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "A web component and API for WYSIWYG HTML editing.",
   "keywords": [
     "wysiwyg",
@@ -63,7 +63,8 @@
     "pretest": "npm run build",
     "docs": "node ./docs/index.js",
     "predocs": "sh predocs.sh && jsdoc -c jsdoc.json",
-    "analyze": "cem analyze --config custom-elements-manifest.config.js"
+    "analyze": "cem analyze --config custom-elements-manifest.config.js",
+    "publish": "npm run build && npm run docs && npm run analyze && npm publish --access public"
   },
   "customElements": "dist/custom-elements.json"
 }
