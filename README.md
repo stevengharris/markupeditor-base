@@ -100,11 +100,11 @@ created dist/markup-editor.js in 300ms
 ```
 
 The installation identifies `muedit` in the package.json `bin` property. You can open the editor on a doc using node.js with 
-the `muedit` command, providing a filename to edit (and optionally a port for node.js). You can use the demo.html file that 
+the `npx muedit` command, providing a filename to edit (and optionally a port for node.js). You can use the demo.html file that 
 is part of the docs:
 
 ```
-$ muedit docs/demo/demo.html 
+$ npx muedit docs/demo/demo.html 
 Server listening at http://localhost:3000
 ```
 
