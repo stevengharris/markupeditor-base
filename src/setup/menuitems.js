@@ -1087,7 +1087,7 @@ export class ImageItem extends DialogItem {
   /** Tell the delegate to select an image to insert, because we don't know how to do that */
   selectImage(state, dispatch, view) {
     this.closeDialog()
-    if (this.config.delegate?.markupSelectImage) this.config.delegate?.markupSelectImage(view)
+    if (this.config.delegate?.markupSelectImage) this.config.delegate?.markupSelectImage(state, dispatch, view)
   }
 
   /**
