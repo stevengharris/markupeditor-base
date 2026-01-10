@@ -94,6 +94,7 @@ import {
     registerDelegate,
     registerEditor,
     registerMessageHandler,
+    setActiveView,
     unregisterEditor,
 } from "./registry.js"
 import {
@@ -344,6 +345,7 @@ export const MU = {
     resetSelection,
     savedDataImage,
     searchFor,
+    setActiveView,
     setHTML,
     setStyle,
     setTestHTML,

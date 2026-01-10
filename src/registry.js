@@ -246,6 +246,13 @@ export function activeConfig() {return _registry.activeConfig.bind(_registry)()}
 export function activeView() {return _registry.activeView.bind(_registry)()}
 
 /** 
+ * Set the active editor's active view. 
+ * 
+ * @param {EditorView}  view  The ProseMirror EditorView that should be active.
+ */
+export function setActiveView(view) {_registry.setActiveView.bind(_registry)(view)}
+
+/** 
  * Add the `toolbar` to the registry.
  * A toolbar holds `cmdItems` that can either be prepended or appended to 
  * the normal MarkupEditor toolbar.
@@ -304,7 +311,6 @@ export const getMessageHandler = _registry.getMessageHandler.bind(_registry)
 export const unregisterAugmentation = _registry.unregisterAugmentation.bind(_registry)
 export const getAugmentation = _registry.getAugmentation.bind(_registry)
 export const activeEditor = _registry.activeEditor.bind(_registry)
-export const setActiveView = _registry.setActiveView.bind(_registry)
 export const activeDocument = _registry.activeDocument.bind(_registry)
 export const setActiveDocument = _registry.setActiveDocument.bind(_registry)
 export const activeEditorElement = _registry.activeEditorElement.bind(_registry)
