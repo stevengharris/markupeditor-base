@@ -63,6 +63,20 @@ a [VSCode extension](https://github.com/stevengharris/markupeditor-vs).
 You can try the MarkupEditor out right from the [project web site](https://stevengharris.github.io/markupeditor-base/). The web site has all 
 the information you need to use the MarkupEditor in your application.
 
+If you have `npx` installed, you can open the MarkupEditor on the demo page using 
+`npx markupeditor https://stevengharris.github.io/markupeditor-base/demo/demo.html`. 
+This uses the `muedit` script provided with the project and starts a node/express server 
+on port 3000 by default.
+
+```
+$ npx markupeditor https://stevengharris.github.io/markupeditor-base/demo/demo.html
+Need to install the following packages:
+markupeditor@0.9.4
+Ok to proceed? (y) y
+
+Server listening at http://localhost:3000
+```
+
 ## Install
 
 Clone the repository.
@@ -91,7 +105,7 @@ Build the project.
 ```
 $ npm run build
 
-> markupeditor@0.9.0 build
+> markupeditor@0.9.4 build
 > rollup -c
 
 
@@ -122,7 +136,7 @@ contents of the "home" page.
 ```
 $ npm run docs
 
-> markupeditor@0.9.0 predocs
+> markupeditor@0.9.4 predocs
 > sh predocs.sh && jsdoc -c jsdoc.json
 
 Updating ./docs dependencies...
@@ -132,7 +146,7 @@ cp -f ./styles/markup.css ./docs/styles/markup.css
 cp -f ./styles/mirror.css ./docs/styles/mirror.css
 cp -f ./styles/toolbar.css ./docs/styles/toolbar.css
 
-> markupeditor@0.9.0 docs
+> markupeditor@0.9.4 docs
 > node ./docs/index.js
 
 Server listening at http://localhost:3000
@@ -145,8 +159,10 @@ test the web site locally.
 
 ## Resources
 
-Refer to the [Resources](https://stevengharris.github.io/markupeditor-base/#resources) section of the [project web site](https://stevengharris.github.io/markupeditor-base/)
-for links to documentation, demos, and other projects using the MarkupEditor.
+You can start with the [MarkupEditor Developer's Guide](https://stevengharris.github.io/markupeditor-base/guide/index.html), 
+or you can check out the [Resources](https://stevengharris.github.io/markupeditor-base/#resources) section of 
+the [project web site](https://stevengharris.github.io/markupeditor-base/) for links to documentation, demos, and 
+other projects using the MarkupEditor. 
 
 ## Acknowledgements
 
