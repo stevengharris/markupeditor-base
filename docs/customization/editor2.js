@@ -4,19 +4,24 @@ import { MU } from "../src/markup-editor.js"
  * A MarkupDelegate that will receive callbacks as the document state changes.
  */
 class MyDelegate {
-    markupInput(editor) {
-        console.log('Input in ' + editor.muId)
+    markupInput() {
+        console.log('Input received.')
     }
     
     // Other methods that will be invoked on the delegate if implemented here...
-    // markupReady(editor) {}
-    // markupInsertLink(state, dispatch, view) {}
+    // markupClicked() {}
+    // markupDidFocus() {}
+    // markupDidBlur() {}
+    // markupError(code, message, info, alert) {}
+    // markupReady() {}
+    // markupImageAdded(src, divId) {}
     // markupInsertImage(state, dispatch, view) {}
-    // markupUpdateHeight(height, editor) {}
-    // markupSelectionChanged(editor) {}
-    // markupClicked(editor) {}
-    // markupSearched(editor) {}
-    // markupImageAdded(editor, src, divId) {}
+    // markupInsertLink(state, dispatch, view) {}
+    // markupSearched() {}
+    // markupSelectionChanged() {}
+    // markupSelectImage(state, dispatch, view) {}
+    // markupUpdateHeight(height) {}
+
 }
 
 // Register the delegate so it can be looked up by name when the MarkupEditor instance is created.

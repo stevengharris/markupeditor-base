@@ -2,8 +2,8 @@ import { MU } from "../src/markup-editor.js"
 
 class DemoDelegate {
 
-    markupReady(editor) {
-        demoToolbar.hideRaw(editor)
+    markupReady() {
+        demoToolbar.hideRaw()
     }
 
     markupInput(editor) {

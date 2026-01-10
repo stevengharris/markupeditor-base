@@ -1,5 +1,5 @@
 export default {
-  /** Globs to analyze, same as jsdoc.json */
+  /** Globs to analyze, same as jsdoc.json except for markupdelegate */
   globs: [
     "./src/main.js",
     "./src/markupeditor.js",

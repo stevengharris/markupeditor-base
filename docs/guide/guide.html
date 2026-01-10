@@ -201,7 +201,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <h3 id="using-muedit-at-the-command-line">Using muedit At The Command Line</h3>
 
-<p>There is a more robust version of this script in the <code>bin</code> directory, <code>muedit.js</code>, that you can execute from anywhere. The <code>muedit</code> script lets you identify the HTML file to open (or none if you just want an empty document) and the port to listen on. For example, from the markupeditor-base directory, you can open the <a href="https://stevengharris.github.io/markupeditor-base/demo/index.html">MarkupEditor demo</a> content:</p>
+<p>There is a more robust version of this script in the <code>bin</code> directory, <code>muedit.js</code>, that you can execute from anywhere. The <code>muedit</code> script lets you identify an HTML file or URL to open (or none if you just want an empty document) and the port to listen on. For example, from the markupeditor-base directory, you can open the <a href="https://stevengharris.github.io/markupeditor-base/demo/index.html">MarkupEditor demo</a> content:</p>
 
 <pre><code>$ node bin/muedit.js docs/demo/demo.html
 Server listening at http://localhost:3000</code></pre>
@@ -210,7 +210,7 @@ Server listening at http://localhost:3000</code></pre>
 
 <p>Here is the <code>demo.html</code> contents opened for editing in Chrome. What you see above shows how <code>muedit</code> uses the <code>prepend</code> attribute to prepend a custom FileToolbar at the front of the standard toolbar. The FileToolbar lets you start over with an empty document, select a local HTML file to load, or to copy the HTML contents of the document you’re editing into the clipboard so you can paste it somewhere else. It also uses the <code>userstyle</code> attribute to set up a “toast” to let you know that the HTML copy worked. Take a look at <code>bin/muedit.js</code> and the <code>filetoolbar.js</code> and <code>filetoolbar.css</code> code that is supplied for more detail.</p>
 
-<p>Because <code>muedit</code> is running in the browser using Express, there is still not an easy way to save the file you’re editing. For proper a proper native application WYSIWYG editing experience, you can use the <a href="https://github.com/stevengharris/markupeditor-desktop">markupeditor-desktop</a> project. The desktop app was used to compose and edit all of the content you’re reading here.</p>
+<p>Because <code>muedit</code> is running in the browser using Express, there is still not an easy way to save the file you’re editing. For a proper native application WYSIWYG editing experience, you can use the <a href="https://github.com/stevengharris/markupeditor-desktop">markupeditor-desktop</a> project. The desktop app was used to compose and edit all of the content you’re reading here.</p>
 
 <p>The <code>muedit</code> script is also identified as the binary for the <code>markupeditor</code> project, which means you can execute it using <code>npx</code> by identifying the project along with the file to open and a port to use:</p>
 
@@ -290,13 +290,13 @@ Server listening at http://localhost:8000</code></pre>
 
 <ul>
     <li>
-        <p><code>ToolbarConfig</code> specifies whether the toolbar itself is visible, which sub-toolbars/dropdowns are visible, and which items are included in each. Refer to <code>src/config/toolbarconfig.js</code>.</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/ToolbarConfig.html"><code>ToolbarConfig</code></a> specifies whether the toolbar itself is visible, which sub-toolbars/dropdowns are visible, and which items are included in each. Refer to <code>src/config/toolbarconfig.js</code>.</p>
     </li>
     <li>
-        <p><code>KeymapConfig</code> specifies how editing actions map to key combos (aka hotkeys). Refer to <code>src/config/keymapconfig.js</code>.</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/KeymapConfig.html"><code>KeymapConfig</code></a> specifies how editing actions map to key combos (aka hotkeys). Refer to <code>src/config/keymapconfig.js</code>.</p>
     </li>
     <li>
-        <p><code>BehaviorConfig</code> specifies various ways the MarkupEditor behaves that are not specific to the menu/toolbar or keymap configurations. Refer to <code>src/config/behaviorconfig.js</code>.</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/BehaviorConfig.html"><code>BehaviorConfig</code></a> specifies various ways the MarkupEditor behaves that are not specific to the menu/toolbar or keymap configurations. Refer to <code>src/config/behaviorconfig.js</code>.</p>
     </li>
 </ul>
 
@@ -344,7 +344,7 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <h3 id="toolbarconfig">ToolbarConfig</h3>
 
-<p>The ToolbarConfig is easier to explain with a picture, because it refers to various pieces of the toolbar by name, and the names make more sense when you can see the toolbar. Here is the full toolbar in all its glory. This toolbar was obtained by defining <code>toolbarConfig = MU.ToolbarConfig.full(true)</code> and then passing <code>toolbar: toolbarConfig</code> in the MarkupEditor configuration. (The <code>true</code> argument specifies that undo/redo should be visible in the <code>full</code> toolbar.) Note that the <code>ToolbarConfig.standard()</code> does not display undo/redo, underline, and subscript/superscript.</p>
+<p>The <a href="https://stevengharris.github.io/markupeditor-base/api/ToolbarConfig.html">ToolbarConfig</a> is easier to explain with a picture, because it refers to various pieces of the toolbar by name, and the names make more sense when you can see the toolbar. Here is the full toolbar in all its glory. This toolbar was obtained by defining <code>toolbarConfig = MU.ToolbarConfig.full(true)</code> and then passing <code>toolbar: toolbarConfig</code> in the MarkupEditor configuration. (The <code>true</code> argument specifies that undo/redo should be visible in the <code>full</code> toolbar.) Note that the <code>ToolbarConfig.standard()</code> does not display undo/redo, underline, and subscript/superscript.</p>
 
 <p><img src="69ac24ab-f2b9-4e61-b9fa-a2320719475f.png" width="825" height="148"></p>
 
@@ -370,7 +370,7 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <h3 id="keymapconfig">KeymapConfig</h3>
 
-<p>The KeymapConfig follows <a href="https://github.com/ProseMirror/prosemirror-keymap">ProseMirror conventions</a>. To quote the comments from <a href="https://github.com/ProseMirror/prosemirror-keymap/blob/081f24f65b6a394174a4bdf07b9a55a00361f1b7/src/keymap.ts">keymap.ts</a>…</p>
+<p>The <a href="https://stevengharris.github.io/markupeditor-base/api/KeymapConfig.html">KeymapConfig</a> follows <a href="https://github.com/ProseMirror/prosemirror-keymap">ProseMirror conventions</a>. To quote the comments from <a href="https://github.com/ProseMirror/prosemirror-keymap/blob/081f24f65b6a394174a4bdf07b9a55a00361f1b7/src/keymap.ts">keymap.ts</a>…</p>
 
 <blockquote>
     <pre><code>/**
@@ -401,7 +401,7 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <h3 id="behaviorconfig">BehaviorConfig</h3>
 
-<p>A common and simple case for BehaviorConfig is to control whether the editor takes focus after it loads. Sometimes you want to be able to type immediately, and other times you want your user to click in the editor before typing. You can control this behavior by setting <code>focusAfterLoad</code> to <code>true</code> (the default) or <code>false</code>. The other options in BehaviorConfig are for more advanced usage and are discussed in more detail later:</p>
+<p>A common and simple case for <a href="https://stevengharris.github.io/markupeditor-base/api/BehaviorConfig.html">BehaviorConfig</a> is to control whether the editor takes focus after it loads. Sometimes you want to be able to type immediately, and other times you want your user to click in the editor before typing. You can control this behavior by setting <code>focusAfterLoad</code> to <code>true</code> (the default) or <code>false</code>. The other options in BehaviorConfig are for more advanced usage and are discussed in more detail later:</p>
 
 <ul>
     <li>
@@ -530,26 +530,26 @@ MU.registerAugmentation(demoToolbar)</code></pre>
 
 <ul>
     <li>
-        <p>MenuItem</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/MenuItem.html">MenuItem</a></p>
     </li>
     <li>
-        <p>Dropdown</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/Dropdown.html">Dropdown</a></p>
     </li>
     <li>
-        <p>DropdownSubmenu</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/DropdownSubmenu.html">DropdownSubmenu</a></p>
     </li>
     <li>
-        <p>cmdItem</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/global.html#cmdItem">cmdItem</a></p>
     </li>
     <li>
-        <p>renderGrouped,</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/global.html#renderGrouped">renderGrouped</a>,</p>
     </li>
     <li>
-        <p>renderDropdownItems</p>
+        <p><a href="https://stevengharris.github.io/markupeditor-base/api/global.html#renderDropdownItems">renderDropdownItems</a></p>
     </li>
 </ul>
 
-<p>The <code>toolbarView</code> itself is also available to you if needed. Refer to the code in the MarkupEditor Demo and in the MarkupEditor itself to learn more about how a toolbar and its MenuItems and Dropdowns are built.</p>
+<p>Refer to the <a href="https://github.com/stevengharris/markupeditor-base/tree/main/docs/demo">code</a> for the <a href="https://stevengharris.github.io/markupeditor-base/demo/index.html">MarkupEditor Demo</a> and in the MarkupEditor itself to learn more about how a toolbar and its MenuItems and Dropdowns are built.</p>
 
 <h2 id="communicating-with-the-markupeditor">Communicating with the MarkupEditor</h2>
 
@@ -557,7 +557,7 @@ MU.registerAugmentation(demoToolbar)</code></pre>
 
 <h3 id="markupdelegate">MarkupDelegate</h3>
 
-<p>The MarkupEditor makes callbacks to a delegate, aka the <em>MarkupDelegate</em>, as you edit the document and its state changes. You can view the full of set callbacks in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Let’s take a look at how to set up your MarkupDelegate and make use of the callbacks.</p>
+<p>The MarkupEditor makes callbacks to a delegate, aka the <a href="https://stevengharris.github.io/markupeditor-base/api/MarkupDelegate.html">MarkupDelegate</a>, as you edit the document and its state changes. You can view the full of set callbacks in the <a href="https://stevengharris.github.io/markupeditor-base/api/index.html">MarkupEditor API</a>. Let’s take a look at how to set up your MarkupDelegate and make use of the callbacks.</p>
 
 <p>Here’s a simple MarkupDelegate. We are putting it in the same <code>demo.js</code> file we looked at earlier when we <a href="#extending-the-toolbar">extended the toolbar</a> and loading it as a <code>userscript</code>. In this example, its methods will be called when the MarkupEditor is “ready”, and when you type into the document or otherwise make editing changes:</p>
 

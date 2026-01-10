@@ -19,6 +19,7 @@
     "source": {
         "include": [
             "./src/main.js",
+            "./src/markupdelegate.js",
             "./src/markupeditor.js",
             "./src/markup.js",
             "./src/setup/menuitems.js",
