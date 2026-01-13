@@ -23019,31 +23019,27 @@ const undoInputRule = (state, dispatch) => {
 /**
 Converts double dashes to an emdash.
 */
-const emDash = new InputRule(/--$/, "—", { inCodeMark: false });
+new InputRule(/--$/, "—", { inCodeMark: false });
 /**
 Converts three dots to an ellipsis character.
 */
-const ellipsis = new InputRule(/\.\.\.$/, "…", { inCodeMark: false });
+new InputRule(/\.\.\.$/, "…", { inCodeMark: false });
 /**
 “Smart” opening double quotes.
 */
-const openDoubleQuote = new InputRule(/(?:^|[\s\{\[\(\<'"\u2018\u201C])(")$/, "“", { inCodeMark: false });
+new InputRule(/(?:^|[\s\{\[\(\<'"\u2018\u201C])(")$/, "“", { inCodeMark: false });
 /**
 “Smart” closing double quotes.
 */
-const closeDoubleQuote = new InputRule(/"$/, "”", { inCodeMark: false });
+new InputRule(/"$/, "”", { inCodeMark: false });
 /**
 “Smart” opening single quotes.
 */
-const openSingleQuote = new InputRule(/(?:^|[\s\{\[\(\<'"\u2018\u201C])(')$/, "‘", { inCodeMark: false });
+new InputRule(/(?:^|[\s\{\[\(\<'"\u2018\u201C])(')$/, "‘", { inCodeMark: false });
 /**
 “Smart” closing single quotes.
 */
-const closeSingleQuote = new InputRule(/'$/, "’", { inCodeMark: false });
-/**
-Smart-quote related input rules.
-*/
-const smartQuotes = [openDoubleQuote, closeDoubleQuote, openSingleQuote, closeSingleQuote];
+new InputRule(/'$/, "’", { inCodeMark: false });
 
 /**
 Build an input rule for automatically wrapping a textblock when a
@@ -23341,7 +23337,7 @@ function headingRule(nodeType, maxLevel) {
 // A set of input rules for creating the basic block quotes, lists,
 // code blocks, and heading.
 function buildInputRules(schema) {
-  let rules = smartQuotes.concat(ellipsis, emDash), type;
+  let rules = [], type;
   if (type = schema.nodes.blockquote) rules.push(blockQuoteRule(type));
   if (type = schema.nodes.ordered_list) rules.push(orderedListRule(type));
   if (type = schema.nodes.bullet_list) rules.push(bulletListRule(type));
