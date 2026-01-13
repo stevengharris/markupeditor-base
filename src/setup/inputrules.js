@@ -1,6 +1,5 @@
 /* eslint no-cond-assign: 0 */
-import {inputRules, wrappingInputRule, textblockTypeInputRule,
-        smartQuotes, emDash, ellipsis} from "prosemirror-inputrules"
+import {inputRules, wrappingInputRule, textblockTypeInputRule} from "prosemirror-inputrules"
 
 // : (NodeType) → InputRule
 // Given a blockquote node type, returns an input rule that turns `"> "`
@@ -46,7 +45,7 @@ export function headingRule(nodeType, maxLevel) {
 // A set of input rules for creating the basic block quotes, lists,
 // code blocks, and heading.
 export function buildInputRules(schema) {
-  let rules = smartQuotes.concat(ellipsis, emDash), type
+  let rules = [], type
   if (type = schema.nodes.blockquote) rules.push(blockQuoteRule(type))
   if (type = schema.nodes.ordered_list) rules.push(orderedListRule(type))
   if (type = schema.nodes.bullet_list) rules.push(bulletListRule(type))
