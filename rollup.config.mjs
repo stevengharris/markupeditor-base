@@ -1,5 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import css from 'rollup-plugin-import-css';
+import json from '@rollup/plugin-json'
 
 export default [
 	// browser-friendly UMD build, used in Swift WKWebView :-(
@@ -22,7 +23,8 @@ export default [
 		],
 		plugins: [
 			resolve(),
-			css()		// so we can import css
+			css(),			// so we can import css
+			json()			// so we can import json
 		]
 	}
 ];
