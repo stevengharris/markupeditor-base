@@ -1,3 +1,5 @@
+import behaviorConfig from "../../config/behaviorconfig.json"
+
 /**
  * BehaviorConfig contains static utility methods to obtain a JavaScript object with properties 
  * that define the behavior configuration of the MarkupEditor. The class makes it convenient 
@@ -40,24 +42,6 @@
 export class BehaviorConfig {
 
     /**
-     * The private definition of all behavior config options used by the public static methods.
-     * Needs to be a function not property for multiple editors.
-     * 
-     * If you add or modify these options, include those changes in the class doc above.
-     * 
-     * @ignore
-     * @returns {object} A JavaScript object with all options enabled.
-     */
-    static _all() {
-        return {
-            "focusAfterLoad": true,     // Whether the editor should take focus after loading
-            "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
-            "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
-            "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
-        }
-    }
-
-    /**
      * Return a behavior configuration object, but defined from a stringified JSON object.
      * 
      * @param {string} string A stringified object, perhaps used as an external definition of a behavior configuration
@@ -77,7 +61,7 @@ export class BehaviorConfig {
      * @returns {object}     A JavaScript object with all options enabled.
      */
     static full() {
-        return this._all()
+        return structuredClone(behaviorConfig)
     }
 
     /**
@@ -86,7 +70,7 @@ export class BehaviorConfig {
      * @returns {object}     A JavaScript object with all settings.
      */
     static standard() { 
-        return this._all()
+        return this.full()
     }
 
     /**

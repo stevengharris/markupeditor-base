@@ -1,6 +1,8 @@
+import keymapConfig from "../../config/keymapconfig.json"
+
 /**
  * KeymapConfig contains static utility methods to obtain a JavaScript object with properties 
- * that define the key mappingconfiguration of the MarkupEditor toolbar. The class makes it convenient 
+ * that define the key mapping configuration of the MarkupEditor toolbar. The class makes it convenient 
  * to write and use the utility methods, but an instance of KeymapConfig itself is not meaningful.
  * 
  * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
@@ -68,50 +70,6 @@
 export class KeymapConfig {
 
     /**
-     * The private definition of all keymap config options used by the public static methods.
-     * Needs to be a function not property for multiple editors.
-     * 
-     * If you add or modify these options, include those changes in the class doc above.
-     * 
-     * @ignore
-     * @returns {object} A JavaScript object with all options enabled.
-     */
-    static _all() {
-        return {
-            // Correction
-            "undo": "Mod-z",
-            "redo": "Shift-Mod-z",
-            // Insert
-            "link": ["Mod-K", "Mod-k"],
-            "image": ["Mod-G", "Mod-g"],
-            //"table": ["Mod-T", "Mod-t"],  // Does not work
-            // Stylemenu
-            "p": "Ctrl-Shift-0",
-            "h1": "Ctrl-Shift-1",
-            "h2": "Ctrl-Shift-2",
-            "h3": "Ctrl-Shift-3",
-            "h4": "Ctrl-Shift-4",
-            "h5": "Ctrl-Shift-5",
-            "h6": "Ctrl-Shift-6",
-            // Stylebar
-            "bullet": ["Ctrl-U", "Ctrl-u"],
-            "number": ["Ctrl-O", "Ctrl-o"],
-            "indent": ["Mod-]", "Ctrl-q"],
-            "outdent": ["Mod-[", "Shift-Ctrl-q"],
-            // Format
-            "bold": ["Mod-B", "Mod-b"],
-            "italic": ["Mod-I", "Mod-i"],
-            "underline": ["Mod-U", "Mod-u"],
-            "strikethrough": ["Ctrl-S", "Ctrl-s"],
-            "code": "Mod-`",
-            "subscript": "Ctrl-Mod--",
-            "superscript": "Ctrl-Mod-+",
-            // Search
-            "search": ["Ctrl-F", "Ctrl-f"],
-        }
-    }
-
-    /**
      * Return a keymap configuration object, but defined from a stringified JSON object.
      * 
      * @param {string} string A stringified object, perhaps used as an external definition of a keymap configuration
@@ -131,7 +89,7 @@ export class KeymapConfig {
      * @returns {object}     A JavaScript object with all options enabled.
      */
     static full() {
-        return this._all()
+        return structuredClone(keymapConfig)
     }
 
     /**
