@@ -1,6 +1,6 @@
 {
   "name": "markupeditor",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "A web component and API for WYSIWYG HTML editing.",
   "keywords": [
     "wysiwyg",
