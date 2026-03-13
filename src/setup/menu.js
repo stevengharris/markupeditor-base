@@ -44,7 +44,8 @@ import {
   getSelectionRect,
   getImageAttributes, 
   insertImageCommand, 
-  modifyImageCommand
+  modifyImageCommand,
+  paragraphStyle
 } from "../markup"
 import { 
   MenuItem,
@@ -330,7 +331,6 @@ function formatItem(markType, markName, options) {
  */
 function styleMenuItems(config, schema) {
   let keymap = config.keymap
-  let icons = config.toolbar.icons
   let items = []
   let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
   if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p, keymap: baseKeyString('p', keymap) }))
@@ -341,5 +341,18 @@ function styleMenuItems(config, schema) {
   if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, keymap: baseKeyString('h5', keymap), attrs: { level: 5 }}))
   if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, keymap: baseKeyString('h6', keymap), attrs: { level: 6 }}))
   if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }))
-  return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
+  if (config.behavior.showStyle) {
+    let titleUpdate = (state) => {
+      let styleElement = paragraphStyle(state).toLowerCase()
+      // The paragraphStyle comes back with a trailing "+"" when across multiple styles
+      let multiple = styleElement[styleElement.length - 1] == '+'
+      let singleElement = multiple ? styleElement.slice(0, -1) : styleElement
+      let label = config.toolbar.styleMenu[singleElement]
+      return label ? (multiple ? label + '+' : label) : styleElement
+    }
+    return [new Dropdown(items, { title: 'Set paragraph style', label: 'Style', titleUpdate: titleUpdate})]
+  } else {
+    let icons = config.toolbar.icons
+    return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
+  }
 }

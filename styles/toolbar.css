@@ -174,16 +174,18 @@
 }
 
 .Markup-menu-dropdown-wrap {
-  display: inline-block;
+  display: flex;
+  justify-content: space-between;
   padding: 0 4px;
-  min-width: 3.0em;
+  width: 2.9em;
   height: inherit;
   border-radius: 4px;
   background: inherit;
 }
 
 .Markup-menu-dropdown-icon-wrap {
-  display: inline-block;
+  display: flex;
+  justify-content: space-between;
   padding-right: 4px;
   width: 1.8em;
   height: inherit;
@@ -200,24 +202,34 @@
   background: inherit;
 }
 
+/* For the paragraph style dropdown with a label, make the font smaller */
 .Markup-menu-dropdown {
-  display: inline-flex;
+  display: flex;
   justify-content: space-between;
-  min-width: 3.0em;
+  align-items: center;
+  box-sizing: border-box;
+  font-size: 0.8em;
+  width: inherit;
   height: inherit;
   background: inherit;
   position: absolute;
 }
 
+/* But for the indicator, bump size up to match the icon-style dropdown */
+.Markup-menu-dropdown .Markup-menu-dropdown-indicator {
+  font-size: 1.25em;
+}
+
 .Markup-menu-dropdown-icon {
   display: inline-flex;
   justify-content: space-between;
-  width: 1.8em;
+  font-size: inherit;
+  width: inherit;
   cursor: pointer;
   position: absolute;
 }
 
-.Markup-menu-dropdown-indicator, .Markup-menu-dropdown-icon-indicator{
+.Markup-menu-dropdown-indicator {
   opacity: .6;
 }
 

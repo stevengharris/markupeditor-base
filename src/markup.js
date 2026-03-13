@@ -2092,10 +2092,11 @@ function _getTableAttributes(state) {
 }
 
 /**
- * Return the paragraph style at the selection.
+ * Return the paragraph style at the selection. 
+ * If the selection contains multiple styles, return the first one with a "+" after it.
  * 
  * @ignore
- * @returns {string}   {Tag name | 'Multiple'} that represents the selected paragraph style.
+ * @returns {string}   {Tag name} that represents the selected paragraph style.
  */
 function _getParagraphStyle() {
     const view = activeView()
@@ -2106,12 +2107,15 @@ export function paragraphStyle(state) {
     const selection = state.selection;
     const nodeTypes = new Set();
     state.doc.nodesBetween(selection.from, selection.to, node => {
-        if (node.isBlock) { 
+        if (_paragraphStyleFor(node)) { 
             nodeTypes.add(node.type)
-        };
-        return false;   // We only need top-level nodes
-    });
-    return (nodeTypes.size <= 1) ? _paragraphStyleFor(selection.$anchor.parent) : 'Multiple';
+            return false
+        } else {
+            return node.isBlock   // Keep traversing if we are in a block
+        }
+    })
+    let firstStyle = _paragraphStyleFor(selection.$anchor.parent)
+    return (nodeTypes.size <= 1) ? firstStyle : firstStyle + '+'
 }
 
 /**
