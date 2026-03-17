@@ -2381,6 +2381,18 @@ export function doUndo() {
     return result
 }
 
+/** Return true if we can undo in the current state; else false. */
+export function canUndo() {
+    const view = activeView()
+    return undoCommand()(view.state)
+}
+
+/** Return true if we can redo in the current state; else false. */
+export function canRedo() {
+    const view = activeView()
+    return redoCommand()(view.state)
+}
+
 /**
  * Return a command to undo and do the proper callbacks.
  * 
