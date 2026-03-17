@@ -37,10 +37,8 @@ import keymapConfig from "../../config/keymapconfig.json"
  *    // Correction
  *    "undo": "Mod-z",
  *    "redo": "Shift-Mod-z",
- *    // Insert
+ *    // Insert (no hotkeys for image or table)
  *    "link": ["Mod-K", "Mod-k"],
- *    "image": ["Mod-G", "Mod-g"],
- *    //"table": ["Mod-T", "Mod-t"],  // Does not work
  *    // Stylemenu
  *    "p": "Ctrl-Shift-0",
  *    "h1": "Ctrl-Shift-1",
