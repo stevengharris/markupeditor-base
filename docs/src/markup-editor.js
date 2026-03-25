@@ -22130,6 +22130,22 @@ class SearchItem {
     this.item = cmdItem(this.command, options);
     this.text = '';
     this.caseSensitive = false;
+    this.keymap = keymap;
+  }
+
+  matchesKey(event, keyStrings) {
+    let keys = keyStrings instanceof Array ? keyStrings : (keyStrings ? [keyStrings] : []);
+    return keys.some(ks => {
+      let parts = ks.split('-');
+      let key = parts[parts.length - 1];
+      let modifiers = parts.slice(0, -1);
+      if (event.key !== key) return false
+      if (modifiers.includes('Ctrl') && !event.ctrlKey) return false
+      if (modifiers.includes('Mod') && !(event.metaKey || event.ctrlKey)) return false
+      if (modifiers.includes('Shift') && !event.shiftKey) return false
+      if (modifiers.includes('Alt') && !event.altKey) return false
+      return true
+    })
   }
 
   showing() {
@@ -22150,15 +22166,14 @@ class SearchItem {
   toggleSearch(state, dispatch, view) {
     setActiveView(view);
     if (this.showing()) {
-      this.hideSearchbar();
+      this.hideSearchbar(state, dispatch, view);
     } else {
       this.showSearchbar(state, dispatch, view);
     }
     this.update && this.update(state);
   }
 
-  hideSearchbar() {
-    let view = activeView();
+  hideSearchbar(state, dispatch, view) {
     if (view) {
       let searchbar = getSearchbar(view);
       searchbar.parentElement.removeChild(searchbar);
@@ -22186,6 +22201,9 @@ class SearchItem {
         } else {
           this.searchBackwardCommand(view.state, view.dispatch, view);
         }
+      } else if (this.matchesKey(e, this.keymap.search)) {
+        e.preventDefault();
+        this.hideSearchbar(view.state, view.dispatch, view);
       }
     });
     input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
@@ -22197,6 +22215,7 @@ class SearchItem {
     this.addSearchButtons(view, searchbar);
     let beforeTarget = getToolbarMore(view) ? getToolbarMore(view).nextSibling : toolbar.nextSibling;
     toolbar.parentElement.insertBefore(searchbar, beforeTarget);
+    input.focus();
   }
 
   setStatus() {
@@ -22884,7 +22903,7 @@ function styleMenuItems(config, schema) {
   if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { label: h4, keymap: baseKeyString('h4', keymap), attrs: { level: 4 }}));
   if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, keymap: baseKeyString('h5', keymap), attrs: { level: 5 }}));
   if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, keymap: baseKeyString('h6', keymap), attrs: { level: 6 }}));
-  if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }));
+  if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre, keymap: baseKeyString('pre', keymap) }));
   if (config.behavior.showStyle) {
     let titleUpdate = (state) => {
       let styleElement = paragraphStyle(state).toLowerCase();

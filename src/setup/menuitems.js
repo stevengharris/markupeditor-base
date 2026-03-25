@@ -1261,6 +1261,22 @@ export class SearchItem {
     this.item = cmdItem(this.command, options);
     this.text = '';
     this.caseSensitive = false;
+    this.keymap = keymap;
+  }
+
+  matchesKey(event, keyStrings) {
+    let keys = keyStrings instanceof Array ? keyStrings : (keyStrings ? [keyStrings] : [])
+    return keys.some(ks => {
+      let parts = ks.split('-')
+      let key = parts[parts.length - 1]
+      let modifiers = parts.slice(0, -1)
+      if (event.key !== key) return false
+      if (modifiers.includes('Ctrl') && !event.ctrlKey) return false
+      if (modifiers.includes('Mod') && !(event.metaKey || event.ctrlKey)) return false
+      if (modifiers.includes('Shift') && !event.shiftKey) return false
+      if (modifiers.includes('Alt') && !event.altKey) return false
+      return true
+    })
   }
 
   showing() {
@@ -1281,15 +1297,14 @@ export class SearchItem {
   toggleSearch(state, dispatch, view) {
     setActiveView(view)
     if (this.showing()) {
-      this.hideSearchbar()
+      this.hideSearchbar(state, dispatch, view)
     } else {
       this.showSearchbar(state, dispatch, view);
     }
     this.update && this.update(state)
   }
 
-  hideSearchbar() {
-    let view = activeView()
+  hideSearchbar(state, dispatch, view) {
     if (view) {
       let searchbar = getSearchbar(view);
       searchbar.parentElement.removeChild(searchbar);
@@ -1317,6 +1332,9 @@ export class SearchItem {
         } else {
           this.searchBackwardCommand(view.state, view.dispatch, view);
         }
+      } else if (this.matchesKey(e, this.keymap.search)) {
+        e.preventDefault();
+        this.hideSearchbar(view.state, view.dispatch, view);
       }
     });
     input.addEventListener('input', e => {    // Use input so e.target.value contains what was typed
@@ -1328,6 +1346,7 @@ export class SearchItem {
     this.addSearchButtons(view, searchbar);
     let beforeTarget = getToolbarMore(view) ? getToolbarMore(view).nextSibling : toolbar.nextSibling;
     toolbar.parentElement.insertBefore(searchbar, beforeTarget);
+    input.focus()
   }
 
   setStatus() {
