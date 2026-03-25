@@ -340,7 +340,7 @@ function styleMenuItems(config, schema) {
   if (h4) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H4', { label: h4, keymap: baseKeyString('h4', keymap), attrs: { level: 4 }}))
   if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, keymap: baseKeyString('h5', keymap), attrs: { level: 5 }}))
   if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, keymap: baseKeyString('h6', keymap), attrs: { level: 6 }}))
-  if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre }))
+  if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre, keymap: baseKeyString('pre', keymap) }))
   if (config.behavior.showStyle) {
     let titleUpdate = (state) => {
       let styleElement = paragraphStyle(state).toLowerCase()
