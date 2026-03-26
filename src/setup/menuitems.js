@@ -174,6 +174,7 @@ export class Dropdown {
    * | `Function(EditorState): string`  | `titleUpdate` | Function to execute that returns a label based on `state`. |
    * | `Function(): boolean`            | `enable`      | Function to return true if MenuItem is enabled, else false |
    * | `string`                         | `label`       | The string to show in the MenuItem |
+   * | `string[]`                       | `labels`      | All possible label strings; used to size the dropdown to the widest label at render time. |
    * | `KeymapConfig`                   | `keymap`      | The KeymapConfig to use for the MenuItem |
    * | `Command`                        | `run`         | The Command to run when the item is pressed |
    * | `Function(): boolean`            | `active`      | Function to return true if MenuItem is active, else false. |
@@ -217,6 +218,18 @@ export class Dropdown {
     let iconWrapClass = this.options.indicator ? "-dropdown-icon-wrap" : "-dropdown-icon-wrap-noindicator"
     let wrapClass = (this.options.icon) ? this.prefix + iconWrapClass : this.prefix + "-dropdown-wrap"
     let wrap = crel("span", { class: wrapClass }, label);
+    if (!this.options.icon && options.labels && options.labels.length > 0) {
+      let container = getToolbar(view) || view.dom.parentNode || document.body;
+      let sizer = crel("span", { style: "visibility:hidden;position:absolute;white-space:nowrap;font-size:0.8em" });
+      container.appendChild(sizer);
+      let maxWidth = 0;
+      for (let lbl of options.labels) {
+        sizer.textContent = lbl + "\u25BE";
+        maxWidth = Math.max(maxWidth, sizer.getBoundingClientRect().width);
+      }
+      container.removeChild(sizer);
+      wrap.style.width = Math.ceil(maxWidth) + "px";
+    }
     let open = null;
     let listeningOnClose = null;
     let close = () => {
@@ -710,7 +723,8 @@ export class LinkItem extends DialogItem {
     if (localRefItems.length == 0) { return null }
     return new Dropdown(localRefItems, {
       title: 'Insert link to header',
-      label: 'H1-6'
+      label: 'H1-6',
+      labels: ['H1-6']
       // Note: enable doesn't work for Dropdown
     })
   }

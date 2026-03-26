@@ -350,7 +350,8 @@ function styleMenuItems(config, schema) {
       let label = config.toolbar.styleMenu[singleElement]
       return label ? (multiple ? label + '+' : label) : styleElement
     }
-    return [new Dropdown(items, { title: 'Set paragraph style', label: 'Style', titleUpdate: titleUpdate})]
+    let allLabels = [p, h1, h2, h3, h4, h5, h6, pre].filter(Boolean).flatMap(l => [l, l + '+'])
+    return [new Dropdown(items, { title: 'Set paragraph style', label: 'Style', titleUpdate: titleUpdate, labels: allLabels})]
   } else {
     let icons = config.toolbar.icons
     return [new Dropdown(items, { title: 'Set paragraph style', icon: icons.paragraphStyle })]
