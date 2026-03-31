@@ -113,6 +113,9 @@ export class MessageHandler {
             case 'copyImage':
                 console.log('fix copyImage ' + messageData.src)
                 return
+            case 'selectImage':
+                delegate?.markupSelectImage && delegate?.markupSelectImage()
+                return
             case 'addedImage': {
                 if (!delegate?.markupImageAdded) return;
                 let divId = messageData.divId

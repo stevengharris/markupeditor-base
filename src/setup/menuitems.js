@@ -33,6 +33,7 @@ import {
     matchCount,
     matchIndex,
     headers,
+    callbackSelectImage,
 } from "../markup"
 import { activeView, setActiveView } from "../registry"
 import { ToolbarConfig } from "../config/toolbarconfig";
@@ -997,10 +998,10 @@ export class ImageItem extends DialogItem {
     this.dialog.appendChild(buttonsDiv)
 
     // When local images are allowed, we insert a "Select..." button that will bring up a 
-    // file chooser. However, the MarkupEditor can't do that itself, so it invokes the 
-    // delegate's `markupSelectImage` method if it exists. Thus, when `selectImage` is 
-    // true in BehaviorConfig, that method should exist. It should bring up a file chooser
-    // and then invoke `MU.insertImage`.
+    // file chooser. However, the MarkupEditor can't do that itself, so it calls back to 
+    // the messageHandler, which in turn should invoke the delegate's `markupSelectImage` 
+    // method if it exists. Thus, when `selectImage` is true in BehaviorConfig, that method 
+    // should exist. It should bring up a file chooser and then invoke `MU.insertImage`.
     if (this.config.behavior.selectImage) {
       this.preview = null;
       let selectItem = cmdItem(this.selectImage.bind(this), {
@@ -1098,10 +1099,13 @@ export class ImageItem extends DialogItem {
     return this.altArea.value
   }
 
-  /** Tell the delegate to select an image to insert, because we don't know how to do that */
-  selectImage(state, dispatch, view) {
+  /** 
+   * Call back to the messageHandler after closing the dialog. The message handler should 
+   * let the delegate deal with bringing up a file picker of some kind.
+  */
+  selectImage() {
     this.closeDialog()
-    if (this.config.delegate?.markupSelectImage) this.config.delegate?.markupSelectImage(state, dispatch, view)
+    callbackSelectImage()
   }
 
   /**

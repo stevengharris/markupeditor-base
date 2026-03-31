@@ -58,6 +58,12 @@ class MarkupDelegate {
      * or image resizing, or pasting, or formatting, etc.
      */
     markupInput() {}
+
+    /**
+     * Invoked when the "Select..." button is pressed in the standard "Insert Image" dialog.
+     * There is no default behavior. Instead, the "Select..." button is not shown by default.
+     */
+    markupSelectImage() {}
     
     /**
      * Invoked when the "Insert Image" button is pressed in the toolbar. 
@@ -88,16 +94,6 @@ class MarkupDelegate {
      * The selection in the editor changed.
      */
     markupSelectionChanged() {}
-
-    /**
-     * Invoked when the "Select..." button is pressed in the standard "Insert Image" dialog.
-     * There is no default behavior. Instead, the "Select..." button is not shown by default.
-     * 
-     * @param {EditorState} state 
-     * @param {Function(Transaction)} dispatch 
-     * @param {EditorView} view 
-     */
-    markupSelectImage(state, dispatch, view) {}
     
     /**
      * The height of the editor changed to `height`.

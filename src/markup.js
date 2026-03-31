@@ -2182,6 +2182,17 @@ export function callbackInput(element) {
 };
 
 /**
+ * Callback to signal that the user wants to select an image from a file.
+ * 
+ * The messageHandler will need to do something like bring up a file picker
+ * and in turn execute insertImage.
+ */
+export function callbackSelectImage() {
+    let messageDict = { 'messageType' : 'selectImage' }
+    _callback(JSON.stringify(messageDict));
+}
+
+/**
  * Callback to signal that user-provided CSS and/or script files have
  * been loaded.
  * 
