@@ -18,7 +18,7 @@ class DOMAccess {
      * @returns {HTMLDivElement}  The toolbar div in the view
      */
     getToolbar(view) {
-        return view.dom.getRootNode().getElementById(this.prefix + "-toolbar");
+        return view.dom.getRootNode().getElementById(this.prefix + "-toolbar")
     }
 
     getSearchItem(view) {
@@ -26,7 +26,11 @@ class DOMAccess {
     }
 
     getSearchbar(view) {
-        return view.dom.getRootNode().getElementById(this.prefix + "-searchbar");
+        return view.dom.getRootNode().getElementById(this.prefix + "-searchbar")
+    }
+
+    getSearchInput(view) {
+        return view.dom.getRootNode().getElementById(this.prefix + "-searchinput")
     }
 
     getToolbarMore(view) {
@@ -67,6 +71,7 @@ export const setPrefix = _domAccess.setPrefix.bind(_domAccess)
 export const getToolbar = _domAccess.getToolbar.bind(_domAccess)
 export const getSearchItem = _domAccess.getSearchItem.bind(_domAccess)
 export const getSearchbar = _domAccess.getSearchbar.bind(_domAccess)
+export const getSearchInput = _domAccess.getSearchInput.bind(_domAccess)
 export const getToolbarMore = _domAccess.getToolbarMore.bind(_domAccess)
 export const getWrapper = _domAccess.getWrapper.bind(_domAccess)
 export const addPromptShowing = _domAccess.addPromptShowing.bind(_domAccess)

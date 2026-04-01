@@ -27,6 +27,7 @@ import {
     mergeCells,
     toggleHeaderRow,
 } from 'prosemirror-tables'
+import { getSearchInput } from './domaccess.js'
 
 /**
  * Define various arrays of tags used to represent MarkupEditor-specific concepts.
@@ -1833,9 +1834,11 @@ function _getSelectionState() {
     // absolutely reflects the selection state at the time of the call regardless
     // of whether it is editable or not.
     const contentEditable = _getContentEditable();
+    const view = activeView()
     state['divid'] = contentEditable.id;            // Will be 'editor' or a div ID
-    state['valid'] = contentEditable.editable;      // Valid means the selection is in something editable
-    if (!contentEditable.editable) return state;    // No need to do more with state if it's not editable
+    // Valid means the selection is in something editable and not in the searchbar input field
+    state['valid'] = contentEditable.editable && view && !getSearchInput(view)?.matches(':focus');
+    if (!state['valid']) return state;    // No need to do more with state if it's not editable
 
     // Selected text
     state['selection'] = _getSelectionText();

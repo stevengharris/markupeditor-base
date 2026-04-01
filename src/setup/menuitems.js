@@ -34,6 +34,7 @@ import {
     matchIndex,
     headers,
     callbackSelectImage,
+    selectionChanged,
 } from "../markup"
 import { activeView, setActiveView } from "../registry"
 import { ToolbarConfig } from "../config/toolbarconfig";
@@ -1341,7 +1342,8 @@ export class SearchItem {
   showSearchbar(state, dispatch, view) {
     let toolbar = getToolbar(view);
     if (!toolbar) return;
-    let input = crel('input', { type: 'search', placeholder: 'Search document...' });
+    let inputId = prefix + "-searchinput"
+    let input = crel('input', { id: inputId, type: 'search', placeholder: 'Search document...' });
     input.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
         let direction = (e.shiftKey) ? 'backward' : 'forward';
@@ -1359,6 +1361,12 @@ export class SearchItem {
       this.text = e.target.value;
       this.stopSearching(false);              // Stop searching but leave focus in the input field
     });
+    input.addEventListener('focus', () => {
+      selectionChanged()
+    })
+    input.addEventListener('blur', () => {
+      selectionChanged()
+    })
     let idClass = prefix + "-searchbar";
     let searchbar = crel("div", { class: idClass, id: idClass }, input);
     this.addSearchButtons(view, searchbar);
