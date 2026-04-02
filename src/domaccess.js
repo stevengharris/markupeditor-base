@@ -29,10 +29,6 @@ class DOMAccess {
         return view.dom.getRootNode().getElementById(this.prefix + "-searchbar")
     }
 
-    getSearchInput(view) {
-        return view.dom.getRootNode().getElementById(this.prefix + "-searchinput")
-    }
-
     getToolbarMore(view) {
         return view.dom.getRootNode().getElementById(this.prefix + "-toolbar-more")
     }
@@ -55,12 +51,24 @@ class DOMAccess {
         return this.prefix + "-prompt-showing"
     }
 
+    searchInput() {
+        return this.prefic + "-searchinput"
+    }
+
     searchbarShowing() {
         return this.prefix + "-searchbar-showing"
     }
 
     searchbarHidden() {
         return this.prefix + "-searchbar-hidden"
+    }
+
+    isSearchFocused(view) {
+        return view?.dom.getRootNode().getElementById(this.searchInput()).matches(':focus')
+    }
+
+    isPromptShowing(view) {
+        return view?.dom.getRootNode().getElementById(this.promptShowing())
     }
 
 }
@@ -71,7 +79,6 @@ export const setPrefix = _domAccess.setPrefix.bind(_domAccess)
 export const getToolbar = _domAccess.getToolbar.bind(_domAccess)
 export const getSearchItem = _domAccess.getSearchItem.bind(_domAccess)
 export const getSearchbar = _domAccess.getSearchbar.bind(_domAccess)
-export const getSearchInput = _domAccess.getSearchInput.bind(_domAccess)
 export const getToolbarMore = _domAccess.getToolbarMore.bind(_domAccess)
 export const getWrapper = _domAccess.getWrapper.bind(_domAccess)
 export const addPromptShowing = _domAccess.addPromptShowing.bind(_domAccess)
@@ -79,3 +86,5 @@ export const removePromptShowing = _domAccess.removePromptShowing.bind(_domAcces
 export const promptShowing = _domAccess.promptShowing.bind(_domAccess)
 export const searchbarShowing = _domAccess.searchbarShowing.bind(_domAccess)
 export const searchbarHidden = _domAccess.searchbarHidden.bind(_domAccess)
+export const isSearchFocused = _domAccess.isSearchFocused.bind(_domAccess)
+export const isPromptShowing = _domAccess.isPromptShowing.bind(_domAccess)

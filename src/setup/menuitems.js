@@ -415,8 +415,9 @@ class DialogItem {
      * @param {EditorView} view 
      */
     openDialog(state, dispatch, view) {
-      setActiveView(view)
+        setActiveView(view)
         this.createDialog(view)
+        selectionChanged()    // Since it's pseudo modal, we can do it once
         this.dialog.show();
     }
 
@@ -503,6 +504,7 @@ class DialogItem {
      */
     closeDialog() {
         removePromptShowing(activeView())
+        selectionChanged()    // Since it's pseudo modal, we can do it once
         this.toolbarOverlay?.parentElement?.removeChild(this.toolbarOverlay)
         this.overlay?.parentElement?.removeChild(this.overlay)
         this.selectionDiv?.parentElement?.removeChild(this.selectionDiv)

@@ -27,7 +27,7 @@ import {
     mergeCells,
     toggleHeaderRow,
 } from 'prosemirror-tables'
-import { getSearchInput } from './domaccess.js'
+import { isSearchFocused, isPromptShowing } from './domaccess.js'
 
 /**
  * Define various arrays of tags used to represent MarkupEditor-specific concepts.
@@ -1836,8 +1836,9 @@ function _getSelectionState() {
     const contentEditable = _getContentEditable();
     const view = activeView()
     state['divid'] = contentEditable.id;            // Will be 'editor' or a div ID
-    // Valid means the selection is in something editable and not in the searchbar input field
-    state['valid'] = contentEditable.editable && view && !getSearchInput(view)?.matches(':focus');
+    // Valid means the selection is in something editable and 
+    // neither search is focused nor is a prompt showing
+    state['valid'] = contentEditable.editable && !(isSearchFocused(view) || isPromptShowing(view));
     if (!state['valid']) return state;    // No need to do more with state if it's not editable
 
     // Selected text
