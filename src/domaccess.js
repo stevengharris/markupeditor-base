@@ -64,7 +64,7 @@ class DOMAccess {
     }
 
     isSearchFocused(view) {
-        return view?.dom.getRootNode().getElementById(this.searchInput()).matches(':focus')
+        return view?.dom.getRootNode().getElementById(this.searchInput())?.matches(':focus')
     }
 
     isPromptShowing(view) {
