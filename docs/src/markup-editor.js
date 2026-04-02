@@ -16240,11 +16240,11 @@ class DOMAccess {
     }
 
     isSearchFocused(view) {
-        return view?.dom.getRootNode().getElementById(this.searchInput())?.matches(':focus')
+        return view?.dom.getRootNode().getElementById(this.searchInput())?.matches(':focus') ?? false
     }
 
     isPromptShowing(view) {
-        return view?.dom.getRootNode().getElementById(this.promptShowing())
+        return view?.dom.getRootNode().getElementById(this.promptShowing()) ?? false
     }
 
 }
