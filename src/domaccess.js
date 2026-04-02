@@ -34,7 +34,7 @@ class DOMAccess {
     }
 
     getWrapper(view) {
-        return this.getToolbar(view).parentElement
+        return this.getToolbar(view)?.parentElement
     }
 
     /** Adding promptShowing class on wrapper lets us suppress scroll while the prompt is showing */
@@ -68,7 +68,7 @@ class DOMAccess {
     }
 
     isPromptShowing(view) {
-        return this.getWrapper(view).classList.contains(this.promptShowing()) ?? false
+        return (view) ? this.getWrapper(view)?.classList.contains(this.promptShowing()) ?? false : false
     }
 
 }
