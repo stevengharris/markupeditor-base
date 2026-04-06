@@ -875,7 +875,7 @@ function _buttonGroupDiv(buttonGroupJSON) {
             buttonGroupDiv.setAttribute('editable', "false");   // Hardcode
             buttonGroup.buttons.forEach( buttonAttributes => {
                 let button = document.createElement('button');
-                button.appendChild(document.createTextNode(buttonAttributes.label));
+                button.innerHTML = buttonAttributes.label;
                 button.setAttribute('label', buttonAttributes.label)
                 button.setAttribute('type', 'button')
                 button.setAttribute('id', buttonAttributes.id);
@@ -935,7 +935,7 @@ export function addButton(id, parentId, cssClass, label) {
     button.setAttribute('parentId', parentId);
     button.setAttribute('class', cssClass);
     button.setAttribute('type', 'button');
-    button.appendChild(document.createTextNode(label));
+    button.innerHTML = label;
     const buttonSlice = _sliceFromElement(button);
     const buttonNode = buttonNodeType.create({id, parentId, cssClass, label}, buttonSlice.content);
     const transaction = view.state.tr;

@@ -220,9 +220,14 @@ let baseNodes = OrderedMap.from({
         }
       }
     }],
-    toDOM(node) { 
-      let {id, cssClass} = node.attrs; 
-      return ["button", { id: id, class: cssClass }, 0]
+    toDOM(node) {
+      let {id, cssClass, label} = node.attrs;
+      const button = document.createElement("button");
+      if (id) button.setAttribute("id", id);
+      if (cssClass) button.setAttribute("class", cssClass);
+      button.setAttribute("type", "button");
+      if (label) button.innerHTML = label;
+      return button;
     }
   }
 
