@@ -146,6 +146,7 @@ let baseNodes = OrderedMap.from({
   div: {
     content: "block*",
     group: "block",
+    isolating: true,    // Prevent operations like lift from going outside of a div
     selectable: false,
     attrs: {
       id: {default: null},
