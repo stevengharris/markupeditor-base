@@ -538,10 +538,11 @@ export class LinkItem extends DialogItem {
     super(config);
     let keymap = this.config.keymap
     let icons = config.toolbar.icons
+    let help = config.toolbar.help
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return markActive(state, state.schema.marks.link) },
-      title: 'Insert/edit link' + keyString('link', keymap),
+      title: help.link + keyString('link', keymap),
       icon: icons.link
     };
 
@@ -854,10 +855,11 @@ export class ImageItem extends DialogItem {
   constructor(config) {
     super(config)
     let icons = config.toolbar.icons
+    let help = config.toolbar.help
     let options = {
       enable: () => { return true }, // Always enabled because it is presented modally
       active: (state) => { return getImageAttributes(state).src  },
-      title: 'Insert/edit image' + keyString('image', config.keymap),
+      title: help.image + keyString('image', config.keymap),
       icon: icons.image
     };
 
@@ -1271,10 +1273,11 @@ export class SearchItem {
   constructor(config) {
     let keymap = config.keymap
     this.icons = config.toolbar.icons
+    this.help = config.toolbar.help
     let options = {
       enable: () => { return true },
       active: () => { return this.showing() },
-      title: 'Toggle search' + keyString('search', keymap),
+      title: this.help.search + keyString('search', keymap),
       icon: this.icons.search,
       id: prefix + '-searchitem'
     };
@@ -1399,11 +1402,11 @@ export class SearchItem {
 
     // The searchBackward and searchForward buttons don't need updating
     let searchBackward = this.searchBackwardCommand.bind(this);
-    let searchBackwardItem = cmdItem(searchBackward, {title: "Search backward", icon: this.icons.searchBackward});
+    let searchBackwardItem = cmdItem(searchBackward, {title: this.help.searchBackward, icon: this.icons.searchBackward});
     let searchBackwardDom = searchBackwardItem.render(view).dom;
     let searchBackwardSpan = crel("span", {class: prefix + "-menuitem"}, searchBackwardDom);
     let searchForward = this.searchForwardCommand.bind(this);
-    let searchForwardItem = cmdItem(searchForward, {title: "Search forward", icon: this.icons.searchForward});
+    let searchForwardItem = cmdItem(searchForward, {title: this.help.searchForward, icon: this.icons.searchForward});
     let searchForwardDom = searchForwardItem.render(view).dom;
     let searchForwardSpan = crel("span", {class: prefix + "-menuitem"}, searchForwardDom);
     let separator = crel("span", {class: prefix + "-menuseparator"})
@@ -1415,7 +1418,7 @@ export class SearchItem {
     let toggleMatchCase = this.toggleMatchCaseCommand.bind(this);
     this.matchCaseItem = cmdItem(
       toggleMatchCase, {
-        title: "Match case", 
+        title: this.help.matchCase, 
         icon: this.icons.matchCase,
         enable: () => {return true},
         active: () => {return this.caseSensitive}
@@ -1599,7 +1602,8 @@ export function markActive(state, type) {
  * @returns string
  */
 export function keyString(itemName, keymap) {
-  return ' (' + baseKeyString(itemName, keymap) + ')'
+  let base = baseKeyString(itemName, keymap)
+  return (base.length > 0) ? ' (' + base + ')' : ''
 }
 
 export function baseKeyString(itemName, keymap) {
