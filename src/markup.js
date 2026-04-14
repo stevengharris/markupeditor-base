@@ -982,7 +982,7 @@ export function focusOn(id) {
     const view = activeView()
     const {node, pos} = _getNode(id);
     if (node && (node.attrs.id !== selectedID())) {
-        const selection = new TextSelection(view.state.doc.resolve(pos));
+        const selection = TextSelection.near(view.state.tr.doc.resolve(pos))
         const transaction = view.state.tr.setSelection(selection).scrollIntoView();
         view.dispatch(transaction);
     };
@@ -1273,7 +1273,7 @@ export function toggleListItem(listType) {
         command(view.state, (transaction) => {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
-        });
+        }, view);
     };
 };
 
