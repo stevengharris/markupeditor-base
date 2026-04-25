@@ -45,6 +45,20 @@ class MyToolbarConfig {
 MU.registerConfig(new MyToolbarConfig())
 
 /**
+ * A keymap configuration based on modifications of `MU.KeymapConfig.standard()`.
+ */
+class MyKeymapConfig {
+    constructor() {
+        Object.assign(this, MU.KeymapConfig.standard())
+        this.search = null                          // Prevent the hotkeys from opening search
+        this.underline = ["Mod-U", "Mod-u"]         // Set underline hotkeys
+    }
+}
+
+// Register an instance of MyKeymapConfig so it can be looked up by name when the MarkupEditor instance is created.
+MU.registerConfig(new MyKeymapConfig())
+
+/**
  * A behavior configuration based on modifications of `MU.BehaviorConfig.standard()`.
  */
 class MyBehaviorConfig {
