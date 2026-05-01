@@ -16,6 +16,7 @@ import { EditorState } from "prosemirror-state"
 import { DOMParser } from "prosemirror-model"
 import { schema } from "./schema/index.js"
 import { markupSetup } from "./setup/index.js"
+import { toolbarView } from "./setup/toolbar.js"
 import { LinkView } from "./nodeview/linkview.js"
 import { ImageView } from "./nodeview/imageview.js"
 import { DivView } from "./nodeview/divview.js"
@@ -300,6 +301,12 @@ export class MarkupEditor {
     }
 }
 
+function setToolbarVisible(visible) {
+    if (toolbarView) {
+        toolbarView.wrapper.style.display = visible ? '' : 'none';
+    }
+}
+
 /**
  * The object whose methods comprise the MarkupEditor API.
  */
@@ -357,6 +364,7 @@ export const MU = {
     setHTML,
     setStyle,
     setTestHTML,
+    setToolbarVisible,
     setTopLevelAttributes,
     testBlockquoteEnter,
     testExtractContents,
