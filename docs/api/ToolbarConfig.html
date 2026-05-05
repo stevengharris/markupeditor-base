@@ -72,6 +72,11 @@ Use &quot;augmentation&quot; to prepend and/or append a toolbar you define yours
     &quot;formatBar&quot;: 50,          // Format bar (b, i, u, etc) order if it is visible
     &quot;search&quot;: 60,             // Search item (hide/show search bar) order if it is visible
   },
+  &quot;menus&quot;: {
+    &quot;styleName&quot;: true         // Whether to show the style name or just use a paragraph symbol
+    &quot;tableHeader&quot;: true,      // Whether the &quot;Header&quot; item is visible in the &quot;Table->Add&quot; menu
+    &quot;tableBorder&quot;: true,      // Whether the &quot;Border&quot; item is visible in the &quot;Table&quot; menu
+  },
   &quot;insertBar&quot;: {
     &quot;link&quot;: true,             // Whether the link menu item is visible
     &quot;image&quot;: true,            // Whether the image menu item is visible
@@ -99,10 +104,6 @@ Use &quot;augmentation&quot; to prepend and/or append a toolbar you define yours
   &quot;styleBar&quot;: {
     &quot;list&quot;: true,             // Whether bullet and numbered list items are visible
     &quot;dent&quot;: true,             // Whether indent and outdent items are visible
-  },
-  &quot;tableMenu&quot;: {
-    &quot;header&quot;: true,           // Whether the &quot;Header&quot; item is visible in the &quot;Table->Add&quot; menu
-    &quot;border&quot;: true,           // Whether the &quot;Border&quot; item is visible in the &quot;Table&quot; menu
   },
   &quot;augmentation&quot;: {
     &quot;prepend&quot;: null,          // Name of a registered array of cmdItems to prepend

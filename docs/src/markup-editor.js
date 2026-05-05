@@ -19574,6 +19574,11 @@ var ordering = {
 	formatBar: 50,
 	search: 60
 };
+var menus = {
+	styleName: false,
+	tableHeader: true,
+	tableBorder: true
+};
 var insertBar = {
 	link: true,
 	image: true,
@@ -19601,10 +19606,6 @@ var styleMenu = {
 var styleBar = {
 	list: true,
 	dent: true
-};
-var tableMenu = {
-	header: true,
-	border: true
 };
 var help = {
 	style: "Set paragraph style",
@@ -19660,11 +19661,11 @@ var icons = {
 var toolbarConfig = {
 	visibility: visibility,
 	ordering: ordering,
+	menus: menus,
 	insertBar: insertBar,
 	formatBar: formatBar,
 	styleMenu: styleMenu,
 	styleBar: styleBar,
-	tableMenu: tableMenu,
 	help: help,
 	augmentation: augmentation,
 	icons: icons
@@ -19721,6 +19722,11 @@ var toolbarConfig = {
  *     "formatBar": 50,          // Format bar (b, i, u, etc) order if it is visible
  *     "search": 60,             // Search item (hide/show search bar) order if it is visible
  *   },
+ *   "menus": {
+ *     "styleName": true         // Whether to show the style name or just use a paragraph symbol
+ *     "tableHeader": true,      // Whether the "Header" item is visible in the "Table->Add" menu
+ *     "tableBorder": true,      // Whether the "Border" item is visible in the "Table" menu
+ *   },
  *   "insertBar": {
  *     "link": true,             // Whether the link menu item is visible
  *     "image": true,            // Whether the image menu item is visible
@@ -19748,10 +19754,6 @@ var toolbarConfig = {
  *   "styleBar": {
  *     "list": true,             // Whether bullet and numbered list items are visible
  *     "dent": true,             // Whether indent and outdent items are visible
- *   },
- *   "tableMenu": {
- *     "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
- *     "border": true,           // Whether the "Border" item is visible in the "Table" menu
  *   },
  *   "augmentation": {
  *     "prepend": null,          // Name of a registered array of cmdItems to prepend
@@ -20096,13 +20098,11 @@ var focusAfterLoad = true;
 var selectImage = false;
 var insertLink = false;
 var insertImage = false;
-var showStyle = true;
 var behaviorConfig = {
 	focusAfterLoad: focusAfterLoad,
 	selectImage: selectImage,
 	insertLink: insertLink,
-	insertImage: insertImage,
-	showStyle: showStyle
+	insertImage: insertImage
 };
 
 /**
@@ -20141,7 +20141,6 @@ var behaviorConfig = {
  *    "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
  *    "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
  *    "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
- *    "showStyle": true           // Whether to show the selected style in a labeled drop-down rather than a (smaller) icon
  * }
  * ```
  */
@@ -22819,14 +22818,14 @@ function tableMenuItems(config) {
   let icons = config.toolbar.icons;
   let help = config.toolbar.help;
   let items = [];
-  let { header, border } = config.toolbar.tableMenu;
+  let { tableHeader, tableBorder } = config.toolbar.menus;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}));
   let addItems = [];
   addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}));
   addItems.push(tableEditItem(addRowCommand('AFTER'), {label: 'Row below'}));
   addItems.push(tableEditItem(addColCommand('BEFORE'), {label: 'Column before'}));
   addItems.push(tableEditItem(addColCommand('AFTER'), {label: 'Column after'}));
-  if (header) addItems.push(
+  if (tableHeader) addItems.push(
     tableEditItem(
       addHeaderCommand(), {
         label: 'Header',
@@ -22848,7 +22847,7 @@ function tableMenuItems(config) {
       label: 'Delete',
       enable: (state) => { return isTableSelected(state) }
     }));
-  if (border) {
+  if (tableBorder) {
     let borderItems = [];
     borderItems.push(tableBorderItem(setBorderCommand('cell'), {label: 'All'}));
     borderItems.push(tableBorderItem(setBorderCommand('outer'), {label: 'Outer'}));
@@ -22999,9 +22998,10 @@ function formatItem(markType, markName, options) {
  */
 function styleMenuItems(config, schema) {
   let keymap = config.keymap;
+  let toolbar = config.toolbar;
   let help = config.toolbar.help;
   let items = [];
-  let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
+  let { p, h1, h2, h3, h4, h5, h6, pre } = toolbar.styleMenu;
   if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p, keymap: baseKeyString('p', keymap) }));
   if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, keymap: baseKeyString('h1', keymap), attrs: { level: 1 }}));
   if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, keymap: baseKeyString('h2', keymap), attrs: { level: 2 }}));
@@ -23010,20 +23010,19 @@ function styleMenuItems(config, schema) {
   if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, keymap: baseKeyString('h5', keymap), attrs: { level: 5 }}));
   if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, keymap: baseKeyString('h6', keymap), attrs: { level: 6 }}));
   if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre, keymap: baseKeyString('pre', keymap) }));
-  if (config.behavior.showStyle) {
+  if (toolbar.menus.styleName) {
     let titleUpdate = (state) => {
       let styleElement = paragraphStyle(state).toLowerCase();
       // The paragraphStyle comes back with a trailing "+"" when across multiple styles
       let multiple = styleElement[styleElement.length - 1] == '+';
       let singleElement = multiple ? styleElement.slice(0, -1) : styleElement;
-      let label = config.toolbar.styleMenu[singleElement];
+      let label = toolbar.styleMenu[singleElement];
       return label ? (multiple ? label + '+' : label) : styleElement
     };
     let allLabels = [p, h1, h2, h3, h4, h5, h6, pre].filter(Boolean).flatMap(l => [l, l + '+']);
     return [new Dropdown(items, { title: help.style, label: 'Style', titleUpdate: titleUpdate, labels: allLabels})]
   } else {
-    let icons = config.toolbar.icons;
-    return [new Dropdown(items, { title: help.style, icon: icons.paragraphStyle })]
+    return [new Dropdown(items, { title: help.style, icon: toolbar.icons.paragraphStyle })]
   }
 }
 
@@ -24877,6 +24876,12 @@ class MarkupEditor {
     }
 }
 
+function setToolbarVisible(visible) {
+    if (toolbarView) {
+        toolbarView.toolbar.style.display = visible ? '' : 'none';
+    }
+}
+
 /**
  * The object whose methods comprise the MarkupEditor API.
  */
@@ -24934,6 +24939,7 @@ const MU = {
     setHTML,
     setStyle,
     setTestHTML,
+    setToolbarVisible,
     setTopLevelAttributes,
     testBlockquoteEnter,
     testExtractContents,

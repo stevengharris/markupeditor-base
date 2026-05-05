@@ -51,6 +51,11 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *     "formatBar": 50,          // Format bar (b, i, u, etc) order if it is visible
  *     "search": 60,             // Search item (hide/show search bar) order if it is visible
  *   },
+ *   "menus": {
+ *     "styleName": true         // Whether to show the style name or just use a paragraph symbol
+ *     "tableHeader": true,      // Whether the "Header" item is visible in the "Table->Add" menu
+ *     "tableBorder": true,      // Whether the "Border" item is visible in the "Table" menu
+ *   },
  *   "insertBar": {
  *     "link": true,             // Whether the link menu item is visible
  *     "image": true,            // Whether the image menu item is visible
@@ -78,10 +83,6 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *   "styleBar": {
  *     "list": true,             // Whether bullet and numbered list items are visible
  *     "dent": true,             // Whether indent and outdent items are visible
- *   },
- *   "tableMenu": {
- *     "header": true,           // Whether the "Header" item is visible in the "Table->Add" menu
- *     "border": true,           // Whether the "Border" item is visible in the "Table" menu
  *   },
  *   "augmentation": {
  *     "prepend": null,          // Name of a registered array of cmdItems to prepend

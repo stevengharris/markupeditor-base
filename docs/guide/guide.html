@@ -358,6 +358,8 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <h4>Style Visibility and Names</h4>
 
+<p>Whether the style menu shows a paragraph symbol (¶) or shows the selected paragraph style is controlled using <code>toolbarConfig.menus.styleName</code>. The more compact paragraph symbol might work better on compact devices, but the default is <code>true</code>, to update the menu in the toolbar with the selected paragraph style name.</p>
+
 <p>The names in the <em>styleMenu</em> can be set as part of the ToolbarConfig. For example, to use “Normal” for the &lt;P&gt; element rather than “Body”, you would specify <code>toolbarConfig.styleMenu.p = “Normal”</code>. If you want to remove an item, set its value to <code>null</code>. For example, <code>toolbarConfig.style.pre = null</code> will remove the <em>Code</em> item from the <em>styleMenu</em> (because code blocks are <code>&lt;pre&gt;&lt;code&gt;</code> in the HTML).</p>
 
 <h4>Ordering</h4>

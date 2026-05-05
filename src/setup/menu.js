@@ -154,14 +154,14 @@ function tableMenuItems(config) {
   let icons = config.toolbar.icons
   let help = config.toolbar.help
   let items = []
-  let { header, border } = config.toolbar.tableMenu;
+  let { tableHeader, tableBorder } = config.toolbar.menus;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))
   let addItems = []
   addItems.push(tableEditItem(addRowCommand('BEFORE'), {label: 'Row above'}))
   addItems.push(tableEditItem(addRowCommand('AFTER'), {label: 'Row below'}))
   addItems.push(tableEditItem(addColCommand('BEFORE'), {label: 'Column before'}))
   addItems.push(tableEditItem(addColCommand('AFTER'), {label: 'Column after'}))
-  if (header) addItems.push(
+  if (tableHeader) addItems.push(
     tableEditItem(
       addHeaderCommand(), {
         label: 'Header',
@@ -183,7 +183,7 @@ function tableMenuItems(config) {
       label: 'Delete',
       enable: (state) => { return isTableSelected(state) }
     }))
-  if (border) {
+  if (tableBorder) {
     let borderItems = []
     borderItems.push(tableBorderItem(setBorderCommand('cell'), {label: 'All'}))
     borderItems.push(tableBorderItem(setBorderCommand('outer'), {label: 'Outer'}))
@@ -334,9 +334,10 @@ function formatItem(markType, markName, options) {
  */
 function styleMenuItems(config, schema) {
   let keymap = config.keymap
+  let toolbar = config.toolbar
   let help = config.toolbar.help
   let items = []
-  let { p, h1, h2, h3, h4, h5, h6, pre } = config.toolbar.styleMenu;
+  let { p, h1, h2, h3, h4, h5, h6, pre } = toolbar.styleMenu;
   if (p) items.push(new ParagraphStyleItem(schema.nodes.paragraph, 'P', { label: p, keymap: baseKeyString('p', keymap) }))
   if (h1) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H1', { label: h1, keymap: baseKeyString('h1', keymap), attrs: { level: 1 }}))
   if (h2) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H2', { label: h2, keymap: baseKeyString('h2', keymap), attrs: { level: 2 }}))
@@ -345,19 +346,18 @@ function styleMenuItems(config, schema) {
   if (h5) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H5', { label: h5, keymap: baseKeyString('h5', keymap), attrs: { level: 5 }}))
   if (h6) items.push(new ParagraphStyleItem(schema.nodes.heading, 'H6', { label: h6, keymap: baseKeyString('h6', keymap), attrs: { level: 6 }}))
   if (pre) items.push(new ParagraphStyleItem(schema.nodes.code_block, 'PRE', { label: pre, keymap: baseKeyString('pre', keymap) }))
-  if (config.behavior.showStyle) {
+  if (toolbar.menus.styleName) {
     let titleUpdate = (state) => {
       let styleElement = paragraphStyle(state).toLowerCase()
       // The paragraphStyle comes back with a trailing "+"" when across multiple styles
       let multiple = styleElement[styleElement.length - 1] == '+'
       let singleElement = multiple ? styleElement.slice(0, -1) : styleElement
-      let label = config.toolbar.styleMenu[singleElement]
+      let label = toolbar.styleMenu[singleElement]
       return label ? (multiple ? label + '+' : label) : styleElement
     }
     let allLabels = [p, h1, h2, h3, h4, h5, h6, pre].filter(Boolean).flatMap(l => [l, l + '+'])
     return [new Dropdown(items, { title: help.style, label: 'Style', titleUpdate: titleUpdate, labels: allLabels})]
   } else {
-    let icons = config.toolbar.icons
-    return [new Dropdown(items, { title: help.style, icon: icons.paragraphStyle })]
+    return [new Dropdown(items, { title: help.style, icon: toolbar.icons.paragraphStyle })]
   }
 }

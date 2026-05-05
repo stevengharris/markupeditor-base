@@ -36,7 +36,6 @@ import behaviorConfig from "../../config/behaviorconfig.json"
  *    "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
  *    "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
  *    "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
- *    "showStyle": true           // Whether to show the selected style in a labeled drop-down rather than a (smaller) icon
  * }
  * ```
  */
