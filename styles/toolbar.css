@@ -77,6 +77,10 @@
   }
 }
 
+.Markup-toolbar-hidden {
+  display: none;
+}
+
 .Markup-menuitem {
   display: inline-block;
   flex-shrink: 0;  /* Otherwise, the drop-downs with icons shrink */

@@ -180,11 +180,9 @@ export function markupSetup(config, schema) {
     gapCursor(),
   ]
 
-  // Only show the toolbar if the config indicates it is visible
-  if (config.toolbar.visibility.toolbar) {
-    let content = buildMenuItems(config, schema);
-    plugins.push(toolbar(content));
-  }
+  // Always build the toolbar, but only show it if the config indicates it is visible
+  let content = buildMenuItems(config, schema)
+  plugins.push(toolbar(content, config.toolbar.visibility.toolbar))
 
   plugins.push(history())
 

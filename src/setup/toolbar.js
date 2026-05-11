@@ -10,9 +10,9 @@ import {renderGrouped, renderGroupedFit, separator} from "./menuitems"
  */
 export let toolbarView;
 
-export function toolbar(content) {
+export function toolbar(content, visible) {
   let view = function view(editorView) {
-    toolbarView = new ToolbarView(editorView, content)
+    toolbarView = new ToolbarView(editorView, content, visible)
     return toolbarView;
   }
   return new Plugin({view})
@@ -20,7 +20,7 @@ export function toolbar(content) {
 
 class ToolbarView {
 
-  constructor(editorView, content) {
+  constructor(editorView, content, visible) {
     this.prefix = prefix + "-toolbar";
     this.editorView = editorView;
     this.content = content;
@@ -28,11 +28,13 @@ class ToolbarView {
 
     // Embed the toolbar and editorView in a wrapper.
     this.wrapper = crel("div", {class: this.prefix + "-wrapper"})
-    this.toolbar = this.wrapper.appendChild(crel("div", {class: this.prefix, id: this.prefix}))
+
+    // Handle the case where the toolbar is hidden initially.
+    let toolbarClass = visible ? this.prefix : this.prefix + "-hidden"
+    this.toolbar = this.wrapper.appendChild(crel("div", {class: toolbarClass, id: this.prefix}))
     // Since the menu adjusts to fit using a `MoreItem` for contents that doesn't fit, 
     // we need to refresh how it is rendered when resizing takes place.
     window.addEventListener('resize', ()=>{ this.refresh() })
-    this.toolbar.className = this.prefix
     if (editorView.dom.parentNode)
       editorView.dom.parentNode.replaceChild(this.wrapper, editorView.dom)
     this.wrapper.appendChild(editorView.dom)

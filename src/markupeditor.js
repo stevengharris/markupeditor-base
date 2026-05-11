@@ -301,6 +301,11 @@ export class MarkupEditor {
     }
 }
 
+/**
+ * Set the visibility of the toolbarView using the display property.
+ * 
+ * @param {boolean} visible True if the toolbar should be visible, else false.
+ */
 function setToolbarVisible(visible) {
     if (toolbarView) {
         toolbarView.toolbar.style.display = visible ? '' : 'none';
