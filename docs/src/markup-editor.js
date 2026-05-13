@@ -19895,7 +19895,7 @@ class ToolbarConfig {
 }
 
 var undo = "Mod-z";
-var redo = "Shift-Mod-z";
+var redo = "Mod-Shift-z";
 var link = [
 	"Mod-K",
 	"Mod-k"
@@ -19916,12 +19916,12 @@ var number = [
 	"Ctrl-o"
 ];
 var indent = [
-	"Mod-]",
-	"Ctrl-q"
+	"Mod->",
+	"Mod-]"
 ];
 var outdent = [
-	"Mod-[",
-	"Shift-Ctrl-q"
+	"Mod-<",
+	"Mod-["
 ];
 var bold = [
 	"Mod-B",
@@ -23357,6 +23357,8 @@ class ToolbarView {
 
     // Embed the toolbar and editorView in a wrapper.
     this.wrapper = crelt("div", {class: this.prefix + "-wrapper"});
+
+    // Handle the case where the toolbar is hidden initially.
     let toolbarClass = visible ? this.prefix : this.prefix + "-hidden";
     this.toolbar = this.wrapper.appendChild(crelt("div", {class: toolbarClass, id: this.prefix}));
     // Since the menu adjusts to fit using a `MoreItem` for contents that doesn't fit, 
@@ -24874,6 +24876,11 @@ class MarkupEditor {
     }
 }
 
+/**
+ * Set the visibility of the toolbarView using the display property.
+ * 
+ * @param {boolean} visible True if the toolbar should be visible, else false.
+ */
 function setToolbarVisible(visible) {
     if (toolbarView) {
         toolbarView.toolbar.style.display = visible ? '' : 'none';
