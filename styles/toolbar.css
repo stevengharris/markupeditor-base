@@ -71,7 +71,7 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar {
-    color: var(--Markup-accent-color, rgb(250, 249, 246));
+    color: var(--Markup-accent-color, lightblue);
     background: var(--Markup-toolbar-bg, rgba(40, 40, 43, 0.9));
     border-bottom: 1px solid var(--Markup-border-color, gray);
   }
@@ -380,7 +380,7 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar-more {
-    color: var(--Markup-accent-color, rgb(250, 249, 246));
+    color: var(--Markup-accent-color, lightblue);
     background: var(--Markup-toolbar-bg, rgba(40, 40, 43, 0.9));
     border-bottom: 1px solid var(--Markup-border-color, gray);
   }
@@ -406,7 +406,7 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-searchbar {
-    color: var(--Markup-accent-color, rgb(250, 249, 246));
+    color: var(--Markup-accent-color, lightblue);
     background: var(--Markup-toolbar-bg, rgba(40, 40, 43, 0.9));
     border-bottom: 1px solid var(--Markup-border-color, gray);
   }
