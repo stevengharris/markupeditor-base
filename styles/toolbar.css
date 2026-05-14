@@ -56,24 +56,24 @@
   position: sticky;
   overflow: visible;
   width: 100%;
-  font-size: 24px;
+  font-size: var(--Markup-font-size, 24px);
   vertical-align: middle;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
   top: 0;
-  max-height: 38px;
+  max-height: calc(var(--Markup-button-size, 28px) + 10px);
   padding: 2px 8px;
-  color: blue;
-  background: rgba(250, 249, 246, 0.95);
-  border-bottom: 1px solid lightgray;
+  color: var(--Markup-accent-color, blue);
+  background: var(--Markup-toolbar-bg, rgba(250, 249, 246, 0.95));
+  border-bottom: 1px solid var(--Markup-border-color, lightgray);
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar {
-    color: rgb(250, 249, 246);
-    background: rgba(40, 40, 43, 0.9);
-    border-bottom: 1px solid gray;
+    color: var(--Markup-accent-color, rgb(250, 249, 246));
+    background: var(--Markup-toolbar-bg, rgba(40, 40, 43, 0.9));
+    border-bottom: 1px solid var(--Markup-border-color, gray);
   }
 }
 
@@ -86,36 +86,36 @@
   flex-shrink: 0;  /* Otherwise, the drop-downs with icons shrink */
   overflow-y: visible;
   vertical-align: middle;
-  min-width: 28px;
-  height: 28px;
+  min-width: var(--Markup-button-size, 28px);
+  height: var(--Markup-button-size, 28px);
   cursor: pointer;
   margin-right: 4px;
   border-radius: 4px;
-  color: blue;
-  border: 1px solid blue;
-  background: white;
-  fill: blue;
+  color: var(--Markup-accent-color, blue);
+  border: 1px solid var(--Markup-accent-color, blue);
+  background: var(--Markup-button-bg, white);
+  fill: var(--Markup-accent-color, blue);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menuitem {
-    color: lightblue;
-    border: 1px solid lightblue; 
+    color: var(--Markup-accent-color, lightblue);
+    border: 1px solid var(--Markup-accent-color, lightblue);
     /* border: 1px solid #4183c4; */
-    background: black;
-    fill: lightblue;
+    background: var(--Markup-button-bg, black);
+    fill: var(--Markup-accent-color, lightblue);
   }
 }
 
 .Markup-menuitem-active {
   fill: white;
   color: white;
-  background: blue;
+  background: var(--Markup-accent-color, blue);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menuitem-active {
       fill: black;
       color: black;
-      background: lightblue;
+      background: var(--Markup-accent-color, lightblue);
   }
 }
 
@@ -131,8 +131,8 @@
 
 .Markup-icon {
   display: inline-block;
-  width: 28px;
-  height: 28px;
+  width: var(--Markup-button-size, 28px);
+  height: var(--Markup-button-size, 28px);
   border: 0;
 }
 
@@ -149,13 +149,13 @@
 .Markup-menuseparator {
   display: inline-block;
   vertical-align: middle;
-  height: 28px;
-  border-right: 1px solid lightgray;
+  height: var(--Markup-button-size, 28px);
+  border-right: 1px solid var(--Markup-border-color, lightgray);
   margin-right: 4px;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menuseparator {
-    border-right: 1px solid gray;
+    border-right: 1px solid var(--Markup-border-color, gray);
   }
 }
 
@@ -247,11 +247,11 @@
   background: inherit;
   padding: 2px;
   background: inherit;
-  border: 1px solid gray;
+  border: 1px solid var(--Markup-border-color, gray);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-dropdown-menu, .Markup-menu-submenu {
-    border: 1px solid lightgray;
+    border: 1px solid var(--Markup-border-color, lightgray);
   }
 }
 
@@ -274,11 +274,11 @@
 }
 
 .Markup-menu-dropdown-item:hover, .Markup-menu-submenu-wrap:hover {
-  background: #f2f2f2;
+  background: var(--Markup-hover-bg, #f2f2f2);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-dropdown-item:hover, .Markup-menu-submenu-wrap:hover {
-    background: rgb(80, 80, 80);
+    background: var(--Markup-hover-bg, rgb(80, 80, 80));
   }
 }
 
@@ -327,12 +327,12 @@
   left: 100%;
   top: -5px;
   /* background cannot be inherited because of hover highlighting in dropdown */
-  background: white;
+  background: var(--Markup-button-bg, white);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-submenu {
     /* background cannot be inherited because of hover highlighting in dropdown */
-    background: black;
+    background: var(--Markup-button-bg, black);
   }
 }
 
@@ -349,12 +349,12 @@
 
 .Markup-selection {
   position: absolute;
-  border: 1px solid blue;
+  border: 1px solid var(--Markup-accent-color, blue);
   background: transparent;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-selection {
-    border: 1px solid lightblue;
+    border: 1px solid var(--Markup-accent-color, lightblue);
   }
 }
 
@@ -365,24 +365,24 @@
   position: sticky;
   overflow: visible;
   width: 100%;
-  font-size: 24px;
+  font-size: var(--Markup-font-size, 24px);
   vertical-align: middle;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
-  top: 35px;
-  max-height: 38px;
+  top: calc(var(--Markup-button-size, 28px) + 7px);
+  max-height: calc(var(--Markup-button-size, 28px) + 10px);
   padding: 2px 8px;
-  color: blue;
-  background: rgba(250, 249, 246, 0.95);
-  border-bottom: 1px solid lightgray;
+  color: var(--Markup-accent-color, blue);
+  background: var(--Markup-toolbar-bg, rgba(250, 249, 246, 0.95));
+  border-bottom: 1px solid var(--Markup-border-color, lightgray);
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-toolbar-more {
-    color: rgb(250, 249, 246);
-    background: rgba(40, 40, 43, 0.9);
-    border-bottom: 1px solid gray;
+    color: var(--Markup-accent-color, rgb(250, 249, 246));
+    background: var(--Markup-toolbar-bg, rgba(40, 40, 43, 0.9));
+    border-bottom: 1px solid var(--Markup-border-color, gray);
   }
 }
 
@@ -390,25 +390,25 @@
 
 .Markup-searchbar {
   display: inline-block;
-  font-size: 24px;
+  font-size: var(--Markup-font-size, 24px);
   vertical-align: middle;
   position: sticky;
-  top: 35px;
+  top: calc(var(--Markup-button-size, 28px) + 7px);
   width: 100%;
   line-height: 30px;
   height: 37px;
-  color: blue;
-  background: rgba(250, 249, 246, 0.95);
-  border-bottom: 1px solid lightgray;
+  color: var(--Markup-accent-color, blue);
+  background: var(--Markup-toolbar-bg, rgba(250, 249, 246, 0.95));
+  border-bottom: 1px solid var(--Markup-border-color, lightgray);
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   overflow: hidden;
 }
 @media (prefers-color-scheme: dark) {
   .Markup-searchbar {
-    color: rgb(250, 249, 246);
-    background: rgba(40, 40, 43, 0.9);
-    border-bottom: 1px solid gray;
+    color: var(--Markup-accent-color, rgb(250, 249, 246));
+    background: var(--Markup-toolbar-bg, rgba(40, 40, 43, 0.9));
+    border-bottom: 1px solid var(--Markup-border-color, gray);
   }
 }
 
@@ -609,12 +609,12 @@
   left: 100%;
   top: -5px;
   /* background cannot be inherited because of hover highlighting in dropdown */
-  background: white;
+  background: var(--Markup-button-bg, white);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-tablesizer {
     /* background cannot be inherited because of hover highlighting in dropdown */
-    background: black;
+    background: var(--Markup-button-bg, black);
   }
 }
 
@@ -627,18 +627,18 @@
   background: inherit;
   padding: 2px;
   background: inherit;
-  border: 1px solid gray;
+  border: 1px solid var(--Markup-border-color, gray);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-dropdown-menu, .Markup-menu-submenu {
-    border: 1px solid lightgray;
+    border: 1px solid var(--Markup-border-color, lightgray);
   }
 }
 
 .Markup-menu-tablesizer .Markup-menu-dropdown-item {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  border: 1px solid blue;
+  border: 1px solid var(--Markup-accent-color, blue);
   width: 18px;
   height: 18px;
   padding: 0;
@@ -646,7 +646,7 @@
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-tablesizer .Markup-menu-dropdown-item {
-    border: 1px solid lightblue;
+    border: 1px solid var(--Markup-accent-color, lightblue);
   }
 }
 
@@ -655,12 +655,12 @@
     padding-top: 3px;
     fill: black;
     color: black;
-    background: blue;
+    background: var(--Markup-accent-color, blue);
 }
 @media (prefers-color-scheme: dark) {
   .Markup-menu-tablesizer .Markup-menuitem-active {
       fill: black;
       color: black;
-      background: lightblue;
+      background: var(--Markup-accent-color, lightblue);
   }
 }

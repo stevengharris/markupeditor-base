@@ -200,6 +200,33 @@ class MarkupEditorElement extends HTMLElement {
     // Create an editor instance and hold onto it here
     this.editor = new MarkupEditor(this.editorContainer, config)
 
+    // Apply toolbar appearance CSS custom properties if an appearance section is present
+    const appearance = this.editor.config?.toolbar?.appearance
+    if (appearance) {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const colorPairs = {
+        accentColor: '--Markup-accent-color',
+        toolbarBg:   '--Markup-toolbar-bg',
+        buttonBg:    '--Markup-button-bg',
+        borderColor: '--Markup-border-color',
+        hoverBg:     '--Markup-hover-bg',
+      }
+      const singleValues = {
+        buttonSize: '--Markup-button-size',
+        fontSize:   '--Markup-font-size',
+      }
+      for (const [field, varName] of Object.entries(colorPairs)) {
+        if (appearance[field] != null) {
+          this.style.setProperty(varName, isDark ? appearance[field].dark : appearance[field].light)
+        }
+      }
+      for (const [field, varName] of Object.entries(singleValues)) {
+        if (appearance[field] != null) {
+          this.style.setProperty(varName, appearance[field])
+        }
+      }
+    }
+
     // Prepend and/or append any augmentations
     const prependItems = getAugmentation(config.prepend)?.menuItems
     if (prependItems) prependToolbar(prependItems)
