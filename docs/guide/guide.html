@@ -352,9 +352,13 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <p>You can control the visibility of each of the individual bars and menus by name; for example, <code>toolbarConfig.visibility.correctionBar = false</code> or <code>toolbarConfig.visibility.search = false.</code> Within the bars and menus, you can also control what is visible. For example, <code>toolbarConfig.insertBar.tableMenu = false</code> will remove the <em>tableMenu</em>. Within the <em>tableMenu</em>, you can control whether it includes a <em>Header</em> or <em>Border</em> item. The individual controls are itemized with comments in <code>src/config/toolbarconfig.js</code>. It’s also possible to turn off the overall toolbar using <code>toolbarConfig.visibility.toolbar = false</code>. This is useful when you define your own toolbar, something that is done in the <a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a>.</p>
 
-<h4>Size</h4>
+<h4>Size and Color</h4>
 
-<p>The toolbar attempts to conform to Apple’s Human Interface Guidelines in terms of size. It scales properly with zoom-in and zoom-out, but is not resizable by configuration. You could adjust or override the settings in s<code>tyles/toolbar.css</code> if needed. Note that the toolbar autosizes to fit within the containing element width using a <code>…</code> (aka “More” button) on the right when the total item width is too large to fit. Pressing the More button will expose the missing elements using a sub-toolbar. The toolbar responds to resizing events, so window resizing (or device rotation) will re-evaluate whether the More button is needed to accommodate the contents.</p>
+<p>The toolbar attempts to conform to Apple’s Human Interface Guidelines in terms of size. It scales properly with zoom-in and zoom-out. You can adjust the toolbar size in <code>src/config/toolbarconfig.js</code> in the <code>appearance</code> section. Note that the toolbar autosizes to fit within the containing element width using a <code>…</code> (aka “More” button) on the right when the total item width is too large to fit. Pressing the More button will expose the missing elements using a sub-toolbar. The toolbar responds to resizing events, so window resizing (or device rotation) will re-evaluate whether the More button is needed to accommodate the contents.</p>
+
+<p>The default colors are also specified in the <code>appearance</code> section of <code>src/config/toolbarconfig.js.</code></p>
+
+<p>The color and size values are accessed by name in <code>styles/toolbar.css</code> (which is embedded with the web component at build time). For example, <code>buttonFontSize</code> shows up as <code>Markup-button-font-size</code> in <code>styles/toolbar.css</code>.</p>
 
 <h4>Style Visibility and Names</h4>
 
