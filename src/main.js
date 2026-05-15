@@ -203,7 +203,8 @@ class MarkupEditorElement extends HTMLElement {
     // Apply toolbar appearance CSS custom properties if an appearance section is present
     const appearance = this.editor.config?.toolbar?.appearance
     if (appearance) {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const canMatchMedia = typeof window.matchMedia === 'function'
+      const isDark = canMatchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
       const colorPairs = {
         accentColor: '--Markup-accent-color',
         toolbarBg:   '--Markup-toolbar-bg',
