@@ -213,7 +213,7 @@ class MarkupEditorElement extends HTMLElement {
       }
       const singleValues = {
         buttonSize: '--Markup-button-size',
-        fontSize:   '--Markup-font-size',
+        buttonFontSize: '--Markup-button-font-size',
       }
       for (const [field, varName] of Object.entries(colorPairs)) {
         if (appearance[field] != null) {
