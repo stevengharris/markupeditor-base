@@ -25206,7 +25206,6 @@ class MarkupEditorElement extends HTMLElement {
     // Apply toolbar appearance CSS custom properties if an appearance section is present
     const appearance = this.editor.config?.toolbar?.appearance;
     if (appearance) {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const colorPairs = {
         accentColor: '--Markup-accent-color',
         toolbarBg:   '--Markup-toolbar-bg',
@@ -25218,15 +25217,24 @@ class MarkupEditorElement extends HTMLElement {
         buttonSize: '--Markup-button-size',
         buttonFontSize: '--Markup-button-font-size',
       };
-      for (const [field, varName] of Object.entries(colorPairs)) {
-        if (appearance[field] != null) {
-          this.style.setProperty(varName, isDark ? appearance[field].dark : appearance[field].light);
+      const applyColors = (isDark) => {
+        for (const [field, varName] of Object.entries(colorPairs)) {
+          if (appearance[field] != null) {
+            this.style.setProperty(varName, isDark ? appearance[field].dark : appearance[field].light);
+          }
         }
-      }
+      };
       for (const [field, varName] of Object.entries(singleValues)) {
         if (appearance[field] != null) {
           this.style.setProperty(varName, appearance[field]);
         }
+      }
+      if (typeof window.matchMedia === 'function') {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        applyColors(mq.matches);
+        mq.addEventListener('change', (e) => applyColors(e.matches));
+      } else {
+        applyColors(false);
       }
     }
 
