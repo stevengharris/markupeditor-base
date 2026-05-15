@@ -141,6 +141,8 @@
 }
 
 .Markup-icon svg {
+  width: var(--Markup-button-size, 28px);
+  height: var(--Markup-button-size, 28px);
   padding: 2px;
   border: 0;
   fill: inherit;
