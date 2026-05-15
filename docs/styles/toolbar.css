@@ -141,6 +141,8 @@
 }
 
 .Markup-icon svg {
+  width: var(--Markup-font-size, 24px);
+  height: var(--Markup-font-size, 24px);
   padding: 2px;
   border: 0;
   fill: inherit;
