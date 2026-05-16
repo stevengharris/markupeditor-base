@@ -323,12 +323,26 @@ export class DropdownSubmenu {
     let items = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
     let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
-    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, crel("div", { class: this.prefix + "-submenu" }, items.dom));
+    let submenu = crel("div", { class: this.prefix + "-submenu" }, items.dom);
+    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, submenu);
+    function repositionIfNeeded() {
+      requestAnimationFrame(() => {
+        const rect = submenu.getBoundingClientRect();
+        if (rect.bottom > win.innerHeight) {
+          const wrapRect = wrap.getBoundingClientRect();
+          submenu.style.top = (win.innerHeight - 4 - rect.height - wrapRect.top) + "px";
+        } else {
+          submenu.style.top = "";
+        }
+      });
+    }
     let listeningOnClose = null;
+    wrap.addEventListener("mouseenter", repositionIfNeeded);
     label.addEventListener("mousedown", e => {
       e.preventDefault();
       markMenuEvent(e);
       setClass(wrap, this.prefix + "-submenu-wrap-active", false);
+      repositionIfNeeded();
       if (!listeningOnClose)
         win.addEventListener("mousedown", listeningOnClose = () => {
           if (!isMenuEvent(wrap)) {
