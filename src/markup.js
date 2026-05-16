@@ -368,6 +368,13 @@ export function pasteHTML(html, event) {
  * @param   {string}                html    The HTML to be pasted
  * @param   {ClipboardEvent | bull} event   A mocked ClipboardEvent for testing
  */
+export function pasteCode(text) {
+    const view = activeView()
+    if (!view) return
+    view.dispatch(view.state.tr.insertText(text))
+    stateChanged(view)
+}
+
 export function pasteText(html, event) {
     const node = _nodeFromHTML(html);
     const htmlFragment = fragmentFromNode(node);
