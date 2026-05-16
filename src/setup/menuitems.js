@@ -282,6 +282,14 @@ export class Dropdown {
       return true;
     }
     dom.appendChild(menuDOM);
+    let win = dom.ownerDocument.defaultView || window;
+    requestAnimationFrame(() => {
+      const rect = menuDOM.getBoundingClientRect();
+      if (rect.bottom > win.innerHeight) {
+        menuDOM.style.marginTop = "0";
+        menuDOM.style.top = (-rect.height - 2) + "px";
+      }
+    });
     return { close, node: menuDOM };
   }
 }
