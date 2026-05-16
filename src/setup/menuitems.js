@@ -501,7 +501,10 @@ class DialogItem {
         let style = this.dialog.style;
         let toolbarHeight = getToolbar(view).getBoundingClientRect().height;
         let minTop = toolbarHeight + scrollY + 4;
-        let maxTop = scrollY + innerHeight - originY - dialogHeight - 4;
+        // Use the tighter of the two boundaries: the wrapper's own visible height (which clips
+        // absolutely-positioned children via overflow-y: scroll) and the window viewport bottom.
+        let availableHeight = Math.min(wrapper.clientHeight, innerHeight - originY);
+        let maxTop = scrollY + availableHeight - dialogHeight - 4;
         let minLeft = scrollX + 4;
         let maxLeft = innerWidth - dialogWidth - 4;
         let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
