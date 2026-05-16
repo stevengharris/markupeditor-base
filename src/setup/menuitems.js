@@ -335,12 +335,11 @@ export class DropdownSubmenu {
     let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, submenu);
     function repositionIfNeeded() {
       requestAnimationFrame(() => {
+        submenu.style.top = "";
         const rect = submenu.getBoundingClientRect();
         if (rect.bottom > win.innerHeight) {
           const wrapRect = wrap.getBoundingClientRect();
           submenu.style.top = (win.innerHeight - 4 - rect.height - wrapRect.top) + "px";
-        } else {
-          submenu.style.top = "";
         }
       });
     }
