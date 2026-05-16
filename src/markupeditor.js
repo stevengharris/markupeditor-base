@@ -209,7 +209,17 @@ export class MarkupEditor {
                 'click': (view) => { setTimeout(() => { clicked(view, target) }, 0) },
                 'delete': () => { setTimeout(() => { callbackInput(target) }, 0) },
             },
-            handlePaste() {
+            handlePaste(view, event) {
+                const { $from } = view.state.selection
+                const inCodeBlock = $from.parent.type === view.state.schema.nodes.code_block
+                if (inCodeBlock && event?.clipboardData) {
+                    const text = event.clipboardData.getData('text/plain')
+                    if (text) {
+                        view.dispatch(view.state.tr.insertText(text))
+                        setTimeout(() => { callbackInput(target) }, 0)
+                        return true
+                    }
+                }
                 setTimeout(() => { callbackInput(target) }, 0)
                 return false
             },
