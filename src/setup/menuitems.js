@@ -493,13 +493,15 @@ class DialogItem {
         // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
         // it with the best chance of showing the entire dialog.
         let wrapper = view.dom.parentElement;
-        let originX = wrapper.getBoundingClientRect().left;
+        let wrapperRect = wrapper.getBoundingClientRect();
+        let originX = wrapperRect.left;
+        let originY = wrapperRect.top;
         let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
         let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
         let style = this.dialog.style;
         let toolbarHeight = getToolbar(view).getBoundingClientRect().height;
         let minTop = toolbarHeight + scrollY + 4;
-        let maxTop = scrollY + innerHeight - dialogHeight - 4;
+        let maxTop = scrollY + innerHeight - originY - dialogHeight - 4;
         let minLeft = scrollX + 4;
         let maxLeft = innerWidth - dialogWidth - 4;
         let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
@@ -514,7 +516,7 @@ class DialogItem {
         } else if (fitsTop) {     // Put dialog above selection
             style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
             style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px';
-        } else {                                          // Put dialog below selection, even if it's off the screen somewhat
+        } else {                                          // Put dialog below selection
             style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
             style.top = Math.min((selrect.bottom + 4), maxTop) + 'px';
         }
