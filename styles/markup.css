@@ -134,6 +134,10 @@ li p {
     margin: 0px 0;
 }
 
+li > ul, li > ol {
+    margin-bottom: 0;
+}
+
 blockquote {
     margin-right: 0px; /* Because nested blockquotes just keep getting narrower */
 }
