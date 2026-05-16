@@ -138,6 +138,10 @@ li > ul, li > ol {
     margin-bottom: 0;
 }
 
+li > h1, li > h2, li > h3, li > h4, li > h5, li > h6 {
+    margin-bottom: 0;
+}
+
 blockquote {
     margin-right: 0px; /* Because nested blockquotes just keep getting narrower */
 }
