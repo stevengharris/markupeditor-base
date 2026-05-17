@@ -282,6 +282,14 @@ export class Dropdown {
       return true;
     }
     dom.appendChild(menuDOM);
+    let win = dom.ownerDocument.defaultView || window;
+    requestAnimationFrame(() => {
+      const rect = menuDOM.getBoundingClientRect();
+      if (rect.bottom > win.innerHeight) {
+        menuDOM.style.marginTop = "0";
+        menuDOM.style.top = (-rect.height - 2) + "px";
+      }
+    });
     return { close, node: menuDOM };
   }
 }
@@ -323,12 +331,25 @@ export class DropdownSubmenu {
     let items = renderDropdownItems(this.content, view);
     let win = view.dom.ownerDocument.defaultView || window;
     let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
-    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, crel("div", { class: this.prefix + "-submenu" }, items.dom));
+    let submenu = crel("div", { class: this.prefix + "-submenu" }, items.dom);
+    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, submenu);
+    function repositionIfNeeded() {
+      requestAnimationFrame(() => {
+        submenu.style.top = "";
+        const rect = submenu.getBoundingClientRect();
+        if (rect.bottom > win.innerHeight) {
+          const wrapRect = wrap.getBoundingClientRect();
+          submenu.style.top = (win.innerHeight - 4 - rect.height - wrapRect.top) + "px";
+        }
+      });
+    }
     let listeningOnClose = null;
+    wrap.addEventListener("mouseenter", repositionIfNeeded);
     label.addEventListener("mousedown", e => {
       e.preventDefault();
       markMenuEvent(e);
       setClass(wrap, this.prefix + "-submenu-wrap-active", false);
+      repositionIfNeeded();
       if (!listeningOnClose)
         win.addEventListener("mousedown", listeningOnClose = () => {
           if (!isMenuEvent(wrap)) {
@@ -472,13 +493,18 @@ class DialogItem {
         // Generally speaking, the selection itself is on the screen, so we want the dialog to be adjacent to 
         // it with the best chance of showing the entire dialog.
         let wrapper = view.dom.parentElement;
-        let originX = wrapper.getBoundingClientRect().left;
+        let wrapperRect = wrapper.getBoundingClientRect();
+        let originX = wrapperRect.left;
+        let originY = wrapperRect.top;
         let scrollY = wrapper.scrollTop;   // The editor scrolls within its wrapper
         let scrollX = window.scrollX;      // The editor doesn't scroll horizontally
         let style = this.dialog.style;
         let toolbarHeight = getToolbar(view).getBoundingClientRect().height;
         let minTop = toolbarHeight + scrollY + 4;
-        let maxTop = scrollY + innerHeight - dialogHeight - 4;
+        // Use the tighter of the two boundaries: the wrapper's own visible height (which clips
+        // absolutely-positioned children via overflow-y: scroll) and the window viewport bottom.
+        let availableHeight = Math.min(wrapper.clientHeight, innerHeight - originY);
+        let maxTop = scrollY + availableHeight - dialogHeight - 4;
         let minLeft = scrollX + 4;
         let maxLeft = innerWidth - dialogWidth - 4;
         let fitsRight = window.innerWidth - selrect.right - scrollX > dialogWidth + 4;
@@ -493,7 +519,7 @@ class DialogItem {
         } else if (fitsTop) {     // Put dialog above selection
             style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
             style.top = Math.min(Math.max((selrect.top - dialogHeight - 4), minTop), maxTop) + 'px';
-        } else {                                          // Put dialog below selection, even if it's off the screen somewhat
+        } else {                                          // Put dialog below selection
             style.left = Math.min(Math.max((selrect.left + (selrect.width / 2) - (dialogWidth / 2)), minLeft), maxLeft) + 'px';
             style.top = Math.min((selrect.bottom + 4), maxTop) + 'px';
         }

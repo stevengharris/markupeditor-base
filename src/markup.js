@@ -349,13 +349,26 @@ export function matchIndex() {
  * Paste html at the selection, replacing the selection as-needed.
  * 
  * @param   {string}                html    The HTML to be pasted
- * @param   {ClipboardEvent | bull} event   A mocked ClipboardEvent for testing
+ * @param   {ClipboardEvent | null} event   A mocked ClipboardEvent for testing
  */
 export function pasteHTML(html, event) {
     const view = activeView()
     view.pasteHTML(html, event);
     stateChanged(view);
 };
+
+/**
+ * Paste the `text` into a code block. Caller determines whether to use this method
+ * based on the selection state.
+ * 
+ * @param {string}                text    The text to be pasted in a preformatted code block
+ */
+export function pasteCode(text) {
+    const view = activeView()
+    if (!view) return
+    view.dispatch(view.state.tr.insertText(text))
+    stateChanged(view)
+}
 
 /**
  * Do a custom paste operation of "text only", which we will extract from the html
@@ -366,7 +379,7 @@ export function pasteHTML(html, event) {
  * unformatted text.
  *  
  * @param   {string}                html    The HTML to be pasted
- * @param   {ClipboardEvent | bull} event   A mocked ClipboardEvent for testing
+ * @param   {ClipboardEvent | null} event   A mocked ClipboardEvent for testing
  */
 export function pasteText(html, event) {
     const node = _nodeFromHTML(html);
