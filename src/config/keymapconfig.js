@@ -38,7 +38,7 @@ import keymapConfig from "../../config/keymapconfig.json"
  *    "undo": "Mod-z",
  *    "redo": "Shift-Mod-z",
  *    // Insert (no hotkeys for image or table)
- *    "link": ["Mod-K", "Mod-k"],
+ *    "link": "Mod-k",
  *    // Stylemenu
  *    "p": "Ctrl-Shift-0",
  *    "h1": "Ctrl-Shift-1",
@@ -48,20 +48,20 @@ import keymapConfig from "../../config/keymapconfig.json"
  *    "h5": "Ctrl-Shift-5",
  *    "h6": "Ctrl-Shift-6",
  *    // Stylebar
- *    "bullet": ["Ctrl-U", "Ctrl-u"],
- *    "number": ["Ctrl-O", "Ctrl-o"],
+ *    "bullet": Ctrl-u",
+ *    "number": "Ctrl-o",
  *    "indent": ["Mod-]", "Ctrl-q"],
  *    "outdent": ["Mod-[", "Shift-Ctrl-q"],
  *    // Format
- *    "bold": ["Mod-B", "Mod-b"],
- *    "italic": ["Mod-I", "Mod-i"],
- *    "underline": ["Mod-U", "Mod-u"],
- *    "strikethrough": ["Ctrl-S", "Ctrl-s"],
+ *    "bold": "Mod-b",
+ *    "italic": "Mod-i",
+ *    "underline": "Mod-u",
+ *    "strikethrough": "Ctrl-s",
  *    "code": "Mod-`",
  *    "subscript": "Ctrl-Mod--",
  *    "superscript": "Ctrl-Mod-+",
  *    // Search
- *    "search": ["Ctrl-F", "Ctrl-f"],
+ *    "search": "Ctrl-f"
  * }
  * ```
  */

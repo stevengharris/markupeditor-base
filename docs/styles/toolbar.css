@@ -328,6 +328,8 @@
   min-width: 4em;
   left: 100%;
   top: -5px;
+  max-height: 80vh;
+  overflow-y: auto;
   /* background cannot be inherited because of hover highlighting in dropdown */
   background: var(--Markup-button-bg, white);
 }
