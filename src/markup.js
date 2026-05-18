@@ -2154,10 +2154,11 @@ export function paragraphStyle(state) {
 
 /**
  * Given a ProseMirror Node, return the HTML tag it corresponds to in the MarkupEditor.
+ * Default is "P" if node.type.name is not recognized (e.g., for HR).
  * 
  * @ignore
  * @param {Node} node The node we want the paragraph style for
- * @returns { "P" | "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | "PRE" | null }
+ * @returns { "P" | "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | "PRE" }
  */
 function _paragraphStyleFor(node) {
     var style;
@@ -2171,6 +2172,8 @@ function _paragraphStyleFor(node) {
         case 'code_block':
             style = "PRE";
             break;
+        default:
+            style = "P"
     };
     return style;
 };
@@ -2786,6 +2789,32 @@ export function selectFullLink(view) {
 }
 
 /********************************************************************************
+ * Horizontal rule
+ */
+//MARK: Horizontal rile
+
+/**
+ * Insert the horizontal rule at the selection.
+ */
+export function insertHRule() {
+    const view = activeView()
+    let command = insertHRuleCommand()
+    return command(view.state, view.dispatch, view)
+};
+
+export function insertHRuleCommand() {
+    const commandAdapter = (state, dispatch, view) => {
+        const hRuleNode = view.state.schema.nodes.horizontal_rule.create()
+        const transaction = view.state.tr.replaceSelectionWith(hRuleNode, true)
+        view.dispatch(transaction);
+        stateChanged(view);
+        return true;
+    }
+
+    return commandAdapter
+}
+
+/********************************************************************************
  * Images
  */
 //MARK: Images
@@ -3220,6 +3249,18 @@ function _mergeHeaders(state, dispatch) {
         mergeCells(newState, dispatch)
     };
 };
+
+export function isHRuleSelected(state) {
+    let hRuleSelected = false
+    state.doc.nodesBetween(state.selection.from, state.selection.to, (node) => {
+        if (node.type === state.schema.nodes.horizontal_rule) {
+            hRuleSelected = true;
+            return false;
+        };
+        return false;
+    });
+    return hRuleSelected
+}
 
 export function isTableSelected(state) {
     let tableSelected = false;

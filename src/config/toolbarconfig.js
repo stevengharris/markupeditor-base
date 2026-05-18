@@ -41,7 +41,7 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *     "styleMenu": true,        // Whether the style menu (p, h1-h6, code) is visible
  *     "styleBar": true,         // Whether the style bar (bullet/numbered lists) is visible
  *     "formatBar": true,        // Whether the format bar (b, i, u, etc) is visible
- *     "search": true,           // Whether the search item (hide/show search bar) is visible
+ *     "search": true            // Whether the search item (hide/show search bar) is visible
  *   },
  *   "ordering": {               // Control the ordering of toolbars, etc, ascending left-to-right
  *     "correctionBar": 10,      // Correction bar order if it is visible
@@ -49,17 +49,18 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *     "styleMenu": 30,          // Style menu (p, h1-h6, code) order if it is visible
  *     "styleBar": 40,           // Style bar (bullet/numbered lists) order if it is visible
  *     "formatBar": 50,          // Format bar (b, i, u, etc) order if it is visible
- *     "search": 60,             // Search item (hide/show search bar) order if it is visible
+ *     "search": 60              // Search item (hide/show search bar) order if it is visible
  *   },
  *   "menus": {
  *     "styleName": true         // Whether to show the style name or just use a paragraph symbol
  *     "tableHeader": true,      // Whether the "Header" item is visible in the "Table->Add" menu
- *     "tableBorder": true,      // Whether the "Border" item is visible in the "Table" menu
+ *     "tableBorder": true       // Whether the "Border" item is visible in the "Table" menu
  *   },
  *   "insertBar": {
  *     "link": true,             // Whether the link menu item is visible
  *     "image": true,            // Whether the image menu item is visible
  *     "tableMenu": true,        // Whether the table menu is visible
+ *     "hRule": true             // Whether the horizontal rule menu item is visible
  *   },
  *   "formatBar": {
  *     "bold": true,             // Whether the bold menu item is visible
@@ -68,7 +69,7 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *     "code": true,             // Whether the code menu item is visible
  *     "strikethrough": true,    // Whether the strikethrough menu item is visible
  *     "subscript": true,        // Whether the subscript menu item is visible
- *     "superscript": true,      // Whether the superscript menu item is visible
+ *     "superscript": true       // Whether the superscript menu item is visible
  *   },
  *   "styleMenu": {
  *     "p": "Body",              // The label in the menu for "P" style
@@ -78,11 +79,11 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *     "h4": "H4",               // The label in the menu for "H4" style
  *     "h5": "H5",               // The label in the menu for "H5" style
  *     "h6": "H6",               // The label in the menu for "H6" style
- *     "pre": "Code",            // The label in the menu for "PRE" aka code_block style
+ *     "pre": "Code"             // The label in the menu for "PRE" aka code_block style
  *   },
  *   "styleBar": {
  *     "list": true,             // Whether bullet and numbered list items are visible
- *     "dent": true,             // Whether indent and outdent items are visible
+ *     "dent": true              // Whether indent and outdent items are visible
  *   },
  *   "augmentation": {
  *     "prepend": null,          // Name of a registered array of cmdItems to prepend
@@ -141,7 +142,9 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *     // format_paragraph
  *     "paragraphStyle": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\" fill=\"#1f1f1f\"><path d=\"M360-160v-240q-83 0-141.5-58.5T160-600q0-83 58.5-141.5T360-800h360v80h-80v560h-80v-560H440v560h-80Z\"/></svg>",
  *     // more_horiz
- *     "more": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\" fill=\"#1f1f1f\"><path d=\"M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z\"/></svg>"
+ *     "more": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\" fill=\"#1f1f1f\"><path d=\"M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z\"/></svg>",
+ *     // horizontal_rule
+ *     "hRule": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\"> <path d=\"M160-440v-80h640v80H160Z\" fill=\"currentColor\"></svg>"
  *   }
  * }
  * ```

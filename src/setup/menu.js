@@ -45,7 +45,9 @@ import {
   getImageAttributes, 
   insertImageCommand, 
   modifyImageCommand,
-  paragraphStyle
+  paragraphStyle,
+  isHRuleSelected,
+  insertHRuleCommand
 } from "../markup"
 import { 
   MenuItem,
@@ -138,7 +140,7 @@ function redoItem(options) {
  */
 function insertBarItems(config) {
   let items = [];
-  let { link, image, tableMenu } = config.toolbar.insertBar;
+  let { link, image, tableMenu, hRule } = config.toolbar.insertBar;
   if (link) {
     items.push(new LinkItem(config))
   }
@@ -147,7 +149,20 @@ function insertBarItems(config) {
     items.push(new ImageItem(config, imageCommands))
   }
   if (tableMenu) items.push(tableMenuItems(config))
+  if (hRule) items.push(hRuleItem(config))
   return items;
+}
+
+function hRuleItem(config) {
+  let icon = config.toolbar.icons.hRule
+  let title = config.toolbar.help.hRule + keyString('hRule', config.keymap)
+  let options = {
+    icon: icon,
+    title: title,
+    active: (state) => { return isHRuleSelected(state) },
+    enable: () => { return true }  // TODO: should be conditional?
+  }
+  return cmdItem(insertHRuleCommand(), options)
 }
 
 function tableMenuItems(config) {

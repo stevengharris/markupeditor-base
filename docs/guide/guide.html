@@ -350,7 +350,9 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <h4>Visibility</h4>
 
-<p>You can control the visibility of each of the individual bars and menus by name; for example, <code>toolbarConfig.visibility.correctionBar = false</code> or <code>toolbarConfig.visibility.search = false.</code> Within the bars and menus, you can also control what is visible. For example, <code>toolbarConfig.insertBar.tableMenu = false</code> will remove the <em>tableMenu</em>. Within the <em>tableMenu</em>, you can control whether it includes a <em>Header</em> or <em>Border</em> item. The individual controls are itemized with comments in <code>src/config/toolbarconfig.js</code>. It’s also possible to turn off the overall toolbar using <code>toolbarConfig.visibility.toolbar = false</code>. This is useful when you define your own toolbar, something that is done in the <a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a>.</p>
+<p>You can control the visibility of each of the individual bars and menus by name; for example, <code>toolbarConfig.visibility.correctionBar = false</code> or <code>toolbarConfig.visibility.search = false.</code> Within the bars and menus, you can also control what is visible. For example, <code>toolbarConfig.insertBar.tableMenu = false</code> will remove the <em>tableMenu</em>. Within the <em>tableMenu</em>, you can control whether it includes a <em>Header</em> or <em>Border</em> item. You can also include a <em>horizontal rule item</em> in the <code>insertBar</code> by setting <code>toolbarConfig.insertBar.hRule = true</code>. The default is to <em>not</em> show the horizontal rule item in the <code>insertBar</code>.</p>
+
+<p>The individual controls are itemized with comments in <code>src/config/toolbarconfig.js</code>. It’s also possible to turn off the overall toolbar using <code>toolbarConfig.visibility.toolbar = false</code>. This is useful when you define your own toolbar, something that is done in the <a href="https://github.com/stevengharris/MarkupEditor">Swift MarkupEditor</a>.</p>
 
 <h4>Size and Color</h4>
 
