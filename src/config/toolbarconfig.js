@@ -143,8 +143,8 @@ import toolbarConfig from "../../config/toolbarconfig.json"
  *     "paragraphStyle": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\" fill=\"#1f1f1f\"><path d=\"M360-160v-240q-83 0-141.5-58.5T160-600q0-83 58.5-141.5T360-800h360v80h-80v560h-80v-560H440v560h-80Z\"/></svg>",
  *     // more_horiz
  *     "more": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\" fill=\"#1f1f1f\"><path d=\"M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z\"/></svg>",
- *     // adapted from horizontal_rule
- *     "hRule": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\"> <path d=\"M160-440v-80h640v80H160Z\" fill=\"currentColor\"/> <path fill-rule=\"evenodd\" d=\"M935-760 A175,175,0,0,1,760-585 A175,175,0,0,1,585-760 A175,175,0,0,1,760-935 A175,175,0,0,1,935-760 Z M895-760 A135,135,0,0,1,760-625 A135,135,0,0,1,625-760 A135,135,0,0,1,760-895 A135,135,0,0,1,895-760 Z\" fill=\"currentColor\"/> <path d=\"M660-780H860V-740H660ZM740-860H780V-660H740Z\" fill=\"currentColor\"/></svg>"
+ *     // custom, since horizontal_rule was inadequate
+ *     "hRule": "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\" width=\"24px\"> <path fill-rule=\"evenodd\" d=\"M160-80q-33 0-56.5-23.5T80-160v-640q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v640q0 33-23.5 56.5T800-80H160ZM160-800H800V-160H160Z\" fill=\"currentColor\"/> <path d=\"M240-340H720V-260H240Z\" fill=\"currentColor\"/> <path d=\"M340-600H620V-520H340ZM440-700H520V-420H440Z\" fill=\"currentColor\"/></svg>"
  *   }
  * }
  * ```
