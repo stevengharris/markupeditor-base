@@ -16,6 +16,7 @@ class Registry {
         this._configs = new Map()
         this._augmentations = new Map()
         this._handlers = new Map()
+        this._plugins = new Map()
         this._activeMuId = null
     }
 
@@ -221,6 +222,64 @@ class Registry {
     setSelectedID(string) {
         if (this.activeEditor()) this.activeEditor().selectedID = string
     }
+
+    /**
+     * Add `plugin` to the registry, keyed by `name`.
+     *
+     * @param {object}  plugin  Plugin object with { id, name, extension, export, import }.
+     * @param {string}  name    The key used to retrieve and invoke the plugin.
+     */
+    registerPlugin(plugin, name) {
+        this._plugins.set(name ?? plugin.name, plugin)
+    }
+
+    /**
+     * Remove the plugin with `name` from the registry.
+     *
+     * @param {string}  name    The key used to identify the plugin.
+     */
+    unregisterPlugin(name) {
+        this._plugins.delete(name)
+    }
+
+    /**
+     * Return the plugin object with `name`, or undefined if not found.
+     *
+     * @param {string}  name    The key used to identify the plugin.
+     * @returns {object | undefined}
+     */
+    getPlugin(name) {
+        return this._plugins.get(name)
+    }
+
+    /**
+     * Return the public manifest for all registered plugins.
+     * Each entry contains only { id, name, extension } — function references are excluded.
+     *
+     * @returns {{ id: string, name: string, extension: string }[]}
+     */
+    getPluginManifest() {
+        const manifest = []
+        for (const plugin of this._plugins.values()) {
+            manifest.push({ id: plugin.id, name: plugin.name, extension: plugin.extension })
+        }
+        return manifest
+    }
+
+    /**
+     * Invoke `action` on the named plugin, passing `...args`.
+     * Returns null if the plugin is not found or does not define the action.
+     *
+     * @param {string}  name    The key used to identify the plugin.
+     * @param {string}  action  The action to invoke (e.g. 'export', 'import').
+     * @param {...*}    args    Arguments forwarded to the plugin action.
+     * @returns {*|null}
+     */
+    invokePlugin(name, action, ...args) {
+        const plugin = this._plugins.get(name)
+        if (!plugin || typeof plugin[action] !== 'function') return null
+        return plugin[action](...args)
+    }
 }
 
 /** 
@@ -318,3 +377,8 @@ export const activeMessageHandler = _registry.activeMessageHandler.bind(_registr
 export const activeSearcher = _registry.activeSearcher.bind(_registry)
 export const selectedID = _registry.selectedID.bind(_registry)
 export const setSelectedID = _registry.setSelectedID.bind(_registry)
+export const registerPlugin = _registry.registerPlugin.bind(_registry)
+export const unregisterPlugin = _registry.unregisterPlugin.bind(_registry)
+export const getPlugin = _registry.getPlugin.bind(_registry)
+export const getPluginManifest = _registry.getPluginManifest.bind(_registry)
+export const invokePlugin = _registry.invokePlugin.bind(_registry)

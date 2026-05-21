@@ -103,6 +103,9 @@ import {
     registerMessageHandler,
     setActiveView,
     unregisterEditor,
+    registerPlugin,
+    getPluginManifest,
+    invokePlugin,
 } from "./registry.js"
 import {
     cmdItem,
@@ -415,4 +418,7 @@ export const MU = {
     registerConfig,
     registerDelegate,
     registerMessageHandler,
+    registerPlugin,
+    getPluginManifest,
+    invokePlugin,
 }

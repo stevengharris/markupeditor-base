@@ -10,34 +10,40 @@ import { MU } from "./markupeditor.js"
 export { MU }
 
 /**
- * A web component and API for WYSIWYG HTML editing. The element is available as `<markup-editor>`. The API is available using the element property `MU`.
- * 
- * @element markup-editor
- * 
- * @attr {string} placeholder - HTML that should be displayed when the editor is empty.
- * 
- * @attr {string} filename - An HTML file whose contents should be loaded for the initial contents of the editor. If you also supply HTML within the <markup-editor> itself (e.g., <markup-editor><p>Hello, world</p></markupeditor>), the content of filename will take precedence.
- * 
- * @attr {string} base - The relative path for image src attributes in the editor. By default, if `filename` is specified with a path, `base` will be set to the directory containing the file. For example, if filename is “demo/guide/guide.html”, `base` will be set to “demo/guide/” so that an image with `src=“myImage.png”` will load. If you want this image to load from the “resources” directory below "demo/guide", then set base to “demo/guide/resources/” (with a trailing slash).
- * 
- * @attr {string} userscript - A JavaScript file that should be loaded as a script within the <markup-editor> element. The script can reference the global MU for access to MarkupEditor functionality. For example, the script could contain code to create and register a MarkupDelegate to receive callbacks during editing, or define a custom ToolbarConfiguration. 
- * 
- * @attr {string} userstyle - A CSS file that should be linked within the <markup-editor> element to supplement the MarkupEditor base styling.
- * 
- * @attr {string} delegate - The name of a MarkupDelegate that has been registered. See the documentation on MarkupDelegates for details on implementation, usage, and registration.
- * 
- * @attr {string} handler - The name of a MessageHandler that has been registered. See the documemtation on MessageHandler for details.
- * 
- * @attr {string} toolbar - The name of a ToolbarConfig that has been registered. See the documentation on ToolbarConfig for details of customizing the toolbar configuration and registering configs.
- * 
- * @attr {string} keymap - The name of a KeymapConfig that has been registered. See the documentation on KeymapConfig for details of customizing the keymap configuration and registering configs.
- * 
- * @attr {string} behavior - The name of a BehaviorConfig that has been registered. See the documentation on BehaviorConfig for details of customizing the behavior configuration and registering configs.
- * 
- * @attr {string} prepend: The name of a toolbar that has been registered, whose `menuItems` will be placed before the MarkupToolbar. See the documentation on Extending the Toolbar for details.
- * 
- * @attr {string} append - The name of a toolbar that has been registered, whose `menuItems` will be placed after the MarkupToolbar. See the documentation on Extending the Toolbar for details.
+ * Load plugins from an array of paths and notify the delegate on completion.
+ *
+ * Each plugin module is imported individually. A per-plugin import failure is caught
+ * and logged; it does not abort the remaining loads or prevent `markupPluginsDidLoad`
+ * from firing. When all imports have settled, `markupPluginsDidLoad` is called on the
+ * delegate (if it defines that method) with an array of manifests for the plugins that
+ * registered successfully. The function is a no-op (no delegate call) when `pluginPaths`
+ * is empty.
+ *
+ * @param {string[]} pluginPaths  Resolved paths to plugin modules.
+ * @param {object|null} delegate  A MarkupDelegate instance (may be null/undefined).
+ * @param {function} [importFn]   Optional import function; defaults to the native dynamic
+ *                                import. Provided for testing.
+ * @returns {Promise<void>}
  */
+export async function loadPlugins(pluginPaths, delegate, importFn = (path) => import(path)) {
+  if (!pluginPaths || pluginPaths.length === 0) return
+  const before = new Set(MU.getPluginManifest().map(m => m.id))
+  await Promise.all(
+    pluginPaths.map(path =>
+      importFn(path).catch(err => {
+        console.error('Plugin load failed:', path, err)
+        return null
+      })
+    )
+  )
+  const after = MU.getPluginManifest()
+  const newManifests = after.filter(m => !before.has(m.id))
+  delegate?.markupPluginsDidLoad && delegate.markupPluginsDidLoad(newManifests)
+}
+
+// Expose loadPlugins on the MU namespace so it is accessible from tests and external callers.
+MU.loadPlugins = loadPlugins
+
 class MarkupEditorElement extends HTMLElement {
 
   /** 
@@ -84,8 +90,14 @@ class MarkupEditorElement extends HTMLElement {
     // The first `muCallback` will be `loadedUserFiles`, which will 
     // cause the editor instance to be created before posting the 
     // message.
-    this.editorContainer.addEventListener('muCallback', (e) => {
+    this.editorContainer.addEventListener('muCallback', async (e) => {
       if (!this.editor) this.createEditor()
+      if (e.message === 'loadedUserFiles') {
+        const pluginsAttr = this.getAttribute('plugins')
+        const pluginPaths = pluginsAttr ? JSON.parse(pluginsAttr) : []
+        const delegate = this.editor.config?.delegate
+        await loadPlugins(pluginPaths, delegate)
+      }
       this.editor.messageHandler.postMessage(e.message)
     })
 
