@@ -246,7 +246,7 @@ class Registry {
      * Return the plugin object with `name`, or undefined if not found.
      *
      * @param {string}  name    The key used to identify the plugin.
-     * @returns {object | undefined}
+     * @returns {object|undefined}
      */
     getPlugin(name) {
         return this._plugins.get(name)
@@ -256,7 +256,7 @@ class Registry {
      * Return the public manifest for all registered plugins.
      * Each entry contains only { id, name, extension } — function references are excluded.
      *
-     * @returns {{ id: string, name: string, extension: string }[]}
+     * @returns {Array<{id: string, name: string, extension: string}>}
      */
     getPluginManifest() {
         const manifest = []
