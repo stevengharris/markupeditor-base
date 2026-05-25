@@ -1,35 +1,24 @@
 import { describe, test, beforeAll, afterEach, expect, vi } from 'vitest'
-import { setDocument, MU } from './setup.js'
+import { setDocument, MU, HtmlTestSuite, runHtmlTest } from './setup.js'
 
+/**
+ * Set up the document and MarkupEditor instance once. Precede with a
+ * workaround for using JSDom and accessing the client rect.
+ */
 beforeAll(setDocument)
 
-describe('Plugin registry', () => {
+// Synchronous registry tests driven from JSON so they can also be run
+// as SwiftTest equivalents in MarkupEditor.
+let suite = new HtmlTestSuite('./test/plugin.json')
+describe(suite.description, () => {
+    test.each(suite.htmlTests)('$description', runHtmlTest)
+})
 
-    test('registerPlugin stores a plugin and getPluginManifest returns its public surface', () => {
-        const plugin = {
-            id: 'test-plugin',
-            name: 'Test Plugin',
-            extension: 'tp',
-            export: async (content) => content,
-            import: async (content) => content,
-        }
-        MU.registerPlugin(plugin, 'Test Plugin')
-        const manifest = MU.getPluginManifest()
-        const entry = manifest.find(m => m.id === 'test-plugin')
-        expect(entry).toBeDefined()
-        expect(entry.id).toBe('test-plugin')
-        expect(entry.name).toBe('Test Plugin')
-        expect(entry.extension).toBe('tp')
-        expect(entry.export).toBeUndefined()
-        expect(entry.import).toBeUndefined()
-    })
+// ---------------------------------------------------------------------------
+// invokePlugin — async, not expressible in the JSON runner
+// ---------------------------------------------------------------------------
 
-    test('getPluginManifest returns only { id, name, extension } — no function references', () => {
-        const manifest = MU.getPluginManifest()
-        for (const entry of manifest) {
-            expect(Object.keys(entry).sort()).toEqual(['extension', 'id', 'name'])
-        }
-    })
+describe('Plugin registry — invokePlugin', () => {
 
     test('invokePlugin dispatches to the named plugin action', async () => {
         const plugin = {
@@ -62,20 +51,23 @@ describe('Plugin registry', () => {
 
 })
 
+// ---------------------------------------------------------------------------
+// loadPlugins — uses vi.fn() / vi.spyOn; not expressible in the JSON runner
+// ---------------------------------------------------------------------------
+
 describe('loadPlugins', () => {
 
     afterEach(() => vi.restoreAllMocks())
 
     test('loadPlugins with no plugin paths is a no-op — delegate not called', async () => {
         const delegate = { markupPluginsDidLoad: vi.fn() }
-        await MU.loadPlugins([], delegate, (path) => Promise.resolve())
+        await MU.loadPlugins([], delegate, () => Promise.resolve())
         expect(delegate.markupPluginsDidLoad).not.toHaveBeenCalled()
     })
 
     test('loadPlugins with valid plugins calls markupPluginsDidLoad with loaded manifests', async () => {
         const delegate = { markupPluginsDidLoad: vi.fn() }
-        // Mock importer: registers a plugin as a side effect (as a real plugin module would)
-        const importFn = (path) => {
+        const importFn = () => {
             MU.registerPlugin({
                 id: 'load-test-plugin',
                 name: 'Load Test Plugin',
@@ -97,10 +89,8 @@ describe('loadPlugins', () => {
     test('loadPlugins with a failing import does not prevent markupPluginsDidLoad from firing', async () => {
         const delegate = { markupPluginsDidLoad: vi.fn() }
         vi.spyOn(console, 'error').mockImplementation(() => {})
-        const importFn = (path) => Promise.reject(new Error('module not found'))
-        // Should resolve without throwing even though the import fails
+        const importFn = () => Promise.reject(new Error('module not found'))
         await expect(MU.loadPlugins(['/plugins/missing.js'], delegate, importFn)).resolves.toBeUndefined()
-        // markupPluginsDidLoad fires with empty array (no successful plugins)
         expect(delegate.markupPluginsDidLoad).toHaveBeenCalledOnce()
         const manifests = delegate.markupPluginsDidLoad.mock.calls[0][0]
         expect(manifests).toEqual([])
@@ -109,9 +99,7 @@ describe('loadPlugins', () => {
     test('loadPlugins calls markupPluginsDidLoad with only successful manifests when one plugin fails', async () => {
         const delegate = { markupPluginsDidLoad: vi.fn() }
         vi.spyOn(console, 'error').mockImplementation(() => {})
-        let callCount = 0
         const importFn = (path) => {
-            callCount++
             if (path.includes('good')) {
                 MU.registerPlugin({
                     id: 'partial-good-plugin',
@@ -128,13 +116,12 @@ describe('loadPlugins', () => {
         const manifests = delegate.markupPluginsDidLoad.mock.calls[0][0]
         const goodEntry = manifests.find(m => m.id === 'partial-good-plugin')
         expect(goodEntry).toBeDefined()
-        // The bad plugin should not appear in the manifests
         const badEntry = manifests.find(m => m.id === 'bad-plugin')
         expect(badEntry).toBeUndefined()
     })
 
     test('loadPlugins with null delegate does not throw', async () => {
-        const importFn = (path) => Promise.resolve({})
+        const importFn = () => Promise.resolve({})
         await expect(MU.loadPlugins(['/plugins/x.js'], null, importFn)).resolves.toBeUndefined()
     })
 
