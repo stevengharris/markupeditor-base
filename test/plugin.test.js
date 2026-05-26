@@ -22,13 +22,12 @@ describe('Plugin registry — invokePlugin', () => {
 
     test('invokePlugin dispatches to the named plugin action', async () => {
         const plugin = {
-            id: 'action-plugin',
             name: 'Action Plugin',
             extension: 'ap',
             export: async (content) => `exported:${content}`,
             import: async (content) => `imported:${content}`,
         }
-        MU.registerPlugin(plugin, 'Action Plugin')
+        MU.registerPlugin(plugin)
         const result = await MU.invokePlugin('Action Plugin', 'export', 'hello')
         expect(result).toBe('exported:hello')
     })
@@ -40,7 +39,6 @@ describe('Plugin registry — invokePlugin', () => {
 
     test('invokePlugin returns null when action is not defined on plugin', async () => {
         const plugin = {
-            id: 'no-action-plugin',
             name: 'No Action Plugin',
             extension: 'nap',
         }
@@ -69,7 +67,6 @@ describe('loadPlugins', () => {
         const delegate = { markupPluginsDidLoad: vi.fn() }
         const importFn = () => {
             MU.registerPlugin({
-                id: 'load-test-plugin',
                 name: 'Load Test Plugin',
                 extension: 'ltp',
                 export: async (c) => c,
@@ -80,7 +77,7 @@ describe('loadPlugins', () => {
         expect(delegate.markupPluginsDidLoad).toHaveBeenCalledOnce()
         const manifests = delegate.markupPluginsDidLoad.mock.calls[0][0]
         expect(Array.isArray(manifests)).toBe(true)
-        const entry = manifests.find(m => m.id === 'load-test-plugin')
+        const entry = manifests.find(m => m.name === 'Load Test Plugin')
         expect(entry).toBeDefined()
         expect(entry.name).toBe('Load Test Plugin')
         expect(entry.extension).toBe('ltp')
@@ -102,7 +99,6 @@ describe('loadPlugins', () => {
         const importFn = (path) => {
             if (path.includes('good')) {
                 MU.registerPlugin({
-                    id: 'partial-good-plugin',
                     name: 'Partial Good Plugin',
                     extension: 'pgp',
                 }, 'Partial Good Plugin')
@@ -114,9 +110,9 @@ describe('loadPlugins', () => {
         await MU.loadPlugins(['/plugins/good.js', '/plugins/bad.js'], delegate, importFn)
         expect(delegate.markupPluginsDidLoad).toHaveBeenCalledOnce()
         const manifests = delegate.markupPluginsDidLoad.mock.calls[0][0]
-        const goodEntry = manifests.find(m => m.id === 'partial-good-plugin')
+        const goodEntry = manifests.find(m => m.name === 'Partial Good Plugin')
         expect(goodEntry).toBeDefined()
-        const badEntry = manifests.find(m => m.id === 'bad-plugin')
+        const badEntry = manifests.find(m => m.name === 'Bad Plugin')
         expect(badEntry).toBeUndefined()
     })
 

@@ -27,7 +27,7 @@ export { MU }
  */
 export async function loadPlugins(pluginPaths, delegate, importFn = (path) => import(path)) {
   if (!pluginPaths || pluginPaths.length === 0) return
-  const before = new Set(MU.getPluginManifest().map(m => m.id))
+  const before = new Set(MU.getPluginManifest().map(m => m.name))
   await Promise.all(
     pluginPaths.map(path =>
       importFn(path).catch(err => {
@@ -37,7 +37,7 @@ export async function loadPlugins(pluginPaths, delegate, importFn = (path) => im
     )
   )
   const after = MU.getPluginManifest()
-  const newManifests = after.filter(m => !before.has(m.id))
+  const newManifests = after.filter(m => !before.has(m.name))
   delegate?.markupPluginsDidLoad && delegate.markupPluginsDidLoad(newManifests)
 }
 

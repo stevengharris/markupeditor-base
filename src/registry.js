@@ -226,7 +226,7 @@ class Registry {
     /**
      * Add `plugin` to the registry, keyed by `name`.
      *
-     * @param {object}  plugin  Plugin object with { id, name, extension, export, import }.
+     * @param {object}  plugin  Plugin object with { name, extension, export, import }.
      * @param {string}  name    The key used to retrieve and invoke the plugin.
      */
     registerPlugin(plugin, name) {
@@ -261,7 +261,7 @@ class Registry {
     getPluginManifest() {
         const manifest = []
         for (const plugin of this._plugins.values()) {
-            manifest.push({ id: plugin.id, name: plugin.name, extension: plugin.extension })
+            manifest.push({ name: plugin.name, extension: plugin.extension })
         }
         return manifest
     }

@@ -232,7 +232,7 @@ class Registry {
     /**
      * Add `plugin` to the registry, keyed by `name`.
      *
-     * @param {object}  plugin  Plugin object with { id, name, extension, export, import }.
+     * @param {object}  plugin  Plugin object with { name, extension, export, import }.
      * @param {string}  name    The key used to retrieve and invoke the plugin.
      */
     registerPlugin(plugin, name) {
@@ -267,7 +267,7 @@ class Registry {
     getPluginManifest() {
         const manifest = [];
         for (const plugin of this._plugins.values()) {
-            manifest.push({ id: plugin.id, name: plugin.name, extension: plugin.extension });
+            manifest.push({ name: plugin.name, extension: plugin.extension });
         }
         return manifest
     }
@@ -25182,7 +25182,7 @@ const MU = {
  */
 async function loadPlugins(pluginPaths, delegate, importFn = (path) => import(path)) {
   if (!pluginPaths || pluginPaths.length === 0) return
-  const before = new Set(MU.getPluginManifest().map(m => m.id));
+  const before = new Set(MU.getPluginManifest().map(m => m.name));
   await Promise.all(
     pluginPaths.map(path =>
       importFn(path).catch(err => {
@@ -25192,7 +25192,7 @@ async function loadPlugins(pluginPaths, delegate, importFn = (path) => import(pa
     )
   );
   const after = MU.getPluginManifest();
-  const newManifests = after.filter(m => !before.has(m.id));
+  const newManifests = after.filter(m => !before.has(m.name));
   delegate?.markupPluginsDidLoad && delegate.markupPluginsDidLoad(newManifests);
 }
 
