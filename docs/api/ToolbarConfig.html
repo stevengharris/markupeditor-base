@@ -110,14 +110,14 @@ Use &quot;augmentation&quot; to prepend and/or append a toolbar you define yours
     &quot;prepend&quot;: null,          // Name of a registered array of cmdItems to prepend
     &quot;append&quot;: null            // Name of a registered array of cmdItems to append
   },
-  &quot;appearance&quot;: {             // Colors (light and dark mode) and sizes, vars in toolbar.css
-    &quot;accentColor&quot;: { &quot;light&quot;: &quot;blue&quot;, &quot;dark&quot;: &quot;lightblue&quot; },
-    &quot;toolbarBg&quot;:   { &quot;light&quot;: &quot;rgba(250, 249, 246, 0.95)&quot;, &quot;dark&quot;: &quot;rgba(40, 40, 43, 0.9)&quot; },
-    &quot;buttonBg&quot;:    { &quot;light&quot;: &quot;white&quot;, &quot;dark&quot;: &quot;black&quot; },
-    &quot;borderColor&quot;: { &quot;light&quot;: &quot;lightgray&quot;, &quot;dark&quot;: &quot;gray&quot; },
-    &quot;hoverBg&quot;:     { &quot;light&quot;: &quot;#f2f2f2&quot;, &quot;dark&quot;: &quot;rgb(80, 80, 80)&quot; },
-    &quot;buttonSize&quot;:  &quot;28px&quot;,
-    &quot;buttonFontSize&quot;:    &quot;24px&quot;
+  &quot;appearance&quot;: {                                                                                    // AccentColor adapts to light and dark
+    &quot;accentColor&quot;: { &quot;light&quot;: &quot;AccentColor&quot;, &quot;dark&quot;: &quot;AccentColor&quot; },                                // System accent color for button icons, infill, and borders
+    &quot;toolbarBg&quot;:   { &quot;light&quot;: &quot;rgba(250, 249, 246, 0.95)&quot;, &quot;dark&quot;: &quot;rgba(40, 40, 43, 0.9)&quot; },        // Toolbar background
+    &quot;buttonBg&quot;:    { &quot;light&quot;: &quot;white&quot;, &quot;dark&quot;: &quot;black&quot; },                                            // Button background
+    &quot;borderColor&quot;: { &quot;light&quot;: &quot;lightgray&quot;, &quot;dark&quot;: &quot;gray&quot; },                                         // Border at bottom of toolbar, around menus
+    &quot;hoverBg&quot;:     { &quot;light&quot;: &quot;#f2f2f2&quot;, &quot;dark&quot;: &quot;rgb(80, 80, 80)&quot; },                                // Highlight menu item on hover
+    &quot;buttonSize&quot;: &quot;28px&quot;,                                                                            // Side length of rounded square buttons, height otherwise
+    &quot;buttonFontSize&quot;: &quot;24px&quot;                                                                         // Font size inside of buttons/menus
   },
   &quot;icons&quot;: {                  // Outlined 400 weight versions from https://fonts.google.com/icons
     // undo
