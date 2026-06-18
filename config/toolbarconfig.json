@@ -79,7 +79,7 @@
         "append": null
     },
     "appearance": {
-        "accentColor": { "light": "AccentColor", "dark": "AccentColor" },
+        "accentColor": { "light": "#007AFF", "dark": "#409CFF" },
         "toolbarBg":   { "light": "rgba(250, 249, 246, 0.95)", "dark": "rgba(40, 40, 43, 0.9)" },
         "buttonBg":    { "light": "white", "dark": "black" },
         "borderColor": { "light": "lightgray", "dark": "gray" },
