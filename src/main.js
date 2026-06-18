@@ -9,6 +9,12 @@ import { MU } from "./markupeditor.js"
 /** The public MarkupEditor API callable as `MU.<function name>`. */
 export { MU }
 
+// Re-export prosemirror-model so plugins loaded alongside this bundle can
+// import from it as an external rather than bundling their own copy. Sharing
+// one instance matters because prosemirror uses instanceof checks internally —
+// a Node created by one copy won't satisfy checks against another copy's class.
+export * from 'prosemirror-model'
+
 /**
  * Load plugins from an array of paths and notify the delegate on completion.
  *
