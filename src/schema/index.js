@@ -3,10 +3,9 @@ import {tableNodes} from "prosemirror-tables"
 import {addListNodes} from "prosemirror-schema-list"
 import {default as OrderedMap} from "orderedmap"
 
-const pDOM = ["p", 0], 
-      blockquoteDOM = ["blockquote", 0], 
+const pDOM = ["p", 0],
+      blockquoteDOM = ["blockquote", 0],
       hrDOM = ["hr"],
-      preDOM = ["pre", ["code", 0]], 
       brDOM = ["br"]
 
 let baseNodes = OrderedMap.from({
@@ -72,8 +71,23 @@ let baseNodes = OrderedMap.from({
     group: "block",
     code: true,
     defining: true,
-    parseDOM: [{tag: "pre", preserveWhitespace: "full"}],
-    toDOM() { return preDOM }
+    attrs: {
+      language: {default: null}
+    },
+    parseDOM: [{
+      tag: "pre",
+      preserveWhitespace: "full",
+      getAttrs(dom) {
+        const className = dom.querySelector("code")?.getAttribute("class")
+        const languageClass = className?.split(/\s+/).find(cls => cls.startsWith("language-"))
+        const language = languageClass ? languageClass.slice("language-".length) : ""
+        return {language: language ? language : null}
+      }
+    }],
+    toDOM(node) {
+      const language = node.attrs.language
+      return ["pre", language ? ["code", {class: `language-${language}`}, 0] : ["code", 0]]
+    }
   },
 
   // :: NodeSpec The text node.
