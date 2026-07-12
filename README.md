@@ -12,7 +12,7 @@ visibility and contents, as well as the key bindings, are configurable and exten
 
 The web component makes embedding WYSIWYG editing as simple as:
 
-```
+```html
 <markup-editor><h1>Hello, MarkupEditor!</h1></markup-editor>
 <script src="markup-editor.js" type="module"></script>
 ```
@@ -41,6 +41,7 @@ even non-developers expect when they edit a document, like image resizing and se
 * Customizable ordering of toolbar contents.
 * Customizable icons for toolbar.
 * Paragraph styles corresponding to P, H1-H6, and `CODE`.
+* Identify language for code blocks to show highlighting.
 * Bold, italic, underline, strikethrough, subscript, superscript, and code text formatting.
 * Insert and edit links, images (local and https src), and tables.
 * Bulleted and numbered lists.

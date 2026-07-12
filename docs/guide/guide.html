@@ -62,7 +62,7 @@
 
 <p>The &lt;markup-editor&gt; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">web component</a> hides complexity and allows the MarkupEditor to be used like other HTML elements. Here is a <a href="https://stevengharris.github.io/markupeditor-base/helloworld/index.html">“Hello, world” example</a>:</p>
 
-<pre><code>&lt;!DOCTYPE html&gt;
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
     &lt;head&gt;
         &lt;title&gt;Hello MarkupEditor&lt;/title&gt;
@@ -157,7 +157,7 @@
 
 <p>We can use Express with node.js as a lightweight server, along with the <code>filename</code> attribute to show a file. Here’s an example to open the contents of <code>guide.html</code> (which you’re reading now) for editing:</p>
 
-<pre><code>import express from 'express'
+<pre><code class="language-javascript">import express from 'express'
 const __dirname = import.meta.dirname
 
 const app = express();
@@ -240,11 +240,11 @@ Server listening at http://localhost:8000</code></pre>
 
 <p>Once you have access to MU, you can get the MarkupEditor contents:</p>
 
-<pre><code>let contents = MU.getHTML()</code></pre>
+<pre><code class="language-javascript">let contents = MU.getHTML()</code></pre>
 
 <p>or set the contents to an HTML string called <code>htmlString</code>:</p>
 
-<pre><code>MU.setHTML(htmlString)</code></pre>
+<pre><code class="language-javascript">MU.setHTML(htmlString)</code></pre>
 
 <p>When you set the HTML contents of the document, the MarkupEditor automatically ensures that the document only contains a restricted set of HTML elements/tags.</p>
 
@@ -306,7 +306,7 @@ Server listening at http://localhost:8000</code></pre>
 
 <p>Let’s look at a quick example of how to customize configuration using a <code>userscript</code> and <code>MU</code>. A simple way to customize configuration is to use one of the pre-defined static methods to get a config object back using <code>MU</code>. You can then modify that config object as needed. Once you have your config object set up the way you want, you need to <em>register</em> it using <code>MU</code> again. When you register a configuration, you provide a name for it, which you can then specify in the toolbar, keymap, or behavior attribute for the &lt;markup-editor&gt; element. Going all the way back to our “Hello, world!” example, we could add the undo/redo buttons in by making the correction sub-toolbar visible, turn off the ability for users to insert tables, and we could change the hotkey used for adding a link. We can do this in a <code>userscript</code>, <code>hello.js</code>, by importing <code>MU</code> and using it:</p>
 
-<pre><code>import { MU } from "../src/markup-editor.js"            // .. or wherever you installed markup-editor.js
+<pre><code class="language-javascript">import { MU } from "../src/markup-editor.js"            // .. or wherever you installed markup-editor.js
 
 let toolbarConfig = MU.ToolbarConfig.standard(true)     // The standard toolbar but with undo/redo showing
 toolbarConfig.insertBar.tableMenu = false               // Turn off tableMenu in the insertBar
@@ -318,7 +318,7 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <p>and then modify the original <code>index.html</code> for the <a href="https://stevengharris.github.io/markupeditor-base/helloworld/index.html">“Hello, world”</a> example to identify the <code>userscript</code> and the names of the ToolbarConfig and KeymapConfig instances we registered:</p>
 
-<pre><code>&lt;!DOCTYPE html&gt;
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
     &lt;head&gt;
         &lt;title&gt;Hello MarkupEditor&lt;/title&gt;
@@ -381,7 +381,7 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 <p>The <a href="https://stevengharris.github.io/markupeditor-base/api/KeymapConfig.html">KeymapConfig</a> follows <a href="https://github.com/ProseMirror/prosemirror-keymap">ProseMirror conventions</a>. To quote the comments from <a href="https://github.com/ProseMirror/prosemirror-keymap/blob/081f24f65b6a394174a4bdf07b9a55a00361f1b7/src/keymap.ts">keymap.ts</a>…</p>
 
 <blockquote>
-    <pre><code>/**
+    <pre><code class="language-javascript">/**
  * `KeymapConfig.standard()` is the default for the MarkupEditor. It can be overridden by 
  * passing a new KeymapConfig by name using the `keymap` attribute of the &lt;markup-editor&gt; 
  * element. You can use the pre-defined static methods like `standard()` and customize what 
@@ -431,7 +431,7 @@ MU.registerConfig(keymapConfig, "MyKeymapConfig")       // Register the keymapCo
 
 <p>Here is part of the <code>userscript</code> demo.js code used to create the DemoToolbar…</p>
 
-<pre><code>import { MU } from "../src/markup-editor.js"
+<pre><code class="language-javascript">import { MU } from "../src/markup-editor.js"
 
 /** A class holding the command items and functionality for a File toolbar that is prepended to the MarkupEditor toolbar */
 class DemoToolbar {
@@ -506,7 +506,7 @@ MU.registerAugmentation(demoToolbar)</code></pre>
 
 <p>In the <code>index.html</code> that loads the demo, we load the <code>userscript</code> <code>demo.js</code>, and we identify “DemoToolbar” to be prepended to the toolbar:</p>
 
-<pre><code>&lt;!DOCTYPE html&gt;
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
     &lt;head&gt;
         &lt;title&gt;MarkupEditor Demo&lt;/title&gt;
@@ -569,7 +569,7 @@ MU.registerAugmentation(demoToolbar)</code></pre>
 
 <p>Here’s a simple MarkupDelegate. We are putting it in the same <code>demo.js</code> file we looked at earlier when we <a href="#extending-the-toolbar">extended the toolbar</a> and loading it as a <code>userscript</code>. In this example, its methods will be called when the MarkupEditor is “ready”, and when you type into the document or otherwise make editing changes:</p>
 
-<pre><code>import { MU } from "../src/markup-editor.js"
+<pre><code class="language-javascript">import { MU } from "../src/markup-editor.js"
 
 class DemoDelegate {
 
@@ -642,7 +642,7 @@ MU.registerDelegate(new DemoDelegate())</code></pre>
 
 <p>When you hit the “Select…” button, the MarkupEditor closes the dialog and invokes <code>markupSelectImage</code> in your MarkupDelegate. Remember, your MarkupDelegate is executing in the client and still has very restricted access to the file system. In the Electron app, your MarkupDelegate would look like this:</p>
 
-<pre><code>class MarkupDelegate {
+<pre><code class="language-javascript">class MarkupDelegate {
 
     markupSelectImage() {
         // Reference the definition in preload.js
@@ -652,7 +652,7 @@ MU.registerDelegate(new DemoDelegate())</code></pre>
 
 <p>The <code>window.markupAPI</code> is defined in an <a href="https://www.electronjs.org/docs/latest/tutorial/tutorial-preload">Electron preload script</a> <code>preload.mjs</code> (Electron requires the mjs extension when using ES modules):</p>
 
-<pre><code>const { contextBridge, ipcRenderer } = require('electron')
+<pre><code class="language-javascript">const { contextBridge, ipcRenderer } = require('electron')
 
 /** Define the `markupAPI` endpoints exposed via windowEvents in main */
 contextBridge.exposeInMainWorld('markupAPI', {
@@ -661,11 +661,11 @@ contextBridge.exposeInMainWorld('markupAPI', {
 
 <p>Meanwhile, in our Electron app’s <code>main.mjs</code>, when we create the window, we set the app to respond to this new custom event, <code>selectImage</code>:</p>
 
-<pre><code>ipcMain.on('selectImage', handleSelectImage)</code></pre>
+<pre><code class="language-javascript">ipcMain.on('selectImage', handleSelectImage)</code></pre>
 
 <p>When the event is triggered, it will invoke our <code>handleSelectImage</code>. Finally(!!!) we can use Electron’s <code>showOpenDialog</code> to select the file with a native dialog and insert that image data into the MarkupEditor document:</p>
 
-<pre><code>async function handleSelectImage() {
+<pre><code class="language-javascript">async function handleSelectImage() {
     const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ['openFile'],
         filters: [
@@ -780,7 +780,7 @@ $</code></pre>
 
 <p>The MessageHandler responds to the same kind of messages as the MarkupDelegate, but it sometimes does its own processing before informing the MarkupDelegate of the specific state change. For example, in the case of “ready”, the MessageHandler loads the initial HTML that was provided in the configuration or retrieves the contents of the filename, and then it loads that HTML into the document.</p>
 
-<pre><code>postMessage(message) {
+<pre><code class="language-javascript">postMessage(message) {
     let config = this.markupEditor.config
     let delegate = config.delegate
 
@@ -805,7 +805,7 @@ $</code></pre>
 
 <p>In VSCode, you would set the MessageHandler like this:</p>
 
-<pre><code>vscode = acquireVsCodeApi();    
+<pre><code class="language-javascript">vscode = acquireVsCodeApi();    
 // We want vscode to receive the callbacks from the MarkupEditor, which are handled in 
 // markupCoordinator.js. We do that by telling the MarkupEditor to use `vscode` as 
 // its `messageHandler` when we instantiate the MarkupEditor.
@@ -813,7 +813,7 @@ MU.registerMessageHandler(vscode, 'vscode')</code></pre>
 
 <p>Now when the MarkupEditor executes its callbacks about document state changes (which it does in a VSCode WebviewPanel using <code>messageHandler?.postMessage(message)</code>), the <code>messageHandler</code> is <code>vscode</code>. When we created the VSCode WebviewPanel, we told it how to respond to messages:</p>
 
-<pre><code>// Set up the message handler for messages coming from the webview
+<pre><code class="language-javascript">// Set up the message handler for messages coming from the webview
 webviewPanel.webview.onDidReceiveMessage((message) =&gt; {
     this.handleMessage(document, message)
 })</code></pre>
@@ -878,7 +878,7 @@ webviewPanel.webview.onDidReceiveMessage((message) =&gt; {
 
 <p>Everything starts at <code>main.js</code>. It defines the MarkupEditorElement class and then uses customElements.define to expose it in the browser:</p>
 
-<pre><code>customElements.define('markup-editor', MarkupEditorElement)</code></pre>
+<pre><code class="language-javascript">customElements.define('markup-editor', MarkupEditorElement)</code></pre>
 
 <p>To enable access to the MarkupEditor public API from scripts that reside outside of the &lt;markup-editor&gt; element, we set the <code>MU</code> property of the MarkupEditorElement from the <code>MU</code> we import from <code>markupeditor.js</code>.</p>
 
@@ -890,7 +890,7 @@ webviewPanel.webview.onDidReceiveMessage((message) =&gt; {
 
 <p>This is the heart of the MarkupEditor functionality. As we have seen in earlier examples, the exported functions are invoked from with the prefix <code>MU</code>. For example, the JavaScript function to toggle the current selection to bold:</p>
 
-<pre><code>export function toggleBold() {
+<pre><code class="language-javascript">export function toggleBold() {
     _toggleFormat('B');
 };</code></pre>
 

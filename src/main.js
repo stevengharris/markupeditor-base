@@ -1,6 +1,9 @@
 import mirrorStyle from "../styles/mirror.css" with { type: "css" }
 import markupStyle from "../styles/markup.css" with { type: "css" }
 import toolbarStyle from "../styles/toolbar.css" with { type: "css" }
+import hljsLightStyle from "highlight.js/styles/github.css" with { type: "css" }
+import hljsDarkStyle from "highlight.js/styles/github-dark.css" with { type: "css" }
+hljsDarkStyle.media.mediaText = '(prefers-color-scheme: dark)'
 import { MarkupEditor } from "./markupeditor.js"
 import { getAugmentation } from "./registry.js"
 import { appendToolbar, prependToolbar } from "./setup/index.js"
@@ -169,7 +172,7 @@ class MarkupEditorElement extends HTMLElement {
           let userSheet = new CSSStyleSheet()
           // replace all styles synchronously:
           userSheet.replaceSync(text)
-          this.shadowRoot.adoptedStyleSheets = [mirrorStyle, markupStyle, toolbarStyle, userSheet]
+          this.shadowRoot.adoptedStyleSheets = [mirrorStyle, markupStyle, toolbarStyle, hljsLightStyle, hljsDarkStyle, userSheet]
         })
         .then(() => {
           const userScript = this.getAttribute('userscript')
@@ -179,7 +182,7 @@ class MarkupEditorElement extends HTMLElement {
           console.log(e)
         })
     } else {
-      this.shadowRoot.adoptedStyleSheets = [mirrorStyle, markupStyle, toolbarStyle]
+      this.shadowRoot.adoptedStyleSheets = [mirrorStyle, markupStyle, toolbarStyle, hljsLightStyle, hljsDarkStyle]
       const userScript = this.getAttribute('userscript')
       MU.loadUserFiles(userScript, null, this.editorContainer, nonce)
     }

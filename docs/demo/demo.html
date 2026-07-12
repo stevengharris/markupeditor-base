@@ -51,7 +51,18 @@
 
 <p>The <em>Paragraph Style</em> menu refers to <em>P</em> style as "Body". The notion of a paragraph style is pretty well understood by every person who has ever used a word processor, spreadsheet, or even the most primitive text editing tool these days. Your users don't need to know anything about HTML or CSS just to use the MarkupEditor.</p>
 
-<p>When you are editing text within a code block (the Code paragraph style), and you want to exit from the Code style, hold the Command (⌘) key and press Enter. The “hard return” creates a new Body style element.</p>
+<h5>Code Blocks</h5>
+
+<p>By default, the MarkupEditor supports code highlighting, but it can be turned off by configuration. If code highlighting is enabled, then when you create a new Code block using the <em>Code</em> menu item, you need to identify the language. To make creation easier, the menu includes Code block languages that already exist in the document if there are any.</p>
+
+<pre><code>// When you select inside of a Code block, it displays its language in a tab on the right side.
+// Select the language tab to show a dialog that lets you identify or change the language for the block.
+let language = "javascript"
+print("When you identify a language, like " + language + ", the editor shows the appropriate code highlighting.")</code></pre>
+
+<p><strong>Note:</strong> You can only use plain text in a Code block. For example, a Code block cannot contain <em>italic</em> text. For this reason, if you select a paragraph like this one, that contains formatted text, the menu option to set the paragraph to Code style will be disabled. Remove the formatting and any links before converting existing paragraphs to Code.</p>
+
+<p>When you are editing text within a Code block, and you want to exit from the Code style, hold the Command (⌘) key and press Enter. The “hard return” creates a new Body style element.</p>
 
 <h4>Lists</h4>
 
@@ -80,7 +91,7 @@
 
 <blockquote>
     <blockquote>
-        <pre><code>// Here is an example of code that has been indented twice.
+        <pre><code class="language-swift">// Here is an example of Swift code that has been indented twice.
 print("Hello, world!")</code></pre>
     </blockquote>
 </blockquote>

@@ -1,4 +1,5 @@
 import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 import css from 'rollup-plugin-import-css';
 import json from '@rollup/plugin-json'
 
@@ -23,6 +24,7 @@ export default [
 		],
 		plugins: [
 			resolve(),
+			commonjs(),		// so we can import highlight.js/lib/core (real CJS under its ESM entry)
 			css(),			// so we can import css
 			json()			// so we can import json
 		]
