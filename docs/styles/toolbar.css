@@ -519,6 +519,11 @@
   width: 300px;
 }
 
+.Markup-prompt-language {
+  height: 96px;
+  width: 300px;
+}
+
 .Markup-prompt img {
   display: inline-block;
   vertical-align: middle;
