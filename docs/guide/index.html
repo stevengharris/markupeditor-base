@@ -7,6 +7,8 @@
         <link href="../styles/index.css" rel="stylesheet">
         <!-- Why load this stylesheet here? Just so the overall page has the same style as the MarkupEditor itself. -->
         <link href="../styles/markup.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
     </head>
     <body>
         <p align="center">
@@ -19,6 +21,7 @@
             .then((response) => response.text())
             .then((text) => {
                 document.getElementById('content').innerHTML = text
+                hljs.highlightAll();
             })
             .catch(error => {
                 document.getElementById('content').innerHTML = 
