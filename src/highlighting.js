@@ -1,24 +1,42 @@
-import hljs from 'highlight.js/lib/core'
-import javascript from 'highlight.js/lib/languages/javascript'
-import typescript from 'highlight.js/lib/languages/typescript'
-import python from 'highlight.js/lib/languages/python'
-import swift from 'highlight.js/lib/languages/swift'
-import java from 'highlight.js/lib/languages/java'
-import xml from 'highlight.js/lib/languages/xml'
-import css from 'highlight.js/lib/languages/css'
-import json from 'highlight.js/lib/languages/json'
-import bash from 'highlight.js/lib/languages/bash'
-import markdown from 'highlight.js/lib/languages/markdown'
+// The curated "common" bundle registers ~34 languages in one import, avoiding
+// a hand-maintained per-language import/registerLanguage list.
+import hljs from 'highlight.js/lib/common'
 
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('typescript', typescript)
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('swift', swift)
-hljs.registerLanguage('java', java)
-hljs.registerLanguage('xml', xml)
-hljs.registerLanguage('css', css)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('markdown', markdown)
+/**
+ * Whether `name` matches a registered language or one of its aliases.
+ * Delegates to hljs.getLanguage, which lowercases internally and checks
+ * both registered names and aliases, so this is case-insensitive and
+ * alias-aware.
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+export function isRecognizedLanguage(name) {
+    return !!hljs.getLanguage((name ?? '').trim())
+}
+
+/**
+ * Return the distinct `language` values present among `doc`'s code_block nodes,
+ * alphabetically sorted. Recomputed from a fresh walk of the document on every
+ * call — no cache or index is maintained, since callers only need this at the
+ * point a language-picker UI is opened, not kept live in the background.
+ *
+ * Deduplicates case-insensitively (lowercased), since language names are stored
+ * as whatever a user typed into the free-text dialog and "Python"/"python" are
+ * the same language for display/matching purposes, matching isRecognizedLanguage's
+ * own case-insensitivity.
+ *
+ * @param {Node} doc  A ProseMirror document node.
+ * @returns {string[]}
+ */
+export function presentCodeLanguages(doc) {
+    const languages = new Set()
+    doc.descendants((node) => {
+        if (node.type.name === 'code_block' && node.attrs.language) {
+            languages.add(node.attrs.language.toLowerCase())
+        }
+    })
+    return Array.from(languages).sort()
+}
 
 export { hljs }

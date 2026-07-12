@@ -28,6 +28,7 @@ import {
     toggleHeaderRow,
 } from 'prosemirror-tables'
 import { isSearchFocused, isPromptShowing } from './domaccess.js'
+import { isRecognizedLanguage, presentCodeLanguages } from './highlighting.js'
 
 /**
  * Define various arrays of tags used to represent MarkupEditor-specific concepts.
@@ -1230,6 +1231,102 @@ export function setStyleCommand(style) {
         } else {    // When checking if active based on state, return true only if different
             return paragraphStyle(state) != style;
         }
+    }
+    return commandAdapter
+}
+
+/**
+ * Find the code_block node containing `state`'s selection, if any, walking up
+ * from the selection's start.
+ *
+ * @ignore
+ * @param {EditorState} state
+ * @returns {{node: Node, pos: number} | null}
+ */
+export function codeBlockAtSelection(state) {
+    const { $from } = state.selection
+    for (let depth = $from.depth; depth >= 0; depth--) {
+        const node = $from.node(depth)
+        if (node.type === state.schema.nodes.code_block) {
+            return { node, pos: $from.before(depth) }
+        }
+    }
+    return null
+}
+
+/**
+ * Return `{pos, label}` describing the language overlay for the code_block at
+ * `state`'s selection, or null if the selection isn't in a code_block. `pos`
+ * is the position just inside the code_block's content, where a widget
+ * Decoration for the overlay should be anchored. `label` is "Language:
+ * <Capitalized name>" or "Language: None" — display-only, the underlying
+ * `language` attribute value is untouched.
+ *
+ * @ignore
+ * @param {EditorState} state
+ * @returns {{pos: number, label: string} | null}
+ */
+export function codeLanguageOverlayInfo(state) {
+    const found = codeBlockAtSelection(state)
+    if (!found) return null
+    const language = found.node.attrs.language
+    const label = language ? `Language: ${language.charAt(0).toUpperCase()}${language.slice(1)}` : 'Language: None'
+    return { pos: found.pos + 1, label }
+}
+
+/**
+ * Return a Command that sets the `language` attribute of the code_block at the
+ * selection to `language`, clearing it to null for a falsy value. Setting an
+ * unrecognized language name is allowed the same as a recognized one — this
+ * command has no opinion on whether `language` will actually be highlighted.
+ *
+ * If the selection isn't already within a code_block, this converts the
+ * selected block(s) to code_block with `language` set, the same way
+ * `setStyleCommand('PRE')` applies the Code style — so this doubles as "apply
+ * Code style" when nothing needs converting versus attribute-only when it does.
+ * Returns false without dispatching only if no qualifying block is found at all.
+ *
+ * @param {string | null} language
+ */
+export function setCodeLanguageCommand(language) {
+    const commandAdapter = (state, dispatch, view) => {
+        const value = language ? language : null
+        const found = codeBlockAtSelection(state)
+        if (found) {
+            if (found.node.attrs.language !== value && dispatch) {
+                const tr = state.tr.setNodeMarkup(found.pos, undefined, { ...found.node.attrs, language: value })
+                dispatch(tr)
+                stateChanged(view)
+            }
+            return true
+        }
+        const codeBlockType = state.schema.nodes.code_block
+        const doc = state.doc
+        const selection = state.selection
+        let tr = state.tr
+        let converted = false, error = false
+        doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+            if (node.type === state.schema.nodes.div) return true
+            if (node.isBlock) {
+                if (node.type.inlineContent) {
+                    try {
+                        tr = tr.setNodeMarkup(pos, codeBlockType, { language: value })
+                        converted = true
+                    } catch {
+                        error = true
+                    }
+                } else {
+                    return true
+                }
+            }
+            return false
+        })
+        if (error || !converted) return false
+        if (dispatch) {
+            dispatch(tr)
+            stateChanged(view)
+        }
+        return true
     }
     return commandAdapter
 }
@@ -2534,6 +2631,32 @@ export function testPasteTextPreprocessing(html) {
     const fragment = fragmentFromNode(node);
     const minimalHTML = _minimalHTML(fragment);
     return minimalHTML;
+};
+
+/**
+ * For testing purposes, invoke isRecognizedLanguage programmatically.
+ *
+ * @param {string}  name    The language name to check.
+ */
+export function testIsRecognizedLanguage(name) {
+    return isRecognizedLanguage(name);
+};
+
+/**
+ * For testing purposes, invoke presentCodeLanguages on the active document.
+ */
+export function testPresentCodeLanguages() {
+    const view = activeView()
+    return presentCodeLanguages(view.state.doc);
+};
+
+/**
+ * For testing purposes, invoke codeLanguageOverlayInfo on the active document's
+ * current selection.
+ */
+export function testCodeLanguageOverlayInfo() {
+    const view = activeView()
+    return codeLanguageOverlayInfo(view.state);
 };
 
 /********************************************************************************

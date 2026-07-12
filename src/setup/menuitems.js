@@ -35,9 +35,11 @@ import {
     headers,
     callbackSelectImage,
     selectionChanged,
+    setCodeLanguageCommand,
 } from "../markup"
 import { activeView, setActiveView } from "../registry"
 import { ToolbarConfig } from "../config/toolbarconfig";
+import { isRecognizedLanguage, presentCodeLanguages } from "../highlighting.js";
 
 function getIcon(root, icon) {
     let doc = (root.nodeType == 9 ? root : root.ownerDocument) || document;
@@ -295,9 +297,47 @@ export class Dropdown {
 }
 
 /**
+ * Reposition `submenu` (already shown, absolutely positioned relative to `wrap`) so it
+ * stays within the editor's own wrapper frame — clamping bottom overflow by adjusting
+ * `top`, and flipping to the left of `wrap` on right overflow — falling back to the
+ * browser window's bounds if the editor's wrapper can't be found.
+ *
+ * Shared by DropdownSubmenu and CodeLanguageSubmenu, which are otherwise deliberately
+ * separate classes (see CodeLanguageSubmenu's own doc comment) — this positioning math
+ * doesn't depend on either class's own content-building logic, so sharing it doesn't
+ * reintroduce the coupling that keeping the classes separate was meant to avoid.
+ *
+ * @param {EditorView} view
+ * @param {HTMLElement} wrap
+ * @param {HTMLElement} submenu
+ */
+function repositionSubmenu(view, wrap, submenu) {
+  requestAnimationFrame(() => {
+    submenu.style.top = "";
+    submenu.style.left = "";
+    submenu.style.right = "";
+    const win = view.dom.ownerDocument.defaultView || window;
+    const wrapperEl = getWrapper(view);
+    const wrapperRect = wrapperEl ? wrapperEl.getBoundingClientRect() : null;
+    const bottomLimit = wrapperRect ? Math.min(wrapperRect.bottom, win.innerHeight) : win.innerHeight;
+    const rightLimit = wrapperRect ? Math.min(wrapperRect.right, win.innerWidth) : win.innerWidth;
+    const rect = submenu.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    if (rect.bottom > bottomLimit) {
+      submenu.style.top = (bottomLimit - 4 - rect.height - wrapRect.top) + "px";
+    }
+    if (rect.right > rightLimit) {
+      // Flip to the left of the wrap instead of expanding rightward.
+      submenu.style.left = "auto";
+      submenu.style.right = "100%";
+    }
+  });
+}
+
+/**
  * Represents a submenu wrapping a group of elements that start
  * hidden and expand to the right when hovered over or tapped.
- * 
+ *
  * Modified from: [prosemirror-menu](https://github.com/ProseMirror/prosemirror-menu)
  */
 export class DropdownSubmenu {
@@ -313,7 +353,7 @@ export class DropdownSubmenu {
    * | `Command`              | `run`     | The Command to run when the item is pressed
    * | `Function(): boolean`  | `active`  | Function to return true if MenuItem is active, else false.
    * | `object`               | `attrs`   | Node attrs that can be used within the `enable` or `active` functions.
-   * 
+   *
    * @param {Array<MenuItem | Array<MenuItem>>} content The submenu's contents in the form of MenuItems.
    * @param {object}                            options See list above.
    */
@@ -333,23 +373,13 @@ export class DropdownSubmenu {
     let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
     let submenu = crel("div", { class: this.prefix + "-submenu" }, items.dom);
     let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, submenu);
-    function repositionIfNeeded() {
-      requestAnimationFrame(() => {
-        submenu.style.top = "";
-        const rect = submenu.getBoundingClientRect();
-        if (rect.bottom > win.innerHeight) {
-          const wrapRect = wrap.getBoundingClientRect();
-          submenu.style.top = (win.innerHeight - 4 - rect.height - wrapRect.top) + "px";
-        }
-      });
-    }
     let listeningOnClose = null;
-    wrap.addEventListener("mouseenter", repositionIfNeeded);
+    wrap.addEventListener("mouseenter", () => repositionSubmenu(view, wrap, submenu));
     label.addEventListener("mousedown", e => {
       e.preventDefault();
       markMenuEvent(e);
       setClass(wrap, this.prefix + "-submenu-wrap-active", false);
-      repositionIfNeeded();
+      repositionSubmenu(view, wrap, submenu);
       if (!listeningOnClose)
         win.addEventListener("mousedown", listeningOnClose = () => {
           if (!isMenuEvent(wrap)) {
@@ -871,9 +901,389 @@ export class LinkItem extends DialogItem {
 }
 
 /**
+ * A free-text dialog for entering a code block's language. Unlike LinkItem/ImageItem,
+ * this isn't rendered as its own toolbar icon — it's opened programmatically by whatever
+ * triggers a language change (a Style-menu item, a block overlay), which supply the
+ * block's current language and a callback to receive the entered value.
+ *
+ * Never blocks submission: an unrecognized language is allowed, since highlighting is
+ * an enhancement on top of the language attribute, not a requirement of it. A live
+ * warning under the input reflects recognition status as the user types, so entering
+ * an unsupported name is a deliberate, informed choice rather than a silent no-op.
+ *
+ * @private
+ */
+export class LanguageDialogItem extends DialogItem {
+
+  constructor(config) {
+    super(config)
+    // Matches LinkItem's *actual* rendered size, i.e. .Markup-prompt-link's CSS values —
+    // not LinkItem's own dialogHeight/dialogWidth (104/317), which have drifted from that
+    // CSS rule (96/300) and only affect LinkItem's own viewport-edge positioning math, never
+    // its real on-screen size. Dependent on toolbar.css for .Markup-prompt-language.
+    this.dialogHeight = 96;
+    this.dialogWidth = 300;
+  }
+
+  /**
+   * Open the dialog positioned at the current selection, prefilled with `currentLanguage`,
+   * invoking `onSubmit(language)` when the user confirms (Enter or the OK button).
+   *
+   * @param {EditorView} view
+   * @param {string} currentLanguage
+   * @param {Function(string)} onSubmit
+   */
+  open(view, currentLanguage, onSubmit) {
+    this.currentLanguage = currentLanguage ?? '';
+    this.onSubmit = onSubmit;
+    setActiveView(view)
+    this.createDialog(view)
+    selectionChanged()
+    this.dialog.show();
+  }
+
+  /**
+   * Create the dialog element for entering a code block's language. Append it to the
+   * wrapper after the toolbar.
+   *
+   * @param {EditorView} view
+   */
+  createDialog(view) {
+    this.selectionDivRect = this.getSelectionDivRect()
+    this.setSelectionDiv();
+
+    this.dialog = crel('dialog', { class: prefix + '-prompt', contenteditable: 'false' });
+    setClass(this.dialog, prefix + '-prompt-language', true);
+    this.setDialogLocation()
+
+    let title = crel('p', 'Specify language');
+    this.dialog.appendChild(title)
+
+    this.setInputArea(view)
+    this.updateValidity()
+    this.setButtons(view)
+    this.okUpdate(view.state);
+    this.cancelUpdate(view.state);
+
+    let wrapper = getWrapper(view);
+    addPromptShowing(view);
+    wrapper.appendChild(this.dialog);
+
+    // Add an overlay so we can get a modal effect without using showModal, matching
+    // LinkItem/ImageItem's approach (see DialogItem.createDialog comments there).
+    this.overlay = crel('div', {class: prefix + '-prompt-overlay', tabindex: "-1", contenteditable: 'false'});
+    this.overlay.addEventListener('click', () => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.overlay);
+
+    this.toolbarOverlay = crel('div', {class: prefix + '-toolbar-overlay', tabindex: "-1", contenteditable: 'false'});
+    if (getSearchbar(view)) {
+      setClass(this.toolbarOverlay, searchbarShowing(), true);
+    } else {
+      setClass(this.toolbarOverlay, searchbarHidden(), true);
+    }
+    this.toolbarOverlay.addEventListener('click', () => {
+      this.closeDialog()
+    });
+    wrapper.appendChild(this.toolbarOverlay)
+  }
+
+  /**
+   * Create and add the input element for the language name.
+   *
+   * Capture Enter to submit and Escape to cancel, matching LinkItem's input handling.
+   *
+   * @param {EditorView} view
+   */
+  setInputArea(view) {
+    this.languageArea = crel('input', { type: 'text', placeholder: 'One of javascript, html, etc' })
+    this.languageArea.value = this.currentLanguage;
+    this.languageArea.addEventListener('input', () => {
+      this.updateValidity();
+      this.okUpdate(view.state);
+      this.cancelUpdate(view.state);
+    });
+    this.languageArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // Enter activates whichever button is currently the default (matches LinkItem's
+        // isValid()-gated Enter handling) — Cancel when empty/unrecognized, OK once a
+        // recognized language is entered. An unsupported language can still be submitted
+        // explicitly via the OK button, which stays enabled regardless.
+        if (this.hasRecognizedLanguage()) {
+          this.submit();
+        } else {
+          this.closeDialog();
+        }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        this.closeDialog()
+      }
+    })
+    this.dialog.appendChild(this.languageArea)
+  }
+
+  /**
+   * Whether the input currently has any language name entered, recognized or
+   * not. An empty field means "no language" — never colored invalid — but it's
+   * also not something recognized, so it alone doesn't make OK the default
+   * button; see hasRecognizedLanguage().
+   */
+  hasContent() {
+    return this.languageArea.value.trim().length > 0
+  }
+
+  /**
+   * Whether the input currently holds a recognized language name. Drives which
+   * of OK/Cancel looks like the default button — Cancel is default when the
+   * field is empty OR holds an unsupported name, OK only once a supported
+   * language is entered. Submission itself is never blocked either way (OK
+   * stays enabled always); this only changes which button LOOKS default.
+   */
+  hasRecognizedLanguage() {
+    return this.hasContent() && isRecognizedLanguage(this.languageArea.value)
+  }
+
+  /**
+   * Color the input text red (the same .invalid convention ImageItem's srcArea
+   * uses) when it has an unsupported language entered. Called on every keystroke;
+   * never affects whether submission is allowed. An empty field is never invalid —
+   * "no language" isn't an unsupported one.
+   */
+  updateValidity() {
+    let unsupported = this.hasContent() && !isRecognizedLanguage(this.languageArea.value);
+    setClass(this.languageArea, 'invalid', unsupported)
+  }
+
+  /**
+   * Create and append the OK/Cancel buttons, positioned and styled like LinkItem's:
+   * a left-side spacer so buttonsDiv's space-between pushes the OK/Cancel group to
+   * the right, and Cancel as the default (active-styled) button until the field has
+   * a language entered, at which point OK becomes the default. OK is always enabled
+   * regardless — an unrecognized language is a valid, deliberate choice, not an
+   * error to block on — only which button LOOKS like the default one changes.
+   *
+   * @param {EditorView} view
+   */
+  setButtons(view) {
+    let buttonsDiv = crel('div', { class: prefix + '-prompt-buttons' })
+    this.dialog.appendChild(buttonsDiv)
+
+    let spacer = crel('div', document.createTextNode('\u200b'))
+    buttonsDiv.appendChild(spacer)
+
+    let group = crel('div', {class: prefix + '-prompt-buttongroup'});
+    let okItem = cmdItem(() => this.submit(), {
+      class: prefix + '-menuitem',
+      title: 'OK',
+      active: () => { return this.hasRecognizedLanguage() },
+      enable: () => { return true }
+    })
+    let {dom: okDom, update: okUpdate} = okItem.render(view)
+    this.okDom = okDom;
+    this.okUpdate = okUpdate;
+    group.appendChild(this.okDom)
+
+    let cancelItem = cmdItem(() => this.closeDialog(), {
+      class: prefix + '-menuitem',
+      title: 'Cancel',
+      active: () => { return !this.hasRecognizedLanguage() },
+      enable: () => { return true }
+    })
+    let {dom: cancelDom, update: cancelUpdate} = cancelItem.render(view)
+    this.cancelDom = cancelDom;
+    this.cancelUpdate = cancelUpdate;
+    group.appendChild(this.cancelDom)
+
+    buttonsDiv.appendChild(group);
+  }
+
+  /**
+   * Read the entered language, close the dialog, and hand the (trimmed) value to
+   * whichever caller opened this dialog.
+   */
+  submit() {
+    let language = this.languageArea.value.trim();
+    let callback = this.onSubmit;
+    this.closeDialog()
+    callback?.(language)
+  }
+
+}
+
+/**
+ * Capitalize just the first character of `text`, leaving the rest as-is
+ * (e.g. "html" -> "Html", "weirdLanguage" -> "WeirdLanguage"). Display-only —
+ * the underlying language value stays exactly as entered/stored.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function capitalized(text) {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
+}
+
+/**
+ * Find the code_block containing `state`'s selection and return its `language`
+ * attribute, or null if the selection isn't in a code_block or the block has
+ * no language set.
+ *
+ * @param {EditorState} state
+ * @returns {string | null}
+ */
+function currentCodeLanguage(state) {
+  let { $from } = state.selection
+  for (let depth = $from.depth; depth >= 0; depth--) {
+    let node = $from.node(depth)
+    if (node.type === state.schema.nodes.code_block) return node.attrs.language
+  }
+  return null
+}
+
+/**
+ * The Code item's submenu, shown instead of a plain style toggle when the
+ * highlightCode behavior setting is on: "No language specified" (top), each
+ * language currently present in the document (middle, alphabetically sorted,
+ * omitted entirely if none), and "Language..." (bottom), which opens the shared
+ * `LanguageDialogItem`.
+ *
+ * A bespoke class rather than a `DropdownSubmenu` subclass/option, matching how
+ * `TableCreateSubmenu` owns its own `render()`/hover wiring instead of extending
+ * `DropdownSubmenu` — the middle section's item count varies with document
+ * content, so unlike every other submenu in this file it can't be built once
+ * from a static `content` array. It's rebuilt fresh from a walk of the document
+ * on hover, the same point at which `DropdownSubmenu`'s CSS reveals the submenu
+ * box, so there's never a moment where the (empty) box is visible before its
+ * contents are populated.
+ *
+ * @private
+ */
+class CodeLanguageSubmenu {
+
+  constructor(config, label) {
+    this.prefix = prefix + "-menu"
+    this.label = label
+    this.languageDialog = new LanguageDialogItem(config)
+  }
+
+  setLanguage(view, language) {
+    setCodeLanguageCommand(language)(view.state, view.dispatch, view)
+  }
+
+  buildItems(view) {
+    let items = []
+    items.push(cmdItem(() => { this.setLanguage(view, null); return true }, {
+      label: 'Language: None',
+      enable: () => true,
+      active: (state) => currentCodeLanguage(state) == null
+    }))
+    for (let language of presentCodeLanguages(view.state.doc)) {
+      items.push(cmdItem(() => { this.setLanguage(view, language); return true }, {
+        label: `Language: ${capitalized(language)}`,
+        enable: () => true,
+        // presentCodeLanguages lowercases its results for dedup, but the selected block's
+        // own attribute value keeps whatever case was originally typed — compare case-
+        // insensitively so a differently-cased match still shows as active.
+        active: (state) => (currentCodeLanguage(state) ?? '').toLowerCase() === language
+      }))
+    }
+    items.push(cmdItem(() => {
+      this.languageDialog.open(view, currentCodeLanguage(view.state) ?? '', (entered) => {
+        this.setLanguage(view, entered ? entered : null)
+      })
+      return true
+    }, {
+      label: 'Language...',
+      enable: () => true
+    }))
+    return items
+  }
+
+  render(view) {
+    let items = null
+    let win = view.dom.ownerDocument.defaultView || window;
+    // Whether the selection can become a code_block at all, kept in sync by update()
+    // and consulted by the mouseenter/mousedown handlers below so a disabled "Code"
+    // behaves like every plain cmdItem-built button (e.g. outdent): visually disabled
+    // via the same class MenuItem itself uses, and inert to clicks, not just DropdownSubmenu's
+    // cosmetic-only class toggle.
+    let enabled = true;
+    // prefix + "-menuitem-disabled" matches MenuItem's own disabled class (MenuItem's
+    // own this.prefix is prefix + "-menuitem") rather than this.prefix + "-disabled"
+    // (prefix + "-menu-disabled", DropdownSubmenu's scheme) — that class only has CSS
+    // scoped to icon children, so it never visibly grays out a <pre>-styled label.
+    const disabledClass = prefix + "-menuitem-disabled";
+    // Rendered as a real <pre>, like ParagraphStyleItem's style labels, so the browser's
+    // own UA font for the tag previews "Code" the same way it did before it held a submenu.
+    let label = crel("div", { class: this.prefix + "-submenu-label" }, crel('pre', { class: prefix + '-stylelabel' }, this.label));
+    let submenu = crel("div", { class: this.prefix + "-submenu" });
+    let wrap = crel("div", { class: this.prefix + "-submenu-wrap" }, label, submenu);
+    let rebuild = () => {
+      submenu.replaceChildren();
+      items = renderDropdownItems(this.buildItems(view), view);
+      submenu.append(...items.dom);   // items.dom is an array of per-item divs, not a single node
+      // MenuItem.render() only wires up the update closure — it doesn't invoke it — so
+      // without this, active/enable classes (e.g. the current-language highlight) wouldn't
+      // apply until whatever transaction happens to trigger the toolbar's next update cycle.
+      items.update(view.state);
+    }
+    let listeningOnClose = null;
+    wrap.addEventListener("mouseenter", () => {
+      if (!enabled) return;
+      rebuild();
+      repositionSubmenu(view, wrap, submenu);
+    });
+    label.addEventListener("mousedown", e => {
+      if (!enabled) return;
+      e.preventDefault();
+      markMenuEvent(e);
+      setClass(wrap, this.prefix + "-submenu-wrap-active", false);
+      repositionSubmenu(view, wrap, submenu);
+      if (!listeningOnClose)
+        win.addEventListener("mousedown", listeningOnClose = () => {
+          if (!isMenuEvent(wrap)) {
+            wrap.classList.remove(this.prefix + "-submenu-wrap-active");
+            win.removeEventListener("mousedown", listeningOnClose);
+            listeningOnClose = null;
+          }
+        });
+    });
+    function update(state) {
+      // Gate on whether the selection could become a code_block at all, like every
+      // other Style-menu item does (e.g. ParagraphStyleItem's enable(state)).
+      enabled = setCodeLanguageCommand(null)(state);
+      setClass(label, disabledClass, !enabled);
+      // .Markup-menu-submenu-wrap:hover .Markup-menu-submenu (toolbar.css) reveals the
+      // submenu purely via CSS :hover, independent of the mouseenter/mousedown guards
+      // above — those only stop rebuild() from populating fresh items, they don't stop
+      // the CSS rule from showing the (possibly stale, previously-populated) submenu.
+      // An inline style here wins over that CSS rule's specificity either way.
+      submenu.style.display = enabled ? '' : 'none';
+      let inner = items ? items.update(state) : true;
+      wrap.style.display = inner ? "" : "none";
+      return inner;
+    }
+    return { dom: wrap, update };
+  }
+}
+
+/**
+ * Build the Code item's submenu. See `CodeLanguageSubmenu`.
+ *
+ * @param {object} config
+ * @param {string} label
+ * @returns {CodeLanguageSubmenu}
+ */
+export function codeLanguageSubmenu(config, label) {
+  return new CodeLanguageSubmenu(config, label)
+}
+
+/**
  * Represents the image MenuItem in the toolbar, which opens the image dialog and maintains its state.
  * Requires commands={getImageAttributes, insertImageCommand, modifyImageCommand, getSelectionRect}
- * 
+ *
  * @private
  */
 export class ImageItem extends DialogItem {
