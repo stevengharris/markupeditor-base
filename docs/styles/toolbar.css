@@ -267,6 +267,16 @@
   padding: 2px 8px 2px 4px;
 }
 
+.Markup-menu-dropdown-separator {
+  border-top: 1px solid var(--Markup-border-color, lightgray);
+  margin: 4px 0;
+}
+@media (prefers-color-scheme: dark) {
+  .Markup-menu-dropdown-separator {
+    border-top: 1px solid var(--Markup-border-color, gray);
+  }
+}
+
 /* Used to overlfow and ellipsis-truncate text in Dropdown menu items */
 .Markup-menuitem-clipped {
   white-space: nowrap;  /* Required for text-overflow */
