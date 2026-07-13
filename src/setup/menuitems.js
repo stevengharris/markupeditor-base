@@ -198,7 +198,7 @@ export class Dropdown {
    */
   render(view) {
     let options = this.options;
-    let content = renderDropdownItems(this.content, view);
+    let content = renderDropdownItems([this.content], view);
     let win = view.dom.ownerDocument.defaultView || window;
     let indicator = crel("span", "\u25BE");
     setClass(indicator, this.prefix + "-dropdown-indicator", true);
@@ -368,7 +368,7 @@ export class DropdownSubmenu {
   */
   render(view) {
     let options = this.options;
-    let items = renderDropdownItems(this.content, view);
+    let items = renderDropdownItems([this.content], view);
     let win = view.dom.ownerDocument.defaultView || window;
     let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
     let submenu = crel("div", { class: this.prefix + "-submenu" }, items.dom);
@@ -1114,18 +1114,6 @@ export class LanguageDialogItem extends DialogItem {
 }
 
 /**
- * Capitalize just the first character of `text`, leaving the rest as-is
- * (e.g. "html" -> "Html", "weirdLanguage" -> "WeirdLanguage"). Display-only —
- * the underlying language value stays exactly as entered/stored.
- *
- * @param {string} text
- * @returns {string}
- */
-function capitalized(text) {
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
-}
-
-/**
  * Find the code_block containing `state`'s selection and return its `language`
  * attribute, or null if the selection isn't in a code_block or the block has
  * no language set.
@@ -1173,23 +1161,12 @@ class CodeLanguageSubmenu {
   }
 
   buildItems(view) {
-    let items = []
-    items.push(cmdItem(() => { this.setLanguage(view, null); return true }, {
-      label: 'Language: None',
+    let noneItem = cmdItem(() => { this.setLanguage(view, null); return true }, {
+      label: 'Language: none',
       enable: () => true,
       active: (state) => currentCodeLanguage(state) == null
-    }))
-    for (let language of presentCodeLanguages(view.state.doc)) {
-      items.push(cmdItem(() => { this.setLanguage(view, language); return true }, {
-        label: `Language: ${capitalized(language)}`,
-        enable: () => true,
-        // presentCodeLanguages lowercases its results for dedup, but the selected block's
-        // own attribute value keeps whatever case was originally typed — compare case-
-        // insensitively so a differently-cased match still shows as active.
-        active: (state) => (currentCodeLanguage(state) ?? '').toLowerCase() === language
-      }))
-    }
-    items.push(cmdItem(() => {
+    })
+    let dialogItem = cmdItem(() => {
       this.languageDialog.open(view, currentCodeLanguage(view.state) ?? '', (entered) => {
         this.setLanguage(view, entered ? entered : null)
       })
@@ -1197,8 +1174,21 @@ class CodeLanguageSubmenu {
     }, {
       label: 'Language...',
       enable: () => true
-    }))
-    return items
+    })
+    let languageItems = []
+    for (let language of presentCodeLanguages(view.state.doc)) {
+      languageItems.push(cmdItem(() => { this.setLanguage(view, language); return true }, {
+        label: language.toLowerCase(),
+        enable: () => true,
+        // presentCodeLanguages lowercases its results for dedup, but the selected block's
+        // own attribute value keeps whatever case was originally typed — compare case-
+        // insensitively so a differently-cased match still shows as active.
+        active: (state) => (currentCodeLanguage(state) ?? '').toLowerCase() === language
+      }))
+    }
+    // Grouped so renderDropdownItems provides separators. Safe to pass languageItems
+    // even when empty — renderDropdownItems drops structurally empty groups.
+    return [[noneItem, dialogItem], languageItems]
   }
 
   render(view) {
@@ -1659,7 +1649,7 @@ export class TableCreateSubmenu {
   render(view) {
     let resetSize = this.resetSize.bind(this);
     let options = this.options;
-    let items = renderDropdownItems(this.content, view);
+    let items = renderDropdownItems([this.content], view);
     this.itemsUpdate = items.update;  // Track the update method so we can update as the mouse is over items
     let win = view.dom.ownerDocument.defaultView || window;
     let label = crel("div", { class: this.prefix + "-submenu-label" }, translate(view, this.options.label || ""));
@@ -2018,6 +2008,17 @@ export function separator() {
 }
 
 /**
+ * Return a div for a separator between groups of MenuItems in a dropdown-item list
+ * (vertical layout) — distinct from `separator()`, which is styled for the toolbar
+ * bar's horizontal layout.
+ *
+ * @private
+ */
+function dropdownSeparator() {
+    return crel("div", { class: prefix + "-menu-dropdown-separator" });
+}
+
+/**
  * Return whether the selection in state is within a mark of type `markType`.
  * @private
  * @param {EditorState} state 
@@ -2158,20 +2159,55 @@ export function renderGroupedFit(view, content, wrapAtIndex) {
 }
 
 /**
- * Render the items in a Dropdown in the view.
- * 
- * @param {Array<MenuItem>} items The content to be rendered in a Dropdown
- * @param {EditorView} view       The EditorView to render the items in 
- * @returns {object}  An object containing the DOM for the Dropdown and an update function to display it
+ * Render the items in a Dropdown in the view, as a list of dropdown-item rows.
+ *
+ * `groups` is an array of arrays: each sub-array is a group of MenuItems, and a
+ * separator row is inserted between adjacent groups that both have content for
+ * the current state (auto-hidden otherwise). Mirrors `renderGrouped`'s toolbar-bar
+ * behavior, but keeps the dropdown-item row wrapper/CSS instead of switching to
+ * the toolbar's menuitem span.
+ *
+ * @param {Array<Array<MenuItem>>} groups The groups of MenuItems to be rendered in a Dropdown
+ * @param {EditorView} view              The EditorView to render the items in
+ * @returns {object}  An object containing the DOM (items and separators, in display order) for the Dropdown and an update function to display it
  */
-export function renderDropdownItems(items, view) {
-    let rendered = [], updates = [];
-    for (let i = 0; i < items.length; i++) {
-        let { dom, update } = items[i].render(view);
-        rendered.push(crel("div", { class: prefix + "-menu-dropdown-item" }, dom));
-        updates.push(update);
-    };
-    return { dom: rendered, update: combineUpdates(updates, rendered) };
+export function renderDropdownItems(groups, view) {
+    // Drop structurally empty groups (e.g. no present languages) up front, so a
+    // separator is never placed next to a group that was never going to render
+    // anything — update() below only knows how to auto-hide a separator when the
+    // adjacent group rendered items that are merely inactive/disabled for the
+    // current state, not when the group had zero items to begin with.
+    let nonEmptyGroups = groups.filter(items => items.length > 0);
+    let rendered = [], updates = [], separators = [];
+    for (let i = 0; i < nonEmptyGroups.length; i++) {
+        let items = nonEmptyGroups[i], localUpdates = [], localNodes = [];
+        for (let j = 0; j < items.length; j++) {
+            let { dom, update } = items[j].render(view);
+            let div = crel("div", { class: prefix + "-menu-dropdown-item" }, dom);
+            rendered.push(div);
+            localNodes.push(div);
+            localUpdates.push(update);
+        }
+        updates.push(combineUpdates(localUpdates, localNodes));
+        if (i < nonEmptyGroups.length - 1) {
+            let sep = dropdownSeparator();
+            rendered.push(sep);
+            separators.push(sep);
+        }
+    }
+    function update(state) {
+        let something = false, needSep = false;
+        for (let i = 0; i < updates.length; i++) {
+            let hasContent = updates[i](state);
+            if (i)
+                separators[i - 1].style.display = needSep && hasContent ? "" : "none";
+            needSep = hasContent;
+            if (hasContent)
+                something = true;
+        }
+        return something;
+    }
+    return { dom: rendered, update };
 }
 
 export function combineUpdates(updates, nodes) {

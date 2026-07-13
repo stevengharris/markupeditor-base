@@ -1259,7 +1259,7 @@ export function codeBlockAtSelection(state) {
  * `state`'s selection, or null if the selection isn't in a code_block. `pos`
  * is the position just inside the code_block's content, where a widget
  * Decoration for the overlay should be anchored. `label` is "Language:
- * <Capitalized name>" or "Language: None" — display-only, the underlying
+ * <lowercase name>" or "Language: none" — display-only, the underlying
  * `language` attribute value is untouched.
  *
  * @ignore
@@ -1270,7 +1270,7 @@ export function codeLanguageOverlayInfo(state) {
     const found = codeBlockAtSelection(state)
     if (!found) return null
     const language = found.node.attrs.language
-    const label = language ? `Language: ${language.charAt(0).toUpperCase()}${language.slice(1)}` : 'Language: None'
+    const label = language ? `Language: ${language.toLowerCase()}` : 'Language: none'
     return { pos: found.pos + 1, label }
 }
 
