@@ -1,7 +1,7 @@
 import {keymap} from "prosemirror-keymap"
 import {history} from "prosemirror-history"
 import {baseKeymap} from "prosemirror-commands"
-import {AllSelection, NodeSelection, Plugin} from "prosemirror-state"
+import {AllSelection, NodeSelection, Selection, TextSelection, Plugin} from "prosemirror-state"
 import {dropCursor} from "prosemirror-dropcursor"
 import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
@@ -14,7 +14,7 @@ import {prefix, setPrefix, getToolbar} from "../domaccess.js"
 import {LinkItem, ImageItem, SearchItem, LanguageDialogItem} from "./menuitems.js"
 import {postMessage, searchIsActive, codeLanguageOverlayInfo, codeBlockAtSelection, setCodeLanguageCommand} from "../markup"
 import {activeConfig, selectedID} from "../registry.js"
-import {hljs} from "../highlighting.js"
+import {highlightSpans, isRecognizedLanguage} from "../highlighting.js"
 
 /**
  * The tablePlugin handles decorations that add CSS styling 
@@ -45,78 +45,37 @@ const tablePlugin = new Plugin({
   }
 })
 
-const codeHighlightCache = new WeakMap()
-
-/**
- * Convert an hljs-highlighted HTML string into a list of {from, to, class}
- * ranges relative to the start of the original plain-text code, by building
- * a detached element via innerHTML (not the global DOMParser class, whose
- * separate parseFromString implementation is less consistently supported
- * across environments than innerHTML) and walking its child nodes.
- *
- * @ignore
- */
-function highlightSpecs(code, language) {
-  let html
-  try {
-    html = hljs.highlight(code, {language, ignoreIllegals: true}).value
-  } catch {
-    return []
-  }
-  const container = document.createElement('div')
-  container.innerHTML = html
-  const specs = []
-  let offset = 0
-  function walk(parent) {
-    parent.childNodes.forEach((child) => {
-      if (child.nodeType === Node.TEXT_NODE) {
-        offset += child.textContent.length
-      } else if (child.nodeType === Node.ELEMENT_NODE) {
-        const start = offset
-        walk(child)
-        const cls = child.getAttribute('class')
-        if (cls) specs.push({from: start, to: offset, class: cls})
-      }
-    })
-  }
-  walk(container)
-  return specs
+function decorationsForSpans(pos, spans) {
+  return spans.map(({from, to, class: cls}) => Decoration.inline(pos + 1 + from, pos + 1 + to, {class: cls}))
 }
 
-/**
- * Walk doc for code_block nodes with a registered language and build a
- * DecorationSet highlighting each one, using a WeakMap cache keyed by node
- * identity so unchanged blocks (same node reference across transactions,
- * per ProseMirror's persistent-tree structural sharing) are never re-run
- * through hljs.highlight().
- *
- * @ignore
- */
-function computeCodeHighlightDecorations(doc) {
+// null for anything that isn't a highlightable code_block, so callers can
+// skip it (no cache entry, no decorations) with a single check.
+function highlightEntryFor(node) {
+  const language = node.attrs.language
+  if (!language || !isRecognizedLanguage(language)) return null
+  return {node, spans: highlightSpans(node.textContent, language)}
+}
+
+function computeAllHighlights(doc) {
+  const cache = new Map()
   const decorations = []
   doc.descendants((node, pos) => {
     if (node.type.name !== 'code_block') return
-    const language = node.attrs.language
-    if (!language || !hljs.getLanguage(language)) return
-    let specs = codeHighlightCache.get(node)
-    if (!specs) {
-      specs = highlightSpecs(node.textContent, language)
-      codeHighlightCache.set(node, specs)
+    const entry = highlightEntryFor(node)
+    if (entry) {
+      cache.set(pos, entry)
+      decorations.push(...decorationsForSpans(pos, entry.spans))
     }
-    specs.forEach(({from, to, class: cls}) => {
-      decorations.push(Decoration.inline(pos + 1 + from, pos + 1 + to, {class: cls}))
-    })
     return false
   })
-  return DecorationSet.create(doc, decorations)
+  return {cache, decorations: DecorationSet.create(doc, decorations)}
 }
 
 /**
  * Walk cur's children, comparing against old's, skipping any subtree that's
- * the same node object as before (ProseMirror's persistent-tree structural
- * sharing means an unchanged subtree is reference-identical). Only visits
- * nodes in the changed region, so cost is bounded by how much of the doc
- * actually changed rather than the whole document.
+ * the same node object as before. Bounds cost to the changed region rather
+ * than the whole document.
  *
  * @ignore
  */
@@ -136,37 +95,45 @@ function changedDescendants(old, cur, offset, f) {
   }
 }
 
-/**
- * The codeHighlightPlugin applies syntax-highlighting decorations to
- * code_block nodes whose language is registered in highlighting.js's hljs
- * instance. Only registered via markupSetup() when the highlightCode
- * behavior setting is on.
- *
- * @ignore
- */
+// Carries cache entries forward by position + Node.eq, not object identity;
+// changedDescendants then fills in anything new or actually changed.
+function updateHighlights(tr, {cache}) {
+  const nextCache = new Map()
+  const decorations = []
+  const carryForward = (pos, entry) => {
+    nextCache.set(pos, entry)
+    decorations.push(...decorationsForSpans(pos, entry.spans))
+  }
+
+  cache.forEach(({node, spans}, pos) => {
+    const mapped = tr.mapping.mapResult(pos)
+    if (mapped.deleted) return
+    const newNode = tr.doc.nodeAt(mapped.pos)
+    if (newNode && newNode.eq(node)) carryForward(mapped.pos, {node: newNode, spans})
+  })
+
+  changedDescendants(tr.before, tr.doc, 0, (node, pos) => {
+    if (node.type.name !== 'code_block' || nextCache.has(pos)) return
+    const entry = highlightEntryFor(node)
+    if (entry) carryForward(pos, entry)
+  })
+
+  return {cache: nextCache, decorations: DecorationSet.create(tr.doc, decorations)}
+}
+
+// Syntax-highlighting decorations for code_block nodes with a registered
+// language. Only registered via markupSetup() when highlightCode is on.
 export const codeHighlightPlugin = new Plugin({
   state: {
     init(_, {doc}) {
-      return computeCodeHighlightDecorations(doc)
+      return computeAllHighlights(doc)
     },
-    apply(tr, set) {
-      if (!tr.docChanged) return set
-      let touchedCodeBlock = false
-      const checkCodeBlock = (node) => {
-        if (node.type.name === 'code_block') touchedCodeBlock = true
-      }
-      // Check both directions: a code_block added/changed in the new doc, and one
-      // removed (e.g. by undoing a paragraph->code_block conversion) from the old
-      // doc. changedDescendants(old, cur, ...) only ever visits cur's children, so
-      // catching removal requires calling it again with old/new swapped.
-      changedDescendants(tr.before, tr.doc, 0, checkCodeBlock)
-      if (!touchedCodeBlock) changedDescendants(tr.doc, tr.before, 0, checkCodeBlock)
-      if (!touchedCodeBlock) return set.map(tr.mapping, tr.doc)
-      return computeCodeHighlightDecorations(tr.doc)
+    apply(tr, value) {
+      return tr.docChanged ? updateHighlights(tr, value) : value
     }
   },
   props: {
-    decorations(state) { return codeHighlightPlugin.getState(state) }
+    decorations(state) { return codeHighlightPlugin.getState(state).decorations }
   }
 })
 
@@ -197,24 +164,17 @@ export function hasRoomAboveOverlay(view, preDOM) {
 }
 
 /**
- * Compute the semi-transparent "Language: <name>" widget Decoration for the
- * selected code_block, if any. Recomputed on every transaction — this is only
- * a selection lookup plus a string, not a doc walk, so unlike
- * computeCodeHighlightDecorations there's no need to cache or gate on
- * tr.docChanged.
+ * Semi-transparent "Language: <name>" widget Decoration for the selected
+ * code_block, if any. A selection lookup plus a string, cheap enough to
+ * recompute every transaction with no caching.
  *
  * @ignore
  */
 function computeCodeLanguageOverlayDecorations(state, languageDialog) {
   const info = codeLanguageOverlayInfo(state)
   if (!info) return DecorationSet.empty
-  // An empty code_block's only content would become this widget's contentEditable=false
-  // button — the exact "non-editable content alone in a textblock" case prosemirror-view
-  // itself flags as fragile in Safari/Chrome (addTextblockHacks, working around Safari
-  // bug #1165 and Chrome bug #1152). Skip the overlay until there's actual code; there's
-  // nothing useful to show a language badge over yet anyway.
   const found = codeBlockAtSelection(state)
-  if (!found || found.node.content.size === 0) return DecorationSet.empty
+  if (!found) return DecorationSet.empty
   const widget = Decoration.widget(info.pos, (view) => {
     const button = document.createElement('button')
     button.type = 'button'
@@ -235,13 +195,9 @@ function computeCodeLanguageOverlayDecorations(state, languageDialog) {
     })
     return button
   }, {
-    side: 1,
-    // By default the cursor at the widget's position is strictly kept on the
-    // `side` indicated above, and per prosemirror-view's own docs "keyboard
-    // cursor motion will not, without further custom handling, visit both
-    // sides of the widget" — which is what broke placing/moving the cursor to
-    // a code_block's start. relaxedSide lets the DOM selection land on either
-    // side instead of being force-pinned to one.
+    // Negative side keeps domFromPos from ever landing on the widget itself
+    // (its domAtom is always true, so side >= 0 can't resolve past it).
+    side: -1,
     relaxedSide: true,
     // Keyed so ProseMirror reuses the existing button DOM node (and its click listener)
     // across transactions unrelated to this block, instead of destroying and rebuilding it
@@ -252,6 +208,42 @@ function computeCodeLanguageOverlayDecorations(state, languageDialog) {
     key: `code-language-overlay-${info.pos}-${info.label}`
   })
   return DecorationSet.create(state.doc, [widget])
+}
+
+/**
+ * Computes the next ArrowLeft/ArrowRight position from the model and
+ * dispatches it directly, instead of trusting native cursor movement.
+ *
+ * A selection resolved exactly at a widget's own position never renders
+ * correctly, and native arrow-key movement doesn't reliably cross that
+ * boundary either. Scoped to code_block boundaries by DOCUMENT STRUCTURE
+ * (is the current or landing position's parent a code_block), not by
+ * decoration presence — an earlier decoration-presence check
+ * (hasWidgetAt) was tried and reverted because the widget doesn't exist
+ * in decorations until the block is already selected, so there was
+ * nothing to detect on the way in. Structure is known independent of
+ * decorations/selection, so it doesn't have that chicken-and-egg problem,
+ * and it keeps this handler from overriding native RTL/bidi and
+ * grapheme-cluster caret movement in ordinary prose, where none of this
+ * is needed.
+ *
+ * @ignore
+ */
+function handlePlainArrowKeyNavigation(view, event) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return false
+  if (event.shiftKey || event.metaKey || event.altKey || event.ctrlKey) return false
+  const { state } = view
+  const sel = state.selection
+  if (!(sel instanceof TextSelection) || !sel.empty) return false
+  const dir = event.key === 'ArrowLeft' ? -1 : 1
+  const targetPos = sel.from + dir
+  if (targetPos < 0 || targetPos > state.doc.content.size) return false
+  const newSel = TextSelection.near(state.doc.resolve(targetPos), dir)
+  const currentlyInCodeBlock = sel.$from.parent.type.name === 'code_block'
+  const landingInCodeBlock = newSel.$from.parent.type.name === 'code_block'
+  if (!currentlyInCodeBlock && !landingInCodeBlock) return false
+  view.dispatch(state.tr.setSelection(newSel).scrollIntoView())
+  return true
 }
 
 /**
@@ -275,11 +267,168 @@ export function codeLanguageOverlayPlugin(config) {
       }
     },
     props: {
-      decorations(state) { return thePlugin.getState(state) }
+      decorations(state) { return thePlugin.getState(state) },
+      handleKeyDown: handlePlainArrowKeyNavigation
     }
   })
   return thePlugin
 }
+
+/**
+ * Character inserted into a code_block whenever it would otherwise be
+ * genuinely empty (content.size === 0), so it never actually is.
+ *
+ * A plain empty textblock is fine on its own — prosemirror-view's own
+ * addTextblockHacks (NodeViewDesc.addTextblockHacks) inserts a trailing
+ * <br class="ProseMirror-trailingBreak"> to keep it natively selectable,
+ * and that alone works correctly (a <p></p> with nothing else needs
+ * exactly this, and gets it). The problem is specific to a code_block
+ * that's ALSO showing a widget (this plugin's own Language tab, or a
+ * downstream plugin's, e.g. the mermaid plugin's Source/Diagram tabs):
+ * addTextblockHacks's own check is `lastChild.dom.contentEditable ==
+ * "false"` — unconditional, no decoration-spec flag exempts a widget from
+ * it — and when a widget is the block's only content, IT is lastChild.
+ * That additionally inserts an <img class="ProseMirror-separator">, and
+ * that separator is an UNCONDITIONAL native-selection barrier (scanFor's
+ * atomElements regex matches any <img>, no relaxedSide exception).
+ * Confirmed via real Safari testing: with the widget showing on a
+ * genuinely empty code_block, a real keystroke lands in the PRECEDING
+ * block instead of the code_block, silently.
+ *
+ * Guaranteeing real content sidesteps addTextblockHacks's check entirely
+ * (lastChild becomes a real TextViewDesc, not the widget) — a widget
+ * followed by real text is the normal, already-working shape every
+ * non-empty code_block already has.
+ *
+ * A single regular space, not a zero-width one — a zero-width character
+ * is real content that keeps content.size > 0, but the caret produces NO
+ * visible movement crossing it, which reads as broken/unresponsive to a
+ * user pressing an arrow key. A plain space moves the caret visibly, the
+ * same as it would across any other single character, and (unlike a
+ * zero-width space) is already stripped by plain .trim() — no downstream
+ * "is this code_block meaningfully empty" check needs updating to know
+ * about it specially.
+ *
+ * Not exported from this package's public surface (see this file's own
+ * changedDescendants-style precedent in downstream plugins) — a consumer
+ * needing the same "is this code_block meaningfully empty" check (e.g.
+ * markupeditor-mermaid.js) already gets it for free via .trim(), so no
+ * cross-package constant sharing is actually needed here.
+ *
+ * @ignore
+ */
+export const EMPTY_CODE_BLOCK_PLACEHOLDER = ' '
+
+/**
+ * Keeps EMPTY_CODE_BLOCK_PLACEHOLDER's invariant true: every code_block
+ * either has real (non-placeholder) content, or contains ONLY the
+ * placeholder — never truly empty, and never the placeholder coexisting
+ * with real content for more than the one transaction it takes to notice.
+ * Runs via appendTransaction (not apply()) because it needs to react to
+ * the FINAL doc a transaction produces and possibly fold in one more
+ * step, atomically, before the state settles.
+ *
+ * Two fixups:
+ *  - Insertion: any code_block that's genuinely empty in the FINAL doc
+ *    (content.size === 0) — a fresh conversion of an already-empty
+ *    paragraph, or the user backspaced out everything. Checked against
+ *    every code_block; there's no history-dependence here, an empty
+ *    code_block should always get the placeholder regardless of how it
+ *    got that way.
+ *  - Stripping: scoped to code_blocks whose content was EXACTLY the
+ *    placeholder in oldState (mapped forward through this transaction's
+ *    own steps to find where that same block ended up) — NOT a blind
+ *    "does this code_block's current text contain a space anywhere"
+ *    check. That distinction matters: a pre-existing, legitimate
+ *    code_block containing real spaces (e.g. "function foo() {}") must
+ *    never have a character silently deleted from it just because some
+ *    UNRELATED edit elsewhere in the document triggered this plugin's
+ *    appendTransaction. Only a block that was JUST a lone placeholder
+ *    moments ago is eligible to have it stripped.
+ *
+ * Each fixup's position is mapped through the accumulating transaction's
+ * own mapping before being applied, so multiple code_blocks needing a
+ * fixup in the same transaction (e.g. a multi-block paste) are all
+ * handled correctly in one appendTransaction call, not just the first.
+ *
+ * Selection placement on insertion: the placeholder is inserted AT the
+ * position selection would otherwise land, which — left to
+ * insertText's own default "push the cursor past what was just
+ * inserted" mapping — puts the cursor AFTER the placeholder space, not
+ * before it. Visually that reads as the caret sitting to the right of a
+ * blank space for no reason, which looks wrong; a block that's
+ * conceptually still empty should have its cursor at the very start,
+ * the same place native Home/click-at-start lands on any other empty
+ * or non-empty textblock. So the fixup, when it discovers the doc's
+ * OTHER (pre-fixup) selection was already exactly at the insertion
+ * point — i.e. this specific block is the one actually being
+ * interacted with, not some unrelated empty code_block elsewhere in
+ * the document this same appendTransaction also happens to fix up —
+ * explicitly resets selection to the placeholder's start afterward.
+ *
+ * @ignore
+ */
+export const emptyCodeBlockPlaceholderPlugin = new Plugin({
+  appendTransaction(transactions, oldState, newState) {
+    // Deliberately NOT gated on tr.docChanged (matching
+    // computeCodeLanguageOverlayDecorations's own "recomputed on every
+    // transaction" choice) — a document can LOAD with an already-empty
+    // code_block, or the user can select into one, with no doc-changing
+    // transaction involved at all; appendTransaction still runs for a
+    // selection-only transaction, and that's the only hook available for
+    // fixing up a document that was already in this state before this
+    // plugin ever got a chance to react (EditorState.create()'s own
+    // init() has no equivalent of appendTransaction to hang this on).
+    const fixups = []
+    newState.doc.descendants((node, pos) => {
+      if (node.type.name === 'code_block' && node.content.size === 0) {
+        // Only this specific block's insertion should claim the cursor —
+        // compared against newState.selection (the doc/selection this
+        // appendTransaction is reacting to, before any of ITS OWN steps),
+        // not some later, already-mapped position.
+        const claimsSelection = newState.selection.empty && newState.selection.from === pos + 1
+        fixups.push({ insertAt: pos + 1, claimsSelection })
+      }
+    })
+    oldState.doc.descendants((node, oldPos) => {
+      if (node.type.name !== 'code_block' || node.textContent !== EMPTY_CODE_BLOCK_PLACEHOLDER) return
+      // Track the placeholder CHARACTER's own position through the mapping (not the
+      // block's position, and not a text search over the block's new content) — an
+      // indexOf-based search can't tell "the surviving placeholder" apart from a
+      // coincidental space introduced by whatever was just typed or pasted (e.g.
+      // pasting "graph TD" over/before the placeholder: naively stripping the first
+      // space found deletes the one between "graph" and "TD" instead). If any step
+      // deletes the placeholder's own position, it was consumed by the edit (e.g. a
+      // paste that replaced the selected placeholder) and there's nothing left to strip.
+      let charPos = oldPos + 1
+      let consumed = false
+      for (const tr of transactions) {
+        const result = tr.mapping.mapResult(charPos, 1)
+        if (result.deleted) { consumed = true; break }
+        charPos = result.pos
+      }
+      if (consumed) return
+      const newNode = newState.doc.nodeAt(newState.doc.resolve(charPos).before())
+      if (!newNode || newNode.type.name !== 'code_block' || newNode.textContent === EMPTY_CODE_BLOCK_PLACEHOLDER) return
+      if (newState.doc.textBetween(charPos, charPos + 1) !== EMPTY_CODE_BLOCK_PLACEHOLDER) return
+      fixups.push({ deleteFrom: charPos, deleteTo: charPos + 1 })
+    })
+    if (fixups.length === 0) return null
+    const tr = newState.tr
+    for (const fixup of fixups) {
+      if (fixup.insertAt !== undefined) {
+        const mappedPos = tr.mapping.map(fixup.insertAt)
+        tr.insertText(EMPTY_CODE_BLOCK_PLACEHOLDER, mappedPos)
+        if (fixup.claimsSelection) {
+          tr.setSelection(Selection.near(tr.doc.resolve(mappedPos)))
+        }
+      } else {
+        tr.delete(tr.mapping.map(fixup.deleteFrom), tr.mapping.map(fixup.deleteTo))
+      }
+    }
+    return tr
+  }
+})
 
 const searchModePlugin  = new Plugin({
   state: {
@@ -425,6 +574,14 @@ export function markupSetup(config, schema) {
 
   // Add the plugin that handles table borders
   plugins.push(tablePlugin);
+
+  // Keeps code_blocks from ever being genuinely empty — see
+  // emptyCodeBlockPlaceholderPlugin's own comment. Registered unconditionally
+  // (not gated behind highlightCode): the invariant it maintains is useful to
+  // ANY plugin that might show a widget on a selected code_block, not just
+  // codeLanguageOverlayPlugin below — e.g. the mermaid plugin's own Source/
+  // Diagram tabs, added independently, outside this config.
+  plugins.push(emptyCodeBlockPlaceholderPlugin)
 
   // Add the plugins that highlight code blocks and show the selected block's
   // language overlay, if enabled in behavior config

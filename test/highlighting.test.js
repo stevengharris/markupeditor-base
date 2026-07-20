@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, test, expect } from 'vitest'
-import { hljs, isRecognizedLanguage } from '../src/highlighting.js'
+import { hljs, isRecognizedLanguage, highlightSpans } from '../src/highlighting.js'
 
 function loadFixture(filename) {
     let fullFilename = path.join(process.cwd(), filename)
@@ -43,6 +43,45 @@ describe('highlighting — hljs mechanism', () => {
     test('null/undefined input is not recognized', () => {
         expect(isRecognizedLanguage(null)).toBe(false)
         expect(isRecognizedLanguage(undefined)).toBe(false)
+    })
+
+})
+
+/**
+ * highlightSpans walks hljs's own token tree (no DOM). Values below were
+ * captured from real hljs output for each snippet, not hand-computed.
+ */
+describe('highlighting — highlightSpans', () => {
+
+    test('javascript: keyword and number spans', () => {
+        expect(highlightSpans('const x = 1;', 'javascript')).toEqual([
+            { from: 0, to: 5, class: 'hljs-keyword' },
+            { from: 10, to: 11, class: 'hljs-number' },
+        ])
+    })
+
+    test('css: comment, selector, and attribute spans', () => {
+        expect(highlightSpans('/* hi */\na { color: red; }', 'css')).toEqual([
+            { from: 0, to: 8, class: 'hljs-comment' },
+            { from: 9, to: 10, class: 'hljs-selector-tag' },
+            { from: 13, to: 18, class: 'hljs-attribute' },
+        ])
+    })
+
+    test('xml with an embedded script sublanguage block needs no special-casing', () => {
+        expect(highlightSpans('<script>var x = 1;</script>', 'xml')).toEqual([
+            { from: 1, to: 7, class: 'hljs-name' },
+            { from: 0, to: 8, class: 'hljs-tag' },
+            { from: 8, to: 11, class: 'hljs-keyword' },
+            { from: 16, to: 17, class: 'hljs-number' },
+            { from: 8, to: 18, class: 'language-javascript' },
+            { from: 20, to: 26, class: 'hljs-name' },
+            { from: 18, to: 27, class: 'hljs-tag' },
+        ])
+    })
+
+    test('unrecognized language produces no spans', () => {
+        expect(highlightSpans('code', 'not-a-real-language')).toEqual([])
     })
 
 })

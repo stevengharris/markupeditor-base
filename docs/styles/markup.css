@@ -298,6 +298,10 @@ pre:has(.Markup-code-language-overlay) {
     border-radius: 0 0 4px 4px;
 }
 
+/* Matches .Markup-menuitem-active's selected-button color scheme (toolbar.css)
+   exactly: light mode is white lettering on the accent-blue fill (the base
+   rule above), dark mode flips to black lettering on the accent-lightblue
+   fill. */
 @media (prefers-color-scheme: dark) {
   .Markup-code-language-overlay {
     background: var(--Markup-accent-color, lightblue);

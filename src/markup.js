@@ -373,20 +373,62 @@ export function pasteCode(text) {
 
 /**
  * Do a custom paste operation of "text only", which we will extract from the html
- * ourselves. First we get a node that conforms to the schema, which by definition 
+ * ourselves. First we get a node that conforms to the schema, which by definition
  * only includes elements in a form we recognize, no spans, styles, etc.
  * The trick here is that we want to use the same code to paste text as we do for
  * HTML, but we want to paste something that is the MarkupEditor-equivalent of
  * unformatted text.
- *  
+ *
  * @param   {string}                html    The HTML to be pasted
  * @param   {ClipboardEvent | null} event   A mocked ClipboardEvent for testing
  */
 export function pasteText(html, event) {
-    const node = _nodeFromHTML(html);
+    const node = _nodeFromHTML(_preprocessPasteText(html));
     const htmlFragment = fragmentFromNode(node);
     const minimalHTML = _minimalHTML(htmlFragment); // Reduce to MarkupEditor-equivalent of "plain" text
     pasteHTML(minimalHTML, event);
+};
+
+/**
+ * Preprocess raw text before it's parsed as HTML by _nodeFromHTML, converting
+ * meaningful line structure into real markup so it survives.
+ *
+ * Only applied when there's an actual newline AND no real markup at all: that
+ * combination means genuinely plain text (e.g., from a clipboard with no text/html
+ * flavor available, or a plain-text-only source app) whose line structure is
+ * meaningful — not HTML, where a run of whitespace (including newlines) collapses to
+ * nothing meaningful once parsed. Gating on '\n' presence too, not just the absence
+ * of '<', matters: some callers intentionally pass single-line text containing
+ * literal HTML entities (e.g. "Hello &lt;b&gt;bold&lt;/b&gt; world", meant to render
+ * as that literal text, not a tag) with no '<' character anywhere in it either —
+ * without the '\n' check, that would be misidentified as bare plain text needing
+ * escaping and get double-escaped (&lt; -> &amp;lt;). No newline means there's
+ * nothing this preprocessing could improve regardless, so it only ever applies to
+ * input _nodeFromHTML couldn't already have handled correctly as HTML on its own.
+ * @ignore
+ */
+function _preprocessPasteText(html) {
+    return (html.includes('\n') && !html.includes('<')) ? _linebreaksToHTML(html) : html;
+};
+
+/**
+ * Convert bare plain text (no HTML markup at all) into minimal paragraph/br-structured
+ * HTML: a blank line (a run of two or more newlines) starts a new paragraph; a single
+ * newline within a paragraph becomes a <br>. Text is HTML-escaped first via a detached
+ * element's textContent/innerHTML round-trip, the standard safe way to escape arbitrary
+ * text for insertion into an HTML string, so literal &, <, > in the source can't be
+ * misinterpreted once this result is parsed as HTML by the caller.
+ * @ignore
+ */
+function _linebreaksToHTML(text) {
+    return text
+        .split(/\n[ \t]*\n+/)
+        .map(paragraph => {
+            const div = document.createElement('div');
+            div.textContent = paragraph;
+            return `<p>${div.innerHTML.split('\n').join('<br>')}</p>`;
+        })
+        .join('');
 };
 
 /**
@@ -588,6 +630,19 @@ export function getHTML(pretty='true', clean='true', divID) {
         div.appendChild(editor);
         text = div.innerHTML;
     };
+    // A code_block that's genuinely empty in the model still carries a
+    // single-space placeholder character (setup/index.js,
+    // EMPTY_CODE_BLOCK_PLACEHOLDER / emptyCodeBlockPlaceholderPlugin) — an
+    // implementation detail of keeping it selectable while a language
+    // widget is showing, not something that should leak into saved/exported
+    // HTML. Matched narrowly (a <code> element whose ENTIRE content is
+    // exactly one space) so this can never touch a real, non-empty
+    // code_block that happens to contain an actual space character.
+    // EMPTY_CODE_BLOCK_PLACEHOLDER itself isn't imported here to avoid a
+    // circular import (setup/index.js already imports from this file) — the
+    // single space character is duplicated by hand instead, kept in sync
+    // with setup/index.js's own copy.
+    text = text.replace(/(<code\b[^>]*>) (<\/code>)/g, '$1$2');
     return text;
 };
 
@@ -2340,7 +2395,7 @@ function _loadedUserFiles(target) {
  * @param {MUError} error 
  */
 function _callbackError(error) {
-    _callback(error.messageDict())
+    _callback(JSON.stringify(error.messageDict()))
 }
 
 /**
@@ -2627,7 +2682,7 @@ export function testPasteHTMLPreprocessing(html) {
  * @param {string}  html    The HTML to paste
  */
 export function testPasteTextPreprocessing(html) {
-    const node = _nodeFromHTML(html);
+    const node = _nodeFromHTML(_preprocessPasteText(html));
     const fragment = fragmentFromNode(node);
     const minimalHTML = _minimalHTML(fragment);
     return minimalHTML;
@@ -3646,4 +3701,19 @@ export function consoleLog(string) {
         'log' : string
     }
     _callback(JSON.stringify(messageDict));
+};
+
+/**
+ * Report an error to the delegate's markupError method, the same path internal
+ * MUErrors use. For external plugins that have their own error conditions
+ * (e.g., a failed render) but no access to the internal MUError/_callbackError
+ * machinery directly.
+ *
+ * @param {string}  code     A short identifier for the error.
+ * @param {string}  message  The error message.
+ * @param {string}  [info]   Optional additional detail.
+ * @param {boolean} [alert]  Whether the host app should treat this as alert-worthy. Defaults to true.
+ */
+export function reportError(code, message, info, alert=true) {
+    _callbackError(new MUError(code, message, info, alert));
 };

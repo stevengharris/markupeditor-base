@@ -21,7 +21,7 @@ describe('codeHighlightPlugin — undo', () => {
         let dispatched
         setCodeLanguageCommand('javascript')(state, tr => { dispatched = tr })
         state = state.apply(dispatched)
-        const decorations = codeHighlightPlugin.getState(state).find()
+        const decorations = codeHighlightPlugin.getState(state).decorations.find()
         expect(decorations.length).toBeGreaterThan(0)
     })
 
@@ -30,7 +30,7 @@ describe('codeHighlightPlugin — undo', () => {
         let dispatched
         setCodeLanguageCommand('javascript')(state, tr => { dispatched = tr })
         state = state.apply(dispatched)
-        expect(codeHighlightPlugin.getState(state).find().length).toBeGreaterThan(0)
+        expect(codeHighlightPlugin.getState(state).decorations.find().length).toBeGreaterThan(0)
 
         undo(state, tr => { dispatched = tr })
         state = state.apply(dispatched)
@@ -38,7 +38,7 @@ describe('codeHighlightPlugin — undo', () => {
         let restoredIsParagraph = false
         state.doc.descendants((node) => { if (node.type.name === 'paragraph') restoredIsParagraph = true })
         expect(restoredIsParagraph).toBe(true)
-        expect(codeHighlightPlugin.getState(state).find().length).toBe(0)
+        expect(codeHighlightPlugin.getState(state).decorations.find().length).toBe(0)
     })
 
 })

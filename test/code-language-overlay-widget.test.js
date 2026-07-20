@@ -23,11 +23,10 @@ describe('codeLanguageOverlayPlugin — widget button', () => {
         state = state.apply(state.tr.setSelection(selection))
         const decorations = plugin.getState(state).find()
         expect(decorations.length).toBe(1)
-        expect(decorations[0].type.side).toBe(1)
-        // relaxedSide lets the DOM selection land on either side of the widget instead
-        // of being strictly pinned — without it, cursor motion can't reach the
-        // code_block's start (prosemirror-view's own docs: "keyboard cursor motion will
-        // not, without further custom handling, visit both sides of the widget").
+        // Negative side — domFromPos can never resolve past a widget
+        // (domAtom is always true), so side >= 0 would land the caret
+        // before it instead of after.
+        expect(decorations[0].type.side).toBe(-1)
         expect(decorations[0].type.spec.relaxedSide).toBe(true)
         // nodeDOM: () => null makes hasRoomAboveOverlay short-circuit to "room available"
         // without needing a full fake view (getToolbar) — covered separately below.
@@ -36,7 +35,7 @@ describe('codeLanguageOverlayPlugin — widget button', () => {
         expect(button.classList.contains(prefix + '-code-language-overlay-below')).toBe(false)
     })
 
-    test('no overlay widget for an empty code_block — the contentEditable=false button would be its only content, a known-fragile browser/ProseMirror combination', () => {
+    test('shows the overlay widget for an empty code_block too — a user should see which language is set to highlight/render even before any content exists. The contentEditable="false"-as-only-content browser fragility this used to avoid entirely is instead handled structurally, by emptyCodeBlockPlaceholderPlugin (setup/index.js) guaranteeing a code_block is never genuinely empty in the first place — this plugin, tested here in isolation, no longer needs its own suppression', () => {
         const dom = document.createElement('div')
         dom.innerHTML = '<pre><code class="language-swift"></code></pre>'
         const doc = PMDOMParser.fromSchema(schema).parse(dom)
@@ -45,7 +44,7 @@ describe('codeLanguageOverlayPlugin — widget button', () => {
         let state = EditorState.create({ doc, schema, selection, plugins: [plugin] })
         state = state.apply(state.tr.setSelection(selection))
         const decorations = plugin.getState(state).find()
-        expect(decorations.length).toBe(0)
+        expect(decorations.length).toBe(1)
     })
 
 })
