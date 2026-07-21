@@ -1007,15 +1007,11 @@ export class LanguageDialogItem extends DialogItem {
     this.languageArea.addEventListener('keydown', e => {   // Use keydown because 'input' isn't triggered for Enter
       if (e.key === 'Enter') {
         e.preventDefault();
-        // Enter activates whichever button is currently the default (matches LinkItem's
-        // isValid()-gated Enter handling) — Cancel when empty/unrecognized, OK once a
-        // recognized language is entered. An unsupported language can still be submitted
-        // explicitly via the OK button, which stays enabled regardless.
-        if (this.hasRecognizedLanguage()) {
-          this.submit();
-        } else {
-          this.closeDialog();
-        }
+        // OK is always the default action, even for an empty or unrecognized
+        // language — entering something not yet in the recognized set (e.g. a
+        // new fenced-code language) must work on Enter alone, without first
+        // having to click OK to override Cancel as the default.
+        this.submit();
       } else if (e.key === 'Tab') {
         e.preventDefault();
       } else if (e.key === 'Escape') {
@@ -1027,23 +1023,10 @@ export class LanguageDialogItem extends DialogItem {
 
   /**
    * Whether the input currently has any language name entered, recognized or
-   * not. An empty field means "no language" — never colored invalid — but it's
-   * also not something recognized, so it alone doesn't make OK the default
-   * button; see hasRecognizedLanguage().
+   * not. An empty field means "no language" — never colored invalid.
    */
   hasContent() {
     return this.languageArea.value.trim().length > 0
-  }
-
-  /**
-   * Whether the input currently holds a recognized language name. Drives which
-   * of OK/Cancel looks like the default button — Cancel is default when the
-   * field is empty OR holds an unsupported name, OK only once a supported
-   * language is entered. Submission itself is never blocked either way (OK
-   * stays enabled always); this only changes which button LOOKS default.
-   */
-  hasRecognizedLanguage() {
-    return this.hasContent() && isRecognizedLanguage(this.languageArea.value)
   }
 
   /**
@@ -1060,10 +1043,11 @@ export class LanguageDialogItem extends DialogItem {
   /**
    * Create and append the OK/Cancel buttons, positioned and styled like LinkItem's:
    * a left-side spacer so buttonsDiv's space-between pushes the OK/Cancel group to
-   * the right, and Cancel as the default (active-styled) button until the field has
-   * a language entered, at which point OK becomes the default. OK is always enabled
-   * regardless — an unrecognized language is a valid, deliberate choice, not an
-   * error to block on — only which button LOOKS like the default one changes.
+   * the right, and OK always the default (active-styled) button, regardless of
+   * whether the field is empty or holds an unrecognized language — an unrecognized
+   * language is a valid, deliberate choice (e.g. a new fenced-code language), not
+   * an error to block submission on. Both buttons stay enabled always; only OK's
+   * active styling is a fixed constant, not state-dependent.
    *
    * @param {EditorView} view
    */
@@ -1078,7 +1062,7 @@ export class LanguageDialogItem extends DialogItem {
     let okItem = cmdItem(() => this.submit(), {
       class: prefix + '-menuitem',
       title: 'OK',
-      active: () => { return this.hasRecognizedLanguage() },
+      active: () => { return true },
       enable: () => { return true }
     })
     let {dom: okDom, update: okUpdate} = okItem.render(view)
@@ -1089,7 +1073,7 @@ export class LanguageDialogItem extends DialogItem {
     let cancelItem = cmdItem(() => this.closeDialog(), {
       class: prefix + '-menuitem',
       title: 'Cancel',
-      active: () => { return !this.hasRecognizedLanguage() },
+      active: () => { return false },
       enable: () => { return true }
     })
     let {dom: cancelDom, update: cancelUpdate} = cancelItem.render(view)

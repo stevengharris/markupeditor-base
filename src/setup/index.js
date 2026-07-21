@@ -1,7 +1,7 @@
 import {keymap} from "prosemirror-keymap"
 import {history} from "prosemirror-history"
 import {baseKeymap} from "prosemirror-commands"
-import {AllSelection, NodeSelection, Selection, TextSelection, Plugin} from "prosemirror-state"
+import {AllSelection, NodeSelection, Plugin} from "prosemirror-state"
 import {dropCursor} from "prosemirror-dropcursor"
 import {gapCursor} from "prosemirror-gapcursor"
 import {Decoration, DecorationSet} from "prosemirror-view"
@@ -10,9 +10,9 @@ import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
 import {buildInputRules} from "./inputrules"
-import {prefix, setPrefix, getToolbar} from "../domaccess.js"
-import {LinkItem, ImageItem, SearchItem, LanguageDialogItem} from "./menuitems.js"
-import {postMessage, searchIsActive, codeLanguageOverlayInfo, codeBlockAtSelection, setCodeLanguageCommand} from "../markup"
+import {setPrefix} from "../domaccess.js"
+import {LinkItem, ImageItem, SearchItem} from "./menuitems.js"
+import {postMessage, searchIsActive, codeBlockAtSelection} from "../markup"
 import {activeConfig, selectedID} from "../registry.js"
 import {highlightSpans, isRecognizedLanguage} from "../highlighting.js"
 
@@ -138,297 +138,38 @@ export const codeHighlightPlugin = new Plugin({
 })
 
 /**
- * Approximate rendered height of the language overlay label (font-size 0.75rem +
- * padding 2px 6px, styles/markup.css). Only used for the room-above check below —
- * doesn't need to be pixel-exact, just enough to decide which side to attach to.
+ * Build the plugin that shows the selected code_block's language overlay tab
+ * (owned by its CodeView NodeView, ../nodeview/codeview.js). A factory for
+ * symmetry with call sites expecting a function, though nothing here is
+ * actually per-instance anymore — the view() hook below gets its own closure
+ * per EditorView regardless of whether this plugin object itself is shared.
  *
  * @ignore
  */
-const CODE_LANGUAGE_OVERLAY_HEIGHT = 24
-
-/**
- * Whether there's room above `preDOM` (the code_block's own <pre> element) to show
- * the language overlay label there without it being pushed above the toolbar or
- * off-screen — if not, it should attach below instead. `view.nodeDOM` is used
- * read-only here (getBoundingClientRect only); mutating its result is what caused
- * the CPU-loop regression fixed earlier, so this must never write to preDOM.
- *
- * @ignore
- */
-export function hasRoomAboveOverlay(view, preDOM) {
-  if (!preDOM) return true
-  const preRect = preDOM.getBoundingClientRect()
-  const toolbarRect = getToolbar(view)?.getBoundingClientRect()
-  const minTop = (toolbarRect?.bottom ?? 0) + CODE_LANGUAGE_OVERLAY_HEIGHT
-  return preRect.top >= minTop
-}
-
-/**
- * Semi-transparent "Language: <name>" widget Decoration for the selected
- * code_block, if any. A selection lookup plus a string, cheap enough to
- * recompute every transaction with no caching.
- *
- * @ignore
- */
-function computeCodeLanguageOverlayDecorations(state, languageDialog) {
-  const info = codeLanguageOverlayInfo(state)
-  if (!info) return DecorationSet.empty
-  const found = codeBlockAtSelection(state)
-  if (!found) return DecorationSet.empty
-  const widget = Decoration.widget(info.pos, (view) => {
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = prefix + '-code-language-overlay'
-    if (!hasRoomAboveOverlay(view, view.nodeDOM(found.pos))) {
-      button.classList.add(prefix + '-code-language-overlay-below')
-    }
-    button.textContent = info.label
-    // Without this, the button is ambiguous to the browser's native cursor placement
-    // as part of the code_block's editable text flow.
-    button.contentEditable = 'false'
-    button.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      const found = codeBlockAtSelection(view.state)
-      languageDialog.open(view, found?.node.attrs.language ?? '', (entered) => {
-        setCodeLanguageCommand(entered ? entered : null)(view.state, view.dispatch, view)
-      })
-    })
-    return button
-  }, {
-    // Negative side keeps domFromPos from ever landing on the widget itself
-    // (its domAtom is always true, so side >= 0 can't resolve past it).
-    side: -1,
-    relaxedSide: true,
-    // Keyed so ProseMirror reuses the existing button DOM node (and its click listener)
-    // across transactions unrelated to this block, instead of destroying and rebuilding it
-    // on every single transaction while a code block is selected (WidgetType.eq() only
-    // short-circuits reuse on a spec.key match). The key includes pos and label — not just
-    // a static string — so a genuinely different block or language change still gets a
-    // fresh toDOM call rather than silently reusing stale button text.
-    key: `code-language-overlay-${info.pos}-${info.label}`
-  })
-  return DecorationSet.create(state.doc, [widget])
-}
-
-/**
- * Computes the next ArrowLeft/ArrowRight position from the model and
- * dispatches it directly, instead of trusting native cursor movement.
- *
- * A selection resolved exactly at a widget's own position never renders
- * correctly, and native arrow-key movement doesn't reliably cross that
- * boundary either. Scoped to code_block boundaries by DOCUMENT STRUCTURE
- * (is the current or landing position's parent a code_block), not by
- * decoration presence — an earlier decoration-presence check
- * (hasWidgetAt) was tried and reverted because the widget doesn't exist
- * in decorations until the block is already selected, so there was
- * nothing to detect on the way in. Structure is known independent of
- * decorations/selection, so it doesn't have that chicken-and-egg problem,
- * and it keeps this handler from overriding native RTL/bidi and
- * grapheme-cluster caret movement in ordinary prose, where none of this
- * is needed.
- *
- * @ignore
- */
-function handlePlainArrowKeyNavigation(view, event) {
-  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return false
-  if (event.shiftKey || event.metaKey || event.altKey || event.ctrlKey) return false
-  const { state } = view
-  const sel = state.selection
-  if (!(sel instanceof TextSelection) || !sel.empty) return false
-  const dir = event.key === 'ArrowLeft' ? -1 : 1
-  const targetPos = sel.from + dir
-  if (targetPos < 0 || targetPos > state.doc.content.size) return false
-  const newSel = TextSelection.near(state.doc.resolve(targetPos), dir)
-  const currentlyInCodeBlock = sel.$from.parent.type.name === 'code_block'
-  const landingInCodeBlock = newSel.$from.parent.type.name === 'code_block'
-  if (!currentlyInCodeBlock && !landingInCodeBlock) return false
-  view.dispatch(state.tr.setSelection(newSel).scrollIntoView())
-  return true
-}
-
-/**
- * Build the plugin that shows the selected code_block's language overlay.
- * A factory (not a module-level singleton like codeHighlightPlugin) because it
- * owns a LanguageDialogItem bound to this editor instance's `config` — sharing
- * one across multiple `<markup-editor>` instances on the same page would let
- * one instance's dialog state stomp on another's.
- *
- * @ignore
- */
-export function codeLanguageOverlayPlugin(config) {
-  const languageDialog = new LanguageDialogItem(config)
-  const thePlugin = new Plugin({
-    state: {
-      init() {
-        return DecorationSet.empty
-      },
-      apply(tr, set, oldState, newState) {
-        return computeCodeLanguageOverlayDecorations(newState, languageDialog)
+export function codeLanguageOverlayPlugin() {
+  return new Plugin({
+    view(editorView) {
+      let activeCodeView = null
+      // A pure selection-only transaction never calls a NodeView's own
+      // update(), so this reaches the CodeView directly via view.nodeDOM(pos)
+      // instead. Tracks the CodeView INSTANCE, not its position — a position
+      // captured before a doc-changing transaction is stale after one (the
+      // block may have moved), but the instance itself is stable across an
+      // update() as long as the node stays a code_block, so deactivating it
+      // needs no position lookup at all, stale or otherwise.
+      const sync = (view) => {
+        const found = codeBlockAtSelection(view.state)
+        const nextCodeView = found ? view.nodeDOM(found.pos)?.codeView : null
+        if (nextCodeView === activeCodeView) return
+        activeCodeView?.setActive(false)
+        nextCodeView?.setActive(true)
+        activeCodeView = nextCodeView
       }
-    },
-    props: {
-      decorations(state) { return thePlugin.getState(state) },
-      handleKeyDown: handlePlainArrowKeyNavigation
+      sync(editorView)
+      return { update: sync }
     }
   })
-  return thePlugin
 }
-
-/**
- * Character inserted into a code_block whenever it would otherwise be
- * genuinely empty (content.size === 0), so it never actually is.
- *
- * A plain empty textblock is fine on its own — prosemirror-view's own
- * addTextblockHacks (NodeViewDesc.addTextblockHacks) inserts a trailing
- * <br class="ProseMirror-trailingBreak"> to keep it natively selectable,
- * and that alone works correctly (a <p></p> with nothing else needs
- * exactly this, and gets it). The problem is specific to a code_block
- * that's ALSO showing a widget (this plugin's own Language tab, or a
- * downstream plugin's, e.g. the mermaid plugin's Source/Diagram tabs):
- * addTextblockHacks's own check is `lastChild.dom.contentEditable ==
- * "false"` — unconditional, no decoration-spec flag exempts a widget from
- * it — and when a widget is the block's only content, IT is lastChild.
- * That additionally inserts an <img class="ProseMirror-separator">, and
- * that separator is an UNCONDITIONAL native-selection barrier (scanFor's
- * atomElements regex matches any <img>, no relaxedSide exception).
- * Confirmed via real Safari testing: with the widget showing on a
- * genuinely empty code_block, a real keystroke lands in the PRECEDING
- * block instead of the code_block, silently.
- *
- * Guaranteeing real content sidesteps addTextblockHacks's check entirely
- * (lastChild becomes a real TextViewDesc, not the widget) — a widget
- * followed by real text is the normal, already-working shape every
- * non-empty code_block already has.
- *
- * A single regular space, not a zero-width one — a zero-width character
- * is real content that keeps content.size > 0, but the caret produces NO
- * visible movement crossing it, which reads as broken/unresponsive to a
- * user pressing an arrow key. A plain space moves the caret visibly, the
- * same as it would across any other single character, and (unlike a
- * zero-width space) is already stripped by plain .trim() — no downstream
- * "is this code_block meaningfully empty" check needs updating to know
- * about it specially.
- *
- * Not exported from this package's public surface (see this file's own
- * changedDescendants-style precedent in downstream plugins) — a consumer
- * needing the same "is this code_block meaningfully empty" check (e.g.
- * markupeditor-mermaid.js) already gets it for free via .trim(), so no
- * cross-package constant sharing is actually needed here.
- *
- * @ignore
- */
-export const EMPTY_CODE_BLOCK_PLACEHOLDER = ' '
-
-/**
- * Keeps EMPTY_CODE_BLOCK_PLACEHOLDER's invariant true: every code_block
- * either has real (non-placeholder) content, or contains ONLY the
- * placeholder — never truly empty, and never the placeholder coexisting
- * with real content for more than the one transaction it takes to notice.
- * Runs via appendTransaction (not apply()) because it needs to react to
- * the FINAL doc a transaction produces and possibly fold in one more
- * step, atomically, before the state settles.
- *
- * Two fixups:
- *  - Insertion: any code_block that's genuinely empty in the FINAL doc
- *    (content.size === 0) — a fresh conversion of an already-empty
- *    paragraph, or the user backspaced out everything. Checked against
- *    every code_block; there's no history-dependence here, an empty
- *    code_block should always get the placeholder regardless of how it
- *    got that way.
- *  - Stripping: scoped to code_blocks whose content was EXACTLY the
- *    placeholder in oldState (mapped forward through this transaction's
- *    own steps to find where that same block ended up) — NOT a blind
- *    "does this code_block's current text contain a space anywhere"
- *    check. That distinction matters: a pre-existing, legitimate
- *    code_block containing real spaces (e.g. "function foo() {}") must
- *    never have a character silently deleted from it just because some
- *    UNRELATED edit elsewhere in the document triggered this plugin's
- *    appendTransaction. Only a block that was JUST a lone placeholder
- *    moments ago is eligible to have it stripped.
- *
- * Each fixup's position is mapped through the accumulating transaction's
- * own mapping before being applied, so multiple code_blocks needing a
- * fixup in the same transaction (e.g. a multi-block paste) are all
- * handled correctly in one appendTransaction call, not just the first.
- *
- * Selection placement on insertion: the placeholder is inserted AT the
- * position selection would otherwise land, which — left to
- * insertText's own default "push the cursor past what was just
- * inserted" mapping — puts the cursor AFTER the placeholder space, not
- * before it. Visually that reads as the caret sitting to the right of a
- * blank space for no reason, which looks wrong; a block that's
- * conceptually still empty should have its cursor at the very start,
- * the same place native Home/click-at-start lands on any other empty
- * or non-empty textblock. So the fixup, when it discovers the doc's
- * OTHER (pre-fixup) selection was already exactly at the insertion
- * point — i.e. this specific block is the one actually being
- * interacted with, not some unrelated empty code_block elsewhere in
- * the document this same appendTransaction also happens to fix up —
- * explicitly resets selection to the placeholder's start afterward.
- *
- * @ignore
- */
-export const emptyCodeBlockPlaceholderPlugin = new Plugin({
-  appendTransaction(transactions, oldState, newState) {
-    // Deliberately NOT gated on tr.docChanged (matching
-    // computeCodeLanguageOverlayDecorations's own "recomputed on every
-    // transaction" choice) — a document can LOAD with an already-empty
-    // code_block, or the user can select into one, with no doc-changing
-    // transaction involved at all; appendTransaction still runs for a
-    // selection-only transaction, and that's the only hook available for
-    // fixing up a document that was already in this state before this
-    // plugin ever got a chance to react (EditorState.create()'s own
-    // init() has no equivalent of appendTransaction to hang this on).
-    const fixups = []
-    newState.doc.descendants((node, pos) => {
-      if (node.type.name === 'code_block' && node.content.size === 0) {
-        // Only this specific block's insertion should claim the cursor —
-        // compared against newState.selection (the doc/selection this
-        // appendTransaction is reacting to, before any of ITS OWN steps),
-        // not some later, already-mapped position.
-        const claimsSelection = newState.selection.empty && newState.selection.from === pos + 1
-        fixups.push({ insertAt: pos + 1, claimsSelection })
-      }
-    })
-    oldState.doc.descendants((node, oldPos) => {
-      if (node.type.name !== 'code_block' || node.textContent !== EMPTY_CODE_BLOCK_PLACEHOLDER) return
-      // Track the placeholder CHARACTER's own position through the mapping (not the
-      // block's position, and not a text search over the block's new content) — an
-      // indexOf-based search can't tell "the surviving placeholder" apart from a
-      // coincidental space introduced by whatever was just typed or pasted (e.g.
-      // pasting "graph TD" over/before the placeholder: naively stripping the first
-      // space found deletes the one between "graph" and "TD" instead). If any step
-      // deletes the placeholder's own position, it was consumed by the edit (e.g. a
-      // paste that replaced the selected placeholder) and there's nothing left to strip.
-      let charPos = oldPos + 1
-      let consumed = false
-      for (const tr of transactions) {
-        const result = tr.mapping.mapResult(charPos, 1)
-        if (result.deleted) { consumed = true; break }
-        charPos = result.pos
-      }
-      if (consumed) return
-      const newNode = newState.doc.nodeAt(newState.doc.resolve(charPos).before())
-      if (!newNode || newNode.type.name !== 'code_block' || newNode.textContent === EMPTY_CODE_BLOCK_PLACEHOLDER) return
-      if (newState.doc.textBetween(charPos, charPos + 1) !== EMPTY_CODE_BLOCK_PLACEHOLDER) return
-      fixups.push({ deleteFrom: charPos, deleteTo: charPos + 1 })
-    })
-    if (fixups.length === 0) return null
-    const tr = newState.tr
-    for (const fixup of fixups) {
-      if (fixup.insertAt !== undefined) {
-        const mappedPos = tr.mapping.map(fixup.insertAt)
-        tr.insertText(EMPTY_CODE_BLOCK_PLACEHOLDER, mappedPos)
-        if (fixup.claimsSelection) {
-          tr.setSelection(Selection.near(tr.doc.resolve(mappedPos)))
-        }
-      } else {
-        tr.delete(tr.mapping.map(fixup.deleteFrom), tr.mapping.map(fixup.deleteTo))
-      }
-    }
-    return tr
-  }
-})
 
 const searchModePlugin  = new Plugin({
   state: {
@@ -575,19 +316,11 @@ export function markupSetup(config, schema) {
   // Add the plugin that handles table borders
   plugins.push(tablePlugin);
 
-  // Keeps code_blocks from ever being genuinely empty — see
-  // emptyCodeBlockPlaceholderPlugin's own comment. Registered unconditionally
-  // (not gated behind highlightCode): the invariant it maintains is useful to
-  // ANY plugin that might show a widget on a selected code_block, not just
-  // codeLanguageOverlayPlugin below — e.g. the mermaid plugin's own Source/
-  // Diagram tabs, added independently, outside this config.
-  plugins.push(emptyCodeBlockPlaceholderPlugin)
-
   // Add the plugins that highlight code blocks and show the selected block's
   // language overlay, if enabled in behavior config
   if (config.behavior.highlightCode) {
     plugins.push(codeHighlightPlugin)
-    plugins.push(codeLanguageOverlayPlugin(config))
+    plugins.push(codeLanguageOverlayPlugin())
   }
 
   // Add the plugin that handles placeholder display for an empty document, as passed in config

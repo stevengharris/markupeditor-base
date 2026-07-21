@@ -630,19 +630,6 @@ export function getHTML(pretty='true', clean='true', divID) {
         div.appendChild(editor);
         text = div.innerHTML;
     };
-    // A code_block that's genuinely empty in the model still carries a
-    // single-space placeholder character (setup/index.js,
-    // EMPTY_CODE_BLOCK_PLACEHOLDER / emptyCodeBlockPlaceholderPlugin) — an
-    // implementation detail of keeping it selectable while a language
-    // widget is showing, not something that should leak into saved/exported
-    // HTML. Matched narrowly (a <code> element whose ENTIRE content is
-    // exactly one space) so this can never touch a real, non-empty
-    // code_block that happens to contain an actual space character.
-    // EMPTY_CODE_BLOCK_PLACEHOLDER itself isn't imported here to avoid a
-    // circular import (setup/index.js already imports from this file) — the
-    // single space character is duplicated by hand instead, kept in sync
-    // with setup/index.js's own copy.
-    text = text.replace(/(<code\b[^>]*>) (<\/code>)/g, '$1$2');
     return text;
 };
 

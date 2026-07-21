@@ -20,6 +20,8 @@ import { toolbarView } from "./setup/toolbar.js"
 import { LinkView } from "./nodeview/linkview.js"
 import { ImageView } from "./nodeview/imageview.js"
 import { DivView } from "./nodeview/divview.js"
+import { CodeView } from "./nodeview/codeview.js"
+import { LanguageDialogItem } from "./setup/menuitems.js"
 import { MessageHandler } from "./messagehandler.js"
 import { Searcher } from "./searcher.js"
 
@@ -193,10 +195,18 @@ export class MarkupEditor {
             this.config.delegate = getDelegate(delegate)
         }
 
+        // One dialog per editor instance, not per code_block — sharing one across
+        // multiple <markup-editor> instances on the same page would let one
+        // instance's dialog state stomp on another's. In contrast to the other 
+        // dialogs, like LinkDialog, the languageDialog can be initiated from 
+        // the tab that shows when it is selected, not just the menu item. This 
+        // necessitates creating it here so we can pass it to the CodeView.
+        const languageDialog = new LanguageDialogItem(this.config)
+
         // Create the EditorView for this MarkupEditor
         this.view = new EditorView(this.element, {
             state: EditorState.create({
-                // For the MarkupEditor, we can just use the editor element. 
+                // For the MarkupEditor, we can just use the editor element.
                 // There is no need to use a separate content element.
                 doc: DOMParser.fromSchema(schema).parse(this.element),
                 plugins: markupSetup(this.config, schema)
@@ -205,6 +215,7 @@ export class MarkupEditor {
                 link(node, view, getPos) { return new LinkView(node, view, getPos) },
                 image(node, view, getPos) { return new ImageView(node, view, getPos) },
                 div(node, view, getPos) { return new DivView(node, view, getPos) },
+                code_block(node, view, getPos) { return new CodeView(node, view, getPos, languageDialog) },
             },
             // All text input makes callbacks to indicate the document state has changed.
             // For history, used handleTextInput, but that fires *before* input happens.

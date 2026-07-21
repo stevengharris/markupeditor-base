@@ -1,53 +1,14 @@
 import { describe, test, expect } from 'vitest'
-import { DOMParser as PMDOMParser } from 'prosemirror-model'
-import { EditorState, TextSelection } from 'prosemirror-state'
-import { schema } from '../src/schema/index.js'
-import { codeLanguageOverlayPlugin, hasRoomAboveOverlay } from '../src/setup/index.js'
+import { hasRoomAboveOverlay } from '../src/nodeview/codeview.js'
 import { prefix } from '../src/domaccess.js'
 
 function rect({ top = 0, bottom = 0 } = {}) {
     return { top, bottom, left: 0, right: 0, width: 0, height: bottom - top, x: 0, y: top, toJSON() { return this } }
 }
 
-describe('codeLanguageOverlayPlugin — widget button', () => {
-
-    test('the language overlay widget is present, non-editable, and relaxedSide for a selected code_block', () => {
-        const dom = document.createElement('div')
-        dom.innerHTML = '<pre><code class="language-swift">let x = 1</code></pre>'
-        const doc = PMDOMParser.fromSchema(schema).parse(dom)
-        const selection = TextSelection.create(doc, 1)
-        const plugin = codeLanguageOverlayPlugin({})
-        let state = EditorState.create({ doc, schema, selection, plugins: [plugin] })
-        // The plugin's state only computes decorations in apply(), not init() — dispatch
-        // a no-op transaction (re-asserting the same selection) to trigger it.
-        state = state.apply(state.tr.setSelection(selection))
-        const decorations = plugin.getState(state).find()
-        expect(decorations.length).toBe(1)
-        // Negative side — domFromPos can never resolve past a widget
-        // (domAtom is always true), so side >= 0 would land the caret
-        // before it instead of after.
-        expect(decorations[0].type.side).toBe(-1)
-        expect(decorations[0].type.spec.relaxedSide).toBe(true)
-        // nodeDOM: () => null makes hasRoomAboveOverlay short-circuit to "room available"
-        // without needing a full fake view (getToolbar) — covered separately below.
-        const button = decorations[0].type.toDOM({ nodeDOM: () => null })
-        expect(button.contentEditable).toBe('false')
-        expect(button.classList.contains(prefix + '-code-language-overlay-below')).toBe(false)
-    })
-
-    test('shows the overlay widget for an empty code_block too — a user should see which language is set to highlight/render even before any content exists. The contentEditable="false"-as-only-content browser fragility this used to avoid entirely is instead handled structurally, by emptyCodeBlockPlaceholderPlugin (setup/index.js) guaranteeing a code_block is never genuinely empty in the first place — this plugin, tested here in isolation, no longer needs its own suppression', () => {
-        const dom = document.createElement('div')
-        dom.innerHTML = '<pre><code class="language-swift"></code></pre>'
-        const doc = PMDOMParser.fromSchema(schema).parse(dom)
-        const selection = TextSelection.create(doc, 1)
-        const plugin = codeLanguageOverlayPlugin({})
-        let state = EditorState.create({ doc, schema, selection, plugins: [plugin] })
-        state = state.apply(state.tr.setSelection(selection))
-        const decorations = plugin.getState(state).find()
-        expect(decorations.length).toBe(1)
-    })
-
-})
+// Covers hasRoomAboveOverlay only. CodeView's own tab rendering and language
+// sync are covered in test/codeview.test.js; tab activation on selection
+// change is covered in test/code-language-overlay-active-tab.test.js.
 
 describe('hasRoomAboveOverlay', () => {
 
