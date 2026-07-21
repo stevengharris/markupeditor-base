@@ -358,6 +358,7 @@ export const MU = {
     cancelSearch,
     canUndo,
     canRedo,
+    CodeView,
     consoleLog,
     cutImage,
     deactivateSearch,
