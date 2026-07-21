@@ -202,6 +202,7 @@ export class MarkupEditor {
         // the tab that shows when it is selected, not just the menu item. This 
         // necessitates creating it here so we can pass it to the CodeView.
         const languageDialog = new LanguageDialogItem(this.config)
+        MU.languageDialog = languageDialog
 
         // Create the EditorView for this MarkupEditor
         this.view = new EditorView(this.element, {
