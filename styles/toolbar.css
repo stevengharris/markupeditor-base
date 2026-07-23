@@ -520,25 +520,25 @@
 }
 
 .Markup-prompt-link {
-  height: 96px;
+  height: calc(68px + var(--Markup-button-size, 28px));  /* 96 px by default */
   width: 300px;
 }
 
 .Markup-prompt-image {
-  height: 130px;
+  height: calc(102px + var(--Markup-button-size, 28px));  /* 130 px by default */
   width: 300px;
 }
 
 .Markup-prompt-language {
-  height: 96px;
+  height: calc(68px + var(--Markup-button-size, 28px));  /* 96 px by default */
   width: 300px;
 }
 
 .Markup-prompt img {
   display: inline-block;
   vertical-align: middle;
-  min-width: 28px;
-  height: 28px;
+  min-width: var(--Markup-button-size, 28px);
+  height: var(--Markup-button-size, 28px);
   margin-right: 4px;
 }
 
@@ -589,8 +589,8 @@
   vertical-align: middle;
   justify-content: space-between;
   justify-items: center;
-  line-height: 28px;
-  height: 28px;
+  line-height: var(--Markup-button-size, 28px);
+  height: var(--Markup-button-size, 28px);
   margin-top: 8px;
   margin-bottom: 8px;
 }
