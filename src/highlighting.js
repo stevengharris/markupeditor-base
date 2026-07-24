@@ -1,17 +1,25 @@
 // The curated "common" bundle registers ~34 languages in one import, avoiding
 // a hand-maintained per-language import/registerLanguage list.
 import hljs from 'highlight.js/lib/common'
+import { getPlugins } from './registry'
 
 /**
  * Whether `name` matches a registered language or one of its aliases.
  * Delegates to hljs.getLanguage, which lowercases internally and checks
  * both registered names and aliases, so this is case-insensitive and
  * alias-aware.
+ * 
+ * Plugins of type 'renderer' are also recognized languages in the sense 
+ * that UI that depends on the return value here needs to know they will 
+ * be rendered by the plugin.
  *
  * @param {string} name
  * @returns {boolean}
  */
 export function isRecognizedLanguage(name) {
+    let renderers = getPlugins('renderer')
+    let rendersLanguage = renderers.filter(plugin => plugin.name === name).length > 0
+    if (rendersLanguage) { return true }
     return !!hljs.getLanguage((name ?? '').trim())
 }
 
@@ -81,7 +89,7 @@ class SpanWalker {
 
 /**
  * {from, to, class} spans for `code` highlighted as `language`, via hljs's
- * own already-built token tree (result._emitter.walk) — no DOM involved.
+ * token tree (result._emitter.walk).
  */
 export function highlightSpans(code, language) {
     try {
