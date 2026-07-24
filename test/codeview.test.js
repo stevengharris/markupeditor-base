@@ -122,7 +122,7 @@ describe('CodeView', () => {
         container.remove()
     })
 
-    describe('setActive applies the -below class per hasRoomAboveOverlay', () => {
+    describe('setActive applies the -below class per hasRoomAbove', () => {
 
         function rect({ top = 0, bottom = 0 } = {}) {
             return { top, bottom, left: 0, right: 0, width: 0, height: bottom - top, x: 0, y: top, toJSON() { return this } }
@@ -141,7 +141,7 @@ describe('CodeView', () => {
             codeView.dom.getBoundingClientRect = () => rect({ top: 200, bottom: 220 })
 
             codeView.setActive(true)
-            expect(codeView.tab.classList.contains(prefix + '-code-language-overlay-below')).toBe(false)
+            expect(codeView.tab.classList.contains(prefix + '-code-language-tab-below')).toBe(false)
 
             view.destroy(); container.remove(); toolbarEl.remove()
         })
@@ -152,7 +152,7 @@ describe('CodeView', () => {
             codeView.dom.getBoundingClientRect = () => rect({ top: 45, bottom: 65 })
 
             codeView.setActive(true)
-            expect(codeView.tab.classList.contains(prefix + '-code-language-overlay-below')).toBe(true)
+            expect(codeView.tab.classList.contains(prefix + '-code-language-tab-below')).toBe(true)
 
             view.destroy(); container.remove(); toolbarEl.remove()
         })

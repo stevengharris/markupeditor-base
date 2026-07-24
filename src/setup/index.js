@@ -138,25 +138,18 @@ export const codeHighlightPlugin = new Plugin({
 })
 
 /**
- * Build the plugin that shows the selected code_block's language overlay tab
- * (owned by its CodeView NodeView, ../nodeview/codeview.js). A factory for
- * symmetry with call sites expecting a function, though nothing here is
- * actually per-instance anymore — the view() hook below gets its own closure
- * per EditorView regardless of whether this plugin object itself is shared.
+ * Return the plugin that shows the selected code_block's language tab (owned
+ * by its CodeView NodeView, ../nodeview/codeview.js).
  *
  * @ignore
  */
-export function codeLanguageOverlayPlugin() {
+export function codeLanguageTabPlugin() {
   return new Plugin({
     view(editorView) {
       let activeCodeView = null
       // A pure selection-only transaction never calls a NodeView's own
       // update(), so this reaches the CodeView directly via view.nodeDOM(pos)
-      // instead. Tracks the CodeView INSTANCE, not its position — a position
-      // captured before a doc-changing transaction is stale after one (the
-      // block may have moved), but the instance itself is stable across an
-      // update() as long as the node stays a code_block, so deactivating it
-      // needs no position lookup at all, stale or otherwise.
+      // instead.
       const sync = (view) => {
         const found = codeBlockAtSelection(view.state)
         const nextCodeView = found ? view.nodeDOM(found.pos)?.codeView : null
@@ -317,10 +310,10 @@ export function markupSetup(config, schema) {
   plugins.push(tablePlugin);
 
   // Add the plugins that highlight code blocks and show the selected block's
-  // language overlay, if enabled in behavior config
+  // language tab, if enabled in behavior config
   if (config.behavior.highlightCode) {
     plugins.push(codeHighlightPlugin)
-    plugins.push(codeLanguageOverlayPlugin())
+    plugins.push(codeLanguageTabPlugin())
   }
 
   // Add the plugin that handles placeholder display for an empty document, as passed in config

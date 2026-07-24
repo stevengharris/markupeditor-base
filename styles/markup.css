@@ -267,12 +267,12 @@ img {
 
 /* Scoped to :has() rather than styling pre unconditionally, since a code_block's
    <pre> should only become a positioning context when it's actually carrying the
-   language overlay (highlightCode on, block selected) — not for every code block. */
-pre:has(.Markup-code-language-overlay) {
+   language tab (highlightCode on, block selected) — not for every code block. */
+pre:has(.Markup-code-language-tab) {
     position: relative;
 }
 
-.Markup-code-language-overlay {
+.Markup-code-language-tab {
     position: absolute;
     bottom: 100%;
     right: 0;
@@ -286,24 +286,21 @@ pre:has(.Markup-code-language-overlay) {
     background: var(--Markup-accent-color, blue);
 }
 
-.Markup-code-language-overlay:hover {
+.Markup-code-language-tab:hover {
     opacity: 0.9;
 }
 
-/* Applied (setup/index.js, hasRoomAboveOverlay) when the code_block is too close to
-   the top of the view for the label to fit above it — attach to the bottom instead. */
-.Markup-code-language-overlay-below {
+/* Applied (setup/index.js, CodeView.hasRoomAbove) when the code_block is too close to
+   the top of the view for the tab to fit above it — attach to the bottom instead. */
+.Markup-code-language-tab-below {
     bottom: auto;
     top: 100%;
     border-radius: 0 0 4px 4px;
 }
 
-/* Matches .Markup-menuitem-active's selected-button color scheme (toolbar.css)
-   exactly: light mode is white lettering on the accent-blue fill (the base
-   rule above), dark mode flips to black lettering on the accent-lightblue
-   fill. */
+/* Matches .Markup-menuitem-active's selected-button color scheme. */
 @media (prefers-color-scheme: dark) {
-  .Markup-code-language-overlay {
+  .Markup-code-language-tab {
     background: var(--Markup-accent-color, lightblue);
     color: black;
   }

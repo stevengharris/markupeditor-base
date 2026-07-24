@@ -1297,10 +1297,9 @@ export function codeBlockAtSelection(state) {
 }
 
 /**
- * Return `{pos, label}` describing the language overlay for the code_block at
- * `state`'s selection, or null if the selection isn't in a code_block. `pos`
- * is the position just inside the code_block's content, where a widget
- * Decoration for the overlay should be anchored. `label` is "Language:
+ * Return `{pos, label}` for the language tab of the code_block at `state`'s
+ * selection, or null if the selection isn't in a code_block. `pos` is the
+ * position just inside the code_block's content. `label` is "Language:
  * <lowercase name>" or "Language: none" — display-only, the underlying
  * `language` attribute value is untouched.
  *
@@ -1308,7 +1307,7 @@ export function codeBlockAtSelection(state) {
  * @param {EditorState} state
  * @returns {{pos: number, label: string} | null}
  */
-export function codeLanguageOverlayInfo(state) {
+export function codeLanguageTabInfo(state) {
     const found = codeBlockAtSelection(state)
     if (!found) return null
     const language = found.node.attrs.language
@@ -2693,12 +2692,12 @@ export function testPresentCodeLanguages() {
 };
 
 /**
- * For testing purposes, invoke codeLanguageOverlayInfo on the active document's
+ * For testing purposes, invoke codeLanguageTabInfo on the active document's
  * current selection.
  */
-export function testCodeLanguageOverlayInfo() {
+export function testCodeLanguageTabInfo() {
     const view = activeView()
-    return codeLanguageOverlayInfo(view.state);
+    return codeLanguageTabInfo(view.state);
 };
 
 /********************************************************************************

@@ -4,7 +4,7 @@ import { EditorState, TextSelection } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { schema } from '../src/schema/index.js'
 import { CodeView } from '../src/nodeview/codeview.js'
-import { codeLanguageOverlayPlugin } from '../src/setup/index.js'
+import { codeLanguageTabPlugin } from '../src/setup/index.js'
 
 function docFromHTML(html) {
     const dom = document.createElement('div')
@@ -15,7 +15,7 @@ function docFromHTML(html) {
 function realView(html, selectionPos) {
     const doc = docFromHTML(html)
     const selection = TextSelection.create(doc, selectionPos)
-    const state = EditorState.create({ doc, schema, selection, plugins: [codeLanguageOverlayPlugin()] })
+    const state = EditorState.create({ doc, schema, selection, plugins: [codeLanguageTabPlugin()] })
     const container = document.body.appendChild(document.createElement('div'))
     const view = new EditorView(container, {
         state,
@@ -24,10 +24,10 @@ function realView(html, selectionPos) {
     return { view, container }
 }
 
-// codeLanguageOverlayPlugin's view() hook toggles CodeView.setActive directly
+// codeLanguageTabPlugin's view() hook toggles CodeView.setActive directly
 // via view.nodeDOM(pos) on every state update, including selection-only ones
 // where a NodeView's own update() isn't reliably called.
-describe('codeLanguageOverlayPlugin activates only the selected code_block\'s tab', () => {
+describe('codeLanguageTabPlugin activates only the selected code_block\'s tab', () => {
 
     const HTML = '<p>Hello</p><pre><code>a</code></pre><pre><code>b</code></pre>'
     // paragraph "Hello" occupies 0-7; code_block1 ("a") occupies 7-10, own

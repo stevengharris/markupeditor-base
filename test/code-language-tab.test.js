@@ -4,7 +4,7 @@ import { describe, test, expect } from 'vitest'
 import { DOMParser as PMDOMParser } from 'prosemirror-model'
 import { EditorState, TextSelection } from 'prosemirror-state'
 import { schema } from '../src/schema/index.js'
-import { codeLanguageOverlayInfo } from '../src/markup.js'
+import { codeLanguageTabInfo } from '../src/markup.js'
 
 function loadFixture(filename) {
     let fullFilename = path.join(process.cwd(), filename)
@@ -30,12 +30,12 @@ function selectionState(html) {
     return EditorState.create({ doc, schema, selection })
 }
 
-const fixture = loadFixture('./test/code-language-overlay.json')
+const fixture = loadFixture('./test/code-language-tab.json')
 
 describe(fixture.description, () => {
     test.each(fixture.tests)('$description', ({ html, expectedLabel }) => {
         const state = selectionState(html)
-        const info = codeLanguageOverlayInfo(state)
+        const info = codeLanguageTabInfo(state)
         if (expectedLabel === null) {
             expect(info).toBeNull()
         } else {
@@ -46,14 +46,14 @@ describe(fixture.description, () => {
 
 /**
  * Position invariant, not part of the portable label matrix above:
- * codeLanguageOverlayInfo's returned pos must point just inside the code_block's
+ * codeLanguageTabInfo's returned pos must point just inside the code_block's
  * content, not at its start tag.
  */
-describe('codeLanguageOverlayInfo — position', () => {
+describe('codeLanguageTabInfo — position', () => {
 
     test('pos points just inside the code_block\'s content, not at its start tag', () => {
         const state = selectionState('<pre><code class="language-swift">let x = 1</code></pre>')
-        const info = codeLanguageOverlayInfo(state)
+        const info = codeLanguageTabInfo(state)
         // Position 0 is before the doc's first node; the code_block's own opening position is 0,
         // so content starts at 1 (the +1 in selectionState accounts for entering the node).
         expect(info.pos).toBe(1)
