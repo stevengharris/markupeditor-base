@@ -226,7 +226,7 @@ class Registry {
     /**
      * Add `plugin` to the registry, keyed by `name`.
      *
-     * @param {object}  plugin  Plugin object with { name, extension, export, import }.
+     * @param {object}  plugin  Plugin object with string values for { name, type, filename }.
      * @param {string}  name    The key used to retrieve and invoke the plugin.
      */
     registerPlugin(plugin, name) {
@@ -253,33 +253,19 @@ class Registry {
     }
 
     /**
-     * Return the public manifest for all registered plugins.
-     * Each entry contains only { id, name, extension } — function references are excluded.
+     * Return an array of registered plugins that match type, all if not specified.
+     * Each entry contains {name, type, filename}
      *
-     * @returns {Array<{id: string, name: string, extension: string}>}
+     * @returns {Array<{name: string, type: string, filename: string}>}
      */
-    getPluginManifest() {
-        const manifest = []
-        for (const plugin of this._plugins.values()) {
-            manifest.push({ name: plugin.name, extension: plugin.extension })
+    getPlugins(type) {
+        if (type) {
+            return Array.from(this._plugins.values()).filter(plugin => plugin.type === type)
+        } else {
+            return Array.from(this._plugins.values())
         }
-        return manifest
     }
 
-    /**
-     * Invoke `action` on the named plugin, passing `...args`.
-     * Returns null if the plugin is not found or does not define the action.
-     *
-     * @param {string}  name    The key used to identify the plugin.
-     * @param {string}  action  The action to invoke (e.g. 'export', 'import').
-     * @param {...*}    args    Arguments forwarded to the plugin action.
-     * @returns {*|null}
-     */
-    invokePlugin(name, action, ...args) {
-        const plugin = this._plugins.get(name)
-        if (!plugin || typeof plugin[action] !== 'function') return null
-        return plugin[action](...args)
-    }
 }
 
 /** 
@@ -359,26 +345,171 @@ export function registerDelegate(delegate, name) {_registry.registerDelegate.bin
  */
 export function registerMessageHandler(handler, name) {_registry.registerMessageHandler.bind(_registry)(handler, name)}
 
+/**
+ * Add the `editor` to the registry.
+ *
+ * When we register an editor, it becomes the active editor.
+ *
+ * @param {MarkupEditor}  editor  The MarkupEditor to be added
+ */
 export const registerEditor = _registry.registerEditor.bind(_registry)
+
+/**
+ * Remove the `editor` from the registry.
+ *
+ * @param {MarkupEditor}  editor  The MarkupEditor to be removed
+ */
 export const unregisterEditor = _registry.unregisterEditor.bind(_registry)
+
+/**
+ * Remove the `delegate` from the registry.
+ *
+ * @param {MarkupDelegate | object}  delegate  A MarkupDelegate or appropriate object.
+ * @param {string}  name  A name used to retrieve the `delegate`.
+ */
 export const unregisterDelegate = _registry.unregisterDelegate.bind(_registry)
+
+/**
+ * Return the `delegate` with `name`.
+ *
+ * @param {string}  name  A name used to retrieve the `delegate`.
+ * @returns {MarkupDelegate | object | undefined}
+ */
 export const getDelegate = _registry.getDelegate.bind(_registry)
+
+/**
+ * Remove the `config` from the registry.
+ *
+ * @param {ToolbarConfig | KeymapConfig | BehaviorConfig | object}  config  One of the "configs" from the MarkupEditor API or appropriate object.
+ * @param {string}  name  A name used to retrieve the `config`.
+ */
 export const unregisterConfig = _registry.unregisterConfig.bind(_registry)
+
+/**
+ * Return the `config` with `name`.
+ *
+ * @param {string}  name  A name used to retrieve the `config`.
+ * @returns {ToolbarConfig | KeymapConfig | BehaviorConfig | object | undefined}
+ */
 export const getConfig = _registry.getConfig.bind(_registry)
+
+/**
+ * Remove the `handler` from the registry.
+ *
+ * @param {MessageHandler | object}  handler  An instance of MessageHandler or appropriate object.
+ * @param {string}  name  A name used to retrieve the `handler`.
+ */
 export const unregisterMessageHandler = _registry.unregisterMessageHandler.bind(_registry)
+
+/**
+ * Return the `handler` with `name`.
+ *
+ * @param {string}  name  A name used to retrieve the `handler`.
+ * @returns {MessageHandler | object | undefined}
+ */
 export const getMessageHandler = _registry.getMessageHandler.bind(_registry)
+
+/**
+ * Remove the `toolbar` augmentation from the registry.
+ *
+ * @param {object}  toolbar  A toolbar that holds `cmdItems`.
+ * @param {string}  name  A name used to retrieve the `toolbar`.
+ */
 export const unregisterAugmentation = _registry.unregisterAugmentation.bind(_registry)
+
+/**
+ * Return the `toolbar` whose `menuItems` will be
+ * either prepended or appended to the normal MarkupEditor toolbar.
+ *
+ * @param {string}  name  A name used to retrieve the `toolbar`.
+ * @returns {object | undefined}
+ */
 export const getAugmentation = _registry.getAugmentation.bind(_registry)
+
+/**
+ * Return the active editor with `muId` of the registry's `activeMuId`.
+ *
+ * @returns {MarkupEditor | undefined}
+ */
 export const activeEditor = _registry.activeEditor.bind(_registry)
+
+/**
+ * Return the active editor's `document` (could be the shadow root).
+ *
+ * @returns {Document | ShadowRoot | undefined}
+ */
 export const activeDocument = _registry.activeDocument.bind(_registry)
+
+/**
+ * Set `activeMuId` based on `document` (could be a shadow root).
+ *
+ * @param {Document | ShadowRoot}  document
+ */
 export const setActiveDocument = _registry.setActiveDocument.bind(_registry)
+
+/**
+ * Return the active editor's element (typically with focus).
+ *
+ * @returns {Element | undefined}
+ */
 export const activeEditorElement = _registry.activeEditorElement.bind(_registry)
+
+/**
+ * Return the active editor's `messageHandler`.
+ *
+ * @returns {MessageHandler | object | undefined}
+ */
 export const activeMessageHandler = _registry.activeMessageHandler.bind(_registry)
+
+/**
+ * Return the active editor's instance of Searcher, `searcher`.
+ *
+ * @returns {object | undefined}
+ */
 export const activeSearcher = _registry.activeSearcher.bind(_registry)
+
+/**
+ * Return the cached ID of the selected contentEditable element.
+ *
+ * @returns {string | undefined}
+ */
 export const selectedID = _registry.selectedID.bind(_registry)
+
+/**
+ * Set/cache the ID of the selected contentEditable element to `string`.
+ *
+ * @param {string}  string
+ */
 export const setSelectedID = _registry.setSelectedID.bind(_registry)
+
+/**
+ * Add `plugin` to the registry, keyed by `name`.
+ *
+ * @param {object}  plugin  Plugin object with string values for { name, type, filename }.
+ * @param {string}  name    The key used to retrieve and invoke the plugin.
+ */
 export const registerPlugin = _registry.registerPlugin.bind(_registry)
+
+/**
+ * Remove the plugin with `name` from the registry.
+ *
+ * @param {string}  name    The key used to identify the plugin.
+ */
 export const unregisterPlugin = _registry.unregisterPlugin.bind(_registry)
+
+/**
+ * Return the plugin object with `name`, or undefined if not found.
+ *
+ * @param {string}  name    The key used to identify the plugin.
+ * @returns {object|undefined}
+ */
 export const getPlugin = _registry.getPlugin.bind(_registry)
-export const getPluginManifest = _registry.getPluginManifest.bind(_registry)
-export const invokePlugin = _registry.invokePlugin.bind(_registry)
+
+/**
+ * Return an array of registered plugins that match `type`, all if not specified.
+ * Each entry contains {name, type, filename}
+ *
+ * @param {string}  [type]  The plugin type to filter by; all plugins are returned if omitted.
+ * @returns {Array<{name: string, type: string, filename: string}>}
+ */
+export const getPlugins = _registry.getPlugins.bind(_registry)

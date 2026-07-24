@@ -33,22 +33,20 @@ export * from 'prosemirror-view'
  *
  * @param {string[]} pluginPaths  Resolved paths to plugin modules.
  * @param {object|null} delegate  A MarkupDelegate instance (may be null/undefined).
- * @param {function} [importFn]   Optional import function; defaults to the native dynamic
- *                                import. Provided for testing.
  * @returns {Promise<void>}
  */
-export async function loadPlugins(pluginPaths, delegate, importFn = (path) => import(path)) {
+export async function loadPlugins(pluginPaths, delegate) {
   if (!pluginPaths || pluginPaths.length === 0) return
-  const before = new Set(MU.getPluginManifest().map(m => m.name))
+  const before = new Set(MU.getPlugins().map(m => m.name))
   await Promise.all(
     pluginPaths.map(path =>
-      importFn(path).catch(err => {
+      import(path).catch(err => {
         console.error('Plugin load failed:', path, err)
         return null
       })
     )
   )
-  const after = MU.getPluginManifest()
+  const after = MU.getPlugins()
   const newManifests = after.filter(m => !before.has(m.name))
   delegate?.markupPluginsDidLoad && delegate.markupPluginsDidLoad(newManifests)
 }
@@ -109,7 +107,7 @@ class MarkupEditorElement extends HTMLElement {
         const pluginPaths = pluginsAttr ? JSON.parse(pluginsAttr) : []
         const delegate = this.editor.config?.delegate
         await loadPlugins(pluginPaths, delegate)
-        const manifests = MU.getPluginManifest()
+        const manifests = MU.getPlugins()
         if (manifests.length > 0) {
           this.editor.messageHandler.postMessage(
             JSON.stringify({ messageType: 'markupPluginsDidLoad', plugins: manifests })

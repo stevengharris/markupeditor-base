@@ -1,17 +1,29 @@
 {
-    "description": "Plugin registry — registerPlugin and getPluginManifest.",
+    "description": "Plugin registry — registerPlugin, unregisterPlugin, getPlugin, and getPlugins.",
     "tests": [
         {
-            "description": "registerPlugin stores a plugin and getPluginManifest returns its public surface",
+            "description": "registerPlugin stores a plugin and getPlugins returns it",
             "startHtml": "<p>|</p>",
             "skipUndoRedo": true,
-            "action": "MU.registerPlugin({name: 'Reg Test', extension: 'rt', export: async (c) => c, import: async (c) => c}, 'Reg Test'); const entry = MU.getPluginManifest().find(m => m.name === 'Reg Test'); expect(entry).toBeDefined(); expect(entry.name).toBe('Reg Test'); expect(entry.extension).toBe('rt'); expect(entry.export).toBeUndefined(); expect(entry.import).toBeUndefined()"
+            "action": "MU.registerPlugin({name: 'Reg Test', type: 'renderer', filename: 'reg-test.js'}); const entry = MU.getPlugins().find(m => m.name === 'Reg Test'); expect(entry).toBeDefined(); expect(entry.type).toBe('renderer'); expect(entry.filename).toBe('reg-test.js')"
         },
         {
-            "description": "getPluginManifest returns only { name, extension } — no function references",
+            "description": "getPlugins(type) returns only plugins matching type",
             "startHtml": "<p>|</p>",
             "skipUndoRedo": true,
-            "action": "for (const entry of MU.getPluginManifest()) { expect(Object.keys(entry).sort()).toEqual(['extension', 'name']) }"
+            "action": "MU.registerPlugin({name: 'Exporter Test', type: 'exporter', filename: 'exporter-test.js'}); const entries = MU.getPlugins('exporter'); expect(entries.find(m => m.name === 'Exporter Test')).toBeDefined(); expect(entries.find(m => m.name === 'Reg Test')).toBeUndefined()"
+        },
+        {
+            "description": "getPlugin(name) returns the plugin with that name, or undefined if not found",
+            "startHtml": "<p>|</p>",
+            "skipUndoRedo": true,
+            "action": "MU.registerPlugin({name: 'Solo Test', type: 'importer', filename: 'solo-test.js'}); const entry = MU.getPlugin('Solo Test'); expect(entry).toBeDefined(); expect(entry.type).toBe('importer'); expect(entry.filename).toBe('solo-test.js'); expect(MU.getPlugin('No Such Plugin')).toBeUndefined()"
+        },
+        {
+            "description": "unregisterPlugin removes the plugin from the registry",
+            "startHtml": "<p>|</p>",
+            "skipUndoRedo": true,
+            "action": "MU.registerPlugin({name: 'Removable Test', type: 'renderer', filename: 'removable-test.js'}); MU.unregisterPlugin('Removable Test'); expect(MU.getPlugin('Removable Test')).toBeUndefined()"
         }
     ]
 }
