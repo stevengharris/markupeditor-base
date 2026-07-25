@@ -505,7 +505,7 @@ const registerPlugin = _registry.registerPlugin.bind(_registry);
  *
  * @param {string}  name    The key used to identify the plugin.
  */
-_registry.unregisterPlugin.bind(_registry);
+const unregisterPlugin = _registry.unregisterPlugin.bind(_registry);
 
 /**
  * Return the plugin object with `name`, or undefined if not found.
@@ -513,7 +513,7 @@ _registry.unregisterPlugin.bind(_registry);
  * @param {string}  name    The key used to identify the plugin.
  * @returns {object|undefined}
  */
-_registry.getPlugin.bind(_registry);
+const getPlugin = _registry.getPlugin.bind(_registry);
 
 /**
  * Return an array of registered plugins that match `type`, all if not specified.
@@ -32738,17 +32738,17 @@ var HighlightJS = /*@__PURE__*/getDefaultExportFromCjs(commonExports);
  * both registered names and aliases, so this is case-insensitive and
  * alias-aware.
  * 
- * Plugins of type 'renderer' are also recognized languages in the sense 
- * that UI that depends on the return value here needs to know they will 
+ * Plugins of type 'codeview' are also recognized languages in the sense
+ * that UI that depends on the return value here needs to know they will
  * be rendered by the plugin.
  *
  * @param {string} name
  * @returns {boolean}
  */
 function isRecognizedLanguage(name) {
-    let renderers = getPlugins('renderer');
-    let rendersLanguage = renderers.filter(plugin => plugin.name === name).length > 0;
-    if (rendersLanguage) { return true }
+    let codeviews = getPlugins('codeview');
+    let isCodeViewLanguage = codeviews.filter(plugin => plugin.name === name).length > 0;
+    if (isCodeViewLanguage) { return true }
     return !!HighlightJS.getLanguage((name ?? '').trim())
 }
 
@@ -42503,6 +42503,8 @@ const MU = {
     registerDelegate,
     registerMessageHandler,
     registerPlugin,
+    unregisterPlugin,
+    getPlugin,
     getPlugins,
 };
 
