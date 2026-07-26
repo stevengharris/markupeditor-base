@@ -400,6 +400,7 @@ export const MU = {
     reportError,
     resetSelection,
     savedDataImage,
+    schema,
     searchFor,
     setActiveView,
     setHTML,

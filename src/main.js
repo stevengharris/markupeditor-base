@@ -20,7 +20,6 @@ export { MU }
 export * from 'prosemirror-model'
 export * from 'prosemirror-state'
 export * from 'prosemirror-view'
-export { schema } from './schema/index.js'
 
 /**
  * Load plugins from an array of paths and notify the delegate on completion.
