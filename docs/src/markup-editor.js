@@ -42462,6 +42462,7 @@ const MU = {
     reportError,
     resetSelection,
     savedDataImage,
+    schema,
     searchFor,
     setActiveView,
     setHTML,
@@ -42773,4 +42774,4 @@ class MarkupEditorElement extends HTMLElement {
 // Let the browser know about the custom element
 customElements.define('markup-editor', MarkupEditorElement);
 
-export { AllSelection, ContentMatch, DOMParser, DOMSerializer, Decoration, DecorationSet, EditorState, EditorView, Fragment, MU, Mark, MarkType, Node$1 as Node, NodeRange, NodeSelection, NodeType$1 as NodeType, Plugin, PluginKey, ReplaceError, ResolvedPos, Schema, Selection, SelectionRange, Slice, TextSelection, Transaction, __endComposition, __parseFromClipboard, loadPlugins, schema };
+export { AllSelection, ContentMatch, DOMParser, DOMSerializer, Decoration, DecorationSet, EditorState, EditorView, Fragment, MU, Mark, MarkType, Node$1 as Node, NodeRange, NodeSelection, NodeType$1 as NodeType, Plugin, PluginKey, ReplaceError, ResolvedPos, Schema, Selection, SelectionRange, Slice, TextSelection, Transaction, __endComposition, __parseFromClipboard, loadPlugins };
