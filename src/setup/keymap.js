@@ -10,6 +10,8 @@ import {
     toggleFormatCommand,
     wrapInListCommand,
     handleDelete,
+    deleteNewlineBackward,
+    deleteNewlineForward,
     handleEnter,
     handleShiftEnter,
     setStyleCommand,
@@ -56,7 +58,7 @@ export function buildKeymap(config, schema) {
     // The MarkupEditor handles Shift-Enter as searchBackward when search is active.
     bind("Shift-Enter", handleShiftEnter)
     // The MarkupEditor needs to be notified of state changes on Delete, like Backspace
-    bind("Delete", handleDelete)
+    bind("Delete", chainCommands(handleDelete, deleteNewlineForward))
     // Table navigation by Tab/Shift-Tab
     bind('Tab', goToNextCell(1))
     bind('Shift-Tab', goToNextCell(-1))
@@ -72,7 +74,7 @@ export function buildKeymap(config, schema) {
     // Correction (needs to be chained with stateChanged also)
     bind(keymap.undo, undoCommand())
     bind(keymap.redo, redoCommand())
-    bind("Backspace", chainCommands(handleDelete, undoInputRule))
+    bind("Backspace", chainCommands(handleDelete, deleteNewlineBackward, undoInputRule))
     // List types
     bind(keymap.bullet, wrapInListCommand(schema, schema.nodes.bullet_list))
     bind(keymap.number, wrapInListCommand(schema, schema.nodes.ordered_list))
