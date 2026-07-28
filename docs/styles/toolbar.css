@@ -409,8 +409,8 @@
   position: sticky;
   top: calc(var(--Markup-button-size, 28px) + 7px);
   width: 100%;
-  line-height: 30px;
-  height: 37px;
+  line-height: calc(var(--Markup-button-size, 28px) + 2px);
+  height: calc(var(--Markup-button-size, 28px) + 9px);;
   color: var(--Markup-accent-color, blue);
   background: var(--Markup-toolbar-bg, rgba(250, 249, 246, 0.95));
   border-bottom: 1px solid var(--Markup-border-color, lightgray);
@@ -429,10 +429,10 @@
 .Markup-searchbar input {
   appearance: none; /* Otherwise, in Safari/WebKit, the height is small and fixed */
   position: relative;
-  font-size: 18px;
-  line-height: 30px;
-  height: 30px;
-  width: calc(100% - 128px);
+  font-size: calc(var(--Markup-button-font-size, 24px) - 6px); 
+  line-height: calc(var(--Markup-button-size, 28px) + 2px);
+  line-height: calc(var(--Markup-button-size, 28px) + 2px);
+  width: calc(100% - (3 * (var(--Markup-button-size, 28px) + 12px)) - 8px);  /* Three buttons plus spacing and margin */
   margin: 0 8px;
   padding: 0 4px;
   outline: none;
@@ -455,11 +455,11 @@
   justify-content: flex-end;
   align-items: center;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: calc(0.5 * var(--Markup-button-font-size, 24px));
   overflow-x: visible;
-  height: 28px;
+  height: var(--Markup-button-size, 28px);
   top: 5px;
-  left: calc(100% - 13em);
+  left: calc(100% - (4 * (var(--Markup-button-size, 28px) + 12px)));  /* Four buttons plus spacing and margin */
   width: 1px;
   color: gray;
   user-select: none;
@@ -495,11 +495,11 @@
 }
 
 .Markup-toolbar-overlay.Markup-searchbar-hidden {
-  height: 38px;
+  height: calc(var(--Markup-button-size, 28px) + 8px);
 }
 
 .Markup-toolbar-overlay.Markup-searchbar-showing {
-  height: 76px;
+  height: calc((var(--Markup-button-size, 28px) + 8px) * 2);
 }
 
 .Markup-prompt {
