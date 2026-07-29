@@ -5553,7 +5553,7 @@ auto-sizing of a WKWebView based on its contents.</p>
     
 
     
-    <h4 class="name" id="getPlugins" data-heading-label="getPlugins" ><span class="type-signature"></span>getPlugins<span class="signature">(type<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Array.&lt;{name: string, type: string, filename: string}>}</span></h4>
+    <h4 class="name" id="getPlugins" data-heading-label="getPlugins" ><span class="type-signature"></span>getPlugins<span class="signature">(type)</span><span class="type-signature"> &rarr; {Array.&lt;object>}</span></h4>
     
 
     
@@ -5561,8 +5561,7 @@ auto-sizing of a WKWebView based on its contents.</p>
 
 
 <div class="description">
-    <p>Return an array of registered plugins that match <code>type</code>, all if not specified.
-Each entry contains {name, type, filename}</p>
+    <p>Return an array of registered plugins that match <code>type</code>, all if not specified.</p>
 </div>
 
 
@@ -5586,8 +5585,6 @@ Each entry contains {name, type, filename}</p>
 
         <th>Type</th>
 
-        
-        <th>Attributes</th>
         
 
         
@@ -5613,16 +5610,6 @@ Each entry contains {name, type, filename}</p>
             
             </td>
 
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
             
 
             
@@ -5692,6 +5679,10 @@ Each entry contains {name, type, filename}</p>
 <h5>Returns:</h5>
 
         
+<div class="param-desc">
+    <p>Array of plugin objects with string properties for {name, type} at minimum.</p>
+</div>
+
 
 
 <dl>
@@ -5700,7 +5691,7 @@ Each entry contains {name, type, filename}</p>
     </dt>
     <dd>
         
-<span class="param-type">Array.&lt;{name: string, type: string, filename: string}></span>
+<span class="param-type">Array.&lt;object></span>
 
 
     </dd>
@@ -8782,7 +8773,12 @@ is used.</p>
 
 
 <div class="description">
-    <p>Add <code>plugin</code> to the registry, keyed by <code>name</code>.</p>
+    <p>Add <code>plugin</code> to the registry, keyed by <code>name</code>.
+A <code>plugin</code> object has <code>name</code> and <code>type</code> string properties at minimum.
+The invoker can add additional properties to the <code>plugin</code>.
+For example, a <code>run</code> function could be part of the <code>plugin</code>, which could,
+by convention of the application environment the markupeditor is used in,
+be used to run the <code>plugin</code> to perform some action or return something.</p>
 </div>
 
 
@@ -8835,7 +8831,7 @@ is used.</p>
 
             
 
-            <td class="description last"><p>Plugin object with string values for { name, type, filename }.</p></td>
+            <td class="description last"><p>Plugin object with string properties for {name, type} at minimum.</p></td>
         </tr>
 
     
@@ -8858,7 +8854,7 @@ is used.</p>
 
             
 
-            <td class="description last"><p>The key used to retrieve and invoke the plugin.</p></td>
+            <td class="description last"><p>The key used to retrieve and invoke the plugin. Taken from <code>plugin.name</code> by default.</p></td>
         </tr>
 
     

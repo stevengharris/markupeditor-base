@@ -225,9 +225,14 @@ class Registry {
 
     /**
      * Add `plugin` to the registry, keyed by `name`.
+     * A `plugin` object has `name` and `type` string properties at minimum.
+     * The invoker can add additional properties to the `plugin`.
+     * For example, a `run` function could be part of the `plugin`, which could, 
+     * by convention of the application environment the markupeditor is used in, 
+     * be used to run the `plugin` to perform some action or return something.
      *
-     * @param {object}  plugin  Plugin object with string values for { name, type, filename }.
-     * @param {string}  name    The key used to retrieve and invoke the plugin.
+     * @param {object}  plugin  Plugin object with string properties for {name, type} at minimum.
+     * @param {string}  name    The key used to retrieve and invoke the plugin. Taken from `plugin.name` by default.
      */
     registerPlugin(plugin, name) {
         this._plugins.set(name ?? plugin.name, plugin)
@@ -246,17 +251,17 @@ class Registry {
      * Return the plugin object with `name`, or undefined if not found.
      *
      * @param {string}  name    The key used to identify the plugin.
-     * @returns {object|undefined}
+     * @returns {object | undefined}
      */
     getPlugin(name) {
         return this._plugins.get(name)
     }
 
     /**
-     * Return an array of registered plugins that match type, all if not specified.
-     * Each entry contains {name, type, filename}
+     * Return an array of registered plugins that match `type`, all if not specified.
      *
-     * @returns {Array<{name: string, type: string, filename: string}>}
+     * @param {string}      type    The plugin type to filter by; all plugins are returned if omitted.
+     * @returns {Array<object>}     Array of plugin objects with string properties for {name, type} at minimum.
      */
     getPlugins(type) {
         if (type) {
@@ -502,10 +507,15 @@ export const setSelectedID = _registry.setSelectedID.bind(_registry)
 
 /**
  * Add `plugin` to the registry, keyed by `name`.
+ * A `plugin` object has `name` and `type` string properties at minimum.
+ * The invoker can add additional properties to the `plugin`.
+ * For example, a `run` function could be part of the `plugin`, which could, 
+ * by convention of the application environment the markupeditor is used in, 
+ * be used to run the `plugin` to perform some action or return something.
  *
  * @function
- * @param {object}  plugin  Plugin object with string values for { name, type, filename }.
- * @param {string}  name    The key used to retrieve and invoke the plugin.
+ * @param {object}  plugin  Plugin object with string properties for {name, type} at minimum.
+ * @param {string}  name    The key used to retrieve and invoke the plugin. Taken from `plugin.name` by default.
  */
 export const registerPlugin = _registry.registerPlugin.bind(_registry)
 
@@ -528,10 +538,9 @@ export const getPlugin = _registry.getPlugin.bind(_registry)
 
 /**
  * Return an array of registered plugins that match `type`, all if not specified.
- * Each entry contains {name, type, filename}
  *
  * @function
- * @param {string}  [type]  The plugin type to filter by; all plugins are returned if omitted.
- * @returns {Array<{name: string, type: string, filename: string}>}
+ * @param {string}      type    The plugin type to filter by; all plugins are returned if omitted.
+ * @returns {Array<object>}     Array of plugin objects with string properties for {name, type} at minimum.
  */
 export const getPlugins = _registry.getPlugins.bind(_registry)
