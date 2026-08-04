@@ -556,6 +556,29 @@ const getPlugin = _registry.getPlugin.bind(_registry);
 const getPlugins = _registry.getPlugins.bind(_registry);
 
 /**
+ * Look up the plugin with `name` and invoke its `run` function, returning/awaiting whatever
+ * it resolves to.
+ *
+ * Content-agnostic and plugin-type-agnostic: `runPlugin` never fetches or supplies content
+ * on the plugin's behalf. The plugin's `run` function is responsible for getting
+ * whatever content it needs, via whichever accessor (e.g. `getHTML`) fits its purpose.
+ *
+ * Returns `null`, never rejects, when there's nothing to run: no plugin registered with
+ * `name`, or a plugin registered without a `run` function. If `run` itself rejects, that
+ * rejection propagates unchanged — it is not swallowed into `null`, so a caller can't
+ * confuse "nothing to run" with "the plugin failed."
+ *
+ * @function
+ * @param {string}  name    The key used to identify the plugin.
+ * @returns {Promise<*>}    Whatever `plugin.run()` resolves to, or `null`.
+ */
+async function runPlugin(name) {
+    const plugin = getPlugin(name);
+    if (!plugin?.run) return null
+    return await plugin.run()
+}
+
+/**
  * MUError captures internal errors and makes it easy to communicate them externally.
  *
  * Usage is generally via the statics defined here, altho supplementary info can
@@ -42572,6 +42595,7 @@ const MU = {
     unregisterPlugin,
     getPlugin,
     getPlugins,
+    runPlugin,
 };
 
 sheet.media.mediaText = '(prefers-color-scheme: dark)';
