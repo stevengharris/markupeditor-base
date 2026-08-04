@@ -113,6 +113,7 @@ import {
     unregisterPlugin,
     getPlugin,
     getPlugins,
+    runPlugin,
 } from "./registry.js"
 import {
     cmdItem,
@@ -445,4 +446,5 @@ export const MU = {
     unregisterPlugin,
     getPlugin,
     getPlugins,
+    runPlugin,
 }
