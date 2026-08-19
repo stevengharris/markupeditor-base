@@ -1,5 +1,8 @@
 import {expect} from 'vitest';
 import {HtmlTestSuite} from './htmltest.js'
+// This imports the built bundle, not src/ directly. Bare `vitest`/`npx vitest run`
+// does NOT rebuild dist/ first and will silently test a stale build — always run
+// `npm test` (its `pretest` hook rebuilds via rollup before vitest runs).
 import {MU} from '../dist/markup-editor.js'
 
 export {MU, HtmlTestSuite}

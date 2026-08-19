@@ -29,6 +29,7 @@ import {
 } from 'prosemirror-tables'
 import { isSearchFocused, isPromptShowing } from './domaccess.js'
 import { isRecognizedLanguage, presentCodeLanguages } from './highlighting.js'
+import { base as _testKeyCodeTable } from 'w3c-keyname'
 
 /**
  * Define various arrays of tags used to represent MarkupEditor-specific concepts.
@@ -2737,6 +2738,99 @@ export function testPasteTextPreprocessing(html) {
  */
 export function testIsRecognizedLanguage(name) {
     return isRecognizedLanguage(name);
+};
+
+/**
+ * For testing purposes, simulate typing `text` one character at a time
+ * through the `handleTextInput` prop, so input rules (setup/inputrules.js)
+ * fire as they do for live typing. Does not fire the DOM `input` event, so
+ * `callbackInput` (markupeditor.js) is not exercised. Skips `\r`/`\n`
+ * characters rather than inserting them, matching real typing, which never
+ * routes a newline through `handleTextInput`.
+ *
+ * @param {string}  text    The text to type, one Unicode code point at a time.
+ */
+export function testTypeText(text) {
+    const view = activeView()
+    for (const ch of text) {
+        if (/[\r\n]/.test(ch)) continue
+        const { from, to } = view.state.selection
+        const deflt = () => view.state.tr.insertText(ch, from, to)
+        const handled = view.someProp('handleTextInput', f => f(view, from, to, ch, deflt))
+        if (!handled) {
+            view.dispatch(deflt())
+        }
+    }
+};
+
+// Modifier segments testTypeKey recognizes when parsing a keymap-style key
+// name. "Mod" (prosemirror-keymap's platform-dependent Cmd/Ctrl alias) is
+// deliberately excluded: it has no single fixed KeyboardEvent flag, and the
+// one scenario that needed testTypeKey (Backspace, no modifiers) never
+// required it.
+const _testTypeKeyModifiers = new Set(['Shift', 'Ctrl', 'Control', 'Alt', 'Cmd', 'Meta'])
+
+// Reverse lookup from KeyboardEvent.key name to legacy keyCode, built from
+// w3c-keyname's public `base` table (keyCode -> name). Where more than one
+// keyCode maps to the same name (e.g. 10 and 13 both name "Enter"), the
+// higher/later entry wins, matching prosemirror-view's own hardcoded
+// convention (its internal key-event helper in src/dom.ts pairs "Enter"
+// with 13 and "Backspace" with 8 at its call sites).
+const _testKeyCodeByName = Object.fromEntries(
+    Object.entries(_testKeyCodeTable).map(([code, name]) => [name, Number(code)])
+)
+
+function _testKeyCodeFor(key) {
+    return _testKeyCodeByName[key] ?? 0
+}
+
+/**
+ * For testing purposes, simulate a single keydown through the `handleKeyDown`
+ * prop, so keymap bindings (setup/keymap.js) fire as they do for a live
+ * keypress. Exercises only handleKeyDown-routed (keymap-bound) behavior: for
+ * anything the browser would otherwise handle natively instead of a
+ * registered binding claiming it (e.g. Backspace when there's no input-rule
+ * state to undo, IME composition), this is a silent no-op — it returns
+ * `false` and does nothing, unlike a real keypress.
+ *
+ * @param {string}  key     A keymap-style key name (e.g., "Backspace",
+ *                          "Shift-Enter"): zero or more modifier prefixes
+ *                          (Shift-, Ctrl-/Control-, Alt-, Cmd-/Meta-)
+ *                          followed by a KeyboardEvent.key value.
+ * @throws {Error}          If `key` contains an unrecognized modifier
+ *                          prefix, including the unsupported "Mod-".
+ * @returns {boolean}       Whether a handler returned `true` for the key.
+ *                          NOT a reliable "the document changed" signal: a
+ *                          command that dispatches but returns `undefined`
+ *                          (a pre-existing bug in some commands here, e.g.
+ *                          setStyleCommand/toggleFormatCommand -- see
+ *                          MarkupEditorApp-4dos) still mutates the document
+ *                          while this returns `false`.
+ */
+export function testTypeKey(key) {
+    const view = activeView()
+    // Split like prosemirror-keymap's own normalizeKeyName does, so a
+    // trailing "-" (or a bare "-") is recognized as the literal key rather
+    // than an empty string, e.g. "Ctrl--" -> ["Ctrl", "-"].
+    const parts = key.split(/-(?!$)/)
+    const eventKey = parts.pop()
+    const modifiers = new Set(parts)
+    for (const modifier of modifiers) {
+        if (!_testTypeKeyModifiers.has(modifier)) {
+            throw new Error(`testTypeKey: unrecognized modifier "${modifier}" in "${key}"`)
+        }
+    }
+    const event = new KeyboardEvent('keydown', {
+        key: eventKey,
+        keyCode: _testKeyCodeFor(eventKey),
+        shiftKey: modifiers.has('Shift'),
+        ctrlKey: modifiers.has('Ctrl') || modifiers.has('Control'),
+        altKey: modifiers.has('Alt'),
+        metaKey: modifiers.has('Cmd') || modifiers.has('Meta'),
+        bubbles: true,
+        cancelable: true,
+    })
+    return view.someProp('handleKeyDown', f => f(view, event)) ?? false
 };
 
 /**
