@@ -293,7 +293,7 @@ export function openImageDialog() {
 export function markupSetup(config, schema) {
   setPrefix('Markup')
   let plugins = [
-    buildInputRules(schema),
+    buildInputRules(schema, config),
     keymap(buildKeymap(config, schema)),
     keymap(baseKeymap),
     dropCursor(),

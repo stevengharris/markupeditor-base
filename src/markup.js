@@ -2773,7 +2773,7 @@ const _testTypeKeyModifiers = new Set(['Shift', 'Ctrl', 'Control', 'Alt', 'Cmd',
 // Reverse lookup from KeyboardEvent.key name to legacy keyCode, built from
 // w3c-keyname's public `base` table (keyCode -> name). Where more than one
 // keyCode maps to the same name (e.g. 10 and 13 both name "Enter"), the
-// higher/later entry wins, matching prosemirror-view's own hardcoded
+// higher/later entry wins, matching prosemirror-view's hardcoded
 // convention (its internal key-event helper in src/dom.ts pairs "Enter"
 // with 13 and "Backspace" with 8 at its call sites).
 const _testKeyCodeByName = Object.fromEntries(
@@ -2809,7 +2809,7 @@ function _testKeyCodeFor(key) {
  */
 export function testTypeKey(key) {
     const view = activeView()
-    // Split like prosemirror-keymap's own normalizeKeyName does, so a
+    // Split like prosemirror-keymap's normalizeKeyName does, so a
     // trailing "-" (or a bare "-") is recognized as the literal key rather
     // than an empty string, e.g. "Ctrl--" -> ["Ctrl", "-"].
     const parts = key.split(/-(?!$)/)
