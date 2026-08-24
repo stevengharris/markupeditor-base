@@ -2800,12 +2800,11 @@ function _testKeyCodeFor(key) {
  * @throws {Error}          If `key` contains an unrecognized modifier
  *                          prefix, including the unsupported "Mod-".
  * @returns {boolean}       Whether a handler returned `true` for the key.
- *                          NOT a reliable "the document changed" signal: a
- *                          command that dispatches but returns `undefined`
- *                          (a pre-existing bug in some commands here, e.g.
- *                          setStyleCommand/toggleFormatCommand -- see
- *                          MarkupEditorApp-4dos) still mutates the document
- *                          while this returns `false`.
+ *                          NOT a reliable "the document changed" signal:
+ *                          some commands (e.g. setStyleCommand,
+ *                          toggleFormatCommand) dispatch without returning
+ *                          `true`, so the document can still mutate while
+ *                          this returns `false`.
  */
 export function testTypeKey(key) {
     const view = activeView()
