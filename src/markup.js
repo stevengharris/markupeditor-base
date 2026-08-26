@@ -2893,6 +2893,20 @@ export function insertLinkCommand(url) {
     return commandAdapter;
 }
 
+/**
+ * Insert a link to the header identified by hTag ('H1'-'H6') and index (its position among
+ * headers with that tag), assigning the header a unique id if it doesn't already have one.
+ *
+ * @param {string} hTag     One of the strings `H1`-`H6`
+ * @param {number} index    Within existing elements with tag `hTag`, this is the index into them that is identified
+ */
+export function insertInternalLink(hTag, index) {
+    const view = activeView()
+    let command = insertInternalLinkCommand(hTag, index);
+    let result = command(view.state, view.dispatch, view);
+    return result
+};
+
 export function insertInternalLinkCommand(hTag, index) {
     const commandAdapter = (state, dispatch, view) => {
         // Find the node matching hTag that is index into the nodes matching hTag
@@ -3008,11 +3022,33 @@ function headerMatching(hTag, index, state) {
 }
 
 /**
+ * Return a JSON-stringified array describing every header in the document, in document order
+ * within each level. Each entry is `{hTag, index, text}`, where `hTag` and `index` identify the
+ * header the same way `insertInternalLink(hTag, index)` and `idForInternalLinkCommand(hTag, index)` do.
+ *
+ * @returns {string}    JSON-stringified array of `{hTag, index, text}`
+ */
+export function getHeaders() {
+    const view = activeView()
+    const headersByLevel = headers(view.state)
+    let result = []
+    for (let level = 1; level < 7; level++) {
+        let hNodes = headersByLevel[level]
+        if (hNodes) {
+            hNodes.forEach((h, index) => {
+                result.push({hTag: 'H' + level.toString(), index: index, text: h.node.textContent})
+            })
+        }
+    }
+    return JSON.stringify(result)
+}
+
+/**
  * Return all the headers that exist in `state.doc` as arrays keyed by level.
- * 
+ *
  * @ignore
  * @param {EditorState} state   The state of the ProseMirror editor
- */ 
+ */
 export function headers(state) {
     let headers = {}
     let hType = state.schema.nodes.heading
