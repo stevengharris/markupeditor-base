@@ -1,0 +1,23 @@
+{
+    "description": "Get the list of headers in the document, keyed by hTag and index.",
+    "tests": [
+        {
+            "description": "No headers in document",
+            "startHtml": "<p>Some text.</p>",
+            "endHtml": "[]",
+            "skipSet": true,
+            "skipUndoRedo": true,
+            "action": "MU.setTestHTML(startHtml, '|'); return MU.getHeaders()",
+            "arg": "startHtml"
+        },
+        {
+            "description": "Mixed header levels in document order",
+            "startHtml": "<h1>Introduction</h1><p>Some text.</p><h2>First</h2><h2>Second</h2>",
+            "endHtml": "[{\"hTag\":\"H1\",\"index\":0,\"text\":\"Introduction\"},{\"hTag\":\"H2\",\"index\":0,\"text\":\"First\"},{\"hTag\":\"H2\",\"index\":1,\"text\":\"Second\"}]",
+            "skipSet": true,
+            "skipUndoRedo": true,
+            "action": "MU.setTestHTML(startHtml, '|'); return MU.getHeaders()",
+            "arg": "startHtml"
+        }
+    ]
+}
