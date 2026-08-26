@@ -35639,34 +35639,32 @@ function insertInternalLink(hTag, index) {
 function insertInternalLinkCommand(hTag, index) {
     const commandAdapter = (state, dispatch, view) => {
         // Find the node matching hTag that is index into the nodes matching hTag
-        let {node} = headerMatching(hTag, index, state);
+        let {node, pos} = headerMatching(hTag, index, state);
         if (!node) return false
-        // Get the unique id for this header, which is may or may not already have.
+        // Get the unique id for this header, which it may or may not already have.
         let id = idForHeader(node, state);
-        let attrs = node.attrs;
-        attrs.id = id;
-        // Insert the mark (id is always referenced with # at front) and set (or reset) the 
-        // id in the header itself. We don't care if it's the same, but we want these changes 
-        // to be made in a single transaction so we can undo them if needed.
+        // Same transaction as the mark insertion below, so both land as one undo step.
+        let tr = state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, id });
         const selection = state.selection;
         const linkMark = state.schema.marks.link.create({ href: '#' + id });
         if (selection.empty) {
-            // In case of an empty selection, insert the textContent of the header and then use 
+            // In case of an empty selection, insert the textContent of the header and then use
             // that to link-to the header
             const textNode = state.schema.text(node.textContent, [linkMark]);
-            let transaction = state.tr.replaceSelectionWith(textNode, false);
-            dispatch(transaction);
+            tr.replaceSelectionWith(textNode, false);
+            dispatch(tr);
             stateChanged(view);
             return true;
         } else {
-            const toggle = toggleMark(linkMark.type, linkMark.attrs);
-            if (toggle) {
-                toggle(state, dispatch);
-                stateChanged(view);
-                return true;
-            } else {
-                return false;
-            }
+            // Capture toggleMark's steps rather than let it dispatch, then replay them onto
+            // `tr` (setNodeMarkup doesn't shift positions, so they apply cleanly).
+            let captured = null;
+            toggleMark(linkMark.type, linkMark.attrs)(state, t => { captured = t; });
+            if (!captured) return false;
+            for (const step of captured.steps) tr.step(step);
+            dispatch(tr);
+            stateChanged(view);
+            return true;
         }
     };
     return commandAdapter;
@@ -35751,11 +35749,17 @@ function headerMatching(hTag, index, state) {
 }
 
 /**
- * Return a JSON-stringified array describing every header in the document, in document order
- * within each level. Each entry is `{hTag, index, text}`, where `hTag` and `index` identify the
- * header the same way `insertInternalLink(hTag, index)` and `idForInternalLinkCommand(hTag, index)` do.
+ * Return a JSON-stringified array describing every non-empty header in the document, in document
+ * order within each level. Each entry is `{hTag, index, text, id}`, where `hTag` and `index` identify
+ * the header the same way `insertInternalLink(hTag, index)` and `idForInternalLinkCommand(hTag, index)`
+ * do, and `id` is the header's current id attribute (null if it hasn't been assigned one yet).
  *
- * @returns {string}    JSON-stringified array of `{hTag, index, text}`
+ * An empty header is omitted -- it can't form a usable id, so there's nothing to link to -- but
+ * `index` still reflects its true position among ALL headers at that level (empty ones included),
+ * matching what `headerMatching` expects; it's only the reported entries that skip empty headers,
+ * not the numbering.
+ *
+ * @returns {string}    JSON-stringified array of `{hTag, index, text, id}`
  */
 function getHeaders() {
     const view = activeView();
@@ -35765,7 +35769,9 @@ function getHeaders() {
         let hNodes = headersByLevel[level];
         if (hNodes) {
             hNodes.forEach((h, index) => {
-                result.push({hTag: 'H' + level.toString(), index: index, text: h.node.textContent});
+                const text = h.node.textContent;
+                if (text.trim().length === 0) return
+                result.push({hTag: 'H' + level.toString(), index: index, text: text, id: h.node.attrs.id ?? null});
             });
         }
     }
