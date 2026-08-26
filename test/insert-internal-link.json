@@ -21,6 +21,13 @@
             "endHtml": "<h2>First</h2><h2 id=\"second\">Second</h2><p>Some text.<a href=\"#second\">Second</a>|</p>",
             "undoHtml": "<h2>First</h2><h2 id=\"second\">Second</h2><p>Some text.|</p>",
             "action": "MU.insertInternalLink('H2', 1)"
+        },
+        {
+            "description": "Insert link when the preceding same-level header is empty - index 1 still targets the real header, matching what getHeaders() reports for it",
+            "startHtml": "<h2></h2><h2>Real</h2><p>Some text.|</p>",
+            "endHtml": "<h2></h2><h2 id=\"real\">Real</h2><p>Some text.<a href=\"#real\">Real</a>|</p>",
+            "undoHtml": "<h2></h2><h2 id=\"real\">Real</h2><p>Some text.|</p>",
+            "action": "MU.insertInternalLink('H2', 1)"
         }
     ]
 }

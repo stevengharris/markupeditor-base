@@ -3022,11 +3022,17 @@ function headerMatching(hTag, index, state) {
 }
 
 /**
- * Return a JSON-stringified array describing every header in the document, in document order
- * within each level. Each entry is `{hTag, index, text}`, where `hTag` and `index` identify the
- * header the same way `insertInternalLink(hTag, index)` and `idForInternalLinkCommand(hTag, index)` do.
+ * Return a JSON-stringified array describing every non-empty header in the document, in document
+ * order within each level. Each entry is `{hTag, index, text, id}`, where `hTag` and `index` identify
+ * the header the same way `insertInternalLink(hTag, index)` and `idForInternalLinkCommand(hTag, index)`
+ * do, and `id` is the header's current id attribute (null if it hasn't been assigned one yet).
  *
- * @returns {string}    JSON-stringified array of `{hTag, index, text}`
+ * An empty header is omitted -- it can't form a usable id, so there's nothing to link to -- but
+ * `index` still reflects its true position among ALL headers at that level (empty ones included),
+ * matching what `headerMatching` expects; it's only the reported entries that skip empty headers,
+ * not the numbering.
+ *
+ * @returns {string}    JSON-stringified array of `{hTag, index, text, id}`
  */
 export function getHeaders() {
     const view = activeView()
@@ -3036,7 +3042,9 @@ export function getHeaders() {
         let hNodes = headersByLevel[level]
         if (hNodes) {
             hNodes.forEach((h, index) => {
-                result.push({hTag: 'H' + level.toString(), index: index, text: h.node.textContent})
+                const text = h.node.textContent
+                if (text.trim().length === 0) return
+                result.push({hTag: 'H' + level.toString(), index: index, text: text, id: h.node.attrs.id ?? null})
             })
         }
     }
