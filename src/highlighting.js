@@ -34,6 +34,12 @@ export function isRecognizedLanguage(name) {
  * the same language for display/matching purposes, matching isRecognizedLanguage's
  * own case-insensitivity.
  *
+ * Filtered through isRecognizedLanguage, so a genuinely custom/unrecognized
+ * language name typed into one block is no longer suggested for reuse in
+ * another. Trade-off accepted for a positive, Markdown-agnostic rule ("only
+ * present languages this app actually supports") rather than a per-language
+ * exclusion list.
+ *
  * @param {Node} doc  A ProseMirror document node.
  * @returns {string[]}
  */
@@ -44,7 +50,7 @@ export function presentCodeLanguages(doc) {
             languages.add(node.attrs.language.toLowerCase())
         }
     })
-    return Array.from(languages).sort()
+    return Array.from(languages).filter(isRecognizedLanguage).sort()
 }
 
 // hljs never has classPrefix reconfigured elsewhere in this codebase, so this
