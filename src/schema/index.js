@@ -266,6 +266,16 @@ const tNodes = tableNodes({
           attrs.style = (attrs.style || '') + `background-color: ${value};`;
       },
     },
+    align: {
+      default: null,
+      getFromDOM(dom) {
+        return dom.style.textAlign || null;
+      },
+      setDOMAttr(value, attrs) {
+        if (value)
+          attrs.style = (attrs.style || '') + `text-align: ${value};`;
+      },
+    },
   }
 });
 tNodes.table.attrs = {class: {default: null}};
