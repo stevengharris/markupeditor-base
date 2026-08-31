@@ -40,6 +40,7 @@ import {
   getListType, 
   isIndented,
   isTableSelected,
+  insertTableCommand,
   tableHasHeader,
   getSelectionRect,
   getImageAttributes, 
@@ -169,6 +170,19 @@ function hRuleItem(config) {
 function tableMenuItems(config) {
   let icons = config.toolbar.icons
   let help = config.toolbar.help
+  // If `behavior.insertTable` is true, the Table button just invokes the delegate's
+  // `markupInsertTable` method instead of the dropdown below -- same reasoning as
+  // LinkItem/ImageItem. Unlike Link/Image, the delegate decides what to show (an
+  // insert-size picker or a table-editing menu) based on whether the selection is
+  // already in a table, so a single enabled state covers both: "can insert a table
+  // here" or "already in a table" (editing an existing table is always available).
+  if (config.behavior.insertTable && config.delegate?.markupInsertTable) {
+    return cmdItem(config.delegate.markupInsertTable, {
+      enable: (state) => insertTableCommand(1, 1)(state) || isTableSelected(state),
+      title: help.table + keyString('table', config.keymap),
+      icon: icons.table
+    })
+  }
   let items = []
   let { tableHeader, tableBorder } = config.toolbar.menus;
   items.push(new TableCreateSubmenu({title: 'Insert table', label: 'Insert'}))

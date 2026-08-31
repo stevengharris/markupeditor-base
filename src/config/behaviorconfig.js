@@ -36,6 +36,7 @@ import behaviorConfig from "../../config/behaviorconfig.json"
  *    "selectImage": false,       // Whether to show a "Select..." button in the Insert Image dialog
  *    "insertLink": false,        // Whether to defer to the MarkupDelegate rather than use the default LinkDialog
  *    "insertImage": false,       // Whether to defer to the MarkupDelagate rather than use the default ImageDialog
+ *    "insertTable": false,       // Whether to defer to the MarkupDelegate rather than use the default Table menu
  *    "highlightCode": true,      // Whether to highlight code blocks and support language identificaton in UI
  *    "markdownShorthand": true   // Whether typing markdown shorthand converts to formatting: block-level
  *                                 // (`> `, list markers, ``` ``` ```, `#`) and inline (**, *, _, `, ~~)

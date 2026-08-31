@@ -3,6 +3,7 @@
     "selectImage": false,
     "insertLink": false,
     "insertImage": false,
+    "insertTable": false,
     "highlightCode": true,
     "markdownShorthand": true
 }

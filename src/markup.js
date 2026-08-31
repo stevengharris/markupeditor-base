@@ -2412,12 +2412,23 @@ export function callbackInsertLink() {
 
 /**
  * Callback to signal that the user wants to insert an image.
- * 
- * The messageHandler will need to bring up a dialog to identify 
+ *
+ * The messageHandler will need to bring up a dialog to identify
  * the image and then execute insertImage.
  */
 export function callbackInsertImage() {
     let messageDict = { 'messageType' : 'insertImage' }
+    _callback(JSON.stringify(messageDict));
+}
+
+/**
+ * Callback to signal that the user wants to insert or edit a table.
+ *
+ * The messageHandler will need to bring up a dialog to size a new table
+ * (and then execute insertTable) or edit the table the selection is in.
+ */
+export function callbackInsertTable() {
+    let messageDict = { 'messageType' : 'insertTable' }
     _callback(JSON.stringify(messageDict));
 }
 
@@ -3295,6 +3306,7 @@ export function insertTable(rows, cols) {
 export function insertTableCommand(rows, cols) {
     const commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
+        if (isTableSelected(state)) return false;      // Tables cannot be nested
         const nodeTypes = state.schema.nodes;
         const table_rows = []
         for (let j = 0; j < rows; j++) {
@@ -3336,15 +3348,8 @@ export function insertTableCommand(rows, cols) {
                     return (pPos == undefined);    // Keep going if pPos hasn't been defined
                 });
             }
-            // Set the selection in the first cell, apply it to the state and the view.
-            // We have to special-case for empty documents to get selection in the 1st cell.
-            let empty = (view.state.doc.textContent.length == 0)
-            let textSelection;
-            if (empty) {
-                textSelection = TextSelection.near(transaction.doc.resolve(pPos), -1)
-            } else {
-                textSelection = TextSelection.near(transaction.doc.resolve(pPos))
-            }
+            // Set the selection in the first cell, applied to the state and the view.
+            let textSelection = TextSelection.near(transaction.doc.resolve(pPos))
             transaction = transaction.setSelection(textSelection);
             state = state.apply(transaction);
             view.updateState(state);

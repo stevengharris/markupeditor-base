@@ -15,12 +15,12 @@ import {
     handleEnter,
     handleShiftEnter,
     setStyleCommand,
+    insertTableCommand,
 } from "../markup"
-import { 
-    SearchItem, 
-    LinkItem, 
-    ImageItem, 
-    TableInsertItem 
+import {
+    SearchItem,
+    LinkItem,
+    ImageItem
 } from "./menuitems"
 
 /**
@@ -84,7 +84,9 @@ export function buildKeymap(config, schema) {
     // Insert
     bind(keymap.link, new LinkItem(config).command)
     bind(keymap.image, new ImageItem(config).command)
-    bind(keymap.table, new TableInsertItem().command) // TODO: Doesn't work properly
+    // Defers to the delegate when `behavior.insertTable` is set, same as Link/Image;
+    // otherwise inserts a default-sized table, since there's no dialog to fall back to.
+    bind(keymap.table, (config.behavior.insertTable && config.delegate?.markupInsertTable) ? config.delegate.markupInsertTable : insertTableCommand(2, 2))
     // Styling
     bind(keymap.p, setStyleCommand('P'))
     bind(keymap.h1, setStyleCommand('H1'))
