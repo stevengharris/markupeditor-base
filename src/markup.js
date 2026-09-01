@@ -3638,7 +3638,7 @@ function _hasColspannedHeader(state) {
     const headers = [];
     let tableAttributes = _getTableAttributes(state);
     if (!tableAttributes.table) return false;
-    state.tr.doc.nodesBetween(tableAttributes.from, tableAttributes.to, (node, pos) => {
+    state.tr.doc.nodesBetween(tableAttributes.from, tableAttributes.to, (node) => {
         if (node.type == nodeTypes.table_header) {
             headers.push(node);
             return false;
@@ -3720,7 +3720,7 @@ export function justifyColumnCommand(align) {
     // 'left' means "clear", matching an unaligned GFM column having no delimiter-row marker
     // at all -- an alias here rather than relying on every caller to pass null/undefined.
     const resolvedAlign = (align && align !== 'left') ? align : null;
-    const commandAdapter = (state, dispatch, view) => {
+    const commandAdapter = (state, dispatch) => {
         if (!isTableSelected(state)) return false;
         const nodeTypes = state.schema.nodes;
         const tableAttributes = _getTableAttributes(state);
@@ -3777,6 +3777,37 @@ export function isTableSelected(state) {
 export function tableHasHeader(state) {
     if (!isTableSelected) return false
     return _getTableAttributes(state).header === true
+}
+
+/**
+ * Handle Mod-Enter when the selection is inside a table: insert a paragraph
+ * immediately after the table and move the selection into it.
+ *
+ * Mirrors prosemirror-commands' `exitCode`, which does the same for code_block
+ * via its `code` node spec. Bound alongside (not instead of) `exitCode` in
+ * keymap.js; returning false when the selection isn't in a table lets that
+ * binding fall through to `exitCode` as usual.
+ *
+ * @ignore
+ * @returns {boolean}   True if a paragraph was inserted after the table; else false.
+ */
+export function exitTableCommand(state, dispatch) {
+    const { $head, $anchor } = state.selection
+    if (!$head.sameParent($anchor)) return false
+    const tableAttributes = _getTableAttributes(state)
+    if (!tableAttributes.table) return false
+    const paragraphType = state.schema.nodes.paragraph
+    const pos = tableAttributes.to
+    const $after = state.doc.resolve(pos)
+    const after = $after.index()
+    if (!$after.parent.canReplaceWith(after, after, paragraphType)) return false
+    if (dispatch) {
+        const tr = state.tr.replaceWith(pos, pos, paragraphType.createAndFill())
+        tr.setSelection(TextSelection.near(tr.doc.resolve(pos)))
+        dispatch(tr.scrollIntoView())
+        stateChanged(activeView())
+    }
+    return true
 }
 
 export function setBorderCommand(border) {

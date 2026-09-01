@@ -16,6 +16,7 @@ import {
     handleShiftEnter,
     setStyleCommand,
     insertTableCommand,
+    exitTableCommand,
 } from "../markup"
 import {
     SearchItem,
@@ -59,6 +60,10 @@ export function buildKeymap(config, schema) {
     bind("Shift-Enter", handleShiftEnter)
     // The MarkupEditor needs to be notified of state changes on Delete, like Backspace
     bind("Delete", chainCommands(handleDelete, deleteNewlineForward))
+    // Escape a table the same way Mod-Enter already escapes a code_block (via
+    // prosemirror-commands' exitCode, bound in baseKeymap): if the selection isn't
+    // in a table, exitTableCommand returns false and this falls through to exitCode.
+    bind("Mod-Enter", exitTableCommand)
     // Table navigation by Tab/Shift-Tab
     bind('Tab', goToNextCell(1))
     bind('Shift-Tab', goToNextCell(-1))
