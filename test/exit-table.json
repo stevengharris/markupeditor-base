@@ -3,7 +3,6 @@
     "tests": [
         {
             "description": "Mod-Enter from a body cell creates a paragraph after the table and moves the selection there",
-            "comment": "action uses 'Ctrl-Enter' literally, not 'Mod-Enter': testTypeKey's modifier set deliberately excludes 'Mod' (see its comment in markup.js -- it has no single fixed KeyboardEvent flag). The keymap binding itself is registered as 'Mod-Enter' in keymap.js; prosemirror-keymap normalizes that to 'Ctrl-' in this non-Mac test environment, which is what a real KeyboardEvent with ctrlKey needs to match.",
             "startHtml": "<table><tr><td><p>A</p></td><td><p>B|</p></td></tr></table>",
             "endHtml": "<table><tr><td><p>A</p></td><td><p>B</p></td></tr></table><p>|</p>",
             "action": "MU.testTypeKey('Ctrl-Enter')"
