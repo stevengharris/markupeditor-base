@@ -34516,6 +34516,8 @@ function setStyle(style) {
 function setStyleCommand(style) {
     let commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
+        const delegate = activeConfig()?.delegate;
+        if (delegate?.canStyle && !delegate.canStyle(isTableSelected(state))) return false;
         const protonode = _nodeFor(style, state.schema);
         const doc = state.doc;
         const selection = state.selection;
@@ -34620,6 +34622,8 @@ function setCodeLanguageCommand(language) {
             }
             return true
         }
+        const delegate = activeConfig()?.delegate;
+        if (delegate?.canStyle && !delegate.canStyle(isTableSelected(state))) return false;
         const codeBlockType = state.schema.nodes.code_block;
         const doc = state.doc;
         const selection = state.selection;
@@ -34812,6 +34816,8 @@ function wrapInListCommand(schema, targetNodeType, attrs) {
     const listItemTypes = [targetListItemType];
 
     const commandAdapter = (state, dispatch, view) => {
+        const delegate = activeConfig()?.delegate;
+        if (delegate?.canList && !delegate.canList(isTableSelected(state))) return false;
         const inTargetNodeType = getListType(state) === listTypeFor(targetNodeType, state.schema);
         const command = inTargetNodeType ? liftListItem(state.schema.nodes.list_item) : wrapInList(targetNodeType, attrs);
         if (command(state)) {
@@ -34965,6 +34971,7 @@ function indent$1() {
 function indentCommand() {
     let commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
+        if (isTableSelected(state)) return false; // Indenting wraps/re-nests blocks, which corrupts a table's structure
         let blockquote = state.schema.nodes.blockquote;
         let li = state.schema.nodes.list_item;
         let ul = state.schema.nodes.bullet_list;
@@ -35080,6 +35087,7 @@ function outdent$1() {
 function outdentCommand() {
     let commandAdapter = (viewState, dispatch, view) => {
         let state = view?.state ?? viewState;
+        if (isTableSelected(state)) return false; // Outdenting lifts/re-nests blocks, which corrupts a table's structure
         const { $from, $to } = state.selection;
         let tr = state.tr;
         let willLift = false;
@@ -36350,10 +36358,14 @@ function insertHRule() {
 }
 function insertHRuleCommand() {
     const commandAdapter = (state, dispatch, view) => {
-        const hRuleNode = view.state.schema.nodes.horizontal_rule.create();
-        const transaction = view.state.tr.replaceSelectionWith(hRuleNode, true);
-        view.dispatch(transaction);
-        stateChanged(view);
+        const delegate = activeConfig()?.delegate;
+        if (delegate?.canInsertHRule && !delegate.canInsertHRule(isTableSelected(state))) return false;
+        if (dispatch) {
+            const hRuleNode = state.schema.nodes.horizontal_rule.create();
+            const transaction = state.tr.replaceSelectionWith(hRuleNode, true);
+            dispatch(transaction);
+            stateChanged(view);
+        }
         return true;
     };
 
@@ -40971,7 +40983,7 @@ function hRuleItem(config) {
     icon: icon,
     title: title,
     active: (state) => { return isHRuleSelected(state) },
-    enable: () => { return true }  // TODO: should be conditional?
+    enable: true
   };
   return cmdItem(insertHRuleCommand(), options)
 }
