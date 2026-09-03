@@ -162,7 +162,7 @@ function hRuleItem(config) {
     icon: icon,
     title: title,
     active: (state) => { return isHRuleSelected(state) },
-    enable: () => { return true }  // TODO: should be conditional?
+    enable: true
   }
   return cmdItem(insertHRuleCommand(), options)
 }
