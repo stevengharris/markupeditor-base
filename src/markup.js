@@ -2195,7 +2195,7 @@ function _getMarkTypes() {
 
 /**
  * Return the link attributes at the selection.
- * 
+ *
  * @returns {object}   An Object whose properties are the link attributes (like href, link) at the selection.
  */
 export function getLinkAttributes() {

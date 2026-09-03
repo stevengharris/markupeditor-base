@@ -237,7 +237,13 @@ export class MarkupEditor {
                 'focus': () => { setTimeout(() => focused(target)) },
                 'blur': () => { setTimeout(() => blurred(target)) },
                 'cut': () => { setTimeout(() => { callbackInput(target) }, 0) },
-                'click': (view) => { setTimeout(() => { clicked(view, target) }, 0) },
+                'click': (view, event) => {
+                    const altKey = event.altKey
+                    // Plain click on a link: LinkView's own listener already decided what
+                    // to do (open on Alt+Click, nothing otherwise); don't also report it,
+                    // or markupClicked's default behavior would follow the link regardless.
+                    setTimeout(() => { if (altKey || !getLinkAttributes().href) clicked(view, target) }, 0)
+                },
                 'delete': () => { setTimeout(() => { callbackInput(target) }, 0) },
             },
             handlePaste(view, event) {

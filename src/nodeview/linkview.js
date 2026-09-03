@@ -9,6 +9,7 @@ export class LinkView {
         link.setAttribute('href', href)
         link.setAttribute('title', title)
         link.addEventListener('click', (ev)=> {
+            ev.preventDefault()
             if (ev.altKey) {
                 if (href.startsWith('#')) {
                     let id = href.substring(1)
