@@ -4,9 +4,12 @@ import {
     blurred,
     clicked,
     handleEnter,
+    handleCodeBlockPaste,
     outermostOfTypeAt,
     resetSelectedID,
     selectionChanged,
+    transformPastedHTML,
+    transformPastedText,
 } from "./markup.js"
 import { ToolbarConfig } from "./config/toolbarconfig.js"
 import { KeymapConfig } from "./config/keymapconfig.js"
@@ -247,19 +250,12 @@ export class MarkupEditor {
                 'delete': () => { setTimeout(() => { callbackInput(target) }, 0) },
             },
             handlePaste(view, event) {
-                const { $from } = view.state.selection
-                const inCodeBlock = $from.parent.type === view.state.schema.nodes.code_block
-                if (inCodeBlock && event?.clipboardData) {
-                    const text = event.clipboardData.getData('text/plain')
-                    if (text) {
-                        view.dispatch(view.state.tr.insertText(text))
-                        setTimeout(() => { callbackInput(target) }, 0)
-                        return true
-                    }
-                }
+                const handled = handleCodeBlockPaste(view, event)
                 setTimeout(() => { callbackInput(target) }, 0)
-                return false
+                return handled
             },
+            transformPastedHTML,
+            transformPastedText,
             handleKeyDown(view, event) {
                 switch (event.key) {
                     case 'Enter':
