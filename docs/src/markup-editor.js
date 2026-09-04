@@ -15225,9 +15225,9 @@ let baseNodes = OrderedMap.from({
   //
   // 1. Changes to div here may need to be reflected in DivView found in markup.js.
   //
-  // 2. We use a style rule to require divs to include id, class, parentId. The div elements 
-  // are used in the Swift MarkupEditor under these specific conditions, and requiring these 
-  // attributes prevents issues when pasting (e.g., from GitHub READMEs) include divs.
+  // 2. We use a tag rule with attribute selectors to require divs to include id, class, parentId.
+  // The div elements are used in the Swift MarkupEditor under these specific conditions, and
+  // requiring these attributes prevents issues when pasting (e.g., from GitHub READMEs) include divs.
   //
   // 3. It might be possible to exclude divs that don't conform to MarkupEditor expectations 
   // by using a rule. For now, deriving a Node from html always removes divs and buttons, so 
@@ -15251,7 +15251,7 @@ let baseNodes = OrderedMap.from({
       writingsuggestions: {default: false},
     },
     parseDOM: [{
-      style: "div[id, class, parentId]",
+      tag: "div[id][class][parentId]",
       getAttrs(dom) {
         const id = dom.getAttribute("id");
         const parentId = dom.getAttribute("parentId");
@@ -34480,6 +34480,7 @@ function toggleFormatCommand(type) {
         }        if (toggle && view) {
             toggle(state, view.dispatch);
             stateChanged(view);
+            return true
         } else {
             return toggle
         }
@@ -34551,6 +34552,7 @@ function setStyleCommand(style) {
             const newState = view.state.apply(transaction);
             view.updateState(newState);
             stateChanged(view);
+            return true
         } else {    // When checking if active based on state, return true only if different
             return paragraphStyle(state) != style;
         }
@@ -36008,11 +36010,6 @@ function _testKeyCodeFor(key) {
  * @throws {Error}          If `key` contains an unrecognized modifier
  *                          prefix, including the unsupported "Mod-".
  * @returns {boolean}       Whether a handler returned `true` for the key.
- *                          NOT a reliable "the document changed" signal:
- *                          some commands (e.g. setStyleCommand,
- *                          toggleFormatCommand) dispatch without returning
- *                          `true`, so the document can still mutate while
- *                          this returns `false`.
  */
 function testTypeKey(key) {
     const view = activeView();
