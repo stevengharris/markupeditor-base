@@ -33720,9 +33720,9 @@ function pasteCode(text) {
 
 /**
  * ProseMirror's own handlePaste EditorView prop for a REAL DOM paste event (e.g. a
- * plain browser Cmd+V, not the Swift app's native Cmd+V interception that routes
- * through pasteCode instead -- see that function's own comment). Only intervenes when
- * the selection is inside a code_block; returns false (unhandled) for anything else,
+ * plain browser Cmd+V, distinct from pasteCode's own explicit insertText call -- see
+ * that function's own comment). Only intervenes when the selection is inside a
+ * code_block; returns false (unhandled) for anything else,
  * letting ProseMirror's default paste behavior take over. Extracted out of
  * markupeditor.js's inline handlePaste prop so this decision/normalization logic is
  * testable independent of that prop's own target-closure/callbackInput side effect.
@@ -33743,10 +33743,9 @@ function handleCodeBlockPaste(view, event) {
 
 /**
  * ProseMirror's transformPastedHTML EditorView prop, run on pasted HTML before it's
- * parsed into the document, for both a real DOM paste and view.pasteHTML/pasteText
- * (used by this file's own pasteHTML/pasteText for the Swift bridge). Does not fire
- * for a code_block paste, since handleCodeBlockPaste already intercepts and returns
- * true before ProseMirror's default paste handling runs.
+ * parsed into the document, for both a real DOM paste and this file's own
+ * pasteHTML/pasteText. Does not fire for a code_block paste, since handleCodeBlockPaste
+ * already intercepts and returns true before ProseMirror's default paste handling runs.
  * @ignore
  * @param {string} html
  * @returns {string}
