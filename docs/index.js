@@ -1,21 +1,12 @@
-import express from 'express'
-import path from 'node:path'
+import { createStaticServer } from '../bin/static-server.js'
+
 const __dirname = import.meta.dirname
+const port = 3000
 
-const app = express();
-const port = 3000;
+// Serves index.html for / via the default directory index, and the
+// relative css/script references inside it, from this same directory.
+const server = createStaticServer({ root: __dirname })
 
-// Allow the relative references for css and scripts to work in index.html
-app.use(express.static(`${__dirname}`))
-
-// For parsing application/json
-app.use(express.json())
-
-// Load example-node.html when loading http://localhost:${port}
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
