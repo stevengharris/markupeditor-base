@@ -164,6 +164,18 @@ p code, h1 code, h2 code, h3 code, h4 code, h5 code, h6 code {
     display: inline;
 }
 
+/* Text that Return will turn into a code block, styled like inline code. */
+.code-fence-pending {
+    background-color: #F8F8F8;
+    border-radius: 3px;
+    font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+    .code-fence-pending {
+        background-color: #808080;
+    }
+}
+
 .resize-container {
     position: relative;
     display: inline-block;
