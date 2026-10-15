@@ -1,5 +1,8 @@
 /* eslint no-cond-assign: 0 */
 import {inputRules, wrappingInputRule, textblockTypeInputRule, InputRule} from "prosemirror-inputrules"
+import {closeHistory} from "prosemirror-history"
+import {Plugin} from "prosemirror-state"
+import {Decoration, DecorationSet} from "prosemirror-view"
 
 // : (NodeType) → InputRule
 // Given a blockquote node type, returns an input rule that turns `"> "`
@@ -24,11 +27,56 @@ export function bulletListRule(nodeType) {
   return wrappingInputRule(/^\s*([-+*])\s$/, nodeType)
 }
 
-// : (NodeType) → InputRule
-// Given a code block node type, returns an input rule that turns a
-// textblock starting with three backticks into a code block.
-export function codeBlockRule(nodeType) {
-  return textblockTypeInputRule(/^```$/, nodeType)
+// : (EditorState, Schema, Object) → ?{$from: ResolvedPos, language: ?string}
+// Returns the paragraph position and language when the selection is a cursor
+// at the end of a paragraph that holds only three backticks and an optional
+// language name, as plain text. Returns null otherwise, including when
+// markdownShorthand is off.
+function pendingCodeFence(state, schema, config) {
+  if (!schema.nodes.code_block || config.behavior?.markdownShorthand === false) return null
+  const { $from, empty } = state.selection
+  const paragraph = $from.parent
+  if (!empty || paragraph.type !== schema.nodes.paragraph || $from.parentOffset !== paragraph.content.size) return null
+  if (!paragraph.children.every(child => child.isText && child.marks.length === 0)) return null
+  const match = /^```([\w+#.-]*)$/.exec(paragraph.textContent)
+  return match ? { $from, language: match[1] || null } : null
+}
+
+// : (Schema, Object) → Command
+// Returns a command, meant to be chained after the Enter key's other
+// handlers, that turns a paragraph holding only three backticks and an
+// optional language name, with the cursor at its end, into an empty code
+// block with that language. The block is created empty, so typing after it
+// starts on the first line. It does nothing when markdownShorthand is off.
+export function codeFenceCommand(schema, config = {}) {
+  return (state, dispatch) => {
+    const pending = pendingCodeFence(state, schema, config)
+    if (!pending) return false
+    if (dispatch) {
+      const { $from, language } = pending
+      const tr = state.tr.delete($from.start(), $from.end())
+      tr.setNodeMarkup($from.before(), schema.nodes.code_block, { language })
+      dispatch(closeHistory(tr).scrollIntoView())
+    }
+    return true
+  }
+}
+
+// : (Schema, Object) → Plugin
+// Returns a plugin that styles the text of a pending code fence like inline
+// code while Return would turn it into a code block. It only decorates the
+// view; the document is not changed.
+export function codeFenceHintPlugin(schema, config = {}) {
+  return new Plugin({
+    props: {
+      decorations(state) {
+        const pending = pendingCodeFence(state, schema, config)
+        if (!pending) return null
+        const { $from } = pending
+        return DecorationSet.create(state.doc, [Decoration.inline($from.start(), $from.end(), { class: "code-fence-pending" })])
+      }
+    }
+  })
 }
 
 // : (NodeType, number) → InputRule
@@ -134,8 +182,8 @@ export function strikethroughRule(markType) {
 
 // : (Schema, object) → Plugin
 // A set of input rules for creating the basic block quotes, lists,
-// code blocks, heading, and markdown formatting shorthand (bold,
-// italic, inline code, strikethrough). All ten rules are gated
+// heading, and markdown formatting shorthand (bold,
+// italic, inline code, strikethrough). All nine rules are gated
 // together by config.behavior.markdownShorthand. config defaults to
 // {}, so markdownShorthand defaults to enabled (only an explicit
 // `false` turns it off) when buildInputRules is called without a
@@ -147,7 +195,6 @@ export function buildInputRules(schema, config = {}) {
     if (type = schema.nodes.blockquote) rules.push(blockQuoteRule(type))
     if (type = schema.nodes.ordered_list) rules.push(orderedListRule(type))
     if (type = schema.nodes.bullet_list) rules.push(bulletListRule(type))
-    if (type = schema.nodes.code_block) rules.push(codeBlockRule(type))
     if (type = schema.nodes.heading) rules.push(headingRule(type, 6))
     if (type = schema.marks.strong) rules.push(strongRule(type))
     if (type = schema.marks.em) {

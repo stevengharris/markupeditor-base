@@ -18,6 +18,7 @@ import {
     insertTableCommand,
     exitTableCommand,
 } from "../markup"
+import { codeFenceCommand } from "./inputrules"
 import {
     SearchItem,
     LinkItem,
@@ -55,7 +56,7 @@ export function buildKeymap(config, schema) {
     // the handleEnter with splitListItem that is bound to Enter here, it always executes, 
     // but splitListItem will also execute, as will anything else beyond it in the chain 
     // if splitListItem returns false (i.e., it doesn't really split the list).
-    bind("Enter", chainCommands(handleEnter, splitListItem(schema.nodes.list_item)))
+    bind("Enter", chainCommands(handleEnter, codeFenceCommand(schema, config), splitListItem(schema.nodes.list_item)))
     // The MarkupEditor handles Shift-Enter as searchBackward when search is active.
     bind("Shift-Enter", handleShiftEnter)
     // The MarkupEditor needs to be notified of state changes on Delete, like Backspace

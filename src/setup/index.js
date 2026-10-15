@@ -9,7 +9,7 @@ import {search} from "prosemirror-search"
 import {buildMenuItems} from "./menu"
 import {buildKeymap} from "./keymap"
 import {toolbar, toolbarView} from "./toolbar"
-import {buildInputRules} from "./inputrules"
+import {buildInputRules, codeFenceHintPlugin} from "./inputrules"
 import {setPrefix} from "../domaccess.js"
 import {LinkItem, ImageItem, SearchItem} from "./menuitems.js"
 import {postMessage, searchIsActive, codeBlockAtSelection} from "../markup"
@@ -294,6 +294,7 @@ export function markupSetup(config, schema) {
   setPrefix('Markup')
   let plugins = [
     buildInputRules(schema, config),
+    codeFenceHintPlugin(schema, config),
     keymap(buildKeymap(config, schema)),
     keymap(baseKeymap),
     dropCursor(),

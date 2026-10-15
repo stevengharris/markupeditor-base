@@ -9,10 +9,9 @@ import { buildInputRules } from '../src/setup/inputrules.js'
  * <markup-editor> instance in beforeAll (see test/setup.js), so BehaviorConfig
  * cannot be varied per test case there. These tests instead exercise
  * buildInputRules directly against a bare ProseMirror EditorState to prove
- * that config.behavior.markdownShorthand gates all ten rules together: the
+ * that config.behavior.markdownShorthand gates all nine rules together: the
  * five markdown shorthand marks (bold, italic x2, inline code, strikethrough)
- * and the five pre-existing block rules (blockquote, lists, code block,
- * heading).
+ * and the four pre-existing block rules (blockquote, lists, heading).
  */
 describe('markdownShorthand BehaviorConfig gate', () => {
 
@@ -42,7 +41,6 @@ describe('markdownShorthand BehaviorConfig gate', () => {
     expect(simulateTyping(plugin, '> ')).toBe(true)        // blockquote
     expect(simulateTyping(plugin, '1. ')).toBe(true)       // ordered list
     expect(simulateTyping(plugin, '- ')).toBe(true)        // bullet list
-    expect(simulateTyping(plugin, '```')).toBe(true)       // code block
     expect(simulateTyping(plugin, '# ')).toBe(true)        // heading
     expect(simulateTyping(plugin, '**foo**')).toBe(true)   // strong
     expect(simulateTyping(plugin, '*foo*')).toBe(true)     // em (star)
@@ -65,7 +63,6 @@ describe('markdownShorthand BehaviorConfig gate', () => {
     expect(simulateTyping(plugin, '> ')).toBe(false)   // blockquote
     expect(simulateTyping(plugin, '1. ')).toBe(false)  // ordered list
     expect(simulateTyping(plugin, '- ')).toBe(false)   // bullet list
-    expect(simulateTyping(plugin, '```')).toBe(false)  // code block
     expect(simulateTyping(plugin, '# ')).toBe(false)   // heading
   })
 })
