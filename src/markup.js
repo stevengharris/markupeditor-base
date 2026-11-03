@@ -2276,8 +2276,29 @@ export function getLinkAttributes() {
             return {href: linkMarks[0].attrs.href, link: selectedNode.text};
         };
     };
+    // A linked image carries the link mark on the image node, which has no text to report as the link.
+    const image = _selectedImageNode(view.state)
+    if (image) {
+        const linkMarks = image.marks.filter(mark => mark.type === schema.marks.link)
+        if (linkMarks.length === 1) {
+            return {href: linkMarks[0].attrs.href, link: image.attrs.alt ?? ''};
+        };
+    };
     return {};
 };
+
+function _selectedImageNode(state) {
+    const {from, to} = state.selection
+    let image = null
+    let count = 0
+    state.doc.nodesBetween(from, to, node => {
+        if (node.type === state.schema.nodes.image) {
+            image = node
+            count++
+        }
+    })
+    return (count === 1) ? image : null
+}
 
 function _getImageAttributes() {
     const view = activeView()
