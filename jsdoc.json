@@ -22,6 +22,7 @@
             "./src/markupdelegate.js",
             "./src/markupeditor.js",
             "./src/markup.js",
+            "./src/headingslug.js",
             "./src/setup/menuitems.js",
             "./src/setup/toolbar.js",
             "./src/setup/index.js",
