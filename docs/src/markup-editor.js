@@ -43333,7 +43333,13 @@ class Searcher {
      * Create a new SearchQuery and highlight all the matches in the document.
      */
     _buildQuery() {
-        this._searchQuery = new SearchQuery({search: this._searchString, caseSensitive: this._caseSensitive});
+        // The search string has straight quotes and apostrophes. Match them against the straight and
+        // curly forms in the document text, without changing the document.
+        const pattern = this._searchString
+            .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            .replaceAll("'", "['‘’]")
+            .replaceAll('"', '["“”]');
+        this._searchQuery = new SearchQuery({search: pattern, regexp: true, caseSensitive: this._caseSensitive});
     }
 
 }
