@@ -3039,12 +3039,13 @@ export function idForInternalLinkCommand(hTag, index) {
 }
 
 /**
- * Return a unique identifier for the heading `node` by lowercasing its trimmed textContent
- * and replacing blanks with `-`, then appending a number until its unique if required.
+ * Return a unique identifier for the heading `node` by lowercasing its textContent, dropping
+ * everything but letters, digits, `-` and `_`, and replacing blanks with `-`, as GitHub does.
+ * If the id is already in use, append `-1`, `-2`, and so on until it is unique.
  * If the heading `node` has an id, then just return it.
- * 
- * Since the `node.textContent` can be arbitrarily large, we limit the id to 40 characters 
- * just to avoid unwieldy IDs.
+ *
+ * Since the `node.textContent` can be arbitrarily large, we limit the id to 40 characters
+ * before any number is appended, just to avoid unwieldy IDs.
  * 
  * @ignore
  * @param {Node}        node    A ProseMirror Node that is of heading type
@@ -3053,15 +3054,15 @@ export function idForInternalLinkCommand(hTag, index) {
  */
 function idForHeader(node, state) {
     if (node.attrs.id) return node.attrs.id
-    let id = node.textContent.toLowerCase().substring(0, 40)
-    id = id.replaceAll(' ', '-')
-    let {node: idNode} = nodeWithId(id, state)
-    let index = 0;
-    while (idNode) {
+    const base = node.textContent.toLowerCase()
+        .replace(/[^\p{L}\p{N}\p{M} _-]/gu, '')
+        .replaceAll(' ', '-')
+        .substring(0, 40)
+    let id = base
+    let index = 0
+    while (nodeWithId(id, state).node) {
         index++
-        id = id + index.toString()
-        let {node} = nodeWithId(id, state)
-        idNode = node
+        id = base + '-' + index.toString()
     }
     return id
 }
