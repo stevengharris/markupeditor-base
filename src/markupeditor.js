@@ -107,6 +107,7 @@ import {
     toggleSubscript,
     toggleSuperscript,
 } from "./markup.js"
+import { headingSlug, headingSlugs } from "./headingslug.js"
 import {
     activeConfig,
     activeView,
@@ -390,6 +391,8 @@ export const MU = {
     getLocalImages,
     getHTML,
     getHeaders,
+    headingSlug,
+    headingSlugs,
     getHeight,
     getImageAttributes,
     getLinkAttributes,
