@@ -157,7 +157,7 @@ function insertBarItems(config) {
 
 function hRuleItem(config) {
   let icon = config.toolbar.icons.hRule
-  let title = config.toolbar.help.hRule + keyString('hRule', config.keymap)
+  let title = config.toolbar.help.hRule + keyString('hrule', config.keymap)
   let options = {
     icon: icon,
     title: title,
