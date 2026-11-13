@@ -17,6 +17,7 @@ import {
     setStyleCommand,
     insertTableCommand,
     exitTableCommand,
+    insertHRuleCommand,
 } from "../markup"
 import { codeFenceCommand } from "./inputrules"
 import {
@@ -90,6 +91,7 @@ export function buildKeymap(config, schema) {
     // Insert
     bind(keymap.link, new LinkItem(config).command)
     bind(keymap.image, new ImageItem(config).command)
+    bind(keymap.hrule, insertHRuleCommand())
     // Defers to the delegate when `behavior.insertTable` is set, same as Link/Image;
     // otherwise inserts a default-sized table, since there's no dialog to fall back to.
     bind(keymap.table, (config.behavior.insertTable && config.delegate?.markupInsertTable) ? config.delegate.markupInsertTable : insertTableCommand(2, 2))
